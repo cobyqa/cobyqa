@@ -128,7 +128,7 @@ def setup_package():
         long_description=open('README.rst').read().rstrip(),
         long_description_content_type='text/x-rst',
         keywords='',
-        license='',
+        license='BSD-3-Clause',
         url='https://github.com/ragonneau/cobyqa',
         download_url='https://pypi.org/project/cobyqa/#files',
         project_urls={
@@ -141,7 +141,7 @@ def setup_package():
             'Intended Audience :: Developers',
             'Intended Audience :: Education',
             'Intended Audience :: Science/Research',
-            'License :: OSI Approved',
+            'License :: OSI Approved :: BSD License',
             'Operating System :: MacOS',
             'Operating System :: Microsoft :: Windows',
             'Operating System :: POSIX',
