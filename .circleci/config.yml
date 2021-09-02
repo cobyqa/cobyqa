@@ -1,0 +1,22 @@
+version: 2.1
+
+jobs:
+  # Build and test the solver using the supported versions of Python
+  build-and-test:
+    parameters:
+      python:
+        type: string
+    docker:
+      - image: cimg/python:<< parameters.python >>
+    steps:
+      - checkout
+      - run: bash build_tools/circle/build-test.sh
+
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - build-and-test:
+          matrix:
+            parameters:
+              python: ['3.7', '3.8', '3.9']
