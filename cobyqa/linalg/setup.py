@@ -14,6 +14,8 @@ def configuration(parent_package='', top_path=None):
     #     **npy_nodepr_api,
     # )
 
+    config.add_data_dir('tests')
+
     return config
 
 

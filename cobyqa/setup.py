@@ -9,6 +9,7 @@ def configuration(parent_package='', top_path=None):
 
     config.add_subpackage('_build_utils')
     config.add_subpackage('linalg')
+    config.add_data_dir('tests')
 
     # Skip cythonization when creating a source distribution.
     if 'sdist' not in sys.argv:

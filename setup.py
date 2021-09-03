@@ -56,12 +56,14 @@ class CleanCommand(clean):
     def run(self):
         super().run()
 
-        # Remove the 'build', 'dist', and '*.egg-info' directories.
+        # Remove the 'build', 'dist', '*.egg-info', and '.pytest_cache'
+        # directories from the current working directory.
         cwd = Path(__file__).resolve(strict=True).parent
         shutil.rmtree(cwd / 'build', ignore_errors=True)
         shutil.rmtree(cwd / 'dist', ignore_errors=True)
         for dirname in cwd.glob('*.egg-info'):
             shutil.rmtree(dirname)
+        shutil.rmtree(cwd / '.pytest_cache', ignore_errors=True)
 
         # Remove the 'MANIFEST' file.
         if Path(cwd, 'MANIFEST').is_file():

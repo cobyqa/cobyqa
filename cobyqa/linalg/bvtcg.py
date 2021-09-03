@@ -339,9 +339,9 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
             iu = int(float(nalt - 3) * angbd + 3.1)
             angt = angbd * np.arange(1, iu + 1, dtype=float) / float(iu)
             sth = np.divide(2. * angt, 1. + np.square(angt))
-            temp = sdhsd + np.multiply(angt, stephred * angt - 2. * stephsd)
-            rednew = np.multiply(sth, gdstep * angt - gdsd)
-            rednew -= np.multiply(sth, .5 * np.multiply(sth, temp))
+            temp = sdhsd + angt * (stephred * angt - 2. * stephsd)
+            rednew = sth * (gdstep * angt - gdsd)
+            rednew -= sth * (.5 * sth * temp)
             isav = np.argmax(rednew)
             redmax = rednew[isav]
             rednew[isav] = -np.inf

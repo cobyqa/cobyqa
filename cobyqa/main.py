@@ -1,6 +1,6 @@
 import numpy as np
 
-from ._models import NLCP
+from .models import NLCP
 
 
 class OptimizeResult(dict):
