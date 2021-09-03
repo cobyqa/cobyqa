@@ -318,8 +318,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             elif inact[k]:
                 asd[k] = sd[k - 2 * mub - n]
         izero = np.less_equal(np.abs(asd), tiny * np.abs(resid))
-        izero = np.logical_and(izero, np.abs(resid) < tolbd)
-        izero = np.logical_and(izero, inact)
+        izero = izero & (np.abs(resid) < tolbd) & inact
         jsav = -1
         alphm = alpha
         if np.any(izero):
@@ -327,8 +326,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             alpha = 0.
         else:
             iclose = np.greater(np.abs(asd), tiny * np.abs(resid))
-            iclose = np.logical_and(iclose, alpha * asd > resid)
-            iclose = np.logical_and(iclose, inact)
+            iclose = iclose & (alpha * asd > resid) & inact
             if np.any(iclose):
                 afeas = np.full_like(asd, np.inf)
                 afeas[iclose] = np.divide(resid[iclose], asd[iclose])
@@ -434,7 +432,7 @@ def getact(gq, Aub, slc, nact, iact, qfac, rfac, delta, resid, inact, **kwargs):
         # purpose of CTOL below is to estimate whether a positive value of
         # VIOLMX may be due to computer rounding errors.
         scale = sdnorm / delta
-        iclose = np.logical_and(inact, resid <= tdel)
+        iclose = inact & (resid <= tdel)
         resall = np.full_like(resid, -np.inf)
         for k in range(2 * (mub + n)):
             if iclose[k] and k < mub:
@@ -502,7 +500,7 @@ def getact(gq, Aub, slc, nact, iact, qfac, rfac, delta, resid, inact, **kwargs):
                 vmu[i] = -np.inner(rfac[i, i + 1:nact], vmu[i + 1:])
                 vmu[i] /= rfac[i, i]
             imult = np.greater(np.abs(vmu), tiny * np.abs(vlam[:nact]))
-            imult = np.logical_and(imult, vlam[:nact] >= violmx * vmu)
+            imult = imult & (vlam[:nact] >= violmx * vmu)
             ic = -1
             vmult = violmx
             if np.any(imult):

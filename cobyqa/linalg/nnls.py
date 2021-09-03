@@ -110,14 +110,13 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
 
             # Update X to keep the first K components nonnegative.
             idiv = np.greater(np.abs(x[:k] - xact[:k]), tiny * np.abs(x[:k]))
-            upd = np.logical_and(inact[:k], xact[:k] <= 0.)
-            upd = np.logical_and(upd, idiv)
+            upd = inact[:k] & (xact[:k] <= 0.) & idiv
             iupd = np.flatnonzero(upd)
             rxupd = x[iupd] / (x[iupd] - xact[iupd])
             x += np.min(rxupd) * (xact - x)
 
             # Update the active set according to the intermediate values of X.
-            act[np.logical_and(inact[:k], np.abs(x[:k]) < tol)] = True
+            act[inact[:k] & (np.abs(x[:k]) < tol)] = True
             inact[:k] = np.logical_not(act)
             iact = np.flatnonzero(act)
             ipos = np.flatnonzero(inact[:k])

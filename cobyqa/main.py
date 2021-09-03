@@ -1,6 +1,6 @@
 import numpy as np
 
-from cobyqa.models import NLCP
+from ._models import NLCP
 
 
 class OptimizeResult(dict):
@@ -165,6 +165,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
     # Begin the iterative procedure.
     nf = nlc.get_opt('npt')
+    nit = 0
     rho = nlc.get_opt('rhobeg')
     delta = rho
     knew = -1
@@ -177,6 +178,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         fsav = nlc.fopt
         xsav = nlc.xopt
         ksav = knew
+        nit += 1
         if knew == -1:
             step = nlc.trust_region_step(delta, **kwargs)
             snorm = np.linalg.norm(step)
@@ -246,10 +248,13 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
     # Build the result structure and return.
     result = OptimizeResult()
-    result.x = nlc.x
+    result.x = nlc.xbase + nlc.xopt
     result.fun = nlc.fopt
     result.jac = nlc.obj_grad()
     result.nfev = nf
+    result.nit = nit
+    if nlc.mub + nlc.meq > 0:
+        result.maxcv = nlc.maxcv
     result.status = exit_status
     result.success = exit_status in [0, 1]
     result.message = {
@@ -268,5 +273,5 @@ def _print(nlc, fun, nf, message):
     print(message)
     print(f'Number of function evaluations: {nf}.')
     print(f'Least value of {fun}: {nlc.fopt}.')
-    print(f'Corresponding point: {nlc.x}.')
+    print(f'Corresponding point: {nlc.xbase + nlc.xopt}.')
     print()

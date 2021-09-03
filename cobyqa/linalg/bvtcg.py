@@ -103,8 +103,8 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
     # 5. NACT       number of active constraints.
     step = np.zeros_like(gq)
     xbdi = np.zeros(step.size, dtype=int)
-    xbdi[np.logical_and(step <= xl, gq >= 0.)] = -1
-    xbdi[np.logical_and(step >= xu, gq <= 0.)] = 1
+    xbdi[(step <= xl) & (gq >= 0.)] = -1
+    xbdi[(step >= xu) & (gq <= 0.)] = 1
     ifree = np.equal(xbdi, 0)
     ifixed = np.not_equal(xbdi, 0)
     nact = np.count_nonzero(np.abs(xbdi))

@@ -4,6 +4,9 @@ import numpy as np
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, givens, lctcg, nnls
 
+EPS = np.finfo(float).eps
+TINY = np.finfo(float).tiny
+
 
 class NLCP:
     r"""
@@ -55,17 +58,17 @@ class NLCP:
         rhobeg = min(.5 * np.min(self._xu - self._xl), rhobeg)
         rhoend = min(rhobeg, rhoend)
         self._opts.update({'rhobeg': rhobeg, 'rhoend': rhoend})
-        adj = np.logical_and(x - self._xl <= rhobeg, self._xl < x)
+        adj = (x - self._xl <= rhobeg) & (self._xl < x)
         if np.any(adj):
             x[adj] = self._xl[adj] + rhobeg
-        adj = np.logical_and(self._xu - x <= rhobeg, x < self._xu)
+        adj = (self._xu - x <= rhobeg) & (x < self._xu)
         if np.any(adj):
             x[adj] = self._xu[adj] - rhobeg
 
         # Set the initial shift of the origin, designed to manage the effects
         # of computer rounding errors in the calculations, and update
         # accordingly the right-hand sides of the constraints at most linear.
-        self._xbase = np.copy(x)
+        self._xbase = x
         self.shift_constraints(self._xbase)
 
         # Set the initial models of the problem.
@@ -74,8 +77,8 @@ class NLCP:
             self.check_models()
 
         # Determine the initial least-squares multipliers of the problem.
-        self._gub = 0.
-        self._geq = 0.
+        self._gub = 1.
+        self._geq = 1.
         self._lmub = np.zeros_like(bub, dtype=float)
         self._lmeq = np.zeros_like(beq, dtype=float)
         self.update_multipliers(**kwargs)
@@ -96,14 +99,21 @@ class NLCP:
         the method also returns the value of the merit function corresponding to
         the modeled problem.
         """
-        tub = np.dot(self._Aub, x) - self._bub + self._lmub / self._gub
-        tub = np.maximum(0., tub)
-        alub = .5 * self._gub * np.inner(tub, tub)
-        teq = np.dot(self._Aeq, x) - self._beq + self._lmeq / self._geq
-        aleq = .5 * self._geq * np.inner(teq, teq)
-        ax = fx + alub + aleq
+        ax = fx
+        mx = self.fopt
+        if abs(self._gub) > TINY * np.max(np.abs(self._lmub), initial=0.):
+            tub = np.dot(self._Aub, x) - self._bub + self._lmub / self._gub
+            tub = np.maximum(0., tub)
+            alub = .5 * self._gub * np.inner(tub, tub)
+            ax += alub
+            mx += alub
+        if abs(self._geq) > TINY * np.max(np.abs(self._lmeq), initial=0.):
+            teq = np.dot(self._Aeq, x) - self._beq + self._lmeq / self._geq
+            aleq = .5 * self._geq * np.inner(teq, teq)
+            ax += aleq
+            mx += aleq
         if model:
-            mx = self.fopt + self.obj(x) + alub + aleq
+            mx += self.obj(x)
             return ax, mx
         return ax
 
@@ -136,6 +146,13 @@ class NLCP:
         return np.copy(self._bub)
 
     @property
+    def mub(self):
+        r"""
+        Return the number of linear inequality constraints.
+        """
+        return self._bub.size
+
+    @property
     def aeq(self):
         r"""
         Return the Jacobian matrix of the linear equality constraints.
@@ -148,6 +165,13 @@ class NLCP:
         Return the right-hand side vector of the linear equality constraints.
         """
         return np.copy(self._beq)
+
+    @property
+    def meq(self):
+        r"""
+        Return the number of linear equality constraints.
+        """
+        return self._beq.size
 
     @property
     def options(self):
@@ -227,18 +251,20 @@ class NLCP:
         return self._mds.xopt
 
     @property
-    def x(self):
-        r"""
-        Return the best point so far without any shifting of the origin.
-        """
-        return self._xbase + self.xopt
-
-    @property
     def fopt(self):
         r"""
         Return the value of the objective function at the best point so far.
         """
         return self._mds.fopt
+
+    @property
+    def maxcv(self):
+        r"""
+        Return the constraint violation at the best point so far.
+        """
+        cub = np.dot(self._Aub, self.xopt) - self._bub
+        ceq = np.dot(self._Aeq, self.xopt) - self._beq
+        return max((np.max(cub, initial=0.), np.max(np.abs(ceq), initial=0.)))
 
     def fun(self, x):
         r"""
@@ -282,14 +308,6 @@ class NLCP:
         """
         return self._opts.get(option, default)
 
-    def resid(self, x):
-        r"""
-        Evaluate the residual of the constraints at ``x``.
-        """
-        rub = np.max(np.dot(self._Aub, x) - self._bub, initial=0.)
-        req = np.max(np.abs(np.dot(self._Aeq, x) - self._beq), initial=0.)
-        return rub, req
-
     def set_default_options(self, n):
         r"""
         Set the default options of the solvers.
@@ -313,7 +331,7 @@ class NLCP:
         if not (npt_min <= npt <= npt_max):
             self._opts['npt'] = min(npt_max, max(npt_min, npt))
             message = "Option 'npt' is not in the required interval and is "
-            message += "increased." if npt_min > npt else "decreased."
+            message += 'increased.' if npt_min > npt else 'decreased.'
             warnings.warn(message, RuntimeWarning, stacklevel=stack_level)
 
         # Ensure that the option 'maxfev' is large enough.
@@ -340,9 +358,6 @@ class NLCP:
         # Note: When adapting the algorithm to tackle general nonlinear
         # constraints, the right-hand sides of the new constraints may be
         # undefined when this method is called.
-        x = np.asarray(x)
-        if x.dtype.kind in np.typecodes['AllInteger']:
-            x = np.asarray(x, dtype=float)
         self._xl -= x
         self._xu -= x
         self._bub -= np.dot(self._Aub, x)
@@ -386,27 +401,24 @@ class NLCP:
         Update the model to include the trial point in the interpolation set.
         """
         # Evaluate the objective function at the trial point.
-        xnew = self.xopt + step
+        xsav = self.xopt
+        xnew = xsav + step
         fx = self.fun(self._xbase + xnew)
 
         # Update the Lagrange multipliers and the penalty parameters.
         self.update_multipliers(**kwargs)
-        # WARNING: update_penalty() modified xopt but it is used in _mds.update,
-        # which leads to an error.
-        # self.update_penalty()
-
-        # TODO: Increase the penalty parameters.
-        mx, mmx = self(xnew, fx, True)
-        mopt = self(self.xopt, self.fopt)
+        mx, mmx, mopt = self.update_penalty_coefficients(xnew, fx, knew)
 
         # Determine the trust-region ratio.
-        tiny = np.finfo(float).tiny
-        if knew < 0 and abs(mopt - mmx) > tiny * abs(mopt - mx):
+        if knew == -1 and abs(mopt - mmx) > TINY * abs(mopt - mx):
             ratio = (mopt - mx) / (mopt - mmx)
         else:
             ratio = -1.
 
-        # Update the models of the problem.
+        # Update the models of the problem. The step is updated to take into
+        # account the fact that the best point so far may have been updated when
+        # the penalty coefficients have been updated.
+        step += xsav - self.xopt
         knew = self._mds.update(step, knew, fx)
         if knew >= 0:
             if mx < mopt:
@@ -424,8 +436,7 @@ class NLCP:
             # Determine the matrix of the least-squares problem. The inequality
             # multipliers corresponding to nonzero constraint values are set to
             # zeros to satisfy the complementary slackness conditions.
-            eps = np.finfo(float).eps
-            tol = eps * self._bub.size * np.max(np.abs(self._bub), initial=1.)
+            tol = EPS * self._bub.size * np.max(np.abs(self._bub), initial=1.)
             iub = np.less_equal(np.abs(self._bub), tol)
             mub = np.count_nonzero(iub)
             A = np.r_[self._Aub[iub, :], self._Aeq].T
@@ -436,6 +447,22 @@ class NLCP:
             self._lmub.fill(0.)
             self._lmub[iub] = lm[:mub]
             self._lmeq = lm[mub:]
+
+    def update_penalty_coefficients(self, xnew, fx, knew):
+        mx, mmx = self(xnew, fx, True)
+        mopt = self(self.xopt, self.fopt)
+        if knew == -1 and mmx > mopt:
+            npt = self.get_opt('npt')
+            mval = np.empty(npt, dtype=float)
+            while mmx > mopt:
+                self._gub *= 2.
+                self._geq *= 2.
+                mx, mmx = self(xnew, fx, True)
+                for k in range(npt):
+                    mval[k] = self(self.xpt[k, :], self.fval[k])
+                self.kopt = np.argmin(mval)
+                mopt = mval[self.kopt]
+        return mx, mmx, mopt
 
     def trust_region_step(self, delta, **kwargs):
         r"""
@@ -453,8 +480,7 @@ class NLCP:
         Methods. MPS-SIAM Ser. Optim. Philadelphia, PA, US: SIAM, 2009.
         """
         # Define the tolerances to compare floating-point numbers with zero.
-        eps = np.finfo(float).eps
-        tol = 1e1 * eps * self.xopt.size
+        tol = 1e1 * EPS * self.xopt.size
 
         # Evaluate the normal step of the Byrd-Omojokun approach. The normal
         # step attempts to reduce the violations of the linear constraints
@@ -476,13 +502,13 @@ class NLCP:
         # Evaluate the tangential step of the trust-region subproblem, and set
         # the global trust-region step. The tangential subproblem is feasible.
         if ssq <= tol * max(delta, 1.):
-            delta *= np.sqrt(2.)
             xopt = self.xopt
+            delta *= np.sqrt(2.)
         else:
             xopt = self.xopt + nstep
             delta = np.sqrt(delta ** 2. - ssq)
         gq = self.obj_grad(xopt)
-        bub = np.dot(self._Aub, xopt)
+        bub = np.maximum(self._bub, np.dot(self._Aub, xopt))
         beq = np.dot(self._Aeq, xopt)
         if mc == 0:
             tstep = bvtcg(xopt, gq, self.obj_hessp, (), self._xl, self._xu,
@@ -785,8 +811,7 @@ class Model:
         vlag[knew] -= 1.
         bmax = np.max(np.abs(self._bmat), initial=1.)
         zmax = np.max(np.abs(self._zmat), initial=1.)
-        tiny = np.finfo(float).tiny
-        if abs(sigma) < tiny * max(bmax, zmax):
+        if abs(sigma) < TINY * max(bmax, zmax):
             # The denominator of the updating formula is too small to safely
             # divide the coefficients of the KKT matrix of interpolation.
             # Theoretically, the value of abs(sigma) is always positive, and
@@ -863,9 +888,8 @@ class Model:
         TODO: Give details.
         """
         # Define the tolerances to compare floating-point numbers with zero.
-        eps = np.finfo(float).eps
         npt = self._xpt.shape[0]
-        tol = eps * npt
+        tol = EPS * npt
 
         # Define the knew-th Lagrange polynomial at the best point.
         lag = Quadratic(self._bmat, self._zmat, self._idz, knew)
@@ -1043,8 +1067,7 @@ class Quadratic:
         r"""
         Check whether the model satisfies the interpolation conditions.
         """
-        eps = np.finfo(float).eps
-        tol = 1e1 * np.sqrt(eps) * fval.size * np.max(np.abs(fval), initial=1.)
+        tol = 1e1 * np.sqrt(EPS) * fval.size * np.max(np.abs(fval), initial=1.)
         diff = 0.
         for k in range(fval.size):
             qx = self(xpt[k, :], xpt, kopt)
