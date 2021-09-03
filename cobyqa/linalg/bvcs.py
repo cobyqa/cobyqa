@@ -124,7 +124,7 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
         # the Cauchy step are set to BIGSTP and the computations stop
         # immediately if every free component of the gradient is zero.
         ifree = np.minimum(-xl, gq) > 0.
-        ifree = np.logical_or(ifree, np.maximum(-xu, gq) < 0.)
+        ifree = ifree | (np.maximum(-xu, gq) < 0.)
         cc = np.zeros_like(step)
         cc[ifree] = bigstp
         gqsq = np.inner(gq[ifree], gq[ifree])
@@ -150,7 +150,7 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
             ixu = np.greater_equal(temp, xu)
             cc[ixu] = xu[ixu]
             ccsq += np.inner(cc[ixu], cc[ixu])
-            ifree[np.logical_or(ixl, ixu)] = False
+            ifree[ixl | ixu] = False
             gqsq = np.inner(gq[ifree], gq[ifree])
             delsq = delta ** 2. - ccsq
 
@@ -159,12 +159,12 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
         ifree = np.less(cc - bigstp, tol * bigstp)
         cc[ifree] = -stplen * gq[ifree]
         step[ifree] = np.maximum(xl[ifree], np.minimum(xu[ifree], cc[ifree]))
-        iopt = np.logical_and(np.logical_not(ifree), np.abs(cc) < tol * bigstp)
+        iopt = np.logical_not(ifree) & (np.abs(cc) < tol * bigstp)
         step[iopt] = 0.
-        ifixed = np.logical_not(np.logical_or(ifree, iopt))
-        ixl = np.logical_and(ifixed, gq > 0.)
+        ifixed = np.logical_not(ifree | iopt)
+        ixl = ifixed & (gq > 0.)
         step[ixl] = xl[ixl]
-        ixu = np.logical_and(ifixed, np.logical_not(ixl))
+        ixu = ifixed & np.logical_not(ixl)
         step[ixu] = xu[ixu]
         gqcc = np.inner(gq, cc)
 
