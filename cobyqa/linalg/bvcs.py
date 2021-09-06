@@ -156,7 +156,7 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
 
         # Set the free components of the Cauchy step in CC and all components of
         # the trial step in STEP. The Cauchy step may be scaled later.
-        ifree = np.less(cc - bigstp, tol * bigstp)
+        ifree = np.less(np.abs(cc - bigstp), tol * bigstp)
         cc[ifree] = -stplen * gq[ifree]
         step[ifree] = np.maximum(xl[ifree], np.minimum(xu[ifree], cc[ifree]))
         iopt = np.logical_not(ifree) & (np.abs(cc) < tol * bigstp)

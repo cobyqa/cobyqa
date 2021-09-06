@@ -264,7 +264,20 @@ class NLCP:
         """
         cub = np.dot(self._Aub, self.xopt) - self._bub
         ceq = np.dot(self._Aeq, self.xopt) - self._beq
-        return max((np.max(cub, initial=0.), np.max(np.abs(ceq), initial=0.)))
+        cb = np.r_[self.xopt - self._xu, self._xl - self.xopt]
+        return np.max(np.r_[cub, np.abs(ceq), cb], initial=0.)
+
+    @property
+    def type(self):
+        # CUTEst classification scheme
+        # https://www.cuter.rl.ac.uk/Problems/classification.shtml
+        if self.mub + self.meq > 0:
+            return 'L'
+        elif np.any(self._xl != -np.inf) or np.any(self._xu != np.inf):
+            # TODO: All variables may be fixed.
+            return 'B'
+        else:
+            return 'U'
 
     def fun(self, x):
         r"""

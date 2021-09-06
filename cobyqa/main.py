@@ -191,7 +191,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             step = nlc.model_step(knew, max(.1 * delta, rho), **kwargs)
             snorm = np.linalg.norm(step)
 
-        if ksav >= 0. or snorm > .5 * delta:
+        if knew >= 0. or snorm > .5 * delta:
             # Evaluate the objective function, include the trial point in the
             # interpolation set, and update accordingly the models.
             if nf >= nlc.get_opt('maxfev'):
@@ -253,7 +253,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     result.jac = nlc.obj_grad()
     result.nfev = nf
     result.nit = nit
-    if nlc.mub + nlc.meq > 0:
+    if nlc.type != 'U':
         result.maxcv = nlc.maxcv
     result.status = exit_status
     result.success = exit_status in [0, 1]
