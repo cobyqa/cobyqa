@@ -172,6 +172,7 @@ class TestBase(ABC):
     @pytest.fixture
     def xl(self, fun, n):
         return {
+            'arwhead': -5.12 * np.ones(n),
             'dixonpr': -10. * np.ones(n),
             'perm0d': -n * np.ones(n),
             'permd': -n * np.ones(n),
@@ -189,6 +190,7 @@ class TestBase(ABC):
     @pytest.fixture
     def xu(self, fun, n):
         return {
+            'arwhead': 5.12 * np.ones(n),
             'dixonpr': 10. * np.ones(n),
             'perm0d': n * np.ones(n),
             'permd': n * np.ones(n),
@@ -257,8 +259,8 @@ class TestUnconstrained(TestBase):
 class TestBoundConstrained(TestBase):
 
     @pytest.mark.parametrize('n', [2, 5, 10])
-    @pytest.mark.parametrize('fun', ['dixonpr', 'power', 'rosen', 'rothyp',
-                                     'sphere', 'stybtang', 'trid'])
+    @pytest.mark.parametrize('fun', ['arwhead', 'dixonpr', 'power', 'rosen',
+                                     'rothyp', 'sphere', 'stybtang', 'trid'])
     def test_simple(self, fun, n, x0, xl, xu, x_sol, f_sol):
         res = minimize(
             fun=getattr(self, fun),
@@ -307,7 +309,7 @@ class TestLinearEqualityConstrained(TestBase):
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
-    def test_simple(self, fun, n, x0, aeq, beq, x_sol, f_sol):
+    def test_simple(self, fun, n, x0, xl, xu, aeq, beq, x_sol, f_sol):
         res = minimize(
             fun=getattr(self, fun),
             x0=x0,
@@ -317,3 +319,32 @@ class TestLinearEqualityConstrained(TestBase):
         )
         self.assert_(res, n, x_sol, f_sol, maxcv=True)
 
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            Aeq=aeq,
+            beq=beq,
+            options={'debug': True},
+        )
+        self.assert_(res, n, x_sol, f_sol, maxcv=True)
+
+
+class TestLinearInequalityConstrained(TestBase):
+
+    @pytest.fixture
+    def aub(self, fun, n):
+        return {
+            'arwhead': np.c_[np.ones((1, n - 1)), 0.],
+            'power': np.ones((1, n)),
+            'sphere': np.ones((1, n)),
+        }.get(fun)
+
+    @pytest.fixture
+    def bub(self, fun):
+        return {
+            'arwhead': np.ones(1),
+            'power': np.ones(1),
+            'sphere': np.ones(1),
+        }.get(fun)

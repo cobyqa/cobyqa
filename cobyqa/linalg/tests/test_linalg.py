@@ -4,6 +4,8 @@ from numpy.testing import assert_, assert_almost_equal, assert_raises
 
 from cobyqa.linalg import bvtcg, cpqp, lctcg, nnls
 
+EPS = np.finfo(float).eps
+
 
 class TestNNLS:
 
@@ -13,7 +15,6 @@ class TestNNLS:
     ])
     def test_standard(self, n_max, m_max, rep):
         rng = np.random.default_rng(0)
-        eps = np.finfo(float).eps
         for n in rng.integers(1, n_max, rep):
             for m in rng.integers(1, m_max, rep):
                 # Solve a randomly generated problem.
@@ -36,10 +37,10 @@ class TestNNLS:
                 # 2. the complementary slackness conditions;
                 # 3. the primal feasibility conditions; and
                 # 4. the dual feasibility conditions.
-                tol = 1e1 * eps * float(max(n, m)) * max(1., np.max(np.abs(b)))
+                tol = 1e1 * EPS * max(n, m) * np.max(np.abs(b), initial=1.)
                 w = np.dot(A.T, np.dot(A, x) - b)
                 assert_(np.all(np.abs(w[k:]) <= tol))
-                assert_(np.all(np.abs(np.multiply(w[:k], x[:k])) <= tol))
+                assert_(np.all(np.abs(w[:k] * x[:k]) <= tol))
                 assert_(np.all(x[:k] >= 0.))
                 assert_(np.all(w[:k] >= -tol))
 
@@ -64,7 +65,6 @@ class TestBVTCG:
     ])
     def test_standard(self, n_max, rep):
         rng = np.random.default_rng(0)
-        eps = np.finfo(float).eps
         for n in rng.integers(1, n_max, rep):
             # Solve a randomly generated problem.
             gq = rng.standard_normal(n)
@@ -83,7 +83,7 @@ class TestBVTCG:
             assert_(step.size == n)
 
             # Assert the feasibility of the output.
-            tol = 1e1 * eps * n * np.max(np.abs(np.r_[xl, xu]), initial=1.)
+            tol = 1e1 * EPS * n * np.max(np.abs(np.r_[xl, xu]), initial=1.)
             assert_(np.max(xl - xopt - step) < tol)
             assert_(np.max(xopt + step - xu) < tol)
             assert_(np.linalg.norm(step) - delta < tol)
@@ -131,7 +131,6 @@ class TestLCTCG:
     ])
     def test_standard(self, n_max, mub_max, meq_max, rep):
         rng = np.random.default_rng(0)
-        eps = np.finfo(float).eps
         for n in rng.integers(1, n_max, rep):
             for mub in rng.integers(0, mub_max, rep):
                 for meq in rng.integers(0, meq_max, rep):
@@ -142,8 +141,8 @@ class TestLCTCG:
                     Aub = rng.standard_normal((mub, n))
                     Aeq = rng.standard_normal((meq, n))
                     U, S, Vh = np.linalg.svd(Aeq)
-                    rk = sum(S > eps * max(meq, n) * np.max(S, initial=1.))
-                    Aeq = np.dot(np.multiply(U[:rk, :rk], S[:rk]), Vh[:rk, :])
+                    rk = sum(S > EPS * max(meq, n) * np.max(S, initial=1.))
+                    Aeq = np.dot(U[:rk, :rk] * S[:rk], Vh[:rk, :])
                     xl = rng.standard_normal(n)
                     xu = rng.standard_normal(n)
                     xl, xu = np.minimum(xl, xu), np.maximum(xl, xu)
@@ -160,7 +159,7 @@ class TestLCTCG:
                     assert_(step.size == n)
 
                     # Assert the feasibility of the output.
-                    tol = 1e1 * eps * n
+                    tol = 1e1 * EPS * n
                     tolbd = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
                     tollc = tol * np.max(np.abs(bub), initial=1.)
                     assert_(np.max(xl - xopt - step) < tolbd)
@@ -184,13 +183,12 @@ class TestLCTCG:
     def test_raises(self, n, mub, meq):
         # Generate an infeasible problem due to the trust region.
         rng = np.random.default_rng(0)
-        eps = np.finfo(float).eps
         gq = rng.standard_normal(n)
         Aub = rng.standard_normal((mub, n))
         Aeq = rng.standard_normal((meq, n))
         U, S, Vh = np.linalg.svd(Aeq)
-        rk = sum(S > eps * max(meq, n) * np.max(S, initial=1.))
-        Aeq = np.dot(np.multiply(U[:rk, :rk], S[:rk]), Vh[:rk, :])
+        rk = sum(S > EPS * max(meq, n) * np.max(S, initial=1.))
+        Aeq = np.dot(U[:rk, :rk] * S[:rk], Vh[:rk, :])
         xl = rng.standard_normal(n)
         xu = rng.standard_normal(n)
         xl, xu = np.minimum(xl, xu), np.maximum(xl, xu)
@@ -239,8 +237,8 @@ class TestLCTCG:
         while np.linalg.matrix_rank(Aeq) < 2:
             Aeq = rng.standard_normal((meq, n))
             U, S, Vh = np.linalg.svd(Aeq)
-            rk = sum(S > eps * max(meq, n) * np.max(S, initial=1.))
-            Aeq = np.dot(np.multiply(U[:rk, :rk], S[:rk]), Vh[:rk, :])
+            rk = sum(S > EPS * max(meq, n) * np.max(S, initial=1.))
+            Aeq = np.dot(U[:rk, :rk] * S[:rk], Vh[:rk, :])
         bub = np.dot(Aub, xopt) + rng.uniform(0., 1., mub)
         beq = np.dot(Aeq, xopt)
         lc = rng.uniform(1e-3, .1, meq - 1)
@@ -259,7 +257,6 @@ class TestCPQP:
     ])
     def test_standard(self, n_max, mub_max, meq_max, rep):
         rng = np.random.default_rng(0)
-        eps = np.finfo(float).eps
         for n in rng.integers(1, n_max, rep):
             for mub in rng.integers(0, mub_max, rep):
                 for meq in rng.integers(0, meq_max, rep):
@@ -280,7 +277,7 @@ class TestCPQP:
                     assert_(step.size == n)
 
                     # Assert the feasibility of the output.
-                    tol = 1e1 * eps * n
+                    tol = 1e1 * EPS * n
                     tol *= np.max(np.abs(np.r_[xl, xu]), initial=1.)
                     snorm = np.linalg.norm(step)
                     assert_(np.max(xl - xopt - step) < tol)
