@@ -442,7 +442,10 @@ def getact(gq, Aub, slc, nact, iact, qfac, rfac, delta, resid, inact, **kwargs):
                 resall[k] = -sd[k - mub]
             elif iclose[k]:
                 resall[k] = sd[k - 2 * mub - n]
-        iviolmx = np.greater(resall, scale * resid)
+        if abs(scale) > tiny * np.max(resall, initial=0.):
+            iviolmx = np.greater(resall, scale * resid)
+        else:
+            iviolmx = np.greater(resall, scale)
         inext = -1
         violmx = 0.
         if np.any(iviolmx):

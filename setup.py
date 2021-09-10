@@ -4,25 +4,25 @@ import os
 import shutil
 import sys
 from distutils.version import LooseVersion
-from pathlib import Path
 
 if sys.version_info < (3, 7):
     raise RuntimeError('Python version >= 3.7 required.')
 
 import builtins
+from pathlib import Path
 
 # Remove MANIFEST before importing setuptools to prevent improper updates.
 if os.path.exists('MANIFEST'):
     os.remove('MANIFEST')
 
+import setuptools  # noqa
+from distutils.command.clean import clean  # noqa
+from distutils.command.sdist import sdist  # noqa
+
 # This is a bit hackish: to prevent loading components that are not yet built,
 # we set a global variable to endow the main __init__ with with the ability to
 # detect whether it is loaded by the setup routine.
 builtins.__COBYQA_SETUP__ = True
-
-import setuptools  # noqa
-from distutils.command.clean import clean  # noqa
-from distutils.command.sdist import sdist  # noqa
 
 import cobyqa  # noqa
 import cobyqa._min_dependencies as min_deps  # noqa
@@ -107,15 +107,15 @@ def configuration(parent_package='', top_path=None):
 
 
 def check_pkg_status(pkg, min_version):
-    message = f'{pkg} version >= {min_version} required.'
+    message = '{} version >= {} required.'.format(pkg, min_version)
     try:
         module = importlib.import_module(pkg)
         pkg_version = module.__version__  # noqa
         if LooseVersion(pkg_version) < LooseVersion(min_version):
-            message += f' The current version is {pkg_version}.'
+            message += ' The current version is {}.'.format(pkg_version)
             raise ValueError(message)
-    except ModuleNotFoundError as e:
-        raise ModuleNotFoundError(message) from e
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError(message)
 
 
 def setup_package():
@@ -167,7 +167,7 @@ def setup_package():
         python_requires='>=3.7',
         install_requires=min_deps.tag_to_pkgs['install'],
         package_data={'': ['*.pxd']},
-        **extra_setuptools_args,
+        **extra_setuptools_args
     )
 
     distutils_commands = {
