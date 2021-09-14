@@ -5,8 +5,8 @@ import shutil
 import sys
 from distutils.version import LooseVersion
 
-if sys.version_info < (3, 7):
-    raise RuntimeError('Python version >= 3.7 required.')
+if sys.version_info < (3, 6):
+    raise RuntimeError('Python version >= 3.6 required.')
 
 import builtins
 from pathlib import Path
@@ -152,6 +152,7 @@ def setup_package():
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3 :: Only',
+            'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: 3.8',
             'Programming Language :: Python :: 3.9',
@@ -164,7 +165,7 @@ def setup_package():
         ],
         platforms=['Linux', 'macOS', 'Unix', 'Windows'],
         cmdclass=cmdclass,
-        python_requires='>=3.7',
+        python_requires='>=3.6',
         install_requires=min_deps.tag_to_pkgs['install'],
         package_data={'': ['*.pxd']},
         **extra_setuptools_args

@@ -1,6 +1,7 @@
 import numpy as np
 
-from .models import NLCP
+from .models import TrustRegion
+from .utils import RestartRequiredException
 
 
 class OptimizeResult(dict):
@@ -161,50 +162,53 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     """
     # Build the initial models of the optimization problem.
     exit_status = 0
-    nlc = NLCP(fun, x0, args, xl, xu, Aub, bub, Aeq, beq, options, **kwargs)
+    problem = TrustRegion(fun, x0, args, xl, xu, Aub, bub, Aeq, beq, options,
+                          **kwargs)
 
     # Begin the iterative procedure.
-    nf = nlc.get_opt('npt')
-    nit = 0
-    rho = nlc.get_opt('rhobeg')
+    rho = problem.rhobeg
     delta = rho
-    knew = -1
+    nf = problem.npt
+    nit = 0
     while True:
         # Update the shift of the origin to manage computer rounding errors.
-        nlc.shift_origin(delta)
+        problem.shift_origin(delta)
 
         # Evaluate the trial step.
         delsav = delta
-        fsav = nlc.fopt
-        xsav = nlc.xopt
-        ksav = knew
+        fopt = problem.fopt
+        xopt = problem.xopt
         nit += 1
-        if knew == -1:
-            step = nlc.trust_region_step(delta, **kwargs)
+        is_trust_region_step = problem.is_trust_region_step
+        if is_trust_region_step:
+            step = problem.trust_region_step(delta, **kwargs)
             snorm = np.linalg.norm(step)
             if snorm <= .5 * delta:
                 delta = rho if delta <= 1.4 * rho else .5 * delta
                 if delsav > rho:
-                    knew = nlc.get_furthest_point(delta)
+                    problem.next_step_is_model(delta)
                     continue
         else:
-            step = nlc.model_step(knew, max(.1 * delta, rho), **kwargs)
+            step = problem.model_step(max(.1 * delta, rho), **kwargs)
             snorm = np.linalg.norm(step)
 
-        if knew >= 0. or snorm > .5 * delta:
+        if not is_trust_region_step or snorm > .5 * delta:
             # Evaluate the objective function, include the trial point in the
             # interpolation set, and update accordingly the models.
-            if nf >= nlc.get_opt('maxfev'):
+            if nf >= problem.maxfev:
                 exit_status = 3
                 break
             nf += 1
-            knew, mopt, ratio = nlc.update(step, knew, **kwargs)
-            if knew == -1:
+            try:
+                mopt, ratio = problem.update(step, **kwargs)
+            except RestartRequiredException:
+                continue
+            except ZeroDivisionError:
                 exit_status = 9
                 break
 
             # Update the trust-region radius.
-            if ksav == -1:
+            if is_trust_region_step:
                 if ratio <= .1:
                     delta *= .5
                 elif ratio <= .7:
@@ -216,45 +220,45 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             # If a trust-region step has provided a sufficient decrease or if a
             # model-improvement step has just been computed, then the next
             # iteration is a trust-region step.
-            if ksav >= 0 or ratio >= .1:
-                knew = -1
+            if not is_trust_region_step or ratio >= .1:
+                problem.next_step_is_trust_region()
                 continue
 
             # If an interpolation point is substantially far from the
             # trust-region center, a model-improvement step is entertained.
-            knew = nlc.get_furthest_point(max(delta, 2. * rho))
-            if knew >= 0 or delsav > rho:
+            problem.next_step_is_model(max(delta, 2. * rho))
+            if not problem.is_trust_region_step or delsav > rho:
                 continue
-            msav = nlc(xsav, fsav)
+            msav = problem(xopt, fopt)
             if mopt < msav:
                 continue
 
         # Update the lower bound on the trust-region radius.
-        if rho > nlc.get_opt('rhoend'):
+        if rho > problem.rhoend:
             delta = .5 * rho
-            if rho > 2.5e2 * nlc.get_opt('rhoend'):
+            if rho > 2.5e2 * problem.rhoend:
                 rho *= .1
             elif rho <= 1.6e1:
-                rho = nlc.get_opt('rhoend')
+                rho = problem.rhoend
             else:
-                rho = np.sqrt(rho * nlc.get_opt('rhoend'))
+                rho = np.sqrt(rho * problem.rhoend)
             delta = max(delta, rho)
-            knew = -1
-            if nlc.get_opt('disp'):
+            problem.next_step_is_trust_region()
+            if problem.disp:
                 message = f'New trust-region radius: {rho}.'
-                _print(nlc, fun.__name__, nf, message)
+                _print(problem, fun.__name__, nf, message)
             continue
         break
 
     # Build the result structure and return.
     result = OptimizeResult()
-    result.x = nlc.xbase + nlc.xopt
-    result.fun = nlc.fopt
-    result.jac = nlc.obj_grad()
+    result.x = problem.xbase + problem.xopt
+    result.fun = problem.fopt
+    result.jac = problem.obj_grad()
     result.nfev = nf
     result.nit = nit
-    if nlc.type != 'U':
-        result.maxcv = nlc.maxcv
+    if problem.type != 'U':
+        result.maxcv = problem.maxcv
     result.status = exit_status
     result.success = exit_status in [0, 1]
     result.message = {
@@ -263,15 +267,15 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         3: 'Maximum number of function evaluations has been exceeded.',
         9: 'Denominator of the updating formula is zero.',
     }.get(exit_status, 'Unknown exit status.')
-    if nlc.get_opt('disp'):
-        _print(nlc, fun.__name__, nf, result.message)
+    if problem.disp:
+        _print(problem, fun.__name__, nf, result.message)
     return result
 
 
-def _print(nlc, fun, nf, message):
+def _print(problem, fun, nf, message):
     print()
     print(message)
     print(f'Number of function evaluations: {nf}.')
-    print(f'Least value of {fun}: {nlc.fopt}.')
-    print(f'Corresponding point: {nlc.xbase + nlc.xopt}.')
+    print(f'Least value of {fun}: {problem.fopt}.')
+    print(f'Corresponding point: {problem.xbase + problem.xopt}.')
     print()

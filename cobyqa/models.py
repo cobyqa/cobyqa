@@ -3,12 +3,13 @@ import warnings
 import numpy as np
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, givens, lctcg, nnls
+from .utils import RestartRequiredException, omega_product
 
 EPS = np.finfo(float).eps
 TINY = np.finfo(float).tiny
 
 
-class NLCP:
+class TrustRegion:
     r"""
     Represent the states of a nonlinear constrained problem.
     """
@@ -19,61 +20,64 @@ class NLCP:
         Initialize the states of the nonlinear constrained problem.
         """
         self._fun = fun
-        x = np.array(x0, dtype=float)
-        n = x.size
+        x0 = np.array(x0, dtype=float)
+        n = x0.size
         if not isinstance(args, tuple):
             args = (args,)
         self._args = args
         if xl is None:
-            xl = np.full_like(x, -np.inf)
-        self._xl = np.array(xl, dtype=float)
+            xl = np.full_like(x0, -np.inf)
+        xl = np.array(xl, dtype=float)
         if xu is None:
-            xu = np.full_like(x, np.inf)
-        self._xu = np.array(xu, dtype=float)
+            xu = np.full_like(x0, np.inf)
+        xu = np.array(xu, dtype=float)
         if Aub is None:
             Aub = np.empty((0, n))
-        self._Aub = np.array(Aub, dtype=float)
+        Aub = np.array(Aub, dtype=float)
         if bub is None:
             bub = np.empty(0)
-        self._bub = np.array(bub, dtype=float)
+        bub = np.array(bub, dtype=float)
         if Aeq is None:
             Aeq = np.empty((0, n))
-        self._Aeq = np.array(Aeq, dtype=float)
+        Aeq = np.array(Aeq, dtype=float)
         if beq is None:
             beq = np.empty(0)
-        self._beq = np.array(beq, dtype=float)
+        beq = np.array(beq, dtype=float)
         if options is None:
             options = {}
-        self._opts = dict(options)
+        self._options = dict(options)
         self.set_default_options(n)
         self.check_options(n)
+
+        # Project the initial guess onto the bound constraints.
+        x0 = np.minimum(xu, np.maximum(xl, x0))
 
         # Modify the initial guess in order to avoid conflicts between the
         # bounds and the first quadratic models. The initial components of the
         # initial guess should either equal bound components or allow the
         # projection of the initial trust region onto the components to lie
         # entirely inside the bounds.
-        rhobeg = self.get_opt('rhobeg')
-        rhoend = self.get_opt('rhoend')
-        rhobeg = min(.5 * np.min(self._xu - self._xl), rhobeg)
+        rhobeg = self.rhobeg
+        rhoend = self.rhoend
+        rhobeg = min(.5 * np.min(xu - xl), rhobeg)
         rhoend = min(rhobeg, rhoend)
-        self._opts.update({'rhobeg': rhobeg, 'rhoend': rhoend})
-        adj = (x - self._xl <= rhobeg) & (self._xl < x)
+        self._options.update({'rhobeg': rhobeg, 'rhoend': rhoend})
+        adj = (x0 - xl <= rhobeg) & (xl < x0)
         if np.any(adj):
-            x[adj] = self._xl[adj] + rhobeg
-        adj = (self._xu - x <= rhobeg) & (x < self._xu)
+            x0[adj] = xl[adj] + rhobeg
+        adj = (xu - x0 <= rhobeg) & (x0 < xu)
         if np.any(adj):
-            x[adj] = self._xu[adj] - rhobeg
+            x0[adj] = xu[adj] - rhobeg
 
         # Set the initial shift of the origin, designed to manage the effects
         # of computer rounding errors in the calculations, and update
         # accordingly the right-hand sides of the constraints at most linear.
-        self._xbase = x
-        self.shift_constraints(self._xbase)
+        self._xbase = x0
 
         # Set the initial models of the problem.
-        self._mds = Model(self.fun, self._xbase, self._xl, self._xu, self._opts)
-        if self.get_opt('debug'):
+        self._models = QuadraticModels(self.fun, self._xbase, xl, xu, Aub, bub,
+                                       Aeq, beq, self._options)
+        if self.debug:
             self.check_models()
 
         # Determine the initial least-squares multipliers of the problem.
@@ -85,13 +89,16 @@ class NLCP:
 
         # Evaluate the merit function at the interpolation points and
         # determine the optimal point so far and update the initial models.
-        npt = self.get_opt('npt')
+        npt = self.npt
         mval = np.empty(npt, dtype=float)
         for k in range(npt):
             mval[k] = self(self.xpt[k, :], self.fval[k])
         self.kopt = np.argmin(mval)
-        if self.get_opt('debug'):
+        if self.debug:
             self.check_models()
+
+        # The initial step is a trust-region step.
+        self._knew = -1
 
     def __call__(self, x, fx, model=False):
         r"""
@@ -102,13 +109,13 @@ class NLCP:
         ax = fx
         mx = self.fopt
         if abs(self._gub) > TINY * np.max(np.abs(self._lmub), initial=0.):
-            tub = np.dot(self._Aub, x) - self._bub + self._lmub / self._gub
+            tub = self._models.cub(x) + self._lmub / self._gub
             tub = np.maximum(0., tub)
             alub = .5 * self._gub * np.inner(tub, tub)
             ax += alub
             mx += alub
         if abs(self._geq) > TINY * np.max(np.abs(self._lmeq), initial=0.):
-            teq = np.dot(self._Aeq, x) - self._beq + self._lmeq / self._geq
+            teq = self._models.ceq(x) + self._lmeq / self._geq
             aleq = .5 * self._geq * np.inner(teq, teq)
             ax += aleq
             mx += aleq
@@ -118,67 +125,11 @@ class NLCP:
         return ax
 
     @property
-    def xl(self):
-        r"""
-        Return the lower-bound constraints on the decision variables.
-        """
-        return np.copy(self._xl)
-
-    @property
-    def xu(self):
-        r"""
-        Return the upper-bound constraints on the decision variables.
-        """
-        return np.copy(self._xu)
-
-    @property
-    def aub(self):
-        r"""
-        Return the Jacobian matrix of the linear inequality constraints.
-        """
-        return np.copy(self._Aub)
-
-    @property
-    def bub(self):
-        r"""
-        Return the right-hand side vector of the linear inequality constraints.
-        """
-        return np.copy(self._bub)
-
-    @property
-    def mub(self):
-        r"""
-        Return the number of linear inequality constraints.
-        """
-        return self._bub.size
-
-    @property
-    def aeq(self):
-        r"""
-        Return the Jacobian matrix of the linear equality constraints.
-        """
-        return np.copy(self._Aeq)
-
-    @property
-    def beq(self):
-        r"""
-        Return the right-hand side vector of the linear equality constraints.
-        """
-        return np.copy(self._beq)
-
-    @property
-    def meq(self):
-        r"""
-        Return the number of linear equality constraints.
-        """
-        return self._beq.size
-
-    @property
     def options(self):
         r"""
         Return the option passed to the solver.
         """
-        return dict(self._opts)
+        return dict(self._options)
 
     @property
     def xbase(self):
@@ -216,75 +167,106 @@ class NLCP:
         return np.copy(self._lmeq)
 
     @property
+    def xl(self):
+        return self._models.xl
+
+    @property
+    def xu(self):
+        return self._models.xu
+
+    @property
+    def aub(self):
+        return self._models.aub
+
+    @property
+    def bub(self):
+        return self._models.bub
+
+    @property
+    def mub(self):
+        return self._models.mub
+
+    @property
+    def aeq(self):
+        return self._models.aeq
+
+    @property
+    def beq(self):
+        return self._models.beq
+
+    @property
+    def meq(self):
+        return self._models.meq
+
+    @property
     def xpt(self):
         r"""
         Return the interpolation points.
         """
-        return self._mds.xpt
+        return self._models.xpt
 
     @property
     def fval(self):
         r"""
         Return the values of the objective function at the interpolation points.
         """
-        return self._mds.fval
+        return self._models.fval
 
     @property
     def kopt(self):
         r"""
         Return the index of the best point so far.
         """
-        return self._mds.kopt
+        return self._models.kopt
 
     @kopt.setter
     def kopt(self, knew):
         r"""
         Set the index of the best point so far.
         """
-        self._mds.kopt = knew
+        self._models.kopt = knew
 
     @property
     def xopt(self):
         r"""
         Return the best point so far.
         """
-        return self._mds.xopt
+        return self._models.xopt
 
     @property
     def fopt(self):
         r"""
         Return the value of the objective function at the best point so far.
         """
-        return self._mds.fopt
+        return self._models.fopt
 
     @property
     def maxcv(self):
         r"""
         Return the constraint violation at the best point so far.
         """
-        cub = np.dot(self._Aub, self.xopt) - self._bub
-        ceq = np.dot(self._Aeq, self.xopt) - self._beq
-        cb = np.r_[self.xopt - self._xu, self._xl - self.xopt]
-        return np.max(np.r_[cub, np.abs(ceq), cb], initial=0.)
+        return self._models.maxcv
 
     @property
     def type(self):
-        # CUTEst classification scheme
-        # https://www.cuter.rl.ac.uk/Problems/classification.shtml
-        if self.mub + self.meq > 0:
-            return 'L'
-        elif np.any(self._xl != -np.inf) or np.any(self._xu != np.inf):
-            # TODO: All variables may be fixed.
-            return 'B'
-        else:
-            return 'U'
+        return self._models.type
+
+    @property
+    def is_trust_region_step(self):
+        return self._knew == -1
+
+    def __getattr__(self, item):
+        try:
+            return self._options[item]
+        except KeyError as e:
+            raise AttributeError(item) from e
 
     def fun(self, x):
         r"""
         Evaluate the objective function at ``x``.
         """
         fx = float(self._fun(x, *self._args))
-        if self.get_opt('disp'):
+        if self.disp:
             print(f'{self._fun.__name__}({x}) = {fx}.')
         return fx
 
@@ -293,45 +275,56 @@ class NLCP:
         Evaluate the objective function of the model at ``x``. If ``x`` is None,
         it is evaluated at ``self.xopt``.
         """
-        return self._mds.obj(x)
+        return self._models.obj(x)
 
     def obj_grad(self, x=None):
         r"""
         Evaluate the gradient of the objective function of the model at ``x``.
         If ``x`` is None, the gradient is evaluated at ``self.xopt``.
         """
-        return self._mds.obj_grad(x)
+        return self._models.obj_grad(x)
 
     def obj_hessp(self, x):
         r"""
         Evaluate the product of the Hessian matrix of the objective function of
         the model and ``x``.
         """
-        return self._mds.obj_hessp(x)
+        return self._models.obj_hessp(x)
 
     def obj_curv(self, x):
         r"""
         Evaluate the curvature of the objective function of the model at ``x``.
         """
-        return self._mds.obj_hessp(x)
+        return self._models.obj_hessp(x)
 
-    def get_opt(self, option, default=None):
+    def lag(self, x):
+        return self._models.lag(x, self._lmub, self._lmeq)
+
+    def lag_grad(self, x):
+        return self._models.lag_grad(x, self._lmub, self._lmeq)
+
+    def lag_hessp(self, x):
         r"""
-        Return the value of an option passed to the solver.
+        Evaluate the product of the Hessian matrix of the Lagrangian function of
+        the model and ``x``.
         """
-        return self._opts.get(option, default)
+        return self._models.lag_hessp(x)
 
     def set_default_options(self, n):
         r"""
         Set the default options of the solvers.
         """
-        self._opts.setdefault('rhobeg', max(1., self.get_opt('rhoend', 0.)))
-        self._opts.setdefault('rhoend', min(1e-6, self.get_opt('rhobeg')))
-        self._opts.setdefault('npt', 2 * n + 1)
-        self._opts.setdefault('maxfev', max(500 * n, self.get_opt('npt') + 1))
-        self._opts.setdefault('target', -np.inf)
-        self._opts.setdefault('disp', False)
-        self._opts.setdefault('debug', False)
+        try:
+            rhoend = self.rhoend
+        except AttributeError:
+            rhoend = 0.
+        self._options.setdefault('rhobeg', max(1., rhoend))
+        self._options.setdefault('rhoend', min(1e-6, self.rhobeg))
+        self._options.setdefault('npt', 2 * n + 1)
+        self._options.setdefault('maxfev', max(500 * n, self.npt + 1))
+        self._options.setdefault('target', -np.inf)
+        self._options.setdefault('disp', False)
+        self._options.setdefault('debug', False)
 
     def check_options(self, n, stack_level=2):
         r"""
@@ -340,17 +333,17 @@ class NLCP:
         # Ensure that the option 'npt' is in the required interval.
         npt_min = n + 2
         npt_max = (n + 1) * (n + 2) // 2
-        npt = self.get_opt('npt')
+        npt = self.npt
         if not (npt_min <= npt <= npt_max):
-            self._opts['npt'] = min(npt_max, max(npt_min, npt))
+            self._options['npt'] = min(npt_max, max(npt_min, npt))
             message = "Option 'npt' is not in the required interval and is "
             message += 'increased.' if npt_min > npt else 'decreased.'
             warnings.warn(message, RuntimeWarning, stacklevel=stack_level)
 
         # Ensure that the option 'maxfev' is large enough.
-        maxfev = self.get_opt('maxfev')
-        if maxfev <= self.get_opt('npt'):
-            self._opts['maxfev'] = self.get_opt('npt') + 1
+        maxfev = self.maxfev
+        if maxfev <= self.npt:
+            self._options['maxfev'] = self.npt + 1
             if maxfev <= npt:
                 message = "Option 'maxfev' is too low and is increased."
             else:
@@ -358,35 +351,24 @@ class NLCP:
             warnings.warn(message, RuntimeWarning, stacklevel=stack_level)
 
         # Ensure that the options 'rhobeg' and 'rhoend' are consistent.
-        if self.get_opt('rhoend') > self.get_opt('rhobeg'):
-            self._opts['rhoend'] = self.get_opt('rhobeg')
+        if self.rhoend > self.rhobeg:
+            self._options['rhoend'] = self.rhobeg
             message = "Option 'rhoend' is too large and is decreased."
             warnings.warn(message, RuntimeWarning, stacklevel=stack_level)
 
-    def shift_constraints(self, x):
-        r"""
-        Shift the bound constraints and the right-hand sides of the linear
-        inequality and equality constraints.
-        """
-        # Note: When adapting the algorithm to tackle general nonlinear
-        # constraints, the right-hand sides of the new constraints may be
-        # undefined when this method is called.
-        self._xl -= x
-        self._xu -= x
-        self._bub -= np.dot(self._Aub, x)
-        self._beq -= np.dot(self._Aeq, x)
+    def next_step_is_trust_region(self):
+        self._knew = -1
 
-    def get_furthest_point(self, delta):
+    def next_step_is_model(self, delta):
         r"""
         Get the index of the further point from ``self.xopt`` if the
         corresponding distance is more than ``delta``, -1 otherwise.
         """
         dsq = np.sum((self.xpt - self.xopt[np.newaxis, :]) ** 2., axis=1)
         dsq[dsq <= delta ** 2.] = -np.inf
-        knew = -1
+        self._knew = -1
         if np.any(np.isfinite(dsq)):
-            knew = np.argmax(dsq)
-        return knew
+            self._knew = np.argmax(dsq)
 
     def shift_origin(self, delta):
         r"""
@@ -399,17 +381,14 @@ class NLCP:
         if xoptsq >= 1e1 * delta ** 2.:
             # Update the models of the problem to include the new shift.
             xold = self.xopt
-            self._mds.shift_origin()
-
-            # Update the right hand sides of the constraints and the bounds.
-            self.shift_constraints(xold)
+            self._models.shift_origin()
 
             # Complete the shift by updating the shift itself.
             self._xbase += xold
-            if self.get_opt('debug'):
+            if self.debug:
                 self.check_models()
 
-    def update(self, step, knew, **kwargs):
+    def update(self, step, **kwargs):
         r"""
         Update the model to include the trial point in the interpolation set.
         """
@@ -420,10 +399,14 @@ class NLCP:
 
         # Update the Lagrange multipliers and the penalty parameters.
         self.update_multipliers(**kwargs)
-        mx, mmx, mopt = self.update_penalty_coefficients(xnew, fx, knew)
+        ksav = self.kopt
+        mx, mmx, mopt = self.update_penalty_coefficients(xnew, fx, self._knew)
+        if ksav != self.kopt:
+            self.next_step_is_trust_region()
+            raise RestartRequiredException
 
         # Determine the trust-region ratio.
-        if knew == -1 and abs(mopt - mmx) > TINY * abs(mopt - mx):
+        if self._knew == -1 and abs(mopt - mmx) > TINY * abs(mopt - mx):
             ratio = (mopt - mx) / (mopt - mmx)
         else:
             ratio = -1.
@@ -432,27 +415,30 @@ class NLCP:
         # account the fact that the best point so far may have been updated when
         # the penalty coefficients have been updated.
         step += xsav - self.xopt
-        knew = self._mds.update(step, knew, fx)
-        if knew >= 0:
+        self._knew = self._models.update(step, self._knew, fx)
+        if self._knew >= 0:
             if mx < mopt:
-                self.kopt = knew
+                self.kopt = self._knew
                 mopt = mx
-            if self.get_opt('debug'):
+            if self.debug:
                 self.check_models()
-        return knew, mopt, ratio
+        else:
+            raise ZeroDivisionError
+        return mopt, ratio
 
     def update_multipliers(self, **kwargs):
         r"""
         Update the least-squares Lagrange multipliers.
         """
-        if self._bub.size + self._beq.size > 0:
+        if self.mub + self.meq > 0:
             # Determine the matrix of the least-squares problem. The inequality
             # multipliers corresponding to nonzero constraint values are set to
             # zeros to satisfy the complementary slackness conditions.
-            tol = EPS * self._bub.size * np.max(np.abs(self._bub), initial=1.)
-            iub = np.less_equal(np.abs(self._bub), tol)
+            tol = EPS * self.mub * np.max(np.abs(self.bub), initial=1.)
+            rub = np.dot(self.aub, self.xopt) - self.bub
+            iub = np.less_equal(np.abs(rub), tol)
             mub = np.count_nonzero(iub)
-            A = np.r_[self._Aub[iub, :], self._Aeq].T
+            A = np.r_[self.aub[iub, :], self.aeq].T
 
             # Determine the least-squares Lagrange multipliers that have not
             # been fixed by the complementary slackness conditions.
@@ -465,9 +451,10 @@ class NLCP:
         mx, mmx = self(xnew, fx, True)
         mopt = self(self.xopt, self.fopt)
         if knew == -1 and mmx > mopt:
-            npt = self.get_opt('npt')
+            npt = self.npt
             mval = np.empty(npt, dtype=float)
-            while mmx > mopt:
+            ksav = self.kopt
+            while ksav == self.kopt and mmx > mopt:
                 self._gub *= 2.
                 self._geq *= 2.
                 mx, mmx = self(xnew, fx, True)
@@ -503,13 +490,13 @@ class NLCP:
         # subproblem is infeasible.
         delta *= np.sqrt(.5)
         nsf = kwargs.get('nsf', .8)
-        mc = self._bub.size + self._beq.size
+        mc = self.mub + self.meq
         if mc == 0:
             nstep = np.zeros_like(self.xopt)
             ssq = 0.
         else:
-            nstep = cpqp(self.xopt, self._Aub, self._bub, self._Aeq, self._beq,
-                         self._xl, self._xu, nsf * delta, **kwargs)
+            nstep = cpqp(self.xopt, self.aub, self.bub, self.aeq, self.beq,
+                         self.xl, self.xu, nsf * delta, **kwargs)
             ssq = np.inner(nstep, nstep)
 
         # Evaluate the tangential step of the trust-region subproblem, and set
@@ -521,52 +508,59 @@ class NLCP:
             xopt = self.xopt + nstep
             delta = np.sqrt(delta ** 2. - ssq)
         gq = self.obj_grad(xopt)
-        bub = np.maximum(self._bub, np.dot(self._Aub, xopt))
-        beq = np.dot(self._Aeq, xopt)
+        bub = np.maximum(self.bub, np.dot(self.aub, xopt))
+        beq = np.dot(self.aeq, xopt)
         if mc == 0:
-            tstep = bvtcg(xopt, gq, self.obj_hessp, (), self._xl, self._xu,
-                          delta, **kwargs)
+            tstep = bvtcg(xopt, gq, self.lag_hessp, (), self.xl, self.xu, delta,
+                          **kwargs)
         else:
-            tstep = lctcg(xopt, gq, self.obj_hessp, (), self._Aub, bub,
-                          self._Aeq, beq, self._xl, self._xu, delta, **kwargs)
+            tstep = lctcg(xopt, gq, self.lag_hessp, (), self.aub, bub, self.aeq,
+                          beq, self.xl, self.xu, delta, **kwargs)
         return nstep + tstep
 
-    def model_step(self, knew, delta, **kwargs):
+    def model_step(self, delta, **kwargs):
         r"""
         Evaluate a model-improvement step.
         TODO: Give details.
         """
-        return self._mds.model_step(knew, self._xl, self._xu, delta, **kwargs)
+        return self._models.model_step(self._knew, delta, **kwargs)
 
     def check_models(self, stack_level=2):
         r"""
         Check whether the models satisfy the interpolation conditions.
         """
-        self._mds.check_models(stack_level)
+        self._models.check_models(stack_level)
 
 
-class Model:
-    r"""
-    Representation of the model of the optimization problem.
+class QuadraticModels:
+    """
+    Representation of a model of an optimization problem for which the objective
+    and nonlinear constraint functions are modeled by quadratic functions
+    obtained by underdetermined interpolation.
+
+    Given an interpolation set, the freedom bequeathed by the interpolation
+    conditions are taken up by minimizing the updates of the Hessian matrices in
+    Frobenius norm [1]_. The interpolation points may be infeasible, but they
+    always satisfies the bound constraints.
+
+    References
+    ----------
+    .. [1] M. J. D. Powell. "Least Frobenius norm updating of quadratic models
+       that satisfy interpolation conditions." In: Math. Program. 100 (2004),
+       pp. 183--215.
     """
 
-    def __init__(self, fun, xbase, xl, xu, options):
-        r"""
-        Construct the initial model of the optimization problem. The quadratic
-        models of the nonlinear functions are obtained by underdetermined
-        interpolation, where the freedom bequeathed by the interpolation
-        conditions is taken up by minimizing the Hessian matrices of the models
-        in Frobenius norm.
+    def __init__(self, fun, xbase, xl, xu, Aub, bub, Aeq, beq, options):
         """
-        xbase = np.asarray(xbase)
-        if xbase.dtype.kind in np.typecodes['AllInteger']:
-            xbase = np.asarray(xbase, dtype=float)
-        xl = np.asarray(xl)
-        if xl.dtype.kind in np.typecodes['AllInteger']:
-            xl = np.asarray(xl, dtype=float)
-        xu = np.asarray(xu)
-        if xu.dtype.kind in np.typecodes['AllInteger']:
-            xu = np.asarray(xu, dtype=float)
+        Construct the initial models of the optimization problem.
+        """
+        self._xl = xl
+        self._xu = xu
+        self._Aub = Aub
+        self._bub = bub
+        self._Aeq = Aeq
+        self._beq = beq
+        self.shift_constraints(xbase)
         n = xbase.size
         npt = options.get('npt')
         rhobeg = options.get('rhobeg')
@@ -585,17 +579,17 @@ class Model:
             # Set the displacement from the shift of the origin of the
             # components of the initial interpolation vectors.
             if 1 <= k <= n:
-                if abs(xu[km]) <= .5 * rhobeg:
+                if abs(self._xu[km]) <= .5 * rhobeg:
                     stepa = -rhobeg
                 else:
                     stepa = rhobeg
                 self._xpt[k, km] = stepa
             elif n < k <= 2 * n:
                 stepa = self._xpt[kx + 1, kx]
-                if abs(xl[kx]) <= .5 * rhobeg:
-                    stepb = min(2. * rhobeg, xu[kx])
-                elif abs(xu[kx]) <= .5 * rhobeg:
-                    stepb = max(-2. * rhobeg, xl[kx])
+                if abs(self._xl[kx]) <= .5 * rhobeg:
+                    stepb = min(2. * rhobeg, self._xu[kx])
+                elif abs(self._xu[kx]) <= .5 * rhobeg:
+                    stepb = max(-2. * rhobeg, self._xl[kx])
                 else:
                     stepb = -rhobeg
                 self._xpt[k, kx] = stepb
@@ -636,6 +630,56 @@ class Model:
                 self._zmat[jpt + 1, kx] = -1. / rhobeg ** 2.
 
         self._obj = Quadratic(self._bmat, self._zmat, self._idz, self._fval)
+
+    @property
+    def xl(self):
+        r"""
+        Return the lower-bound constraints on the decision variables.
+        """
+        return np.copy(self._xl)
+
+    @property
+    def xu(self):
+        r"""
+        Return the upper-bound constraints on the decision variables.
+        """
+        return np.copy(self._xu)
+
+    @property
+    def aub(self):
+        r"""
+        Return the Jacobian matrix of the linear inequality constraints.
+        """
+        return np.copy(self._Aub)
+
+    @property
+    def bub(self):
+        r"""
+        Return the right-hand side vector of the linear inequality constraints.
+        """
+        return np.copy(self._bub)
+
+    @property
+    def mub(self):
+        return self.bub.size
+
+    @property
+    def aeq(self):
+        r"""
+        Return the Jacobian matrix of the linear equality constraints.
+        """
+        return np.copy(self._Aeq)
+
+    @property
+    def beq(self):
+        r"""
+        Return the right-hand side vector of the linear equality constraints.
+        """
+        return np.copy(self._beq)
+
+    @property
+    def meq(self):
+        return self.beq.size
 
     @property
     def xpt(self):
@@ -704,18 +748,28 @@ class Model:
         """
         return self._fval[self._kopt]
 
-    @staticmethod
-    def omega_prod(zmat, idz, x):
-        r"""
-        Perform the product of the leading submatrix of the KKT matrix of
-        interpolation and ``x``. If ``x`` is an integer, it is understood as
-        the ``x``-th standard unit vector.
+    @property
+    def maxcv(self):
         """
-        if isinstance(x, (int, np.integer)):
-            temp = np.r_[-zmat[x, :idz], zmat[x, idz:]]
+        Return the constraint violation at the best point so far.
+        """
+        cub = np.dot(self._Aub, self.xopt) - self._bub
+        ceq = np.dot(self._Aeq, self.xopt) - self._beq
+        cb = np.r_[self.xopt - self._xu, self._xl - self.xopt]
+        return np.max(np.r_[cub, np.abs(ceq), cb], initial=0.)
+
+    @property
+    def type(self):
+        # CUTEst classification scheme
+        # https://www.cuter.rl.ac.uk/Problems/classification.shtml
+        if self.bub.size + self.beq.size > 0:
+            return 'L'
+        elif np.all(self._xl == -np.inf) and np.all(self._xu == np.inf):
+            return 'U'
+        elif np.all(self._xu - self._xl <= 1e1 * EPS * np.abs(self._xu)):
+            return 'X'
         else:
-            temp = np.dot(np.c_[-zmat[:, :idz], zmat[:, idz:]].T, x)
-        return np.dot(zmat, temp)
+            return 'B'
 
     def obj(self, x=None):
         r"""
@@ -744,6 +798,43 @@ class Model:
         """
         return self._obj.curv(x, self._xpt)
 
+    def cub(self, x):
+        return np.dot(self._Aub, x) - self._bub
+
+    def ceq(self, x):
+        return np.dot(self._Aeq, x) - self._beq
+
+    def lag(self, x, lmub, lmeq):
+        lx = self.obj(x)
+        lx += np.inner(lmub, np.dot(self._Aub, x) - self._bub)
+        lx += np.inner(lmeq, np.dot(self._Aeq, x) - self._beq)
+        return lx
+
+    def lag_grad(self, x, lmub, lmeq):
+        gx = self.obj_grad(x)
+        gx += np.dot(self._Aub.T, lmub)
+        gx += np.dot(self._Aeq.T, lmeq)
+
+    def lag_hessp(self, x):
+        r"""
+        Evaluate the product of the Hessian matrix of the Lagrangian function of
+        the model and ``x``.
+        """
+        return self.obj_hessp(x)
+
+    def shift_constraints(self, x):
+        r"""
+        Shift the bound constraints and the right-hand sides of the linear
+        inequality and equality constraints.
+        """
+        # Note: When adapting the algorithm to tackle general nonlinear
+        # constraints, the right-hand sides of the new constraints may be
+        # undefined when this method is called.
+        self._xl -= x
+        self._xu -= x
+        self._bub -= np.dot(self._Aub, x)
+        self._beq -= np.dot(self._Aeq, x)
+
     def shift_origin(self):
         r"""
         Update the model when the shift of the origin is modified.
@@ -756,15 +847,15 @@ class Model:
         # that do not depend on the factorization of the leading submatrix.
         qoptsq = .25 * xoptsq
         updt = np.dot(self._xpt, self.xopt) - .5 * xoptsq
-        self._xpt -= .5 * xopt[np.newaxis, :]
+        hxpt = self._xpt - .5 * xopt[np.newaxis, :]
         for k in range(npt):
-            step = updt[k] * self._xpt[k, :] + qoptsq * self.xopt
+            step = updt[k] * hxpt[k, :] + qoptsq * self.xopt
             temp = np.outer(self._bmat[k, :], step)
             self._bmat[npt:, :] += temp + temp.T
 
         # Calculate the remaining revisions of the matrix.
         temp = qoptsq * np.outer(xopt, np.sum(self._zmat, axis=0))
-        temp += np.matmul(self._xpt.T, self._zmat * updt[:, np.newaxis])
+        temp += np.matmul(hxpt.T, self._zmat * updt[:, np.newaxis])
         for k in range(self._idz):
             self._bmat[:npt, :] -= np.outer(self._zmat[:, k], temp[:, k])
             self._bmat[npt:, :] -= np.outer(temp[:, k], temp[:, k])
@@ -773,8 +864,9 @@ class Model:
             self._bmat[npt:, :] += np.outer(temp[:, k], temp[:, k])
 
         # Complete the shift by updating the models.
-        self._obj.shift_origin(self._xpt, xopt)
-        self._xpt -= .5 * xopt[np.newaxis, :]
+        self._obj.shift_origin(self._xpt, self._kopt)
+        self.shift_constraints(xopt)
+        self._xpt -= xopt[np.newaxis, :]
 
     def update(self, step, knew, fx):
         r"""
@@ -895,7 +987,7 @@ class Model:
         self._obj = Quadratic(self._bmat, self._zmat, self._idz, self._fval)
         self._obj.shift(self.xopt, self._xpt)
 
-    def model_step(self, knew, xl, xu, delta, **kwargs):
+    def model_step(self, knew, delta, **kwargs):
         r"""
         Evaluate a model-improvement step.
         TODO: Give details.
@@ -911,15 +1003,15 @@ class Model:
         # Determine a point on a line between the optimal point and the other
         # interpolation points, chosen to maximize the absolute value of the
         # knew-th Lagrange polynomial, defined above.
-        omega = self.omega_prod(self._zmat, self._idz, knew)
+        omega = omega_product(self._zmat, self._idz, knew)
         alpha = omega[knew]
-        step = bvlag(self._xpt, self._kopt, knew, lag.grad(), xl, xu, delta,
-                     alpha, **kwargs)
+        step = bvlag(self._xpt, self._kopt, knew, lag.grad(), self._xl,
+                     self._xu, delta, alpha, **kwargs)
 
         # Evaluate the constrained Cauchy step from the optimal point of the
         # absolute value of the knew-th Lagrange polynomial.
         salt, cauchy = bvcs(self._xpt, self._kopt, lag.grad(), lag.curv,
-                            (self._xpt,), xl, xu, delta, **kwargs)
+                            (self._xpt,), self._xl, self._xu, delta, **kwargs)
 
         # Among the two computed alternative points, we choose the one leading
         # to the greatest value of sigma in Equation (2.13) or Powell (2004).
@@ -942,7 +1034,7 @@ class Model:
         # Evaluate the Lagrange polynomials at the interpolation points.
         check = np.multiply(xstep, .5 * xstep + xxopt)
         vlag = np.dot(self._bmat[:npt, :], step)
-        vlag += self.omega_prod(self._zmat, self._idz, check)
+        vlag += omega_product(self._zmat, self._idz, check)
 
         return vlag
 
@@ -977,49 +1069,163 @@ class Model:
 
 
 class Quadratic:
-    r"""
-    Representation of a quadratic function.
+    """
+    Representation of a quadratic multivariate function.
+
+    To improve the computational efficiency of the updates of the models, the
+    Hessian matrix of a model is stored as an explicit and an implicit part,
+    which rely on the coordinates of the interpolation points [1]_.
+
+    References
+    ----------
+    .. [1] M. J. D. Powell. "The NEWUOA software for unconstrained optimization
+       without derivatives." In: Large-Scale Nonlinear Optimization. Ed. by G.
+       Di Pillo and M. Roma. New York, NY, US: Springer, 2006, pp. 255--297.
     """
 
     def __init__(self, bmat, zmat, idz, fval):
-        r"""
-        Construct the quadratic function. If ``fval`` is an integer, it builds
-        the ``fval``-th Lagrange polynomial.
         """
-        bmat = np.asarray(bmat)
-        if bmat.dtype.kind in np.typecodes['AllInteger']:
-            bmat = np.asarray(bmat, dtype=float)
-        zmat = np.asarray(zmat)
-        if zmat.dtype.kind in np.typecodes['AllInteger']:
-            zmat = np.asarray(zmat, dtype=float)
+        Construct a quadratic function by underdetermined interpolation.
+
+        The freedom bequeathed by the interpolation conditions is taken up by
+        minimizing the Hessian matrix of the model in Frobenius norm [1]_.
+
+        Parameters
+        ----------
+        bmat : numpy.ndarray, shape (npt + n, n)
+            Last ``n`` columns of the inverse KKT matrix of interpolation.
+        zmat : numpy.ndarray, shape (npt, npt - n - 1)
+            Rank factorization matrix of the leading ``npt`` submatrix of the
+            inverse KKT matrix of interpolation.
+        idz : int
+            Number of nonpositive eigenvalues of the leading ``npt`` submatrix
+            of the inverse KKT matrix of interpolation. Although its theoretical
+            value is always 0, it is designed to tackle numerical difficulties
+            caused by ill-conditioned problems.
+        fval : int or numpy.ndarray, shape (npt,)
+            Evaluations associated with the interpolation points. An integer
+            value represents the ``npt``-dimensional vector whose components are
+            all zero, except the ``fval``-th one whose value is one. Hence,
+            passing an integer value construct the ``fval``-th Lagrange
+            polynomial associated with the interpolation points.
+
+        References
+        ----------
+        .. [1] M. J. D. Powell. "Least Frobenius norm updating of quadratic
+           models that satisfy interpolation conditions." In: Math. Program. 100
+           (2004), pp. 183--215.
+        """
         npt = zmat.shape[0]
         if isinstance(fval, (int, np.integer)):
-            # Build the fval-th Lagrange quadratic model.
+            # The gradient of the fval-th Lagrange quadratic model is the
+            # product of the first npt rows of bmat with the npt-dimensional
+            # vector whose components are zero, except the fval-th one whose
+            # value is one. To improve the computational efficiency of the code,
+            # the product is made implicitly.
             self._gq = np.copy(bmat[fval, :])
         else:
-            # Build a generic quadratic function.
-            fval = np.asarray(fval)
-            if fval.dtype.kind in np.typecodes['AllInteger']:
-                fval = np.asarray(fval, dtype=float)
             self._gq = np.dot(bmat[:npt, :].T, fval)
-        self._pq = Model.omega_prod(zmat, idz, fval)
+        self._pq = omega_product(zmat, idz, fval)
+
+        # Initially, the explicit part of the Hessian matrix of the model is the
+        # zero matrix. To improve the computational efficiency of the code, it
+        # is stored only if it becomes a nonzero matrix.
         self._hq = None
 
+    @property
+    def gq(self):
+        """
+        Get the stored gradient of the model.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            The stored gradient of the model.
+
+        """
+        return self._gq
+
+    @property
+    def pq(self):
+        """
+        Get the stored implicit Hessian matrix of the model.
+
+        Returns
+        -------
+        numpy.ndarray, shape (npt,)
+            The stored implicit Hessian matrix of the model.
+
+        """
+        return self._pq
+
+    @property
+    def hq(self):
+        """
+        Get the stored explicit Hessian matrix of the model.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n, n)
+            The stored explicit Hessian matrix of the model.
+
+        """
+        if self._hq is None:
+            return np.zeros((self._gq.size, self._gq.size))
+        else:
+            return self._hq
+
     def __call__(self, x, xpt, kopt):
-        r"""
+        """
         Evaluate the quadratic function at ``x``.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the quadratic function is to be evaluated.
+        xpt : numpy.ndarray, shape (npt, n)
+            Interpolation points that define the quadratic function.
+        kopt : int
+            Index of the interpolation point around which the quadratic function
+            is defined. Since the constant term of the quadratic function is not
+            maintained, ``self.__call__(xpt[kopt, :], xpt, kopt)`` is zero.
+
+        Returns
+        -------
+        float
+            The value of the quadratic function at ``x``.
         """
         x = x - xpt[kopt, :]
         qx = np.inner(self._gq, x)
         qx += .5 * np.inner(self._pq, np.dot(xpt, x) ** 2.)
         if self._hq is not None:
+            # To improve the computational efficiency of the code, the explicit
+            # part of the Hessian matrix of the quadratic function may be
+            # undefined, in which case it is understood as the zero matrix.
             qx += .5 * np.inner(x, np.dot(self._hq, x))
         return qx
 
     def grad(self, x=None, xpt=None, kopt=None):
-        r"""
-        Evaluate the gradient of the quadratic function at ``x``. If ``x`` is
-        None, the gradient is evaluated at ``xpt[kopt, :]``.
+        """
+        Evaluate the gradient of the quadratic function at ``x``.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the quadratic function is to be evaluated. If it is
+            undefined, the gradient is evaluated at ``xpt[kopt, :]``.
+        xpt : numpy.ndarray, shape (npt, n)
+            Interpolation points that define the quadratic function. It must be
+            defined if ``x`` is well-defined.
+        kopt : int
+            Index of the interpolation point around which the quadratic function
+            is defined. Since the constant term of the quadratic function is not
+            maintained, ``self.__call__(xpt[kopt, :], xpt, kopt)`` is zero. It
+            must be defined if ``x`` is well-defined.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            The value of the gradient of the quadratic function at ``x``.
         """
         gx = np.copy(self._gq)
         if x is not None:
@@ -1027,9 +1233,39 @@ class Quadratic:
             gx += self.hessp(x, xpt)
         return gx
 
+    def hess(self, xpt):
+        """
+        Evaluate the Hessian matrix of the quadratic function.
+
+        Parameters
+        ----------
+        xpt : numpy.ndarray, shape (npt, n)
+            Interpolation points that define the quadratic function.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n, n)
+            The Hessian matrix of the quadratic function.
+        """
+        return self.hq + np.dot(xpt.T, self._pq[:, np.newaxis] * xpt)
+
     def hessp(self, x, xpt):
-        r"""
-        Evaluate the product of the Hessian of the quadratic function and ``x``.
+        """
+        Evaluate the product of the Hessian matrix of the quadratic function
+        with the vector ``x``.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Left-hand side of the product to be evaluated.
+        xpt : numpy.ndarray, shape (npt, n)
+            Interpolation points that define the quadratic function.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            The value of the product of the Hessian matrix of the quadratic
+            function with the vector ``x``.
         """
         hx = np.dot(xpt.T, self._pq * np.dot(xpt, x))
         if self._hq is not None:
@@ -1037,8 +1273,24 @@ class Quadratic:
         return hx
 
     def curv(self, x, xpt):
-        r"""
+        """
         Evaluate the curvature of the quadratic function at ``x``.
+
+        Although it is defined as ``numpy.dot(x, self.hessp(x, xpt))``, the
+        evaluation of this method improves the computational efficiency.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the curvature is to be evaluated.
+        xpt : numpy.ndarray, shape (npt, n)
+            Interpolation points that define the quadratic function.
+
+        Returns
+        -------
+        hx : numpy.ndarray, shape (n,)
+            The value of the product of the Hessian matrix of the quadratic
+            function with the vector ``x``.
         """
         cx = np.inner(self._pq, np.dot(xpt, x) ** 2.)
         if self._hq is not None:
@@ -1046,39 +1298,110 @@ class Quadratic:
         return cx
 
     def shift(self, step, xpt):
-        r"""
-        Shift the evaluation points of the model from ``step``.
+        """
+        Shift the point around which the quadratic function is defined from a
+        displacement of ``step``.
+
+        This method must be called when the index around which the quadratic
+        function is defined is modified, or when the point in ``xpt`` around
+        which the quadratic function is defined is modified.
+
+        Parameters
+        ----------
+        step : numpy.ndarray, shape (n,)
+            Displacement from the current point ``xopt`` around which the
+            quadratic function is defined. After calling this method, the value
+            of the quadratic function at ``xopt + step`` is 0, since the
+            constant term of the function is not maintained.
+        xpt : numpy.ndarray, shape (npt, n)
+            Interpolation points that define the quadratic function.
         """
         self._gq += self.hessp(step, xpt)
 
-    def shift_origin(self, hxpt, xopt):
-        r"""
-        Update the model when the shift of the origin is modified.
+    def shift_origin(self, xpt, kopt):
         """
-        temp = np.outer(np.dot(hxpt.T, self._pq), xopt)
+        Update the model when the shift of the origin is modified.
+
+        Parameters
+        ----------
+        xpt : numpy.ndarray, shape (npt, n)
+            Interpolation points that define the quadratic function.
+        kopt : int
+            Index of the interpolation point around which the quadratic function
+            is defined. Since the constant term of the quadratic function is not
+            maintained, ``self.__call__(xpt[kopt, :], xpt, kopt)`` is zero.
+        """
+        n = xpt.shape[1]
+        hxpt = xpt - .5 * xpt[np.newaxis, kopt, :]
+        temp = np.outer(np.dot(hxpt.T, self._pq), xpt[kopt, :])
         if self._hq is None:
-            self._hq = np.zeros((xopt.size, xopt.size), dtype=float)
+            self._hq = np.zeros((n, n), dtype=float)
         self._hq += temp + temp.T
 
     def update(self, xpt, kopt, xold, bmat, zmat, idz, knew, diff):
-        r"""
-        Update the model when the KKT matrix of interpolation is modified.
         """
-        # Update the explicit and implicit Hessian matrices of the model.
-        omega = Model.omega_prod(zmat, idz, knew)
+        Update the model when the KKT matrix of interpolation is modified.
+
+        Parameters
+        ----------
+        xpt : numpy.ndarray, shape (npt, n)
+            Interpolation points that define the quadratic function.
+        kopt : int
+            Index of the interpolation point around which the quadratic function
+            is defined. Since the constant term of the quadratic function is not
+            maintained, ``self.__call__(xpt[kopt, :], xpt, kopt)`` is zero.
+        xold : numpy.ndarray, shape (n,)
+            Previous point around which the quadratic function was defined.
+        bmat : numpy.ndarray, shape (npt + n, n)
+            Last ``n`` columns of the inverse KKT matrix of interpolation.
+        zmat : numpy.ndarray, shape (npt, npt - n - 1)
+            Rank factorization matrix of the leading ``npt`` submatrix of the
+            inverse KKT matrix of interpolation.
+        idz : int
+            Number of nonpositive eigenvalues of the leading ``npt`` submatrix
+            of the inverse KKT matrix of interpolation. Although its theoretical
+            value is always 0, it is designed to tackle numerical difficulties
+            caused by ill-conditioned problems.
+        knew : int
+            Index of the interpolation point that has been modified.
+        diff : float
+            Difference between the evaluation of the previous model and the
+            expected value at ``xpt[kopt, :]``.
+        """
+        # Update the explicit and implicit parts of the Hessian matrix of the
+        # quadratic function. The knew-th component of the implicit part of the
+        # Hessian matrix is decoded and added to the explicit Hessian matrix.
+        # Then, the implicit part of the Hessian matrix is modified.
+        omega = omega_product(zmat, idz, knew)
         if self._hq is None:
             self._hq = np.zeros((xold.size, xold.size), dtype=float)
         self._hq += self._pq[knew] * np.outer(xold, xold)
         self._pq[knew] = 0.
         self._pq += diff * omega
 
-        # Update the gradient of the model.
+        # Update the gradient of the model. The constant term is not maintained,
+        # to improve the computational efficiency.
         temp = omega * np.dot(xpt, xpt[kopt, :])
         self._gq += diff * (bmat[knew, :] + np.dot(xpt.T, temp))
 
     def check_model(self, xpt, fval, kopt, stack_level=2):
-        r"""
-        Check whether the model satisfies the interpolation conditions.
+        """
+        Check whether the evaluations of the quadratic function at the
+        interpolation points in ``xpt`` match the values in ``fval``.
+
+        Parameters
+        ----------
+        xpt : numpy.ndarray, shape (npt, n)
+            Interpolation points that define the quadratic function.
+        fval : numpy.ndarray, shape (npt,)
+            Evaluations associated with the interpolation points.
+        kopt : int
+            Index of the interpolation point around which the quadratic function
+            is defined. Since the constant term of the quadratic function is not
+            maintained, ``self.__call__(xpt[kopt, :], xpt, kopt)`` is zero.
+        stack_level : int, optional
+            Stack level of the warning.
+            Default is 2.
         """
         tol = 1e1 * np.sqrt(EPS) * fval.size * np.max(np.abs(fval), initial=1.)
         diff = 0.

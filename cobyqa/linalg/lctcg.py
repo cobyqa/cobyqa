@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_
 
-from .utils import givens
+from .utils import NullProjectedDirectionException, givens
 
 
 def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
@@ -214,14 +214,12 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             # vector closest to -GQ that is orthogonal to the normals of the
             # active constraints. SDD is then scaled to have length ACTF*DELTA,
             # as then a move of SDD from the current trial step is allowed by
-            # the linear constraints. When None is returned, the projected
-            # direction is null, and the current trial step leads to the optimal
-            # solution, which stops the calculations.
-            res = getact(gq, Aub, Aeq, nact, iact, qfac, rfac, delta, resid,
-                         inact, **kwargs)
-            if res is None:
+            # the linear constraints.
+            try:
+                sdd, sddsq, nact = getact(gq, Aub, Aeq, nact, iact, qfac, rfac,
+                                          delta, resid, inact, **kwargs)
+            except NullProjectedDirectionException:
                 break
-            sdd, sddsq, nact = res
             snorm = np.sqrt(sddsq)
             if snorm <= tiny * delta:
                 break
@@ -443,7 +441,7 @@ def getact(gq, Aub, Aeq, nact, iact, qfac, rfac, delta, resid, inact, **kwargs):
         sd = -np.dot(qfac[:, meq + nact:], np.dot(qfac[:, meq + nact:].T, gq))
         cgsq = np.inner(sd, sd)
         if cgsq >= cgsqsav or cgsq <= tolgd:
-            return
+            raise NullProjectedDirectionException
         cgsqsav = cgsq
         sdnorm = np.sqrt(cgsq)
 
@@ -541,7 +539,7 @@ def getact(gq, Aub, Aeq, nact, iact, qfac, rfac, delta, resid, inact, **kwargs):
                 if vlam[ic] >= 0.:
                     nact = rmact(meq, nact, iact, ic, qfac, rfac, inact, vlam)
 
-    return
+    raise NullProjectedDirectionException
 
 
 def rmact(meq, nact, iact, ic, qfac, rfac, inact, vlam):

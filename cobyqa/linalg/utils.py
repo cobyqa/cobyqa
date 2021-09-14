@@ -1,6 +1,14 @@
 import numpy as np
 
 
+class NullProjectedDirectionException(Exception):
+    """
+    The projected direction computed by truncated conjugate gradient method is
+    null, which must stop the computations.
+    """
+    pass
+
+
 def givens(M, cval, sval, i, j, axis, slicing=None):
     r"""
     Perform a Givens rotation on the matrix ``M``.
