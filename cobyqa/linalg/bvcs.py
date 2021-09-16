@@ -128,7 +128,7 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
         cc = np.zeros_like(step)
         cc[ifree] = bigstp
         gqsq = np.inner(gq[ifree], gq[ifree])
-        if gqsq < tol * bigstp:
+        if np.sqrt(gqsq) < tol * bigstp:
             break
 
         # Fix the remaining components of the Cauchy step in CC to the lower and
@@ -137,7 +137,7 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
         ccsqsav = -1.
         stplen = 0.
         delsq = delta ** 2.
-        while ccsq > ccsqsav and gqsq >= tol * bigstp and delsq >= tol * delta:
+        while ccsq > ccsqsav and np.sqrt(gqsq) >= tol * bigstp:
             ccsqsav = ccsq
             stplen = np.sqrt(delsq / gqsq)
             ifree = np.less(np.abs(cc - bigstp), tol * bigstp)

@@ -5,20 +5,39 @@ from .utils import RestartRequiredException
 
 
 class OptimizeResult(dict):
-    r"""
-    Structure the results of the optimization algorithm.
+    """
+    Result structure of an optimization algorithm.
     """
 
     def __dir__(self):
-        r"""
-        Return the list of the names of the attributes in the current scope.
+        """
+        Get the names of the attributes in the current scope.
+
+        Returns
+        -------
+        list:
+            Names of the attributes in the current scope.
         """
         return list(self.keys())
 
     def __getattr__(self, name):
-        r"""
-        Return the value of the attribute ``name``. This method raises an
-        `AttributeError` exception if such an attribute does not exist.
+        """
+        Get the value of an attribute that is not explicitly defined.
+
+        Parameters
+        ----------
+        name : str
+            Name of the attribute to be assessed.
+
+        Returns
+        -------
+        object
+            Value of the attribute.
+
+        Raises
+        ------
+        AttributeError
+            The required attribute does not exist.
         """
         try:
             return self[name]
@@ -26,42 +45,67 @@ class OptimizeResult(dict):
             raise AttributeError(name) from e
 
     def __setattr__(self, key, value):
-        r"""
-        Assign the value ``value`` to the attribute ``key``.
+        """
+        Assign an existing or a new attribute.
+
+        Parameters
+        ----------
+        key : str
+            Name of the attribute to be assigned.
+        value : object
+            Value of the attribute to be assigned.
         """
         super().__setitem__(key, value)
 
     def __delattr__(self, key):
-        r"""
-        Delete the attribute ``key``.
+        """
+        Delete an attribute.
+
+        Parameters
+        ----------
+        key : str
+            Name of the attribute to be deleted.
+
+        Raises
+        ------
+        KeyError
+            The required attribute does not exist.
         """
         super().__delitem__(key)
 
     def __repr__(self):
-        r"""
-        Return a string representation of an instance of this class, which looks
-        like a valid Python expression that can be used to recreate an object
-        with the same value (given an appropriate environment).
+        """
+        Get a string representation that looks like valid Python expression,
+        which can be used to recreate an object with the same value, given an
+        appropriate environment.
+
+        Returns
+        -------
+        str
+            String representation of instances of this class.
         """
         attrs = ', '.join(f'{k}={repr(v)}' for k, v in sorted(self.items()))
         return f'{self.__class__.__name__}({attrs})'
 
     def __str__(self):
-        r"""
-        Return an informal string representation of an instance of this class,
-        which is designed to be nicely printable.
+        """
+        Get a string representation, designed to be nicely printable.
+
+        Returns
+        -------
+        str
+            String representation of instances of this class.
         """
         if self.keys():
-            items = sorted(self.items())
-            width = max(map(len, self.keys())) + 1
-            return '\n'.join(f'{k.rjust(width)}: {str(v)}' for k, v in items)
+            m = max(map(len, self.keys())) + 1
+            return '\n'.join(f'{k:>{m}}: {v}' for k, v in sorted(self.items()))
         else:
             return f'{self.__class__.__name__}()'
 
 
 def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
              beq=None, options=None, **kwargs):
-    r"""
+    """
     Minimize a real-valued function subject to linear equality and inequality
     constraints using a derivative-free trust-region SQP method.
 
@@ -72,7 +116,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
             ``fun(x, *args) -> float``
 
-        where ``x`` is an array with shape (n,) and ``args`` is a tuple of
+        where ``x`` is an array with shape (n,) and `args` is a tuple of
         parameters to pass to the objective function.
     x0 : array_like, shape (n,)
         Initial guess.
@@ -86,18 +130,12 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         Jacobian matrix of the linear inequality constraints.
     bub : array_like, shape (mub,), optional
         Right-hand side vector of the linear inequality constraints
-
-            ``\mathtt{Aub} \times x \le \mathtt{bub}``
-
-        where :math:`x` has the same size than ``x0``.
+        ``Aub @ x <= bub``, where ``x`` has the same size than `x0`.
     Aeq : array_like, shape (meq, n), optional
         Jacobian matrix of the linear equality constraints.
     beq : array_like, shape (meq,), optional
         Right-hand side vector of the linear equality constraints
-
-            ``\mathtt{Aeq} \times x = \mathtt{beq}``
-
-        where :math:`x` has the same size than ``x0``.
+        `Aeq @ x = beq`, where ``x`` has the same size than `x0`.
     options : dict, optional
         Options to pass to the solver. Accepted options are:
 
@@ -109,10 +147,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 Default is 1e-6.
             npt : int
                 Number of interpolation points.
-                Default is :math:`2 \times \mathtt{n} + 1`.
+                Default is ``2 * n + 1``.
             maxfev : int
                 Maximum number of function evaluations.
-                Default is :math:`500 \times \mathtt{n}`.
+                Default is ``500 * n``.
             target : float
                 Target value of the objective function.
                 Default is ``-numpy.inf``.
@@ -139,12 +177,12 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     bdtol : float, optional
         Tolerance for comparisons on the bound constraints.
         Default is ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``. Note
-        that the values of ``xl`` and ``xu`` evolve to include the shift of the
+        that the values of `xl` and `xu` evolve to include the shift of the
         origin, so that the tolerance may vary from an iteration to another.
     lctol : float, optional
         Tolerance for comparisons on the linear constraints.
         Default is ``10 * eps * n * max(1, max(abs(bub)))``. Note that the value
-        of ``bub`` evolves to include the shift of the origin, so that the
+        of `bub` evolves to include the shift of the origin, so that the
         tolerance may vary from an iteration to another.
     lstol : float, optional
         Tolerance on the approximate KKT conditions.
@@ -162,45 +200,46 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     """
     # Build the initial models of the optimization problem.
     exit_status = 0
-    problem = TrustRegion(fun, x0, args, xl, xu, Aub, bub, Aeq, beq, options,
-                          **kwargs)
+    fwk = TrustRegion(fun, x0, args, xl, xu, Aub, bub, Aeq, beq, options,
+                      **kwargs)
 
     # Begin the iterative procedure.
-    rho = problem.rhobeg
+    rho = fwk.rhobeg
     delta = rho
-    nf = problem.npt
+    nf = fwk.npt
     nit = 0
+    itest = 0
     while True:
         # Update the shift of the origin to manage computer rounding errors.
-        problem.shift_origin(delta)
+        fwk.shift_origin(delta)
 
         # Evaluate the trial step.
         delsav = delta
-        fopt = problem.fopt
-        xopt = problem.xopt
+        fopt = fwk.fopt
+        xopt = fwk.xopt
         nit += 1
-        is_trust_region_step = problem.is_trust_region_step
+        is_trust_region_step = not fwk.is_model_step
         if is_trust_region_step:
-            step = problem.trust_region_step(delta, **kwargs)
+            step = fwk.trust_region_step(delta, **kwargs)
             snorm = np.linalg.norm(step)
             if snorm <= .5 * delta:
                 delta = rho if delta <= 1.4 * rho else .5 * delta
                 if delsav > rho:
-                    problem.next_step_is_model(delta)
+                    fwk.prepare_model_step(delta)
                     continue
         else:
-            step = problem.model_step(max(.1 * delta, rho), **kwargs)
+            step = fwk.model_step(max(.1 * delta, rho), **kwargs)
             snorm = np.linalg.norm(step)
 
         if not is_trust_region_step or snorm > .5 * delta:
             # Evaluate the objective function, include the trial point in the
             # interpolation set, and update accordingly the models.
-            if nf >= problem.maxfev:
+            if nf >= fwk.maxfev:
                 exit_status = 3
                 break
             nf += 1
             try:
-                mopt, ratio = problem.update(step, **kwargs)
+                mopt, ratio = fwk.update(step, **kwargs)
             except RestartRequiredException:
                 continue
             except ZeroDivisionError:
@@ -216,49 +255,62 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 else:
                     delbd = np.sqrt(2.) * delta
                     delta = min(delbd, max(.2 * delta, 2. * snorm))
+                if delta <= 1.5 * rho:
+                    delta = rho
+                    if ratio > 1e-2:
+                        itest = 0
+                    else:
+                        itest += 1
+                        obj_norm = np.linalg.norm(fwk.obj_grad(fwk.xopt))
+                        alt_norm = np.linalg.norm(fwk.alt_grad(fwk.xopt))
+                        if obj_norm < 10. * alt_norm:
+                            itest = 0
+                        if itest >= 3:
+                            fwk.reset_models()
+                            itest = 0
 
             # If a trust-region step has provided a sufficient decrease or if a
             # model-improvement step has just been computed, then the next
             # iteration is a trust-region step.
             if not is_trust_region_step or ratio >= .1:
-                problem.next_step_is_trust_region()
+                fwk.prepare_trust_region_step()
                 continue
 
             # If an interpolation point is substantially far from the
             # trust-region center, a model-improvement step is entertained.
-            problem.next_step_is_model(max(delta, 2. * rho))
-            if not problem.is_trust_region_step or delsav > rho:
+            fwk.prepare_model_step(max(delta, 2. * rho))
+            if fwk.is_model_step or delsav > rho:
                 continue
-            msav = problem(xopt, fopt)
+            msav = fwk(xopt, fopt)
             if mopt < msav:
                 continue
 
         # Update the lower bound on the trust-region radius.
-        if rho > problem.rhoend:
+        if rho > fwk.rhoend:
             delta = .5 * rho
-            if rho > 2.5e2 * problem.rhoend:
+            if rho > 2.5e2 * fwk.rhoend:
                 rho *= .1
             elif rho <= 1.6e1:
-                rho = problem.rhoend
+                rho = fwk.rhoend
             else:
-                rho = np.sqrt(rho * problem.rhoend)
+                rho = np.sqrt(rho * fwk.rhoend)
             delta = max(delta, rho)
-            problem.next_step_is_trust_region()
-            if problem.disp:
+            fwk.prepare_trust_region_step()
+            if fwk.disp:
                 message = f'New trust-region radius: {rho}.'
-                _print(problem, fun.__name__, nf, message)
+                _print(fwk, fun.__name__, nf, message)
             continue
         break
 
     # Build the result structure and return.
     result = OptimizeResult()
-    result.x = problem.xbase + problem.xopt
-    result.fun = problem.fopt
-    result.jac = problem.obj_grad()
+    result.x = fwk.xbase + fwk.xopt
+    result.fun = fwk.fopt
+    result.jac = fwk.obj_grad(fwk.xopt)
     result.nfev = nf
     result.nit = nit
-    if problem.type != 'U':
-        result.maxcv = problem.maxcv
+    if fwk.type != 'U':
+        result.maxcv = fwk.maxcv
     result.status = exit_status
     result.success = exit_status in [0, 1]
     result.message = {
@@ -267,8 +319,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         3: 'Maximum number of function evaluations has been exceeded.',
         9: 'Denominator of the updating formula is zero.',
     }.get(exit_status, 'Unknown exit status.')
-    if problem.disp:
-        _print(problem, fun.__name__, nf, result.message)
+    if fwk.disp:
+        _print(fwk, fun.__name__, nf, result.message)
     return result
 
 

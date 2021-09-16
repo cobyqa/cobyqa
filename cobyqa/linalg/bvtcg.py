@@ -135,7 +135,7 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
         sd[ifixed] = 0.
         sdsq = np.inner(sd, sd)
         tolsd = tol * np.max(np.abs(sd), initial=1.)
-        if sdsq < tolsd:
+        if np.sqrt(sdsq) < tolsd:
             break
         if beta < tolsd:
             gqsq = sdsq
@@ -258,9 +258,9 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
             # step and the reduced gradient that is orthogonal to STEP.
             iterc += 1
             disc = gqsq * stepsq - gdstep ** 2.
-            if disc < tolsd:
+            sqrd = np.sqrt(max(disc, 0.))
+            if sqrd < tolsd:
                 break
-            sqrd = np.sqrt(disc)
             sd[ifree] = (gdstep * step[ifree] - stepsq * gq[ifree]) / sqrd
             sd[ifixed] = 0.
             gdsd = -sqrd

@@ -420,7 +420,7 @@ def getact(gq, Aub, slc, nact, iact, qfac, rfac, delta, resid, inact, **kwargs):
         cgsqa = np.inner(sd[:n], sd[:n])
         cgsqb = np.inner(sd[n:], sd[n:])
         cgsq = cgsqa + cgsqb
-        if cgsq >= cgsqsav or cgsq <= tolgd:
+        if cgsq >= cgsqsav or np.sqrt(cgsq) <= tolgd:
             raise NullProjectedDirectionException
         cgsqsav = cgsq
         sdnorm = np.sqrt(cgsqa)

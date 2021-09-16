@@ -216,7 +216,7 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             # as then a move of SDD from the current trial step is allowed by
             # the linear constraints.
             try:
-                sdd, sddsq, nact = getact(gq, Aub, Aeq, nact, iact, qfac, rfac,
+                sdd, sddsq, nact = getact(gq, Aub, meq, nact, iact, qfac, rfac,
                                           delta, resid, inact, **kwargs)
             except NullProjectedDirectionException:
                 break
@@ -392,7 +392,7 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     return step
 
 
-def getact(gq, Aub, Aeq, nact, iact, qfac, rfac, delta, resid, inact, **kwargs):
+def getact(gq, Aub, meq, nact, iact, qfac, rfac, delta, resid, inact, **kwargs):
     r"""
     Pick the actual active set. It is defined by the property that the
     projection of -GQ into the space orthogonal to the normals of the active
@@ -406,7 +406,6 @@ def getact(gq, Aub, Aeq, nact, iact, qfac, rfac, delta, resid, inact, **kwargs):
     cgsqsav = 2. * np.inner(gq, gq)
     n = gq.size
     mub = Aub.shape[0]
-    meq = Aeq.shape[0]
 
     # Define the tolerances to compare floating-point numbers with zero.
     eps = np.finfo(float).eps
@@ -440,7 +439,7 @@ def getact(gq, Aub, Aeq, nact, iact, qfac, rfac, delta, resid, inact, **kwargs):
         # constraint gradients.
         sd = -np.dot(qfac[:, meq + nact:], np.dot(qfac[:, meq + nact:].T, gq))
         cgsq = np.inner(sd, sd)
-        if cgsq >= cgsqsav or cgsq <= tolgd:
+        if cgsq >= cgsqsav or np.sqrt(cgsq) <= tolgd:
             raise NullProjectedDirectionException
         cgsqsav = cgsq
         sdnorm = np.sqrt(cgsq)
