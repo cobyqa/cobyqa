@@ -479,6 +479,8 @@ class TrustRegion:
                     mval[k] = self(self.xpt[k, :], self.fval[k])
                 self.kopt = np.argmin(mval)
                 mopt = mval[self.kopt]
+        else:
+            mopt = self(self.xopt, self.fopt)
         return mx, mmx, mopt
 
     def trust_region_step(self, delta, **kwargs):

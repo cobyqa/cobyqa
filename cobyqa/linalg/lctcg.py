@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.testing import assert_
+from scipy.linalg import qr
 
 from .utils import NullProjectedDirectionException, givens
 
@@ -157,18 +158,21 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     # since it requires the Jacobian matrix of the constraints to be constant.
     # It could however be easily implemented by adding NACT, IACT, QFAC, and
     # RFAC to the arguments of the function.
-    # TODO: Remove the rank condition on AEQ and adapt the comments.
     nact = 0
     iact = np.empty(n, dtype=int)
     rfac = np.zeros((n, n))
-    qfac, rfac[:, :meq] = np.linalg.qr(Aeq.T, 'complete')
+    qfac, req, _ = qr(Aeq.T, pivoting=True)
+    r_norm = np.maximum(1., np.linalg.norm(req[:, :np.min(req.shape)], axis=0))
+    meq = np.count_nonzero(np.abs(np.diag(req)) >= tol * r_norm)
+    rfac[:, :meq] = req[:, :meq]
+    # qfac, rfac[:, :meq] = np.linalg.qr(Aeq.T, 'complete')
 
     # Ensure the full row rankness of the Jacobian matrix of the linear equality
     # constraints and the feasibility of the initial guess for the bounds and
     # the linear equality constraints.
     if meq > 0:
-        rdiag = np.diag(rfac[:meq, :meq])
-        assert_(np.min(np.abs(rdiag)) > tol * np.max(rdiag, initial=1.))
+        # rdiag = np.diag(rfac[:meq, :meq])
+        # assert_(np.min(np.abs(rdiag)) > tol * np.max(rdiag, initial=1.))
         assert_(np.max(np.abs(beq)) < tollc)
     assert_(np.max(xl) < tolbd)
     assert_(np.min(xu) > -tolbd)

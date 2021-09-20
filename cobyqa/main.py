@@ -204,6 +204,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                       **kwargs)
 
     # Begin the iterative procedure.
+    eps = np.finfo(float).eps
+    actf = kwargs.get('actf', .2)
     rho = fwk.rhobeg
     delta = rho
     nf = fwk.npt
@@ -222,7 +224,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         if is_trust_region_step:
             step = fwk.trust_region_step(delta, **kwargs)
             snorm = np.linalg.norm(step)
-            if snorm <= .5 * delta:
+            stf = actf - np.sqrt(eps)
+            if snorm <= stf * delta:
                 delta = rho if delta <= 1.4 * rho else .5 * delta
                 if delsav > rho:
                     fwk.prepare_model_step(delta)
@@ -257,17 +260,20 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                     delta = min(delbd, max(.2 * delta, 2. * snorm))
                 if delta <= 1.5 * rho:
                     delta = rho
-                    if ratio > 1e-2:
+
+            # Attempt to replace the models by the alternative ones.
+            if is_trust_region_step and delta <= rho:
+                if ratio > 1e-2:
+                    itest = 0
+                else:
+                    itest += 1
+                    obj_grad_norm = np.linalg.norm(fwk.obj_grad(fwk.xopt))
+                    alt_grad_norm = np.linalg.norm(fwk.alt_grad(fwk.xopt))
+                    if obj_grad_norm < 10. * alt_grad_norm:
                         itest = 0
-                    else:
-                        itest += 1
-                        obj_norm = np.linalg.norm(fwk.obj_grad(fwk.xopt))
-                        alt_norm = np.linalg.norm(fwk.alt_grad(fwk.xopt))
-                        if obj_norm < 10. * alt_norm:
-                            itest = 0
-                        if itest >= 3:
-                            fwk.reset_models()
-                            itest = 0
+                    if itest >= 3:
+                        fwk.reset_models()
+                        itest = 0
 
             # If a trust-region step has provided a sufficient decrease or if a
             # model-improvement step has just been computed, then the next
