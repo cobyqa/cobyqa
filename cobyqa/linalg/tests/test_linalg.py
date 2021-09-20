@@ -140,9 +140,6 @@ class TestLCTCG:
                     Hq = .5 * (Hq + Hq.T)
                     Aub = rng.standard_normal((mub, n))
                     Aeq = rng.standard_normal((meq, n))
-                    U, S, Vh = np.linalg.svd(Aeq)
-                    rk = sum(S > EPS * max(meq, n) * np.max(S, initial=1.))
-                    Aeq = np.dot(U[:rk, :rk] * S[:rk], Vh[:rk, :])
                     xl = rng.standard_normal(n)
                     xu = rng.standard_normal(n)
                     xl, xu = np.minimum(xl, xu), np.maximum(xl, xu)
@@ -186,9 +183,6 @@ class TestLCTCG:
         gq = rng.standard_normal(n)
         Aub = rng.standard_normal((mub, n))
         Aeq = rng.standard_normal((meq, n))
-        U, S, Vh = np.linalg.svd(Aeq)
-        rk = sum(S > EPS * max(meq, n) * np.max(S, initial=1.))
-        Aeq = np.dot(U[:rk, :rk] * S[:rk], Vh[:rk, :])
         xl = rng.standard_normal(n)
         xu = rng.standard_normal(n)
         xl, xu = np.minimum(xl, xu), np.maximum(xl, xu)
@@ -230,20 +224,6 @@ class TestLCTCG:
         bub = np.dot(Aub, xopt) + rng.uniform(0., 1., mub)
         bub[0] -= 1.1
         beq = np.dot(Aeq, xopt)
-        assert_raises(AssertionError, lctcg, xopt, gq, None, (), Aub, bub, Aeq,
-                      beq, xl, xu, delta)
-
-        # Generate a feasible problem with a rank deficient matrix AEQ.
-        while np.linalg.matrix_rank(Aeq) < 2:
-            Aeq = rng.standard_normal((meq, n))
-            U, S, Vh = np.linalg.svd(Aeq)
-            rk = sum(S > EPS * max(meq, n) * np.max(S, initial=1.))
-            Aeq = np.dot(U[:rk, :rk] * S[:rk], Vh[:rk, :])
-        bub = np.dot(Aub, xopt) + rng.uniform(0., 1., mub)
-        beq = np.dot(Aeq, xopt)
-        lc = rng.uniform(1e-3, .1, meq - 1)
-        Aeq[0, :] = np.dot(Aeq[1:, :].T, lc)
-        beq[0] = np.inner(beq[1:], lc)
         assert_raises(AssertionError, lctcg, xopt, gq, None, (), Aub, bub, Aeq,
                       beq, xl, xu, delta)
 
