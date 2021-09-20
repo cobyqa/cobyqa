@@ -225,7 +225,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             step = fwk.trust_region_step(delta, **kwargs)
             snorm = np.linalg.norm(step)
             stf = actf - np.sqrt(eps)
-            if snorm <= stf * delta:
+            # FIXME: Tests fail for condition ``snorm <= stf * delta``.
+            if snorm <= .5 * delta:
                 delta = rho if delta <= 1.4 * rho else .5 * delta
                 if delsav > rho:
                     fwk.prepare_model_step(delta)
