@@ -104,7 +104,7 @@ class OptimizeResult(dict):
 
 
 def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
-             beq=None, options=None, **kwargs):
+             beq=None, cub=None, ceq=None, options=None, **kwargs):
     """
     Minimize a real-valued function subject to linear equality and inequality
     constraints using a derivative-free trust-region SQP method.
@@ -136,6 +136,20 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     beq : array_like, shape (meq,), optional
         Right-hand side vector of the linear equality constraints
         `Aeq @ x = beq`, where ``x`` has the same size than `x0`.
+    cub : callable
+        Nonlinear inequality constraint function ``ceq(x, *args) <= 0``.
+
+            ``cub(x, *args) -> array_like, shape (TODO,)``
+
+        where ``x`` is an array with shape (n,) and `args` is a tuple of
+        parameters to pass to the constraint function.
+    ceq : callable
+        Nonlinear equality constraint function ``ceq(x, *args) = 0``.
+
+            ``ceq(x, *args) -> array_like, shape (TODO,)``
+
+        where ``x`` is an array with shape (n,) and `args` is a tuple of
+        parameters to pass to the constraint function.
     options : dict, optional
         Options to pass to the solver. Accepted options are:
 
@@ -200,8 +214,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     """
     # Build the initial models of the optimization problem.
     exit_status = 0
-    fwk = TrustRegion(fun, x0, args, xl, xu, Aub, bub, Aeq, beq, options,
-                      **kwargs)
+    fwk = TrustRegion(fun, x0, args, xl, xu, Aub, bub, Aeq, beq, cub, ceq,
+                      options, **kwargs)
 
     # Begin the iterative procedure.
     eps = np.finfo(float).eps
@@ -218,7 +232,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         # Evaluate the trial step.
         delsav = delta
         fopt = fwk.fopt
-        xopt = fwk.xopt
+        cubopt = np.copy(fwk.cvalub[fwk.kopt, :])
+        ceqopt = np.copy(fwk.cvaleq[fwk.kopt, :])
+        xopt = np.copy(fwk.xopt)
         nit += 1
         is_trust_region_step = not fwk.is_model_step
         if is_trust_region_step:
@@ -288,7 +304,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             fwk.prepare_model_step(max(delta, 2. * rho))
             if fwk.is_model_step or delsav > rho:
                 continue
-            msav = fwk(xopt, fopt)
+            msav = fwk(xopt, fopt, cubopt, ceqopt)
             if mopt < msav:
                 continue
 
@@ -303,6 +319,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 rho = np.sqrt(rho * fwk.rhoend)
             delta = max(delta, rho)
             fwk.prepare_trust_region_step()
+            fwk.reduce_penalty_coefficients()
             if fwk.disp:
                 message = f'New trust-region radius: {rho}.'
                 _print(fwk, fun.__name__, nf, message)

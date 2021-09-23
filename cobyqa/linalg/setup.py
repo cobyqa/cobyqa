@@ -1,6 +1,6 @@
 # import numpy as np
 
-from cobyqa._build_utils import npy_nodepr_api  # noqa
+from cobyqa._build_utils import numpy_nodepr_api  # noqa
 
 
 def configuration(parent_package='', top_path=None):
@@ -11,7 +11,7 @@ def configuration(parent_package='', top_path=None):
     #     'nnls',
     #     sources=['nnls.pyx'],
     #     include_dirs=[np.get_include()],
-    #     **npy_nodepr_api,
+    #     **numpy_nodepr_api,
     # )
 
     config.add_data_dir('tests')

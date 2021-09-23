@@ -15,7 +15,8 @@ class TrustRegion:
     """
 
     def __init__(self, fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None,
-                 Aeq=None, beq=None, options=None, **kwargs):
+                 Aeq=None, beq=None, cub=None, ceq=None, options=None,
+                 **kwargs):
         r"""
         Initialize the states of the nonlinear constrained problem.
         """
@@ -45,6 +46,8 @@ class TrustRegion:
         beq = np.array(beq, dtype=float)
         if options is None:
             options = {}
+        self._cub = cub
+        self._ceq = ceq
         self._options = dict(options)
         self.set_default_options(n)
         self.check_options(n)
@@ -76,15 +79,18 @@ class TrustRegion:
 
         # Set the initial models of the problem.
         self._models = QuadraticModels(self.fun, self._xbase, xl, xu, Aub, bub,
-                                       Aeq, beq, self._options)
+                                       Aeq, beq, self.cub, self.ceq,
+                                       self._options)
         if self.debug:
             self.check_models()
 
         # Determine the initial least-squares multipliers of the problem.
-        self._gub = 1.
-        self._geq = 1.
-        self._lmub = np.zeros_like(bub, dtype=float)
-        self._lmeq = np.zeros_like(beq, dtype=float)
+        self._gub = 0.
+        self._geq = 0.
+        self._lmub_lin = np.zeros_like(bub)
+        self._lmeq_lin = np.zeros_like(beq)
+        self._lmub_nlin = np.zeros(self.mnlub, dtype=float)
+        self._lmeq_nlin = np.zeros(self.mnleq, dtype=float)
         self.update_multipliers(**kwargs)
 
         # Evaluate the merit function at the interpolation points and
@@ -92,7 +98,8 @@ class TrustRegion:
         npt = self.npt
         mval = np.empty(npt, dtype=float)
         for k in range(npt):
-            mval[k] = self(self.xpt[k, :], self.fval[k])
+            mval[k] = self(self.xpt[k, :], self.fval[k], self.cvalub[k, :],
+                           self.cvaleq[k, :])
         self.kopt = np.argmin(mval)
         if self.debug:
             self.check_models()
@@ -100,7 +107,7 @@ class TrustRegion:
         # The initial step is a trust-region step.
         self._knew = None
 
-    def __call__(self, x, fx, model=False):
+    def __call__(self, x, fx, cubx, ceqx, model=False):
         r"""
         Evaluate the merit functions at ``x``. If ``model = True`` is provided,
         the method also returns the value of the merit function corresponding to
@@ -108,19 +115,39 @@ class TrustRegion:
         """
         ax = fx
         mx = self.fopt
-        if abs(self._gub) > TINY * np.max(np.abs(self._lmub), initial=0.):
-            tub = np.dot(self.aub, x) - self.bub + self._lmub / self._gub
+        if abs(self._gub) > TINY * np.max(np.abs(self._lmub_lin), initial=0.):
+            tub = np.dot(self.aub, x) - self.bub + self._lmub_lin / self._gub
             tub = np.maximum(0., tub)
             alub = .5 * self._gub * np.inner(tub, tub)
             ax += alub
             mx += alub
-        if abs(self._geq) > TINY * np.max(np.abs(self._lmeq), initial=0.):
-            teq = np.dot(self.aeq, x) - self.beq + self._lmeq / self._geq
+        lmub_nlin_max = np.max(np.abs(self._lmub_nlin), initial=0.)
+        if abs(self._gub) > TINY * lmub_nlin_max:
+            tub = cubx + self._lmub_nlin / self._gub
+            tub = np.maximum(0., tub)
+            ax += .5 * self._gub * np.inner(tub, tub)
+        if abs(self._geq) > TINY * np.max(np.abs(self._lmeq_lin), initial=0.):
+            teq = np.dot(self.aeq, x) - self.beq + self._lmeq_lin / self._geq
             aleq = .5 * self._geq * np.inner(teq, teq)
             ax += aleq
             mx += aleq
+        lmeq_nlin_max = np.max(np.abs(self._lmeq_nlin), initial=0.)
+        if abs(self._geq) > TINY * lmeq_nlin_max:
+            teq = ceqx + self._lmeq_nlin / self._geq
+            ax += .5 * self._geq * np.inner(teq, teq)
         if model:
             mx += self.obj(x)
+            if abs(self._gub) > TINY * lmub_nlin_max:
+                tub = self.cvalub[self.kopt, :] + self._lmub_nlin / self._gub
+                for i in range(self.mnlub):
+                    tub[i] += self.cubm(x, i)
+                tub = np.maximum(0., tub)
+                mx += .5 * self._gub * np.inner(tub, tub)
+            if abs(self._geq) > TINY * lmeq_nlin_max:
+                teq = self.cvaleq[self.kopt, :] + self._lmeq_nlin / self._geq
+                for i in range(self.mnleq):
+                    teq[i] += self.ceqm(x, i)
+                mx += .5 * self._geq * np.inner(teq, teq)
             return ax, mx
         return ax
 
@@ -135,7 +162,7 @@ class TrustRegion:
         r"""
         Return the shift of the origin in the calculations.
         """
-        return np.copy(self._xbase)
+        return self._xbase
 
     @property
     def xl(self):
@@ -170,6 +197,14 @@ class TrustRegion:
         return self._models.meq
 
     @property
+    def mnlub(self):
+        return self._models.mnlub
+
+    @property
+    def mnleq(self):
+        return self._models.mnleq
+
+    @property
     def options(self):
         r"""
         Return the option passed to the solver.
@@ -191,18 +226,20 @@ class TrustRegion:
         return self._geq
 
     @property
-    def lmub(self):
-        r"""
-        Returns the Lagrange multipliers for the inequality constraints.
-        """
-        return self._lmub
+    def lmub_lin(self):
+        return self._lmub_lin
 
     @property
-    def lmeq(self):
-        r"""
-        Returns the Lagrange multipliers for the equality constraints.
-        """
-        return self._lmeq
+    def lmeq_lin(self):
+        return self._lmeq_lin
+
+    @property
+    def lmub_nlin(self):
+        return self._lmub_nlin
+
+    @property
+    def lmeq_nlin(self):
+        return self._lmeq_nlin
 
     @property
     def xpt(self):
@@ -217,6 +254,14 @@ class TrustRegion:
         Return the values of the objective function at the interpolation points.
         """
         return self._models.fval
+
+    @property
+    def cvalub(self):
+        return self._models.cvalub
+
+    @property
+    def cvaleq(self):
+        return self._models.cvaleq
 
     @property
     def kopt(self):
@@ -266,42 +311,46 @@ class TrustRegion:
         return self._knew is not None
 
     def fun(self, x):
-        r"""
-        Evaluate the objective function at ``x``.
-        """
         fx = float(self._fun(x, *self._args))
         if self.disp:
             print(f'{self._fun.__name__}({x}) = {fx}.')
         return fx
 
+    def cub(self, x):
+        if self._cub is not None:
+            cx = np.atleast_1d(self._cub(x, *self._args))
+            if cx.dtype.kind in np.typecodes['AllInteger']:
+                cx = np.asarray(cx, dtype=float)
+            if self.disp:
+                print(f'{self._cub.__name__}({x}) = {cx}.')
+        else:
+            cx = np.asarray([], dtype=float)
+        return cx
+
+    def ceq(self, x):
+        if self._ceq is not None:
+            cx = np.atleast_1d(self._ceq(x, *self._args))
+            if cx.dtype.kind in np.typecodes['AllInteger']:
+                cx = np.asarray(cx, dtype=float)
+            if self.disp:
+                print(f'{self._ceq.__name__}({x}) = {cx}.')
+        else:
+            cx = np.asarray([], dtype=float)
+        return cx
+
     def obj(self, x):
-        r"""
-        Evaluate the objective function of the model at ``x``. If ``x`` is None,
-        it is evaluated at ``self.xopt``.
-        """
         return self._models.obj(x)
 
     def obj_grad(self, x):
-        r"""
-        Evaluate the gradient of the objective function of the model at ``x``.
-        If ``x`` is None, the gradient is evaluated at ``self.xopt``.
-        """
         return self._models.obj_grad(x)
 
     def obj_hess(self):
         return self._models.obj_hess()
 
     def obj_hessp(self, x):
-        r"""
-        Evaluate the product of the Hessian matrix of the objective function of
-        the model and ``x``.
-        """
         return self._models.obj_hessp(x)
 
     def obj_curv(self, x):
-        r"""
-        Evaluate the curvature of the objective function of the model at ``x``.
-        """
         return self._models.obj_curv(x)
 
     def alt(self, x):
@@ -319,21 +368,83 @@ class TrustRegion:
     def alt_curv(self, x):
         return self._models.alt_curv(x)
 
+    def cubm(self, x, i):
+        return self._models.cub(x, i)
+
+    def cubm_grad(self, x, i):
+        return self._models.cub_grad(x, i)
+
+    def cubm_hess(self, i):
+        return self._models.cub_hess(i)
+
+    def cubm_hessp(self, x, i):
+        return self._models.cub_hessp(x, i)
+
+    def cubm_curv(self, x, i):
+        return self._models.cub_curv(x, i)
+
+    def cubm_alt(self, x, i):
+        return self._models.cub_alt(x, i)
+
+    def cubm_alt_grad(self, x, i):
+        return self._models.cub_alt_grad(x, i)
+
+    def cubm_alt_hess(self, i):
+        return self._models.cub_alt_hess(i)
+
+    def cubm_alt_hessp(self, x, i):
+        return self._models.cub_alt_hessp(x, i)
+
+    def cubm_alt_curv(self, x, i):
+        return self._models.cub_alt_curv(x, i)
+
+    def ceqm(self, x, i):
+        return self._models.ceq(x, i)
+
+    def ceqm_grad(self, x, i):
+        return self._models.ceq_grad(x, i)
+
+    def ceqm_hess(self, i):
+        return self._models.ceq_hess(i)
+
+    def ceqm_hessp(self, x, i):
+        return self._models.ceq_hessp(x, i)
+
+    def ceqm_curv(self, x, i):
+        return self._models.ceq_curv(x, i)
+
+    def ceqm_alt(self, x, i):
+        return self._models.ceq_alt(x, i)
+
+    def ceqm_alt_grad(self, x, i):
+        return self._models.ceq_alt_grad(x, i)
+
+    def ceqm_alt_hess(self, i):
+        return self._models.ceq_alt_hess(i)
+
+    def ceqm_alt_hessp(self, x, i):
+        return self._models.ceq_alt_hessp(x, i)
+
+    def ceqm_alt_curv(self, x, i):
+        return self._models.ceq_alt_curv(x, i)
+
     def lag(self, x):
-        return self._models.lag(x, self._lmub, self._lmeq)
+        return self._models.lag(x, self._lmub_lin, self._lmeq_lin,
+                                self._lmub_nlin, self._lmeq_nlin)
 
     def lag_grad(self, x):
-        return self._models.lag_grad(x, self._lmub, self._lmeq)
+        return self._models.lag_grad(x, self._lmub_lin, self._lmeq_lin,
+                                     self._lmub_nlin, self._lmeq_nlin)
 
     def lag_hess(self):
-        return self._models.lag_hess()
+        return self._models.lag_hess(self._lmub_nlin, self._lmeq_nlin)
 
     def lag_hessp(self, x):
         r"""
         Evaluate the product of the Hessian matrix of the Lagrangian function of
         the model and ``x``.
         """
-        return self._models.lag_hessp(x)
+        return self._models.lag_hessp(x, self._lmub_nlin, self._lmeq_nlin)
 
     def set_default_options(self, n):
         r"""
@@ -416,11 +527,13 @@ class TrustRegion:
         xsav = np.copy(self.xopt)
         xnew = xsav + step
         fx = self.fun(self._xbase + xnew)
+        cubx = self.cub(self._xbase + xnew)
+        ceqx = self.ceq(self._xbase + xnew)
 
         # Update the Lagrange multipliers and the penalty parameters.
         self.update_multipliers(**kwargs)
         ksav = self.kopt
-        mx, mmx, mopt = self.update_penalty_coefficients(xnew, fx)
+        mx, mmx, mopt = self.update_penalty_coefficients(xnew, fx, cubx, ceqx)
         if ksav != self.kopt:
             self.prepare_trust_region_step()
             raise RestartRequiredException
@@ -435,7 +548,7 @@ class TrustRegion:
         # account the fact that the best point so far may have been updated when
         # the penalty coefficients have been updated.
         step += xsav - self.xopt
-        self._knew = self._models.update(step, fx, self._knew)
+        self._knew = self._models.update(step, fx, cubx, ceqx, self._knew)
         if mx < mopt:
             self.kopt = self._knew
             mopt = mx
@@ -447,7 +560,8 @@ class TrustRegion:
         r"""
         Update the least-squares Lagrange multipliers.
         """
-        if self.mub + self.meq > 0:
+        n = self.xopt.size
+        if self.mub + self.mnlub + self.meq + self.mnleq > 0:
             # Determine the matrix of the least-squares problem. The inequality
             # multipliers corresponding to nonzero constraint values are set to
             # zeros to satisfy the complementary slackness conditions.
@@ -455,33 +569,87 @@ class TrustRegion:
             rub = np.dot(self.aub, self.xopt) - self.bub
             iub = np.less_equal(np.abs(rub), tol)
             mub = np.count_nonzero(iub)
-            A = np.r_[self.aub[iub, :], self.aeq].T
+            rub = self.cvalub[self.kopt, :]
+            tol = EPS * self.mub * np.max(np.abs(rub), initial=1.)
+            cub_jac = np.empty((self.mnlub, n), dtype=float)
+            for i in range(self.mnlub):
+                cub_jac[i, :] = self.cubm_grad(self.xopt, i)
+                cub_jac[i, :] -= self.cubm_hessp(self.xopt, i)
+            inlub = np.less_equal(np.abs(rub), tol)
+            mnlub = np.count_nonzero(inlub)
+            ceq_jac = np.empty((self.mnleq, n), dtype=float)
+            for i in range(self.mnleq):
+                ceq_jac[i, :] = self.ceqm_grad(self.xopt, i)
+                ceq_jac[i, :] -= self.ceqm_hessp(self.xopt, i)
+            A = np.r_[self.aub[iub, :], cub_jac[inlub, :], self.aeq, ceq_jac].T
 
             # Determine the least-squares Lagrange multipliers that have not
             # been fixed by the complementary slackness conditions.
-            lm, _ = nnls(A, -self.obj_grad(self.xopt), mub, **kwargs)
-            self._lmub.fill(0.)
-            self._lmub[iub] = lm[:mub]
-            self._lmeq = lm[mub:]
+            lm, _ = nnls(A, -self.obj_grad(self.xopt), mub + mnlub, **kwargs)
+            self._lmub_lin.fill(0.)
+            self._lmub_nlin.fill(0.)
+            self._lmub_lin[iub] = lm[:mub]
+            self._lmub_nlin[inlub] = lm[mub:mub + mnlub]
+            self._lmeq_lin = lm[mub + mnlub:mub + mnlub + self.meq]
+            self._lmeq_nlin = lm[mub + mnlub + self.meq:]
 
-    def update_penalty_coefficients(self, xnew, fx):
-        mx, mmx = self(xnew, fx, True)
-        mopt = self(self.xopt, self.fopt)
+    def update_penalty_coefficients(self, xnew, fx, cubx, ceqx):
+        mx, mmx = self(xnew, fx, cubx, ceqx, True)
+        mopt = self(self.xopt, self.fopt, self.cvalub[self.kopt, :],
+                    self.cvaleq[self.kopt, :])
         if not self.is_model_step and mmx > mopt:
             npt = self.npt
             mval = np.empty(npt, dtype=float)
             ksav = self.kopt
             while ksav == self.kopt and mmx > mopt:
-                self._gub *= 2.
-                self._geq *= 2.
-                mx, mmx = self(xnew, fx, True)
+                if self._gub > 0.:
+                    self._gub *= 2.
+                else:
+                    self._gub = 1.
+                if self._geq > 0.:
+                    self._geq *= 2.
+                else:
+                    self._geq = 1.
+                mx, mmx = self(xnew, fx, cubx, ceqx, True)
                 for k in range(npt):
-                    mval[k] = self(self.xpt[k, :], self.fval[k])
+                    mval[k] = self(self.xpt[k, :], self.fval[k],
+                                   self.cvalub[k, :], self.cvaleq[k, :])
                 self.kopt = np.argmin(mval)
                 mopt = mval[self.kopt]
         else:
-            mopt = self(self.xopt, self.fopt)
+            mopt = self(self.xopt, self.fopt, self.cvalub[self.kopt, :],
+                        self.cvaleq[self.kopt, :])
         return mx, mmx, mopt
+
+    def reduce_penalty_coefficients(self):
+        if self._gub > 0. and self._geq > 0.:
+            rub = np.c_[
+                np.dot(self.xpt, self.aub.T) - self.bub[np.newaxis, :],
+                self.cvalub,
+            ]
+            req = np.c_[
+                np.dot(self.xpt, self.aeq.T) - self.beq[np.newaxis, :],
+                self.cvaleq,
+            ]
+            cubmin = np.min(rub, axis=1, initial=0.)
+            cubmax = np.max(rub, axis=1, initial=0.)
+            ceqmin = np.min(req, axis=1, initial=0.)
+            ceqmax = np.max(req, axis=1, initial=0.)
+            iub = np.less(cubmin, 2. * cubmax)
+            ieq = (ceqmin < 2. * ceqmax) | (ceqmin > .5 * ceqmax)
+            minf = np.min(self.fval)
+            maxf = np.max(self.fval)
+            if np.any(iub):
+                denom = np.min(cubmax[iub] - np.minimum(0., cubmin[iub]))
+                self._gub = (maxf - minf) / denom
+            else:
+                self._gub = 0.
+            if np.any(ieq):
+                denom = np.min(np.maximum(0., ceqmax[ieq]) -
+                               np.minimum(0., ceqmin[ieq]))
+                self._geq = (maxf - minf) / denom
+            else:
+                self._geq = 0.
 
     def trust_region_step(self, delta, **kwargs):
         r"""
@@ -509,13 +677,31 @@ class TrustRegion:
         # subproblem is infeasible.
         delta *= np.sqrt(.5)
         nsf = kwargs.get('nsf', .8)
-        mc = self.mub + self.meq
+        mc = self.mub + self.mnlub + self.meq + self.mnleq
+        aub = np.copy(self.aub)
+        bub = np.copy(self.bub)
+        for i in range(self.mnlub):
+            aubi = self.cubm_grad(self.xopt, i)
+            bubi = np.inner(self.xopt, aubi) - self.cvalub[self.kopt, i]
+            aubi -= self.cubm_hessp(self.xopt, i)
+            bubi -= .5 * self.cubm_curv(self.xopt, i)
+            aub = np.vstack([aub, aubi])
+            bub = np.r_[bub, bubi]
+        aeq = np.copy(self.aeq)
+        beq = np.copy(self.beq)
+        for i in range(self.mnleq):
+            aeqi = self.ceqm_grad(self.xopt, i)
+            beqi = np.inner(self.xopt, aeqi) - self.cvaleq[self.kopt, i]
+            aeqi -= self.ceqm_hessp(self.xopt, i)
+            beqi -= .5 * self.ceqm_curv(self.xopt, i)
+            aeq = np.vstack([aeq, aeqi])
+            beq = np.r_[beq, beqi]
         if mc == 0:
             nstep = np.zeros_like(self.xopt)
             ssq = 0.
         else:
-            nstep = cpqp(self.xopt, self.aub, self.bub, self.aeq, self.beq,
-                         self.xl, self.xu, nsf * delta, **kwargs)
+            nstep = cpqp(self.xopt, aub, bub, aeq, beq, self.xl, self.xu,
+                         nsf * delta, **kwargs)
             ssq = np.inner(nstep, nstep)
 
         # Evaluate the tangential step of the trust-region subproblem, and set
@@ -527,14 +713,14 @@ class TrustRegion:
             delta = np.sqrt(delta ** 2. - ssq)
         xopt = self.xopt + nstep
         gq = self.obj_grad(xopt)
-        bub = np.maximum(self.bub, np.dot(self.aub, xopt))
-        beq = np.dot(self.aeq, xopt)
+        bub = np.maximum(bub, np.dot(aub, xopt))
+        beq = np.dot(aeq, xopt)
         if mc == 0:
             tstep = bvtcg(xopt, gq, self.lag_hessp, (), self.xl, self.xu, delta,
                           **kwargs)
         else:
-            tstep = lctcg(xopt, gq, self.lag_hessp, (), self.aub, bub, self.aeq,
-                          beq, self.xl, self.xu, delta, **kwargs)
+            tstep = lctcg(xopt, gq, self.lag_hessp, (), aub, bub, aeq, beq,
+                          self.xl, self.xu, delta, **kwargs)
         return nstep + tstep
 
     def model_step(self, delta, **kwargs):
@@ -572,7 +758,8 @@ class QuadraticModels:
        pp. 183--215.
     """
 
-    def __init__(self, fun, xbase, xl, xu, Aub, bub, Aeq, beq, options):
+    def __init__(self, fun, xbase, xl, xu, Aub, bub, Aeq, beq, cub, ceq,
+                 options):
         """
         Construct the initial models of the optimization problem.
         """
@@ -586,8 +773,14 @@ class QuadraticModels:
         n = xbase.size
         npt = options.get('npt')
         rhobeg = options.get('rhobeg')
+        cub_xbase = cub(xbase)
+        mnlub = cub_xbase.size
+        ceq_xbase = ceq(xbase)
+        mnleq = ceq_xbase.size
         self._xpt = np.zeros((npt, n), dtype=float)
         self._fval = np.empty(npt, dtype=float)
+        self._cvalub = np.empty((npt, mnlub), dtype=float)
+        self._cvaleq = np.empty((npt, mnleq), dtype=float)
         self._bmat = np.zeros((npt + n, n), dtype=float)
         self._zmat = np.zeros((npt, npt - n - 1), dtype=float)
         self._idz = 0
@@ -626,6 +819,14 @@ class QuadraticModels:
             # values are interpreted as floating-point numbers by NumPy
             # automatically when stored.
             self._fval[k] = fun(xbase + self._xpt[k, :])
+            if k == 0:
+                # The constraints functions have already been evaluated at xbase
+                # to get the number of constraints.
+                self._cvalub[0, :] = cub_xbase
+                self._cvaleq[0, :] = ceq_xbase
+            else:
+                self._cvalub[k, :] = cub(xbase + self._xpt[k, :])
+                self._cvaleq[k, :] = ceq(xbase + self._xpt[k, :])
 
             # Set the initial elements of the KKT matrix of interpolation.
             if k <= 2 * n:
@@ -652,7 +853,19 @@ class QuadraticModels:
                 self._zmat[jpt + 1, kx] = -1. / rhobeg ** 2.
 
         self._obj = Quadratic(self._bmat, self._zmat, self._idz, self._fval)
-        self._obj_alt = self.alt_model()
+        self._obj_alt = self.alt_model(self._fval)
+        self._cub = np.empty(mnlub, dtype=Quadratic)
+        self._cub_alt = np.empty(mnlub, dtype=Quadratic)
+        for i in range(mnlub):
+            self._cub[i] = Quadratic(self._bmat, self._zmat, self._idz,
+                                     self._cvalub[:, i])
+            self._cub_alt[i] = self.alt_model(self._cvalub[:, i])
+        self._ceq = np.empty(mnleq, dtype=Quadratic)
+        self._ceq_alt = np.empty(mnleq, dtype=Quadratic)
+        for i in range(mnleq):
+            self._ceq[i] = Quadratic(self._bmat, self._zmat, self._idz,
+                                     self._cvaleq[:, i])
+            self._ceq_alt[i] = self.alt_model(self._cvaleq[:, i])
 
     @property
     def xl(self):
@@ -719,6 +932,22 @@ class QuadraticModels:
         return self._fval
 
     @property
+    def cvalub(self):
+        return self._cvalub
+
+    @property
+    def mnlub(self):
+        return self._cvalub.shape[1]
+
+    @property
+    def cvaleq(self):
+        return self._cvaleq
+
+    @property
+    def mnleq(self):
+        return self._cvaleq.shape[1]
+
+    @property
     def bmat(self):
         r"""
         Return the last columns of the KKT matrix of interpolation.
@@ -756,6 +985,12 @@ class QuadraticModels:
             step = self.xpt[knew, :] - self.xopt
             self._obj.shift(step, self._xpt)
             self._obj_alt.shift(step, self._xpt)
+            for i in range(self.mnlub):
+                self._cub[i].shift(step, self._xpt)
+                self._cub_alt[i].shift(step, self._xpt)
+            for i in range(self.mnleq):
+                self._ceq[i].shift(step, self._xpt)
+                self._ceq_alt[i].shift(step, self._xpt)
             self._kopt = knew
 
     @property
@@ -777,8 +1012,14 @@ class QuadraticModels:
         """
         Return the constraint violation at the best point so far.
         """
-        cub = np.dot(self._Aub, self.xopt) - self._bub
-        ceq = np.dot(self._Aeq, self.xopt) - self._beq
+        cub = np.r_[
+            np.dot(self._Aub, self.xopt) - self._bub,
+            self._cvalub[self._kopt, :],
+        ]
+        ceq = np.r_[
+            np.dot(self._Aeq, self.xopt) - self._beq,
+            self._cvaleq[self._kopt, :],
+        ]
         cbd = np.r_[self.xopt - self._xu, self._xl - self.xopt]
         return np.max(np.r_[cub, np.abs(ceq), cbd], initial=0.)
 
@@ -786,7 +1027,9 @@ class QuadraticModels:
     def type(self):
         # CUTEst classification scheme
         # https://www.cuter.rl.ac.uk/Problems/classification.shtml
-        if self.mub + self.meq > 0:
+        if self.mnlub + self.mnleq > 0:
+            return 'O'
+        elif self.mub + self.meq > 0:
             return 'L'
         elif np.all(self._xl == -np.inf) and np.all(self._xu == np.inf):
             return 'U'
@@ -840,39 +1083,119 @@ class QuadraticModels:
     def alt_curv(self, x):
         return self._obj_alt.curv(x, self._xpt)
 
-    def lag(self, x, lmub, lmeq):
+    def cub(self, x, i):
+        return self._cub[i](x, self._xpt, self._kopt)
+
+    def cub_grad(self, x, i):
+        return self._cub[i].grad(x, self._xpt, self._kopt)
+
+    def cub_hess(self, i):
+        return self._cub[i].hess(self._xpt)
+
+    def cub_hessp(self, x, i):
+        return self._cub[i].hessp(x, self._xpt)
+
+    def cub_curv(self, x, i):
+        return self._cub[i].curv(x, self._xpt)
+
+    def cub_alt(self, x, i):
+        return self._cub_alt[i](x, self._xpt, self._kopt)
+
+    def cub_alt_grad(self, x, i):
+        return self._cub_alt[i].grad(x, self._xpt, self._kopt)
+
+    def cub_alt_hess(self, i):
+        return self._cub_alt[i].hess(self._xpt)
+
+    def cub_alt_hessp(self, x, i):
+        return self._cub_alt[i].hessp(x, self._xpt)
+
+    def cub_alt_curv(self, x, i):
+        return self._cub_alt[i].curv(x, self._xpt)
+
+    def ceq(self, x, i):
+        return self._ceq[i](x, self._xpt, self._kopt)
+
+    def ceq_grad(self, x, i):
+        return self._ceq[i].grad(x, self._xpt, self._kopt)
+
+    def ceq_hess(self, i):
+        return self._ceq[i].hess(self._xpt)
+
+    def ceq_hessp(self, x, i):
+        return self._ceq[i].hessp(x, self._xpt)
+
+    def ceq_curv(self, x, i):
+        return self._ceq[i].curv(x, self._xpt)
+
+    def ceq_alt(self, x, i):
+        return self._ceq_alt[i](x, self._xpt, self._kopt)
+
+    def ceq_alt_grad(self, x, i):
+        return self._ceq_alt[i].grad(x, self._xpt, self._kopt)
+
+    def ceq_alt_hess(self, i):
+        return self._ceq_alt[i].hess(self._xpt)
+
+    def ceq_alt_hessp(self, x, i):
+        return self._ceq_alt[i].hessp(x, self._xpt)
+
+    def ceq_alt_curv(self, x, i):
+        return self._ceq_alt[i].curv(x, self._xpt)
+
+    def lag(self, x, lmub_lin, lmeq_lin, lmub_nlin, lmeq_nlin):
         lx = self.obj(x)
-        lx += np.inner(lmub, np.dot(self._Aub, x) - self._bub)
-        lx += np.inner(lmeq, np.dot(self._Aeq, x) - self._beq)
+        lx += np.inner(lmub_lin, np.dot(self._Aub, x) - self._bub)
+        lx += np.inner(lmeq_lin, np.dot(self._Aeq, x) - self._beq)
+        for i in range(self.mnlub):
+            lx += lmub_nlin[i] * self.cub(x, i)
+        for i in range(self.mnleq):
+            lx += lmeq_nlin[i] * self.ceq(x, i)
         return lx
 
-    def lag_grad(self, x, lmub, lmeq):
+    def lag_grad(self, x, lmub_lin, lmeq_lin, lmub_nlin, lmeq_nlin):
         gx = self.obj_grad(x)
-        gx += np.dot(self._Aub.T, lmub)
-        gx += np.dot(self._Aeq.T, lmeq)
+        gx += np.dot(self._Aub.T, lmub_lin)
+        gx += np.dot(self._Aeq.T, lmeq_lin)
+        for i in range(self.mnlub):
+            gx += lmub_nlin[i] * self.cub_grad(x, i)
+        for i in range(self.mnleq):
+            gx += lmeq_nlin[i] * self.ceq_grad(x, i)
         return gx
 
-    def lag_hess(self):
-        return self.obj_hess()
+    def lag_hess(self, lmub_nlin, lmeq_nlin):
+        hx = self.obj_hess()
+        for i in range(self.mnlub):
+            hx += lmub_nlin[i] * self.cub_hess(i)
+        for i in range(self.mnleq):
+            hx += lmeq_nlin[i] * self.ceq_hess(i)
+        return hx
 
-    def lag_hessp(self, x):
+    def lag_hessp(self, x, lmub_nlin, lmeq_nlin):
         r"""
         Evaluate the product of the Hessian matrix of the Lagrangian function of
         the model and ``x``.
         """
-        return self.obj_hessp(x)
+        hx = self.obj_hessp(x)
+        for i in range(self.mnlub):
+            hx += lmub_nlin[i] * self.cub_hessp(x, i)
+        for i in range(self.mnleq):
+            hx += lmeq_nlin[i] * self.ceq_hessp(x, i)
+        return hx
 
-    def lag_curv(self, x):
-        return self.obj_curv(x)
+    def lag_curv(self, x, lmub_nlin, lmeq_nlin):
+        cx = self.obj_curv(x)
+        for i in range(self.mnlub):
+            cx += lmub_nlin[i] * self.cub_curv(x, i)
+        for i in range(self.mnleq):
+            cx += lmeq_nlin[i] * self.ceq_curv(x, i)
+        return cx
 
     def shift_constraints(self, x):
         r"""
         Shift the bound constraints and the right-hand sides of the linear
         inequality and equality constraints.
         """
-        # Note: When adapting the algorithm to tackle general nonlinear
-        # constraints, the right-hand sides of the new constraints may be
-        # undefined when this method is called.
         self._xl -= x
         self._xu -= x
         self._bub -= np.dot(self._Aub, x)
@@ -908,10 +1231,17 @@ class QuadraticModels:
 
         # Complete the shift by updating the models.
         self._obj.shift_origin(self._xpt, self._kopt)
+        self._obj_alt.shift_origin(self._xpt, self._kopt)
+        for i in range(self.mnlub):
+            self._cub[i].shift_origin(self._xpt, self._kopt)
+            self._cub_alt[i].shift_origin(self._xpt, self._kopt)
+        for i in range(self.mnleq):
+            self._ceq[i].shift_origin(self._xpt, self._kopt)
+            self._ceq_alt[i].shift_origin(self._xpt, self._kopt)
         self.shift_constraints(xopt)
         self._xpt -= xopt[np.newaxis, :]
 
-    def update(self, step, fx, knew=None):
+    def update(self, step, fx, cubx, ceqx, knew=None):
         r"""
         Update KKT matrix of interpolation and the model to replace the
         ``knew``-th interpolation point by ``self.xopt + step``. If
@@ -1008,16 +1338,32 @@ class QuadraticModels:
         # Update the models of the problem.
         xnew = self.xopt + step
         xold = np.copy(self._xpt[knew, :])
-        diff = fx - self.fopt - self.obj(xnew)
+        dfx = fx - self.fopt - self.obj(xnew)
+        dcubx = np.empty(self.mnlub, dtype=float)
+        for i in range(self.mnlub):
+            dcubx[i] = cubx[i] - self._cvalub[self.kopt, i] - self.cub(xnew, i)
+        dceqx = np.empty(self.mnleq, dtype=float)
+        for i in range(self.mnleq):
+            dceqx[i] = ceqx[i] - self._cvaleq[self.kopt, i] - self.ceq(xnew, i)
         self._fval[knew] = fx
+        self._cvalub[knew, :] = cubx
+        self._cvaleq[knew, :] = ceqx
         self._xpt[knew, :] = xnew
         self._obj.update(self._xpt, self._kopt, xold, self._bmat, self._zmat,
-                         self._idz, knew, diff)
-        self._obj_alt = self.alt_model()
+                         self._idz, knew, dfx)
+        self._obj_alt = self.alt_model(self._fval)
+        for i in range(self.mnlub):
+            self._cub[i].update(self._xpt, self._kopt, xold, self._bmat,
+                                self._zmat, self._idz, knew, dcubx[i])
+            self._cub_alt[i] = self.alt_model(self._cvalub[:, i])
+        for i in range(self.mnleq):
+            self._ceq[i].update(self._xpt, self._kopt, xold, self._bmat,
+                                self._zmat, self._idz, knew, dceqx[i])
+            self._ceq_alt[i] = self.alt_model(self._cvaleq[:, i])
         return knew
 
-    def alt_model(self):
-        model = Quadratic(self._bmat, self._zmat, self._idz, self._fval)
+    def alt_model(self, fval):
+        model = Quadratic(self._bmat, self._zmat, self._idz, fval)
         model.shift(self.xopt, self._xpt)
         return model
 
@@ -1027,6 +1373,8 @@ class QuadraticModels:
         Hessian matrices are least in Frobenius norm.
         """
         self._obj = self._obj_alt
+        self._cub = self._cub_alt
+        self._ceq = self._ceq_alt
 
     def model_step(self, klag, delta, **kwargs):
         r"""
@@ -1069,6 +1417,12 @@ class QuadraticModels:
         """
         stack_level += 1
         self._obj.check_model(self._xpt, self._fval, self._kopt, stack_level)
+        for i in range(self.mnlub):
+            self._cub[i].check_model(self._xpt, self._cvalub[:, i], self._kopt,
+                                     stack_level)
+        for i in range(self.mnleq):
+            self._ceq[i].check_model(self._xpt, self._cvaleq[:, i], self._kopt,
+                                     stack_level)
 
     def _index_to_replace(self, beta, vlag):
         npt = self._xpt.shape[0]
@@ -1439,4 +1793,5 @@ class Quadratic:
         if diff > tol:
             stack_level += 1
             message = f'error in interpolation conditions is {diff:e}.'
-            warnings.warn(message, RuntimeWarning, stacklevel=stack_level)
+            raise RuntimeError(message)
+            # warnings.warn(message, RuntimeWarning, stacklevel=stack_level)

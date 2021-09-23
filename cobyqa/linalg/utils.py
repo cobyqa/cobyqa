@@ -106,5 +106,4 @@ def qr(a, overwrite_a=False, pivoting=False, check_finite=True):
             R[i, j] = 0.
     if pivoting:
         return Q, R, P
-    else:
-        return Q, R
+    return Q, R
