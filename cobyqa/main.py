@@ -232,8 +232,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         # Evaluate the trial step.
         delsav = delta
         fopt = fwk.fopt
-        cubopt = np.copy(fwk.cvalub[fwk.kopt, :])
-        ceqopt = np.copy(fwk.cvaleq[fwk.kopt, :])
+        kopt = fwk.kopt
+        coptub = np.copy(fwk.coptub)
+        copteq = np.copy(fwk.copteq)
         xopt = np.copy(fwk.xopt)
         nit += 1
         is_trust_region_step = not fwk.is_model_step
@@ -284,9 +285,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                     itest = 0
                 else:
                     itest += 1
-                    obj_grad_norm = np.linalg.norm(fwk.obj_grad(fwk.xopt))
-                    alt_grad_norm = np.linalg.norm(fwk.alt_grad(fwk.xopt))
-                    if obj_grad_norm < 10. * alt_grad_norm:
+                    gd = fwk.model_obj_grad(fwk.xopt)
+                    gd_alt = fwk.model_obj_alt_grad(fwk.xopt)
+                    if np.linalg.norm(gd) < 10. * np.linalg.norm(gd_alt):
                         itest = 0
                     if itest >= 3:
                         fwk.reset_models()
@@ -304,8 +305,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             fwk.prepare_model_step(max(delta, 2. * rho))
             if fwk.is_model_step or delsav > rho:
                 continue
-            msav = fwk(xopt, fopt, cubopt, ceqopt)
-            if mopt < msav:
+            msav = fwk(xopt, fopt, coptub, copteq)
+            if fwk.less_merit(mopt, fwk.rval[fwk.kopt], msav, fwk.rval[kopt]):
                 continue
 
         # Update the lower bound on the trust-region radius.
@@ -330,7 +331,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     result = OptimizeResult()
     result.x = fwk.xbase + fwk.xopt
     result.fun = fwk.fopt
-    result.jac = fwk.obj_grad(fwk.xopt)
+    result.jac = fwk.model_obj_grad(fwk.xopt)
     result.nfev = nf
     result.nit = nit
     if fwk.type != 'U':
