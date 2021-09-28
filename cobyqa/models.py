@@ -8,40 +8,118 @@ from .utils import RestartRequiredException, omega_product
 
 
 class TrustRegion:
-    r"""
-    Represent the states of a nonlinear constrained problem.
+    """
+    Framework atomization of the derivative-free trust-region SQP method.
     """
 
     def __init__(self, fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None,
                  Aeq=None, beq=None, cub=None, ceq=None, options=None,
                  **kwargs):
-        r"""
-        Initialize the states of the nonlinear constrained problem.
+        """
+        Initialize the derivative-free trust-region SQP method.
+
+        Parameters
+        ----------
+        fun : callable
+            Objective function to be minimized.
+
+                ``fun(x, *args) -> float``
+
+            where ``x`` is an array with shape (n,) and `args` is a tuple of
+            parameters to specify the objective function.
+        x0 : array_like, shape (n,)
+            Initial guess.
+        args : tuple, optional
+            Parameters to forward to the objective function, the nonlinear
+            inequality constraint function, and the nonlinear equality
+            constraint function.
+        xl : array_like, shape (n,), optional
+            Lower-bound constraints on the decision variables ``x >= xl``.
+        xu : array_like, shape (n,), optional
+            Upper-bound constraints on the decision variables ``x <= xu``.
+        Aub : array_like, shape (mlub, n), optional
+            Jacobian matrix of the linear inequality constraints. Each row of
+            `Aub` stored the gradient of a linear inequality constraint.
+        bub : array_like, shape (mlub,), optional
+            Right-hand side vector of the linear inequality constraints
+            ``Aub @ x <= bub``.
+        Aeq : array_like, shape (mleq, n), optional
+            Jacobian matrix of the linear equality constraints. Each row of
+            `Aeq` stored the gradient of a linear equality constraint.
+        beq : array_like, shape (mleq,), optional
+            Right-hand side vector of the linear equality constraints
+            ``Aeq @ x = beq``.
+        cub : callable, optional
+            Nonlinear inequality constraint function ``cub(x) <= 0``.
+
+                ``cub(x, *args) -> numpy.ndarray, shape (mnlub,)``
+
+            where ``x`` is an array with shape (n,) and `args` is a tuple of
+            parameters to specify the constraint function.
+        ceq : callable, optional
+            Nonlinear equality constraint function ``ceq(x) = 0``.
+
+                ``ceq(x, *args) -> numpy.ndarray, shape (mnleq,)``
+
+            where ``x`` is an array with shape (n,) and `args` is a tuple of
+            parameters to specify the constraint function.
+        options : dict, optional
+            Options to forward to the solver. Accepted options are:
+
+                rhobeg : float, optional
+                    Initial trust-region radius (the default is 1).
+                rhoend : float, optional
+                    Final trust-region radius (the default is 1e-6).
+                npt : int, optional
+                    Number of interpolation points for the objective and
+                    constraint models(the default is ``2 * n + 1``).
+                maxfev : int, optional
+                    Upper bound on the number of objective and constraint
+                    function evaluations (the default is ``500 * n``).
+                target : float, optional
+                    Target value on the objective function (the default is
+                    ``-numpy.inf``). If the solver encounters a feasible point
+                    at which the objective function evaluations is below the
+                    target value, then the computations are stopped.
+                disp : bool, optional
+                    Whether to print pieces of information on the execution of
+                    the solver (the default is False).
+                debug : bool, optional
+                    Whether to make debugging tests during the execution, which
+                    is not recommended in production (the default is False).
+
+        Other Parameters
+        ----------------
+        lstol : float, optional
+            Tolerance on the approximate KKT conditions for the calculations of
+            the least-squares Lagrange multipliers (the default is
+            ``10 * eps * max(n, m) * max(1, max(abs(g)))``, where ``g`` is the
+            gradient of the current model of the objective function).
         """
         self._fun = fun
-        x0 = np.array(x0, dtype=float)
+        x0 = np.atleast_1d(np.array(x0, dtype=float))
         n = x0.size
         if not isinstance(args, tuple):
             args = (args,)
         self._args = args
         if xl is None:
             xl = np.full_like(x0, -np.inf)
-        xl = np.array(xl, dtype=float)
+        xl = np.atleast_1d(np.array(xl, dtype=float))
         if xu is None:
             xu = np.full_like(x0, np.inf)
-        xu = np.array(xu, dtype=float)
+        xu = np.atleast_1d(np.array(xu, dtype=float))
         if Aub is None:
             Aub = np.empty((0, n))
-        Aub = np.array(Aub, dtype=float)
+        Aub = np.atleast_2d(np.array(Aub, dtype=float))
         if bub is None:
             bub = np.empty(0)
-        bub = np.array(bub, dtype=float)
+        bub = np.atleast_1d(np.array(bub, dtype=float))
         if Aeq is None:
             Aeq = np.empty((0, n))
-        Aeq = np.array(Aeq, dtype=float)
+        Aeq = np.atleast_2d(np.array(Aeq, dtype=float))
         if beq is None:
             beq = np.empty(0)
-        beq = np.array(beq, dtype=float)
+        beq = np.atleast_1d(np.array(beq, dtype=float))
         if options is None:
             options = {}
         self._cub = cub
@@ -54,8 +132,8 @@ class TrustRegion:
         x0 = np.minimum(xu, np.maximum(xl, x0))
 
         # Modify the initial guess in order to avoid conflicts between the
-        # bounds and the first quadratic models. The initial components of the
-        # initial guess should either equal bound components or allow the
+        # bounds and the initial interpolation points. The coordinates of the
+        # initial guess should either equal the bound components or allow the
         # projection of the initial trust region onto the components to lie
         # entirely inside the bounds.
         rhobeg = self.rhobeg
@@ -71,17 +149,16 @@ class TrustRegion:
             x0[adj] = xu[adj] - rhobeg
 
         # Set the initial shift of the origin, designed to manage the effects
-        # of computer rounding errors in the calculations, and update
-        # accordingly the right-hand sides of the constraints at most linear.
+        # of computer rounding errors in the calculations.
         self._xbase = x0
 
         # Set the initial models of the problem.
-        self._models = Models(self.fun, self._xbase, xl, xu, Aub, bub, Aeq, beq,
-                              self.cub, self.ceq, self._options)
+        self._models = Models(self.fun, self.xbase, xl, xu, Aub, bub, Aeq, beq,
+                              self.cub, self.ceq, self.options)
         if self.debug:
             self.check_models()
 
-        # Determine the initial least-squares multipliers of the problem.
+        # Determine the initial least-squares multipliers.
         self._penub = 0.
         self._peneq = 0.
         self._lmlub = np.zeros_like(bub)
@@ -90,360 +167,1388 @@ class TrustRegion:
         self._lmnleq = np.zeros(self.mnleq, dtype=float)
         self.update_multipliers(**kwargs)
 
-        # Evaluate the merit function at the interpolation points and
-        # determine the optimal point so far and update the initial models.
-        # self.kopt = self.get_best_point()
-        npt = self.npt
-        mval = np.empty(npt, dtype=float)
-        for k in range(npt):
-            mval[k] = self(self.xpt[k, :], self.fval[k], self.cvalub[k, :],
-                           self.cvaleq[k, :])
-        self.kopt = np.argmin(mval)
+        # Determine the optimal point so far.
+        self.kopt = self.get_best_point()
         if self.debug:
             self.check_models()
 
-        # The initial step is a trust-region step.
+        # The attribute knew contains the index of the interpolation point to be
+        # removed from the interpolation set. It is set only during model step.
+        # Therefore, if set to None, the current step is a trust-region step.
         self._knew = None
 
     def __call__(self, x, fx, cubx, ceqx, model=False):
-        r"""
-        Evaluate the merit functions at ``x``. If ``model = True`` is provided,
-        the method also returns the value of the merit function corresponding to
-        the modeled problem.
+        """
+        Evaluate the merit function.
+
+        The merit function is an augmented Lagrangian.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the merit function is to be evaluated.
+        fx : float
+            Value of the objective function at `x`.
+        cubx : numpy.ndarray, shape (mnlub,)
+            Value of the nonlinear inequality constraint function at `x`.
+        ceqx : numpy.ndarray, shape (mnleq,)
+            Value of the nonlinear equality constraint function at `x`.
+        model : bool, optional
+            Whether to also evaluate the merit function on the different models
+            (the default is False).
+
+        Returns
+        -------
+        float or (float, float)
+            Value of the merit function at `x`, evaluated on the nonlinear
+            optimization problem. If ``model = True``, the merit function
+            evaluated on the different models is also returned.
         """
         tiny = np.finfo(float).tiny
         ax = fx
         mx = 0.
-        if abs(self._penub) > tiny * np.max(np.abs(self._lmlub), initial=0.):
-            tub = np.dot(self.aub, x) - self.bub + self._lmlub / self._penub
+
+        # Calculate the penalty term associated with the linear inequality
+        # constraints and add it to both merit values.
+        if abs(self.penub) > tiny * np.max(np.abs(self.lmlub), initial=0.):
+            tub = np.dot(self.aub, x) - self.bub + self.lmlub / self.penub
             tub = np.maximum(0., tub)
-            alub = .5 * self._penub * np.inner(tub, tub)
+            alub = .5 * self.penub * np.inner(tub, tub)
             ax += alub
             mx += alub
-        lmnlub_max = np.max(np.abs(self._lmnlub), initial=0.)
-        if abs(self._penub) > tiny * lmnlub_max:
-            tub = cubx + self._lmnlub / self._penub
+
+        # Calculate the penalty term associated with the nonlinear inequality
+        # constraints and add it to the merit value evaluated on the nonlinear
+        # optimization problem.
+        lmnlub_max = np.max(np.abs(self.lmnlub), initial=0.)
+        if abs(self.penub) > tiny * lmnlub_max:
+            tub = cubx + self.lmnlub / self.penub
             tub = np.maximum(0., tub)
-            ax += .5 * self._penub * np.inner(tub, tub)
-        if abs(self._peneq) > tiny * np.max(np.abs(self._lmleq), initial=0.):
-            teq = np.dot(self.aeq, x) - self.beq + self._lmleq / self._peneq
-            aleq = .5 * self._peneq * np.inner(teq, teq)
+            ax += .5 * self.penub * np.inner(tub, tub)
+
+        # Calculate the penalty term associated with the linear equality
+        # constraints and add it to both merit values.
+        if abs(self.peneq) > tiny * np.max(np.abs(self.lmleq), initial=0.):
+            teq = np.dot(self.aeq, x) - self.beq + self.lmleq / self.peneq
+            aleq = .5 * self.peneq * np.inner(teq, teq)
             ax += aleq
             mx += aleq
+
+        # Calculate the penalty term associated with the nonlinear equality
+        # constraints and add it to the merit value evaluated on the nonlinear
+        # optimization problem.
         lmnleq_max = np.max(np.abs(self._lmnleq), initial=0.)
-        if abs(self._peneq) > tiny * lmnleq_max:
-            teq = ceqx + self._lmnleq / self._peneq
-            ax += .5 * self._peneq * np.inner(teq, teq)
+        if abs(self.peneq) > tiny * lmnleq_max:
+            teq = ceqx + self.lmnleq / self.peneq
+            ax += .5 * self.peneq * np.inner(teq, teq)
+
+        # The remaining terms of the merit value evaluated on the different
+        # models are expensive, and calculated only if required.
         if model:
             mx += self.model_obj(x)
-            if abs(self._penub) > tiny * lmnlub_max:
-                tub = self._lmnlub / self._penub
+
+            # Calculate the penalty term associated with the linearizations of
+            # the nonlinear inequality constraints and add it to the merit value
+            # evaluated on the different models.
+            if abs(self.penub) > tiny * lmnlub_max:
+                tub = self.coptub + self.lmnlub / self.penub
                 for i in range(self.mnlub):
-                    tub[i] += self.model_cub(x, i)
+                    gopt = self.model_cub_grad(self.xopt, i)
+                    tub[i] += np.inner(x - self.xopt, gopt)
                 tub = np.maximum(0., tub)
-                mx += .5 * self._penub * np.inner(tub, tub)
-            if abs(self._peneq) > tiny * lmnleq_max:
-                teq = self._lmnleq / self._peneq
+                mx += .5 * self.penub * np.inner(tub, tub)
+
+            # Calculate the penalty term associated with the linearizations of
+            # the nonlinear equality constraints and add it to the merit value
+            # evaluated on the different models.
+            if abs(self.peneq) > tiny * lmnleq_max:
+                teq = self.copteq + self.lmnleq / self.peneq
                 for i in range(self.mnleq):
-                    teq[i] += self.model_ceq(x, i)
-                mx += .5 * self._peneq * np.inner(teq, teq)
+                    gopt = self.model_ceq_grad(self.xopt, i)
+                    teq[i] += np.inner(x - self.xopt, gopt)
+                mx += .5 * self.peneq * np.inner(teq, teq)
             return ax, mx
         return ax
 
     def __getattr__(self, item):
+        """
+        Get options as attributes of the class.
+
+        Parameters
+        ----------
+        item : str
+            Name of the option to retrieve.
+
+        Returns
+        -------
+        object
+            Value of the option.
+
+        Raises
+        ------
+        AttributeError
+            The required option does not exist.
+        """
         try:
-            return self._options[item]
+            return self.options[item]
         except KeyError as e:
             raise AttributeError(item) from e
 
     @property
     def xbase(self):
-        r"""
-        Return the shift of the origin in the calculations.
+        """
+        Get the shift of the origin in the calculations.
+
+        The shift of the origin is designed to tackle numerical difficulties
+        caused by ill-conditioned problems.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            Shift of the origin in the calculations.
         """
         return self._xbase
 
     @property
     def options(self):
-        r"""
-        Return the option passed to the solver.
+        """
+        Get the options forwarded to the solver.
+
+        Returns
+        -------
+        dict
+            Options forwarded to the solver.
         """
         return self._options
 
     @property
     def penub(self):
-        r"""
-        Returns the penalty coefficient for the inequality constraints.
+        """
+        Get the penalty coefficient associated with the inequality constraints.
+
+        Returns
+        -------
+        float
+            Penalty coefficient associated with the inequality constraints.
         """
         return self._penub
 
     @property
     def peneq(self):
-        r"""
-        Returns the penalty coefficient for the equality constraints.
+        """
+        Get the penalty coefficient associated with the equality constraints.
+
+        Returns
+        -------
+        float
+            Penalty coefficient associated with the equality constraints.
         """
         return self._peneq
 
     @property
     def lmlub(self):
+        """
+        Get the Lagrange multipliers associated with the linear inequality
+        constraints.
+
+        Returns
+        -------
+        numpy.ndarray, shape (mlub,)
+            Lagrange multipliers associated with the linear inequality
+            constraints.
+        """
         return self._lmlub
 
     @property
     def lmleq(self):
+        """
+        Get the Lagrange multipliers associated with the linear equality
+        constraints.
+
+        Returns
+        -------
+        numpy.ndarray, shape (mleq,)
+            Lagrange multipliers associated with the linear equality
+            constraints.
+        """
         return self._lmleq
 
     @property
     def lmnlub(self):
+        """
+        Get the Lagrange multipliers associated with the quadratic models of the
+        nonlinear inequality constraints.
+
+        Returns
+        -------
+        numpy.ndarray, shape (mnlub,)
+            Lagrange multipliers associated with the quadratic models of the
+            nonlinear inequality constraints.
+        """
         return self._lmnlub
 
     @property
     def lmnleq(self):
+        """
+        Get the Lagrange multipliers associated with the quadratic models of the
+        nonlinear equality constraints.
+
+        Returns
+        -------
+        numpy.ndarray, shape (mnleq,)
+            Lagrange multipliers associated with the quadratic models of the
+            nonlinear equality constraints.
+        """
         return self._lmnleq
 
     @property
     def knew(self):
+        """
+        Get the index of the interpolation point to be removed from the
+        interpolation set.
+        
+        It is set only during model steps. Therefore, if set to None, the
+        current step is a trust-region step.
+        
+        Returns
+        -------
+        int
+            Index of the interpolation point to be removed from the
+            interpolation set.
+        """
         return self._knew
 
     @property
     def xl(self):
+        """
+        Get the lower-bound constraints on the decision variables.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            Lower-bound constraints on the decision variables.
+        """
         return self._models.xl
 
     @property
     def xu(self):
+        """
+        Get the upper-bound constraints on the decision variables.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            Upper-bound constraints on the decision variables.
+        """
         return self._models.xu
 
     @property
     def aub(self):
+        """
+        Get the Jacobian matrix of the linear inequality constraints.
+
+        Returns
+        -------
+        numpy.ndarray, shape (mlub, n)
+            Jacobian matrix of the linear inequality constraints.
+        """
         return self._models.aub
 
     @property
     def bub(self):
+        """
+        Get the right-hand side vector of the linear inequality constraints.
+
+        Returns
+        -------
+        numpy.ndarray, shape (mlub,)
+            Right-hand side vector of the linear inequality constraints.
+        """
         return self._models.bub
 
     @property
     def mlub(self):
+        """
+        Get the number of the linear inequality constraints.
+
+        Returns
+        -------
+        int
+            Number of the linear inequality constraints.
+        """
         return self._models.mlub
 
     @property
     def aeq(self):
+        """
+        Get the Jacobian matrix of the linear equality constraints.
+
+        Returns
+        -------
+        numpy.ndarray, shape (mleq, n)
+            Jacobian matrix of the linear equality constraints.
+        """
         return self._models.aeq
 
     @property
     def beq(self):
+        """
+        Get the right-hand side vector of the linear equality constraints.
+
+        Returns
+        -------
+        numpy.ndarray, shape (mleq,)
+            Right-hand side vector of the linear equality constraints.
+        """
         return self._models.beq
 
     @property
     def mleq(self):
+        """
+        Get the number of the linear equality constraints.
+
+        Returns
+        -------
+        int
+            Number of the linear equality constraints.
+        """
         return self._models.mleq
 
     @property
     def xpt(self):
-        r"""
-        Return the interpolation points.
+        """
+        Get the displacements of the interpolation points from the origin.
+
+        Returns
+        -------
+        numpy.ndarray, shape (npt, n)
+            Displacements of the interpolation points from the origin. Each row
+            of the returned matrix stored the displacements of an interpolation
+            point from the origin of the calculations.
         """
         return self._models.xpt
 
     @property
     def fval(self):
-        r"""
-        Return the values of the objective function at the interpolation points.
+        """
+        Get the evaluations of the objective function of the nonlinear
+        optimization problem at the interpolation points.
+
+        Returns
+        -------
+        numpy.ndarray, shape (npt,)
+            Evaluations of the objective function of the nonlinear optimization
+            problem at the interpolation points.
         """
         return self._models.fval
 
     @property
     def rval(self):
+        """
+        Get the residuals associated with the constraints of the nonlinear
+        optimization problem at the interpolation points.
+
+        Returns
+        -------
+        numpy.ndarray, shape (npt,)
+            Residuals associated with the constraints of the nonlinear
+            optimization problem at the interpolation points.
+        """
         return self._models.rval
 
     @property
     def cvalub(self):
+        """
+        Get the evaluations of the nonlinear inequality constraint function of
+        the nonlinear optimization problem at the interpolation points.
+
+        Returns
+        -------
+        numpy.ndarray, shape (npt, mnlub)
+            Evaluations of the nonlinear inequality constraint function of the
+            nonlinear optimization problem at the interpolation points.
+        """
         return self._models.cvalub
 
     @property
     def mnlub(self):
+        """
+        Get the number of the nonlinear inequality constraints.
+
+        Returns
+        -------
+        int
+            Number of the nonlinear inequality constraints.
+        """
         return self._models.mnlub
 
     @property
     def cvaleq(self):
+        """
+        Get the evaluations of the nonlinear equality constraint function of the
+        nonlinear optimization problem at the interpolation points.
+
+        Returns
+        -------
+        numpy.ndarray, shape (npt, mnleq)
+            Evaluations of the nonlinear equality constraint function of the
+            nonlinear optimization problem at the interpolation points.
+        """
         return self._models.cvaleq
 
     @property
     def mnleq(self):
+        """
+        Get the number of the nonlinear equality constraints.
+
+        Returns
+        -------
+        int
+            Number of the nonlinear equality constraints.
+        """
         return self._models.mnleq
 
     @property
     def kopt(self):
-        r"""
-        Return the index of the best point so far.
+        """
+        Get the index of the best interpolation point so far, corresponding to
+        the point around which the Taylor expansions of the quadratic models are
+        defined.
+        
+        Returns
+        -------
+        int
+            Index of the best interpolation point so far, corresponding to the
+            point around which the Taylor expansions of the quadratic models are
+            defined.
         """
         return self._models.kopt
 
     @kopt.setter
     def kopt(self, knew):
-        r"""
-        Set the index of the best point so far.
+        """
+        Set the index of the best interpolation point so far, corresponding to
+        the point around which the Taylor expansions of the quadratic models are
+        defined.
+
+        Parameters
+        ----------
+        knew : int
+            New index of the best interpolation point so far, which hereinafter
+            corresponds to the point around which the Taylor expansions of the
+            quadratic models are defined.
         """
         self._models.kopt = knew
 
     @property
     def xopt(self):
-        r"""
-        Return the best point so far.
+        """
+        Get the best interpolation point so far, corresponding to the point
+        around which the Taylor expansion of the quadratic models are defined.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            Best interpolation point so far, corresponding to the point around
+            which the Taylor expansion of the quadratic models are defined.
         """
         return self._models.xopt
 
     @property
     def fopt(self):
-        r"""
-        Return the value of the objective function at the best point so far.
+        """
+        Get the evaluation of the objective function of the nonlinear
+        optimization problem at the best interpolation point so far,
+        corresponding to the point around which the Taylor expansion of the
+        quadratic models are defined.
+
+        Returns
+        -------
+        float
+            Evaluation of the objective function of the nonlinear optimization
+            problem at the best interpolation point so far, corresponding to the
+            point around which the Taylor expansion of the quadratic models are
+            defined.
         """
         return self._models.fopt
 
     @property
     def maxcv(self):
-        r"""
-        Return the constraint violation at the best point so far.
+        """
+        Get the constraint violation evaluated on the nonlinear optimization
+        problem at the best point so far, corresponding to the point around
+        which the Taylor expansion of the quadratic models are defined.
+
+        Returns
+        -------
+        float
+            Constraint violation evaluated on the nonlinear optimization
+            problem at the best point so far, corresponding to the point around
+            which the Taylor expansion of the quadratic models are defined.
         """
         return self._models.ropt
 
     @property
     def coptub(self):
+        """
+        Get the evaluation of the nonlinear inequality constraint function of
+        the nonlinear optimization problem at the best interpolation point so
+        far, corresponding to the point around which the Taylor expansions of
+        the quadratic models are defined.
+
+        Returns
+        -------
+        numpy.ndarray, shape (mnlub,)
+            Evaluation of the nonlinear inequality constraint function of the
+            nonlinear optimization problem at the best interpolation point so
+            far, corresponding to the point around which the Taylor expansions
+            of the quadratic models are defined.
+        """
         return self._models.coptub
 
     @property
     def copteq(self):
+        """
+        Get the evaluation of the nonlinear equality constraint function of the
+        nonlinear optimization problem at the best interpolation point so far,
+        corresponding to the point around which the Taylor expansions of the
+        quadratic models are defined.
+
+        Returns
+        -------
+        numpy.ndarray, shape (mnlub,)
+            Evaluation of the nonlinear equality constraint function of the
+            nonlinear optimization problem at the best interpolation point so
+            far, corresponding to the point around which the Taylor expansions
+            of the quadratic models are defined.
+        """
         return self._models.copteq
 
     @property
     def type(self):
+        """
+        Get the type of the nonlinear optimization problem.
+
+        It follows the CUTEst classification scheme for the constraint types
+        (see https://www.cuter.rl.ac.uk/Problems/classification.shtml).
+
+        Returns
+        -------
+        {'U', 'X', 'B', 'L', 'O'}
+            Type of the nonlinear optimization problem:
+
+                #. 'U' : the problem is unconstrained.
+                #. 'X' : the problem only constraints are fixed variables.
+                #. 'B' : the problem only constraints are bounds constraints.
+                #. 'L' : the problem constraints are linear.
+                #. 'O' : the problem constraints general.
+        """
         return self._models.type
 
     @property
     def is_model_step(self):
-        return self._knew is not None
+        """
+        Get a flag indicating whether the current step is a model step.
+
+        Returns
+        -------
+        bool
+            Flag indicating whether the current step is a model step.
+        """
+        return self.knew is not None
 
     def fun(self, x):
+        """
+        Evaluate the objective function of the nonlinear optimization problem.
+
+        Parameters
+        ----------
+        x : array_like, shape (n,)
+            Point at which the objective function is to be evaluated.
+
+        Returns
+        -------
+        float
+            Value of the objective function of the nonlinear optimization
+            problem at `x`.
+        """
         fx = float(self._fun(x, *self._args))
         if self.disp:
             print(f'{self._fun.__name__}({x}) = {fx}.')
         return fx
 
     def cub(self, x):
+        """
+        Evaluate the nonlinear inequality constraint function of the nonlinear
+        optimization problem.
+
+        Parameters
+        ----------
+        x : array_like, shape (n,)
+            Point at which the constraint function is to be evaluated.
+
+        Returns
+        -------
+        numpy.ndarray, shape (mnlub,)
+            Value of the nonlinear inequality constraint function of the
+            nonlinear optimization problem at `x`.
+        """
         return self._eval_con(self._cub, x)
 
     def ceq(self, x):
+        """
+        Evaluate the nonlinear equality constraint function of the nonlinear
+        optimization problem.
+
+        Parameters
+        ----------
+        x : array_like, shape (n,)
+            Point at which the constraint function is to be evaluated.
+
+        Returns
+        -------
+        numpy.ndarray, shape (mnleq,)
+            Value of the nonlinear equality constraint function of the
+            nonlinear optimization problem at `x`.
+        """
         return self._eval_con(self._ceq, x)
 
     def model_obj(self, x):
+        """
+        Evaluate the objective function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the quadratic function is to be evaluated.
+
+        Returns
+        -------
+        float:
+            Value of the objective function of the model at `x`.
+        """
         return self._models.obj(x)
 
     def model_obj_grad(self, x):
+        """
+        Evaluate the gradient of the objective function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the gradient of the quadratic function is to be
+            evaluated.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Gradient of the objective function of the model at `x`.
+        """
         return self._models.obj_grad(x)
 
     def model_obj_hess(self):
+        """
+        Evaluate the Hessian matrix of the objective function of the model.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n, n):
+            Hessian matrix of the objective function of the model.
+        """
         return self._models.obj_hess()
 
     def model_obj_hessp(self, x):
+        """
+        Evaluate the product of the Hessian matrix of the objective function of
+        the model with any vector.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Vector to be left-multiplied by the Hessian matrix of the quadratic
+            function.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Value of the product of the Hessian matrix of the objective function
+            of the model with the vector `x`.
+        """
         return self._models.obj_hessp(x)
 
     def model_obj_curv(self, x):
+        """
+        Evaluate the curvature of the objective function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the curvature of the quadratic function is to be
+            evaluated.
+
+        Returns
+        -------
+        float
+            Curvature of the objective function of the model at `x`.
+        """
         return self._models.obj_curv(x)
 
     def model_obj_alt(self, x):
+        """
+        Evaluate the alternative objective function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the quadratic function is to be evaluated.
+
+        Returns
+        -------
+        float:
+            Value of the alternative objective function of the model at `x`.
+        """
         return self._models.obj_alt(x)
 
     def model_obj_alt_grad(self, x):
+        """
+        Evaluate the gradient of the alternative objective function of the
+        model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the gradient of the quadratic function is to be
+            evaluated.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Gradient of the alternative objective function of the model at `x`.
+        """
         return self._models.obj_alt_grad(x)
 
     def model_obj_alt_hess(self):
+        """
+        Evaluate the Hessian matrix of the alternative objective function of the
+        model.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n, n):
+            Hessian matrix of the alternative objective function of the model.
+        """
         return self._models.obj_alt_hess()
 
     def model_obj_alt_hessp(self, x):
+        """
+        Evaluate the product of the Hessian matrix of the alternative objective
+        function of the model with any vector.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Vector to be left-multiplied by the Hessian matrix of the quadratic
+            function.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Value of the product of the Hessian matrix of the alternative
+            objective function of the model with the vector `x`.
+        """
         return self._models.obj_alt_hessp(x)
 
     def model_obj_alt_curv(self, x):
+        """
+        Evaluate the curvature of the alternative objective function of the
+        model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the curvature of the quadratic function is to be
+            evaluated.
+
+        Returns
+        -------
+        float
+            Curvature of the alternative objective function of the model at `x`.
+        """
         return self._models.obj_alt_curv(x)
 
     def model_cub(self, x, i):
+        """
+        Evaluate an inequality constraint function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the quadratic function is to be evaluated.
+        i : int
+            Index of the inequality constraint to be considered.
+
+        Returns
+        -------
+        float:
+            Value of the `i`-th inequality constraint function of the model at
+            `x`.
+        """
         return self._models.cub(x, i)
 
     def model_cub_grad(self, x, i):
+        """
+        Evaluate the gradient of an inequality constraint function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the gradient of the quadratic function is to be
+            evaluated.
+        i : int
+            Index of the inequality constraint to be considered.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Gradient of the `i`-th inequality constraint function of the model
+            at `x`.
+        """
         return self._models.cub_grad(x, i)
 
     def model_cub_hess(self, i):
+        """
+        Evaluate the Hessian matrix of an inequality constraint function of the
+        model.
+
+        Parameters
+        ----------
+        i : int
+            Index of the inequality constraint to be considered.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n, n):
+            Hessian matrix of the `i`-th inequality constraint function of the
+            model.
+        """
         return self._models.cub_hess(i)
 
     def model_cub_hessp(self, x, i):
+        """
+        Evaluate the product of the Hessian matrix of an inequality constraint
+        function of the model with any vector.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Vector to be left-multiplied by the Hessian matrix of the quadratic
+            function.
+        i : int
+            Index of the inequality constraint to be considered.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Value of the product of the Hessian matrix of the `i`-th inequality
+            constraint function of the model with the vector `x`.
+        """
         return self._models.cub_hessp(x, i)
 
     def model_cub_curv(self, x, i):
+        """
+        Evaluate the curvature of an inequality constraint function of the
+        model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the curvature of the quadratic function is to be
+            evaluated.
+        i : int
+            Index of the inequality constraint to be considered.
+
+        Returns
+        -------
+        float
+            Curvature of the `i`-th inequality constraint function of the model
+            at `x`.
+        """
         return self._models.cub_curv(x, i)
 
     def model_cub_alt(self, x, i):
+        """
+        Evaluate an alternative inequality constraint function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the quadratic function is to be evaluated.
+        i : int
+            Index of the inequality constraint to be considered.
+
+        Returns
+        -------
+        float:
+            Value of the `i`-th alternative inequality constraint function of
+            the model at `x`.
+        """
         return self._models.cub_alt(x, i)
 
     def model_cub_alt_grad(self, x, i):
+        """
+        Evaluate the gradient of an alternative inequality constraint function
+        of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the gradient of the quadratic function is to be
+            evaluated.
+        i : int
+            Index of the inequality constraint to be considered.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Gradient of the `i`-th alternative inequality constraint function of
+            the model at `x`.
+        """
         return self._models.cub_alt_grad(x, i)
 
     def model_cub_alt_hess(self, i):
+        """
+        Evaluate the Hessian matrix of an alternative inequality constraint
+        function of the model.
+
+        Parameters
+        ----------
+        i : int
+            Index of the inequality constraint to be considered.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n, n):
+            Hessian matrix of the `i`-th alternative inequality constraint
+            function of the model.
+        """
         return self._models.cub_alt_hess(i)
 
     def model_cub_alt_hessp(self, x, i):
+        """
+        Evaluate the product of the Hessian matrix of an alternative inequality
+        constraint function of the model with any vector.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Vector to be left-multiplied by the Hessian matrix of the quadratic
+            function.
+        i : int
+            Index of the inequality constraint to be considered.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Value of the product of the Hessian matrix of the `i`-th alternative
+            inequality constraint function of the model with the vector `x`.
+        """
         return self._models.cub_alt_hessp(x, i)
 
     def model_cub_alt_curv(self, x, i):
+        """
+        Evaluate the curvature of an alternative inequality constraint function
+        of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the curvature of the quadratic function is to be
+            evaluated.
+        i : int
+            Index of the inequality constraint to be considered.
+
+        Returns
+        -------
+        float
+            Curvature of the `i`-th alternative inequality constraint function
+            of the model at `x`.
+        """
         return self._models.cub_alt_curv(x, i)
 
     def model_ceq(self, x, i):
+        """
+        Evaluate an equality constraint function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the quadratic function is to be evaluated.
+        i : int
+            Index of the equality constraint to be considered.
+
+        Returns
+        -------
+        float:
+            Value of the `i`-th equality constraint function of the model at
+            `x`.
+        """
         return self._models.ceq(x, i)
 
     def model_ceq_grad(self, x, i):
+        """
+        Evaluate the gradient of an equality constraint function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the gradient of the quadratic function is to be
+            evaluated.
+        i : int
+            Index of the equality constraint to be considered.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Gradient of the `i`-th equality constraint function of the model at
+            `x`.
+        """
         return self._models.ceq_grad(x, i)
 
     def model_ceq_hess(self, i):
+        """
+        Evaluate the Hessian matrix of an equality constraint function of the
+        model.
+
+        Parameters
+        ----------
+        i : int
+            Index of the equality constraint to be considered.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n, n):
+            Hessian matrix of the `i`-th equality constraint function of the
+            model.
+        """
         return self._models.ceq_hess(i)
 
     def model_ceq_hessp(self, x, i):
+        """
+        Evaluate the product of the Hessian matrix of an equality constraint
+        function of the model with any vector.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Vector to be left-multiplied by the Hessian matrix of the quadratic
+            function.
+        i : int
+            Index of the equality constraint to be considered.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Value of the product of the Hessian matrix of the `i`-th equality
+            constraint function of the model with the vector `x`.
+        """
         return self._models.ceq_hessp(x, i)
 
     def model_ceq_curv(self, x, i):
+        """
+        Evaluate the curvature of an equality constraint function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the curvature of the quadratic function is to be
+            evaluated.
+        i : int
+            Index of the equality constraint to be considered.
+
+        Returns
+        -------
+        float
+            Curvature of the `i`-th equality constraint function of the model at
+            `x`.
+        """
         return self._models.ceq_curv(x, i)
 
     def model_ceq_alt(self, x, i):
+        """
+        Evaluate an alternative equality constraint function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the quadratic function is to be evaluated.
+        i : int
+            Index of the equality constraint to be considered.
+
+        Returns
+        -------
+        float:
+            Value of the `i`-th alternative equality constraint function of the
+            model at `x`.
+        """
         return self._models.ceq_alt(x, i)
 
     def model_ceq_alt_grad(self, x, i):
+        """
+        Evaluate the gradient of an alternative equality constraint function of
+        the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the gradient of the quadratic function is to be
+            evaluated.
+        i : int
+            Index of the equality constraint to be considered.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Gradient of the `i`-th alternative equality constraint function of
+            the model at `x`.
+        """
         return self._models.ceq_alt_grad(x, i)
 
     def model_ceq_alt_hess(self, i):
+        """
+        Evaluate the Hessian matrix of an alternative equality constraint
+        function of the model.
+
+        Parameters
+        ----------
+        i : int
+            Index of the equality constraint to be considered.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n, n):
+            Hessian matrix of the `i`-th alternative equality constraint
+            function of the model.
+        """
         return self._models.ceq_alt_hess(i)
 
     def model_ceq_alt_hessp(self, x, i):
+        """
+        Evaluate the product of the Hessian matrix of an alternative equality
+        constraint function of the model with any vector.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Vector to be left-multiplied by the Hessian matrix of the quadratic
+            function.
+        i : int
+            Index of the equality constraint to be considered.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Value of the product of the Hessian matrix of the `i`-th alternative
+            equality constraint function of the model with the vector `x`.
+        """
         return self._models.ceq_alt_hessp(x, i)
 
     def model_ceq_alt_curv(self, x, i):
+        """
+        Evaluate the curvature of an alternative equality constraint function of
+        the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the curvature of the quadratic function is to be
+            evaluated.
+        i : int
+            Index of the equality constraint to be considered.
+
+        Returns
+        -------
+        float
+            Curvature of the `i`-th alternative equality constraint function of
+            the model at `x`.
+        """
         return self._models.ceq_alt_curv(x, i)
 
     def model_lag(self, x):
-        return self._models.lag(x, self._lmlub, self._lmleq, self._lmnlub,
-                                self._lmnleq)
+        """
+        Evaluate the Lagrangian function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the quadratic function is to be evaluated.
+
+        Returns
+        -------
+        float:
+            Value of the Lagrangian function of the model at `x`.
+        """
+        return self._models.lag(x, self.lmlub, self.lmleq, self.lmnlub,
+                                self.lmnleq)
 
     def model_lag_grad(self, x):
-        return self._models.lag_grad(x, self._lmlub, self._lmleq, self._lmnlub,
-                                     self._lmnleq)
+        """
+        Evaluate the gradient of Lagrangian function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the gradient of the quadratic function is to be
+            evaluated.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Gradient of the Lagrangian function of the model at `x`.
+        """
+        return self._models.lag_grad(x, self.lmlub, self.lmleq, self.lmnlub,
+                                     self.lmnleq)
 
     def model_lag_hess(self):
-        return self._models.lag_hess(self._lmnlub, self._lmnleq)
+        """
+        Evaluate the Hessian matrix of the Lagrangian function of the model.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n, n):
+            Hessian matrix of the Lagrangian function of the model.
+        """
+        return self._models.lag_hess(self.lmnlub, self.lmnleq)
 
     def model_lag_hessp(self, x):
-        r"""
-        Evaluate the product of the Hessian matrix of the Lagrangian function of
-        the model and ``x``.
         """
-        return self._models.lag_hessp(x, self._lmnlub, self._lmnleq)
+        Evaluate the product of the Hessian matrix of the Lagrangian function of
+        the model with any vector.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Vector to be left-multiplied by the Hessian matrix of the quadratic
+            function.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Value of the product of the Hessian matrix of the Lagrangian
+            function of the model with the vector `x`.
+        """
+        return self._models.lag_hessp(x, self.lmnlub, self.lmnleq)
+
+    def model_lag_curv(self, x):
+        """
+        Evaluate the curvature of the Lagrangian function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the curvature of the quadratic function is to be
+            evaluated.
+
+        Returns
+        -------
+        float
+            Curvature of the Lagrangian function of the model at `x`.
+        """
+        return self._models.lag_curv(x, self.lmnlub, self.lmnleq)
+
+    def model_lag_alt(self, x):
+        """
+        Evaluate the alternative Lagrangian function of the model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the quadratic function is to be evaluated.
+
+        Returns
+        -------
+        float:
+            Value of the alternative Lagrangian function of the model at `x`.
+        """
+        return self._models.lag_alt(x, self.lmlub, self.lmleq, self.lmnlub,
+                                    self.lmnleq)
+
+    def model_lag_alt_grad(self, x):
+        """
+        Evaluate the gradient of the alternative Lagrangian function of the
+        model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the gradient of the quadratic function is to be
+            evaluated.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Gradient of the alternative Lagrangian function of the model at `x`.
+        """
+        return self._models.lag_alt_grad(x, self.lmlub, self.lmleq, self.lmnlub,
+                                         self.lmnleq)
+
+    def model_lag_alt_hess(self):
+        """
+        Evaluate the Hessian matrix of the alternative Lagrangian function of
+        the model.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n, n):
+            Hessian matrix of the alternative Lagrangian function of the model.
+        """
+        return self._models.lag_alt_hess(self.lmnlub, self.lmnleq)
+
+    def model_lag_alt_hessp(self, x):
+        """
+        Evaluate the product of the Hessian matrix of the alternative Lagrangian
+        function of the model with any vector.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Vector to be left-multiplied by the Hessian matrix of the quadratic
+            function.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,):
+            Value of the product of the Hessian matrix of the alternative
+            Lagrangian function of the model with the vector `x`.
+        """
+        return self._models.lag_alt_hessp(x, self.lmnlub, self.lmnleq)
+
+    def model_lag_alt_curv(self, x):
+        """
+        Evaluate the curvature of the alternative Lagrangian function of the
+        model.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the curvature of the quadratic function is to be
+            evaluated.
+
+        Returns
+        -------
+        float
+            Curvature of the alternative Lagrangian function of the model at
+            `x`.
+        """
+        return self._models.lag_alt_curv(x, self.lmnlub, self.lmnleq)
 
     def set_default_options(self, n):
-        r"""
-        Set the default options of the solvers.
+        """
+        Set the default options for the solvers.
+
+        Parameters
+        ----------
+        n : int
+            Number of decision variables.
         """
         rhoend = getattr(self, 'rhoend', 1e-6)
         self._options.setdefault('rhobeg', max(1., rhoend))
@@ -455,8 +1560,20 @@ class TrustRegion:
         self._options.setdefault('debug', False)
 
     def check_options(self, n, stack_level=2):
-        r"""
-        Set the options passed to the solvers.
+        """
+        Ensure that the options are consistent, and modify them if necessary.
+
+        Parameters
+        ----------
+        n : int
+            Number of decision variables.
+        stack_level : int, optional
+            Stack level of the warning (the default is 2).
+
+        Warns
+        -----
+        RuntimeWarning
+            The options are inconsistent and modified.
         """
         # Ensure that the option 'npt' is in the required interval.
         npt_min = n + 2
@@ -485,6 +1602,14 @@ class TrustRegion:
             warnings.warn(message, RuntimeWarning, stacklevel=stack_level)
 
     def get_best_point(self):
+        """
+        Get the index of the optimal interpolation point.
+
+        Returns
+        -------
+        int
+            Index of the optimal interpolation point.
+        """
         kopt = self.kopt
         mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
         for k in range(self.npt):
@@ -497,12 +1622,24 @@ class TrustRegion:
         return kopt
 
     def prepare_trust_region_step(self):
+        """
+        Set the next iteration to a trust-region step.
+        """
         self._knew = None
 
     def prepare_model_step(self, delta):
-        r"""
-        Get the index of the further point from ``self.xopt`` if the
-        corresponding distance is more than ``delta``, -1 otherwise.
+        """
+        Set the next iteration to a model-step if necessary.
+
+        The method checks whether the furthest interpolation point from
+        ``self.xopt`` is more than the provided trust-region radius to set a
+        model-step. If such a point does not exist, the next iteration is a
+        trust-region step.
+
+        Parameters
+        ----------
+        delta : float
+            Trust-region radius.
         """
         dsq = np.sum((self.xpt - self.xopt[np.newaxis, :]) ** 2., axis=1)
         dsq[dsq <= delta ** 2.] = -np.inf
@@ -512,18 +1649,50 @@ class TrustRegion:
             self._knew = None
 
     def less_merit(self, mval1, rval1, mval2, rval2):
+        """
+        Indicates whether a point is better than another.
+
+        Parameters
+        ----------
+        mval1 : float
+            Merit value associated with the first point.
+        rval1 : float
+            Residual value associated with the first point.
+        mval2 : float
+            Merit value associated with the second point.
+        rval2 : float
+            Residual value associated with the second point.
+
+        Returns
+        -------
+        bool:
+            A flag indicating whether the first point is better than the other.
+        """
         eps = np.finfo(float).eps
         tol = 10. * eps * self.npt * max(1., abs(mval2))
         if mval1 < mval2:
             return True
-        elif max(self._penub, self._peneq) < tol:
+        elif max(self.penub, self.peneq) < tol:
+            # If the penalty coefficients are zero and if the merit values are
+            # equal, the optimality of the points is decided based on their
+            # residual values.
             if abs(mval1 - mval2) <= tol and rval1 < rval2:
                 return True
         return False
 
     def shift_origin(self, delta):
-        r"""
-        Update the shift of the origin if necessary.
+        """
+        Shift the origin of the calculations if necessary.
+
+        Although the shift of the origin in the calculations does not change
+        anything from a theoretical point of view, it is designed to tackle
+        numerical difficulties caused by ill-conditioned problems. If the method
+        is triggered, the origin is shifted to the best point so far.
+
+        Parameters
+        ----------
+        delta : float
+            Trust-region radius.
         """
         xoptsq = np.inner(self.xopt, self.xopt)
 
@@ -537,21 +1706,57 @@ class TrustRegion:
                 self.check_models()
 
     def update(self, step, **kwargs):
-        r"""
-        Update the model to include the trial point in the interpolation set.
         """
-        # Evaluate the objective function at the trial point.
+        Include a new point in the interpolation set.
+
+        When the new point is included in the interpolation set, the models of
+        the nonlinear optimization problems are updated.
+
+        Parameters
+        ----------
+        step : numpy.ndarray, shape (n,)
+            Step from ``self.xopt`` of the new point to include in the
+            interpolation set.
+
+        Returns
+        -------
+        mopt : float
+            Merit value of the new interpolation point.
+        ratio : float
+            Trust-region ratio associated with the new interpolation point.
+
+        Other Parameters
+        ----------------
+        lstol : float, optional
+            Tolerance on the approximate KKT conditions for the calculations of
+            the least-squares Lagrange multipliers (the default is
+            ``10 * eps * max(n, m) * max(1, max(abs(g)))``, where ``g`` is the
+            gradient of the current model of the objective function).
+
+        Raises
+        ------
+        RestartRequiredException
+            The iteration must be restarted because the index of the optimal
+            point among the interpolation set has changed.
+        """
+        # Evaluate the objective function, the nonlinear inequality constraint
+        # function, and the nonlinear equality constraint function at the trial
+        # point. The functions are defined in the space centered at the origin.
         xsav = np.copy(self.xopt)
         xnew = xsav + step
-        fx = self.fun(self._xbase + xnew)
-        cubx = self.cub(self._xbase + xnew)
-        ceqx = self.ceq(self._xbase + xnew)
+        fx = self.fun(self.xbase + xnew)
+        cubx = self.cub(self.xbase + xnew)
+        ceqx = self.ceq(self.xbase + xnew)
 
-        # Update the Lagrange multipliers and the penalty parameters.
+        # Update the Lagrange multipliers and the penalty parameters for the
+        # trust-region ratio to be well-defined.
         self.update_multipliers(**kwargs)
         ksav = self.kopt
         mx, mmx, mopt = self.update_penalty_coefficients(xnew, fx, cubx, ceqx)
         if ksav != self.kopt:
+            # When increasing the penalty parameters to make the trust-region
+            # ratio meaningful, the index of the optimal point changed. A
+            # trust-region iteration has to be entertained.
             self.prepare_trust_region_step()
             raise RestartRequiredException
 
@@ -562,40 +1767,45 @@ class TrustRegion:
         else:
             ratio = -1.
 
-        # Update the models of the problem. The step is updated to take into
-        # account the fact that the best point so far may have been updated when
-        # the penalty coefficients have been updated.
-        step += xsav - self.xopt
+        # Update the models of the problem.
         rx = self._models.resid(xnew, cubx, ceqx)
-        self._knew = self._models.update(step, fx, cubx, ceqx, self._knew)
+        self._knew = self._models.update(step, fx, cubx, ceqx, self.knew)
         if self.less_merit(mx, rx, mopt, self.maxcv):
-            self.kopt = self._knew
+            self.kopt = self.knew
             mopt = mx
         if self.debug:
             self.check_models()
         return mopt, ratio
 
     def update_multipliers(self, **kwargs):
-        r"""
-        Update the least-squares Lagrange multipliers.
+        """
+        Set the least-squares Lagrange multipliers.
+
+        Other Parameters
+        ----------------
+        lstol : float, optional
+            Tolerance on the approximate KKT conditions for the calculations of
+            the least-squares Lagrange multipliers (the default is
+            ``10 * eps * max(n, m) * max(1, max(abs(g)))``, where ``g`` is the
+            gradient of the current model of the objective function).
         """
         n = self.xopt.size
         if self.mlub + self.mnlub + self.mleq + self.mnleq > 0:
-            # Determine the matrix of the least-squares problem. The inequality
-            # multipliers corresponding to nonzero constraint values are set to
-            # zeros to satisfy the complementary slackness conditions.
+            # Determine the matrix of the least-squares problem. The Lagrange
+            # multipliers corresponding to nonzero inequality constraint values
+            # are zeroed to satisfy the complementary slackness conditions.
             eps = np.finfo(float).eps
             tol = 10. * eps * self.mlub * np.max(np.abs(self.bub), initial=1.)
             rub = np.dot(self.aub, self.xopt) - self.bub
             ilub = np.less_equal(np.abs(rub), tol)
             mlub = np.count_nonzero(ilub)
-            rub = self.coptub
-            tol = 10. * eps * self.mlub * np.max(np.abs(rub), initial=1.)
+            abs_rub = np.abs(self.coptub)
+            tol = 10. * eps * self.mlub * np.max(abs_rub, initial=1.)
             cub_jac = np.empty((self.mnlub, n), dtype=float)
             for i in range(self.mnlub):
                 cub_jac[i, :] = self.model_cub_grad(self.xopt, i)
                 cub_jac[i, :] -= self.model_cub_hessp(self.xopt, i)
-            inlub = np.less_equal(np.abs(rub), tol)
+            inlub = np.less_equal(abs_rub, tol)
             mnlub = np.count_nonzero(inlub)
             ceq_jac = np.empty((self.mnleq, n), dtype=float)
             for i in range(self.mnleq):
@@ -617,26 +1827,51 @@ class TrustRegion:
     def update_penalty_coefficients(self, xnew, fx, cubx, ceqx):
         mx, mmx = self(xnew, fx, cubx, ceqx, True)
         mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
+
+        # During trust-region step, the trust-region ratio has to be meaningful.
+        # Therefore, its denominator has to be positive.
         if not self.is_model_step and mmx > mopt:
             ksav = self.kopt
+
+            # If the index of the best interpolation point so far changes during
+            # when the penalty coefficients are increased, the iterations of the
+            # method must be restarted.
             while ksav == self.kopt and mmx > mopt:
-                if self._penub > 0.:
+                if self.penub > 0.:
                     self._penub *= 2.
                 elif self.mlub + self.mnlub > 0:
                     self._penub = 1.
-                if self._peneq > 0.:
+                if self.peneq > 0.:
                     self._peneq *= 2.
                 elif self.mleq + self.mnleq > 0:
                     self._peneq = 1.
+
+                # When the penalty coefficients are modified, the index of the
+                # best interpolation point so far may changed.
                 mx, mmx = self(xnew, fx, cubx, ceqx, True)
                 self.kopt = self.get_best_point()
                 mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
         return mx, mmx, mopt
 
     def reduce_penalty_coefficients(self):
+        """
+        Reduce the penalty coefficients if possible, to prevent overflows.
+
+        Notes
+        -----
+        The thresholds at which the penalty coefficients are set are empirical
+        and based on Equation (13) of [1]_.
+
+        References
+        ----------
+        .. [1] M. J. D. Powell. "A direct search optimization method that models
+           the objective and constraint functions by linear interpolation." In:
+           Advances in Optimization and Numerical Analysis. Ed. by S. Gomez and
+           J. P. Hennart. Dordrecht, NL: Springer, 1994, pp. 51--67.
+        """
         fmin = np.min(self.fval)
         fmax = np.max(self.fval)
-        if self._penub > 0.:
+        if self.penub > 0.:
             resid = np.dot(self.xpt, self.aub.T) - self.bub[np.newaxis, :]
             resid = np.c_[resid, self.cvalub]
             cmin = np.min(resid, axis=1, initial=0.)
@@ -648,7 +1883,7 @@ class TrustRegion:
                 self._penub = (fmax - fmin) / denom
             else:
                 self._penub = 0.
-        if self._peneq > 0.:
+        if self.peneq > 0.:
             resid = np.dot(self.xpt, self.aeq.T) - self.beq[np.newaxis, :]
             resid = np.c_[resid, self.cvaleq]
             cmin = np.min(resid, axis=1, initial=0.)
@@ -663,23 +1898,49 @@ class TrustRegion:
                 self._peneq = 0.
 
     def trust_region_step(self, delta, **kwargs):
-        r"""
-        Evaluate a Byrd-Omojokun-like trust-region step.
+        """
+        Evaluate a Byrd-Omojokun-like trust-region step from ``self.xopt``.
+
+        Parameters
+        ----------
+        delta : float
+            Trust-region radius.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            Trust-region step from ``self.xopt``.
+
+        Other Parameters
+        ----------------
+        actf : float, optional
+            Factor of proximity to the linear constraints (the default is 0.2).
+        nsf : float, optional
+            Shrinkage factor of the Byrd-Omojokun normal subproblem (the default
+            is 0.8).
+        bdtol : float, optional
+            Tolerance for comparisons on the bound constraints (the default is
+            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``, where the
+            values of ``xl`` and ``xu`` evolve to include the shift of the
+            origin).
+        lctol : float, optional
+            Tolerance for comparisons on the linear constraints (the default is
+            ``10 * eps * n * max(1, max(abs(bub)))``, where the values of
+            ``bub`` evolve to include the shift of the origin).
 
         Notes
         -----
         The trust-region constraint of the tangential subproblem is not centered
         if the normal step is nonzero. To cope with this difficulty, we use the
-        result in Equation (15.4.3) of [1]_.
+        result presented in Equation (15.4.3) of [1]_.
 
         References
         ----------
         .. [1] A. R. Conn, N. I. M. Gould, and Ph. L. Toint. Trust-Region
-        Methods. MPS-SIAM Ser. Optim. Philadelphia, PA, US: SIAM, 2009.
+           Methods. MPS-SIAM Ser. Optim. Philadelphia, PA, US: SIAM, 2009.
         """
-        # Define the tolerances to compare floating-point numbers with zero.
         eps = np.finfo(float).eps
-        tol = 1e1 * eps * self.xopt.size
+        tol = 10. * eps * self.xopt.size
 
         # Evaluate the normal step of the Byrd-Omojokun approach. The normal
         # step attempts to reduce the violations of the linear constraints
@@ -717,7 +1978,9 @@ class TrustRegion:
             ssq = np.inner(nstep, nstep)
 
         # Evaluate the tangential step of the trust-region subproblem, and set
-        # the global trust-region step. The tangential subproblem is feasible.
+        # the global trust-region step. Th tangential step attempts to reduce
+        # the objective function of the model without worsening the constraint
+        # violation provided by the normal step.
         if np.sqrt(ssq) <= tol * max(delta, 1.):
             nstep = np.zeros_like(self.xopt)
             delta *= np.sqrt(2.)
@@ -736,22 +1999,94 @@ class TrustRegion:
         return nstep + tstep
 
     def model_step(self, delta, **kwargs):
-        r"""
-        Evaluate a model-improvement step.
-        TODO: Give details.
         """
-        return self._models.improve_geometry(self._knew, delta, **kwargs)
+        Estimate a model-improvement step from ``self.xopt``.
+
+        Parameters
+        ----------
+        delta : float
+            Trust-region radius.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            Model-improvement step from ``self.xopt``.
+
+        Other Parameters
+        ----------------
+        bdtol : float, optional
+            Tolerance for comparisons on the bound constraints (the default is
+            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``, where the
+            values of ``xl`` and ``xu`` evolve to include the shift of the
+            origin).
+
+        Notes
+        -----
+        Two alternative steps are computed.
+
+            1. The first alternative step is selected on the lines that join
+               ``self.xopt`` to the other interpolation points that maximize a
+               lower bound on the denominator of the updating formula.
+            2. The second alternative is a constrained Cauchy step.
+
+        Among the two alternative steps, the method selects the one that leads
+        to the greatest denominator in Equation (2.12) of [1]_.
+
+        References
+        ----------
+        .. [1] M. J. D. Powell. "On updating the inverse of a KKT matrix." In:
+           Numerical Linear Algebra and Optimization. Ed. by Y. Yuan. Beijing,
+           CN: Science Press, 2004, pp. 56--78.
+        """
+        return self._models.improve_geometry(self.knew, delta, **kwargs)
 
     def reset_models(self):
+        """
+        Set the standard models of the objective function, the nonlinear
+        inequality constraint function, and the nonlinear equality constraint
+        function to the ones whose Hessian matrices are least in Frobenius norm.
+        """
         self._models.reset_models()
 
     def check_models(self, stack_level=2):
-        r"""
-        Check whether the models satisfy the interpolation conditions.
+        """
+        Check whether the evaluations of the quadratic models at the
+        interpolation points match their expected values.
+
+        Parameters
+        ----------
+        stack_level : int, optional
+            Stack level of the warning (the default is 2).
+
+        Warns
+        -----
+        RuntimeWarning
+            The evaluations of a quadratic function do not satisfy the
+            interpolation conditions up to a certain tolerance.
         """
         self._models.check_models(stack_level)
 
     def _eval_con(self, con, x):
+        """
+        Evaluate a constraint function.
+
+        Parameters
+        ----------
+        con : callable
+            Constraint function.
+
+                ``con(x, *args) -> numpy.ndarray, shape (mnl,)``
+
+            where ``x`` is an array with shape (n,) and `args` is a tuple of
+            parameters to specify the constraint function.
+        x : array_like, shape (n,)
+            Point at which the constraint function is to be evaluated.
+
+        Returns
+        -------
+        numpy.ndarray, shape (mnl,)
+            Value of the nonlinear constraint function at `x`.
+        """
         if con is not None:
             cx = np.atleast_1d(con(x, *self._args))
             if cx.dtype.kind in np.typecodes['AllInteger']:
@@ -1193,7 +2528,7 @@ class Models:
     def kopt(self):
         """
         Get the index of the interpolation point around which the Taylor
-        expansion of the quadratic models are defined.
+        expansions of the quadratic models are defined.
 
         Returns
         -------
@@ -1207,13 +2542,13 @@ class Models:
     def kopt(self, knew):
         """
         Set the index of the interpolation point around which the Taylor
-        expansion of the quadratic models are defined.
+        expansions of the quadratic models are defined.
 
         Parameters
         ----------
         knew : int
             New index of the interpolation point around which the Taylor
-            expansion of the quadratic models is to be defined.
+            expansions of the quadratic models is to be defined.
         """
         if self._kopt != knew:
             step = self.xpt[knew, :] - self.xopt
@@ -1246,14 +2581,14 @@ class Models:
         """
         Get the evaluation of the objective function of the nonlinear
         optimization problem at the interpolation point around which the Taylor
-        expansion of the quadratic models are defined.
+        expansions of the quadratic models are defined.
 
         Returns
         -------
         float
             Evaluation of the objective function of the nonlinear optimization
             problem at the interpolation point around which the Taylor
-            expansion of the quadratic models are defined.
+            expansions of the quadratic models are defined.
         """
         return self.fval[self.kopt]
 
@@ -1262,14 +2597,14 @@ class Models:
         """
         Get the residual associated with the constraints of the nonlinear
         optimization problem at the interpolation point around which the Taylor
-        expansion of the quadratic models are defined.
+        expansions of the quadratic models are defined.
 
         Returns
         -------
         float
             Residual associated with the constraints of the nonlinear
             optimization problem at the interpolation point around which the
-            Taylor expansion of the quadratic models are defined.
+            Taylor expansions of the quadratic models are defined.
         """
         return self.rval[self.kopt]
 
@@ -1278,14 +2613,14 @@ class Models:
         """
         Get the evaluation of the nonlinear inequality constraint function of
         the nonlinear optimization problem at the interpolation point around
-        which the Taylor expansion of the quadratic models are defined.
+        which the Taylor expansions of the quadratic models are defined.
 
         Returns
         -------
         numpy.ndarray, shape (mnlub,)
             Evaluation of the nonlinear inequality constraint function of the
             nonlinear optimization problem at the interpolation point around
-            which the Taylor expansion of the quadratic models are defined.
+            which the Taylor expansions of the quadratic models are defined.
         """
         return self.cvalub[self.kopt, :]
 
@@ -1294,14 +2629,14 @@ class Models:
         """
         Get the evaluation of the nonlinear equality constraint function of the
         nonlinear optimization problem at the interpolation point around which
-        the Taylor expansion of the quadratic models are defined.
+        the Taylor expansions of the quadratic models are defined.
 
         Returns
         -------
         numpy.ndarray, shape (mnleq,)
             Evaluation of the nonlinear equality constraint function of the
             nonlinear optimization problem at the interpolation point around
-            which the Taylor expansion of the quadratic models are defined.
+            which the Taylor expansions of the quadratic models are defined.
         """
         return self.cvaleq[self.kopt, :]
 
@@ -2405,7 +3740,7 @@ class Models:
 
         # Update finally the evaluations of the objective function, the
         # nonlinear inequality constraint function, and the nonlinear equality
-        # constraint function, the residuals of the interpolation points, the
+        # constraint function, the interpolation points, the residuals of the
         # interpolation points, and the models of the problem.
         xnew = self.xopt + step
         xold = np.copy(self.xpt[knew, :])
@@ -2419,8 +3754,8 @@ class Models:
         for i in range(self.mnleq):
             dceqx[i] = ceqx[i] - self.ceq(xnew, i)
         self._cvaleq[knew, :] = ceqx
-        self._rval[knew] = self.resid(knew)
         self._xpt[knew, :] = xnew
+        self._rval[knew] = self.resid(knew)
         self._obj.update(self.xpt, self.kopt, xold, self.bmat, self.zmat,
                          self.idz, knew, dfx)
         self._obj_alt = self.new_model(self.fval)
@@ -2504,7 +3839,8 @@ class Models:
         bdtol : float, optional
             Tolerance for comparisons on the bound constraints (the default is
             ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``, where the
-            values of `xl` and `xu` evolve to include the shift of the origin).
+            values of ``xl`` and ``xu`` evolve to include the shift of the
+            origin).
         """
         # Define the tolerances to compare floating-point numbers with zero.
         npt = self.xpt.shape[0]
@@ -2714,7 +4050,7 @@ class Quadratic:
         idz : int
             Number of nonpositive eigenvalues of the leading ``npt`` submatrix
             of the inverse KKT matrix of interpolation. Although its theoretical
-            value is always 0, it is designed to tackle frenumerical difficulties
+            value is always 0, it is designed to tackle numerical difficulties
             caused by ill-conditioned problems.
         fval : int or numpy.ndarray, shape (npt,)
             Evaluations associated with the interpolation points. An integer

@@ -177,7 +177,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
     Returns
     -------
-    result : OptimizeResult
+    OptimizeResult
         Result of the optimization method.
 
     Other Parameters
