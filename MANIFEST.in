@@ -2,3 +2,20 @@ include README.rst
 include LICENSE
 include MANIFEST.in
 include pyproject.toml
+
+# Add documentation to sdist-generated tarballs
+recursive-include docs *
+prune docs/build
+prune docs/source/**/generated
+
+# Exclude undesirable files
+global-exclude *.AppleDouble
+global-exclude *.DS_Store
+global-exclude *.LSOverride
+global-exclude *.egg-info
+global-exclude *.dll
+global-exclude *.dylib
+global-exclude *.o
+global-exclude *.pyc
+global-exclude *.pyd
+global-exclude *.so

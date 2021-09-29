@@ -94,6 +94,7 @@ def qr(a, overwrite_a=False, pivoting=False, check_finite=True):
     Q = np.eye(m, dtype=float)
     R = a if overwrite_a else np.copy(a)
     P = np.arange(n, dtype=int)
+    tiny = np.finfo(float).tiny
     for j in range(n):
         if pivoting:
             k = j + np.argmax(np.linalg.norm(R[j:, j:], axis=0))
@@ -101,9 +102,10 @@ def qr(a, overwrite_a=False, pivoting=False, check_finite=True):
             R[:, [j, k]] = R[:, [k, j]]
         for i in range(j + 1, m):
             cval, sval = R[j, j], R[i, j]
-            givens(Q, cval, sval, i, j, 1)
-            givens(R, cval, sval, i, j, 0)
-            R[i, j] = 0.
+            if abs(sval) > tiny * max(1., abs(cval)):
+                givens(Q, cval, sval, i, j, 1)
+                givens(R, cval, sval, i, j, 0)
+                R[i, j] = 0.
     if pivoting:
         return Q, R, P
     return Q, R

@@ -1,12 +1,35 @@
 import numpy as np
 
-from .models import TrustRegion
+from .optimize import TrustRegion
 from .utils import RestartRequiredException
 
 
 class OptimizeResult(dict):
     """
     Result structure of an optimization algorithm.
+
+    Attributes
+    ----------
+    x : numpy.ndarray, shape (n,)
+        Solution point.
+    success : bool
+        Flag indicating whether the solver terminated successfully.
+    status : int
+        Termination status of the solver.
+    message : str
+        Description of the termination status.
+    fun : float
+        Value of the objective function at the solution point.
+    jac : numpy.ndarray, shape (n,)
+        Approximation of the gradient of the objective function, based
+        on undetermined interpolation, at the solution point.
+    nfev : int
+        Number of function evaluations.
+    nit : int
+        Number of iterations performed by the solver.
+    maxcv : float
+        Maximum constraint violation of the solution point. It is set
+        only if the problem admits at least one constraint.
     """
 
     def __dir__(self):
@@ -106,8 +129,12 @@ class OptimizeResult(dict):
 def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
              beq=None, cub=None, ceq=None, options=None, **kwargs):
     """
-    Minimize a real-valued function subject to linear equality and inequality
-    constraints using a derivative-free trust-region SQP method.
+    Minimize a real-valued function subject to bound, linear inequality,
+    linear equality, nonlinear inequality, and nonlinear equality constraints
+    using a derivative-free trust-region SQP method.
+
+    Although the solver may tackle infeasible points (including the initial
+    guess), the bounds constraints are always respected.
 
     Parameters
     ----------
@@ -121,96 +148,109 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     x0 : array_like, shape (n,)
         Initial guess.
     args : tuple, optional
-        Parameters to pass to the objective function.
+        Parameters to forward to the objective, the nonlinear inequality
+        constraint, and the nonlinear equality constraint functions.
     xl : array_like, shape (n,), optional
-        Lower-bound constraints on the decision variables.
+        Lower-bound constraints on the decision variables. Use ``-numpy.inf`` to
+        disable the bounds on some variables.
     xu : array_like, shape (n,), optional
-        Upper-bound constraints on the decision variables.
-    Aub : array_like, shape (mub, n), optional
+        Upper-bound constraints on the decision variables. Use ``numpy.inf`` to
+        disable the bounds on some variables.
+    Aub : array_like, shape (mlub, n), optional
         Jacobian matrix of the linear inequality constraints.
-    bub : array_like, shape (mub,), optional
+    bub : array_like, shape (mlub,), optional
         Right-hand side vector of the linear inequality constraints
         ``Aub @ x <= bub``, where ``x`` has the same size than `x0`.
-    Aeq : array_like, shape (meq, n), optional
+    Aeq : array_like, shape (mleq, n), optional
         Jacobian matrix of the linear equality constraints.
-    beq : array_like, shape (meq,), optional
+    beq : array_like, shape (mleq,), optional
         Right-hand side vector of the linear equality constraints
         `Aeq @ x = beq`, where ``x`` has the same size than `x0`.
     cub : callable
         Nonlinear inequality constraint function ``ceq(x, *args) <= 0``.
 
-            ``cub(x, *args) -> array_like, shape (TODO,)``
+            ``cub(x, *args) -> array_like, shape (mnlub,)``
 
         where ``x`` is an array with shape (n,) and `args` is a tuple of
         parameters to pass to the constraint function.
     ceq : callable
         Nonlinear equality constraint function ``ceq(x, *args) = 0``.
 
-            ``ceq(x, *args) -> array_like, shape (TODO,)``
+            ``ceq(x, *args) -> array_like, shape (mnleq,)``
 
         where ``x`` is an array with shape (n,) and `args` is a tuple of
         parameters to pass to the constraint function.
     options : dict, optional
-        Options to pass to the solver. Accepted options are:
+        Options to forward to the solver. Accepted options are:
 
-            rhobeg : float
-                Initial trust-region radius.
-                Default is 1.
-            rhoend : float
-                Final trust-region radius.
-                Default is 1e-6.
-            npt : int
-                Number of interpolation points.
-                Default is ``2 * n + 1``.
-            maxfev : int
-                Maximum number of function evaluations.
-                Default is ``500 * n``.
-            target : float
-                Target value of the objective function.
-                Default is ``-numpy.inf``.
-            disp : bool
-                Whether to print information on the execution.
-                Default is False.
-            debug : bool
-                Whether to make debugging tests during the execution.
-                Default is False.
+            rhobeg : float, optional
+                Initial trust-region radius (the default is 1).
+            rhoend : float, optional
+                Final trust-region radius (the default is 1e-6).
+            npt : int, optional
+                Number of interpolation points for the objective and constraint
+                models (the default is ``2 * n + 1``).
+            maxfev : int, optional
+                Upper bound on the number of objective and constraint function
+                evaluations (the default is ``500 * n``).
+            target : float, optional
+                Target value on the objective function (the default is
+                ``-numpy.inf``). If the solver encounters a feasible point at
+                which the objective function evaluations is below the target
+                value, then the computations are stopped.
+            disp : bool, optional
+                Whether to print pieces of information on the execution of the
+                solver (the default is False).
+            debug : bool, optional
+                Whether to make debugging tests during the execution, which is
+                not recommended in production (the default is False).
 
     Returns
     -------
     OptimizeResult
-        Result of the optimization method.
+        Result of the optimization solver. Attributes are:
+
+            x : numpy.ndarray, shape (n,)
+                Solution point.
+            success : bool
+                Flag indicating whether the solver terminated successfully.
+            status : int
+                Termination status of the solver.
+            message : str
+                Description of the termination status.
+            fun : float
+                Value of the objective function at the solution point.
+            jac : numpy.ndarray, shape (n,)
+                Approximation of the gradient of the objective function, based
+                on undetermined interpolation, at the solution point.
+            nfev : int
+                Number of function evaluations.
+            nit : int
+                Number of iterations performed by the solver.
+            maxcv : float
+                Maximum constraint violation of the solution point. It is set
+                only if the problem admits at least one constraint.
 
     Other Parameters
     ----------------
     actf : float, optional
-        Factor of proximity to the linear constraints.
-        Default is 0.2.
+        Factor of proximity to the linear constraints (the default is 0.2).
     nsf : float, optional
-        Shrinkage factor of the Byrd-Omojokun normal subproblem.
-        Default is 0.8.
+        Shrinkage factor of the Byrd-Omojokun-like normal subproblem (the
+        default is 0.8).
     bdtol : float, optional
-        Tolerance for comparisons on the bound constraints.
-        Default is ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``. Note
-        that the values of `xl` and `xu` evolve to include the shift of the
-        origin, so that the tolerance may vary from an iteration to another.
+        Tolerance for comparisons on the bound constraints (the default is
+        ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``, where the values
+        of ``xl`` and ``xu`` evolve to include the shift of the origin).
     lctol : float, optional
-        Tolerance for comparisons on the linear constraints.
-        Default is ``10 * eps * n * max(1, max(abs(bub)))``. Note that the value
-        of `bub` evolves to include the shift of the origin, so that the
-        tolerance may vary from an iteration to another.
+        Tolerance for comparisons on the linear constraints (the default is
+        ``10 * eps * n * max(1, max(abs(bub)))``, where the values of ``bub``
+        evolve to include the shift of the origin).
     lstol : float, optional
-        Tolerance on the approximate KKT conditions.
-        Default is ``10 * eps * max(n, m) * max(1, max(abs(g)))``, where ``g``
-        is the gradient of the current model of the objective function, so that
-        the tolerance may vary from an iteration to another.
-
-    Notes
-    -----
-    TODO
-
-    References
-    ----------
-    TODO
+        Tolerance on the approximate KKT conditions for the calculations of the
+        least-squares Lagrange multipliers (the default is
+        ``10 * eps * max(n, m) * max(1, max(abs(g)))``, where ``g`` is the
+        gradient of the current model of the objective function).
     """
     # Build the initial models of the optimization problem.
     exit_status = 0

@@ -72,7 +72,7 @@ class TrustRegion:
                     Final trust-region radius (the default is 1e-6).
                 npt : int, optional
                     Number of interpolation points for the objective and
-                    constraint models(the default is ``2 * n + 1``).
+                    constraint models (the default is ``2 * n + 1``).
                 maxfev : int, optional
                     Upper bound on the number of objective and constraint
                     function evaluations (the default is ``500 * n``).
@@ -1752,7 +1752,7 @@ class TrustRegion:
         # trust-region ratio to be well-defined.
         self.update_multipliers(**kwargs)
         ksav = self.kopt
-        mx, mmx, mopt = self.update_penalty_coefficients(xnew, fx, cubx, ceqx)
+        mx, mmx, mopt = self.update_penalty_coefficients(step, fx, cubx, ceqx)
         if ksav != self.kopt:
             # When increasing the penalty parameters to make the trust-region
             # ratio meaningful, the index of the optimal point changed. A
@@ -1824,7 +1824,40 @@ class TrustRegion:
             self._lmleq = lm[mlub + mnlub:mlub + mnlub + self.mleq]
             self._lmnleq = lm[mlub + mnlub + self.mleq:]
 
-    def update_penalty_coefficients(self, xnew, fx, cubx, ceqx):
+    def update_penalty_coefficients(self, step, fx, cubx, ceqx):
+        """
+        Increase the penalty coefficients.
+
+        The penalty coefficients are increased to make the trust-region ratio
+        meaningful. The increasing process of the penalty coefficients may be
+        prematurely stop if the index of the best point so far changes.
+
+        Parameters
+        ----------
+        step : numpy.ndarray, shape (n,)
+            Trial step from ``self.xopt``.
+        fx : float
+            Value of the objective function at ``self.xopt + step``.
+        cubx : numpy.ndarray, shape (mnlub,)
+            Value of the nonlinear inequality constraint function at
+            ``self.xopt + step``.
+        ceqx : numpy.ndarray, shape (mnleq,)
+            Value of the nonlinear equality constraint function at
+            ``self.xopt + step``.
+
+        Returns
+        -------
+        mx : float
+            Value of the merit function at ``self.xopt + step``, evaluated on
+            the nonlinear optimization problem.
+        mmx : float
+            Value of the merit function at ``self.xopt + step``, evaluated on
+            the different models.
+        mopt : float
+            Value of the merit function at ``self.xopt``, evaluated on the
+            nonlinear optimization problem.
+        """
+        xnew = self.xopt + step
         mx, mmx = self(xnew, fx, cubx, ceqx, True)
         mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
 
@@ -1916,8 +1949,8 @@ class TrustRegion:
         actf : float, optional
             Factor of proximity to the linear constraints (the default is 0.2).
         nsf : float, optional
-            Shrinkage factor of the Byrd-Omojokun normal subproblem (the default
-            is 0.8).
+            Shrinkage factor of the Byrd-Omojokun-like normal subproblem (the
+            default is 0.8).
         bdtol : float, optional
             Tolerance for comparisons on the bound constraints (the default is
             ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``, where the

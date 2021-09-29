@@ -58,6 +58,7 @@ cover/
 
 # Sphinx documentation
 docs/_build/
+docs/source/**/generated/
 
 # PyBuilder
 .pybuilder/
@@ -120,8 +121,8 @@ cmake-build-*/
 
 ### macOS
 # General
-.DS_Store
 .AppleDouble
+.DS_Store
 .LSOverride
 
 # Files that might appear in the root of a volume
