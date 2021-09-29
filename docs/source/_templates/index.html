@@ -1,0 +1,61 @@
+{%- extends "layout.html" %}
+
+{% set title = _('Documentation') %}
+
+{% block body %}
+<h1>{{ docstitle|e }}</h1>
+
+<p>Welcome! This is the documentation for {{ project|e }} v{{ release|e }}.</p>
+
+<h2>Algorithms</h2>
+
+<table class="contentstable">
+    <tr>
+        <td class="w-50">
+            <p class="biglink">
+                <a class="biglink" href="{{ pathto('algo/linalg') }}">Linear algebra</a><br/>
+                <span class="linkdescr">How to solve the subproblems</span>
+            </p>
+        </td>
+    </tr>
+</table>
+
+<h2>API documentation</h2>
+
+<table class="contentstable">
+    <tr>
+        <td class="w-50">
+            <p class="biglink">
+                <a class="biglink" href="{{ pathto('refs/optimize') }}">Optimization framework</a><br/>
+                <span class="linkdescr">Minimization of real-valued nonlinear functions</span>
+            </p>
+            <p class="biglink">
+                <a class="biglink" href="{{ pathto('refs/linalg') }}">Linear algebra</a><br/>
+                <span class="linkdescr">Subproblem solvers</span>
+            </p>
+        </td>
+    </tr>
+</table>
+
+<h2>Meta information</h2>
+
+<table class="contentstable">
+    <tr>
+        <td class="w-50">
+            <p class="biglink"><a class="biglink" href="{{ pathto('bugs') }}">Reporting bugs</a></p>
+        </td>
+        <td class="w-50">
+            <p class="biglink"><a class="biglink" href="{{ pathto('license') }}">License of {{ project|e }}</a></p>
+        </td>
+    </tr>
+</table>
+
+<h2>Acknowledgements</h2>
+
+<p>
+    The development of {{ project|e }} is funded by the
+    <a href="https://www.ugc.edu.hk/eng/rgc/">Research Grants Council</a> of Hong Kong, under the
+    <a href="https://cerg1.ugc.edu.hk/hkpfs/index.html">Hong Kong Ph.D. Fellowship Scheme</a>
+    (ref. no. PF18-24698), and the Hong Kong Polytechnic University.
+</p>
+{% endblock %}
