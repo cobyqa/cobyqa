@@ -404,10 +404,10 @@ class TrustRegion:
         """
         Index of the interpolation point to be removed from the interpolation
         set.
-        
+
         It is set only during model steps. Therefore, if set to None, the
         current step is a trust-region step.
-        
+
         Returns
         -------
         int
@@ -617,7 +617,7 @@ class TrustRegion:
         """
         Index of the best interpolation point so far, corresponding to the point
         around which the Taylor expansions of the quadratic models are defined.
-        
+
         Returns
         -------
         int
@@ -1792,13 +1792,11 @@ class TrustRegion:
             cub_jac = np.empty((self.mnlub, n), dtype=float)
             for i in range(self.mnlub):
                 cub_jac[i, :] = self.model_cub_grad(self.xopt, i)
-                cub_jac[i, :] -= self.model_cub_hessp(self.xopt, i)
             inlub = np.less_equal(abs_rub, tol)
             mnlub = np.count_nonzero(inlub)
             ceq_jac = np.empty((self.mnleq, n), dtype=float)
             for i in range(self.mnleq):
                 ceq_jac[i, :] = self.model_ceq_grad(self.xopt, i)
-                ceq_jac[i, :] -= self.model_ceq_hessp(self.xopt, i)
             A = np.r_[self.aub[ilub, :], cub_jac[inlub, :], self.aeq, ceq_jac].T
 
             # Determine the least-squares Lagrange multipliers that have not
@@ -1977,8 +1975,6 @@ class TrustRegion:
         for i in range(self.mnlub):
             lhs = self.model_cub_grad(self.xopt, i)
             rhs = np.inner(self.xopt, lhs) - self.coptub[i]
-            lhs -= self.model_cub_hessp(self.xopt, i)
-            rhs -= .5 * self.model_cub_curv(self.xopt, i)
             aub = np.vstack([aub, lhs])
             bub = np.r_[bub, rhs]
         aeq = np.copy(self.aeq)
@@ -1986,8 +1982,6 @@ class TrustRegion:
         for i in range(self.mnleq):
             lhs = self.model_ceq_grad(self.xopt, i)
             rhs = np.inner(self.xopt, lhs) - self.copteq[i]
-            lhs -= self.model_ceq_hessp(self.xopt, i)
-            rhs -= .5 * self.model_ceq_curv(self.xopt, i)
             aeq = np.vstack([aeq, lhs])
             beq = np.r_[beq, rhs]
         if mc == 0:

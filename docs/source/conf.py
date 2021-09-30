@@ -36,6 +36,7 @@ extensions = [
     'numpydoc',
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.mathjax',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -103,7 +104,39 @@ latex_documents = [
 ]
 
 latex_elements = {
-    'fontenc': r'\usepackage[LGR,T1]{fontenc}'
+    'fontenc': r'\usepackage[LGR,T1]{fontenc}',
+    'preamble': r'''
+\usepackage{dsfont}
+
+% Mathematical constants, sets, and notations
+\def\eu{\ensuremath{\mathrm{e}}}
+\def\iu{\ensuremath{\mathrm{i}}}
+\def\du{\ensuremath{\mathrm{d}}}
+\def\C{\ensuremath{\mathds{C}}}
+\def\N{\ensuremath{\mathds{N}}}
+\def\Q{\ensuremath{\mathds{Q}}}
+\def\R{\ensuremath{\mathds{R}}}
+\def\Z{\ensuremath{\mathds{Z}}}
+\def\sft{\ensuremath{\mathsf{T}}}
+
+% Dedicated mathematical macros
+\newcommand{\dv}{x}
+\newcommand{\icon}{i}
+\newcommand{\iiter}{k}
+\newcommand{\lmv}{\lambda}
+\newcommand{\nv}{n}
+\newcommand{\tsv}{d}
+
+\newcommand{\bl}{l}
+\newcommand{\bu}{u}
+\newcommand{\con}[1][\icon]{c_{#1}}
+\newcommand{\lag}{\mathcal{L}}
+\newcommand{\meq}{n_{\scriptscriptstyle\seq}}
+\newcommand{\mub}{n_{\scriptscriptstyle\sub}}
+\newcommand{\obj}{f}
+\newcommand{\seq}{\mathcal{E}}
+\newcommand{\sub}{\mathcal{I}}
+    ''',
 }
 
 # Image to place at the top of the title page.
@@ -125,4 +158,42 @@ autosummary_generate = True
 intersphinx_mapping = {
     'python': ('https://docs.python.org/dev', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
+}
+
+
+# -- Math support for HTML outputs --------------------------------------------
+
+mathjax3_config = {
+    'tex': {
+        'macros': {
+            # Mathematical constants, sets, and notations
+            'eu': r'{\mathrm{e}}',
+            'iu': r'{\mathrm{i}}',
+            'du': r'{\mathrm{d}}',
+            'C': r'{\mathbb{C}}',
+            'N': r'{\mathbb{N}}',
+            'Q': r'{\mathbb{Q}}',
+            'R': r'{\mathbb{R}}',
+            'Z': r'{\mathbb{Z}}',
+            'sft': r'{\mathsf{T}}',
+
+            # Dedicated mathematical macros
+            'dv': '{x}',
+            'icon': '{i}',
+            'iiter': '{k}',
+            'lmv': r'{\lambda}',
+            'nv': '{n}',
+            'stv': '{d}',
+
+            'bl': '{l}',
+            'bu': '{u}',
+            'con': [r'{c_{#1}}', 1, '\icon'],
+            'lag': r'{\mathcal{L}}',
+            'meq': '{n_{\scriptscriptstyle\seq}}',
+            'mub': '{n_{\scriptscriptstyle\sub}}',
+            'obj': '{f}',
+            'seq': r'{\mathcal{E}}',
+            'sub': r'{\mathcal{I}}',
+        }
+    }
 }

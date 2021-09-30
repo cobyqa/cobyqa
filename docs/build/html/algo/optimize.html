@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Description of the Algorithms &#8212; COBYQA v1.0.dev0 Manual</title>
+    <title>Optimization solver &#8212; COBYQA v1.0.dev0 Manual</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet" />
   <link href="../_static/css/index.c5995385ac14fb8791e8eb36b4908be2.css" rel="stylesheet" />
@@ -31,11 +31,13 @@
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>window.MathJax = {"tex": {"macros": {"eu": "{\\mathrm{e}}", "iu": "{\\mathrm{i}}", "du": "{\\mathrm{d}}", "C": "{\\mathbb{C}}", "N": "{\\mathbb{N}}", "Q": "{\\mathbb{Q}}", "R": "{\\mathbb{R}}", "Z": "{\\mathbb{Z}}", "sft": "{\\mathsf{T}}", "dv": "{x}", "icon": "{i}", "iiter": "{k}", "lmv": "{\\lambda}", "nv": "{n}", "stv": "{d}", "bl": "{l}", "bu": "{u}", "con": ["{c_{#1}}", 1, "\\icon"], "lag": "{\\mathcal{L}}", "meq": "{n_{\\scriptscriptstyle\\seq}}", "mub": "{n_{\\scriptscriptstyle\\sub}}", "obj": "{f}", "seq": "{\\mathcal{E}}", "sub": "{\\mathcal{I}}"}}}</script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Optimization solver" href="optimize.html" />
-    <link rel="prev" title="COBYQA Documentation" href="../index.html" />
+    <link rel="next" title="Linear Algebra" href="linalg.html" />
+    <link rel="prev" title="Description of the Algorithms" href="index.html" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="en" />
@@ -73,7 +75,7 @@
       <div class="navbar-center-item">
         <ul id="navbar-main-elements" class="navbar-nav">
     <li class="toctree-l1 current active nav-item">
- <a class="current reference internal nav-link" href="#">
+ <a class="reference internal nav-link" href="index.html">
   Algorithms
  </a>
 </li>
@@ -119,9 +121,9 @@
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
   <div class="bd-toc-item active">
-    <ul class="nav bd-sidenav">
- <li class="toctree-l1">
-  <a class="reference internal" href="optimize.html">
+    <ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
    Optimization solver
   </a>
  </li>
@@ -144,9 +146,19 @@
               
               <div class="toc-item">
                 
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
 
 <nav id="bd-toc-nav">
-    
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#statement-of-the-problem">
+   Statement of the problem
+  </a>
+ </li>
+</ul>
+
 </nav>
               </div>
               
@@ -166,24 +178,31 @@
               
               <div>
                 
-  <div class="section" id="description-of-the-algorithms">
-<span id="algo"></span><h1>Description of the Algorithms<a class="headerlink" href="#description-of-the-algorithms" title="Permalink to this headline">¶</a></h1>
-<p>This page presents the framework of the method.</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="optimize.html">Optimization solver</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="optimize.html#statement-of-the-problem">Statement of the problem</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="linalg.html">Linear Algebra</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="linalg.altmov.html">Geometry improvement of the interpolation set</a></li>
-<li class="toctree-l2"><a class="reference internal" href="linalg.bvtcg.html">Bound constrained truncated conjugate gradient</a></li>
-<li class="toctree-l2"><a class="reference internal" href="linalg.cpqp.html">Convex piecewise quadratic programming</a></li>
-<li class="toctree-l2"><a class="reference internal" href="linalg.lctcg.html">Linear constrained truncated conjugate gradient</a></li>
-<li class="toctree-l2"><a class="reference internal" href="linalg.nnls.html">Nonnegative least squares</a></li>
-</ul>
-</li>
-</ul>
+  <div class="section" id="optimization-solver">
+<span id="optimize"></span><h1>Optimization solver<a class="headerlink" href="#optimization-solver" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="statement-of-the-problem">
+<h2>Statement of the problem<a class="headerlink" href="#statement-of-the-problem" title="Permalink to this headline">¶</a></h2>
+<p>We are interested in nonlinear constrained optimization problems of the form</p>
+<div class="math notranslate nohighlight" id="equation-nlc">
+<span class="eqno">(1)<a class="headerlink" href="#equation-nlc" title="Permalink to this equation">¶</a></span>\[\begin{split}\begin{array}{ll}
+    \min        &amp; \quad \obj(\dv)\\
+    \text{s.t.} &amp; \quad \bl \le \dv \le \bu,\\
+                &amp; \quad \con(\dv) \le 0, ~ \icon \in \sub,\\
+                &amp; \quad \con(\dv) = 0, ~ \icon \in \seq.
+\end{array}\end{split}\]</div>
+<p>where the <em>objective function</em> <span class="math notranslate nohighlight">\(\obj\)</span> and the <em>constraint functions</em>
+<span class="math notranslate nohighlight">\(\con\)</span>, with <span class="math notranslate nohighlight">\(\icon \in \sub \cup \seq\)</span>, are real-valued functions
+on <span class="math notranslate nohighlight">\(\R^{\nv}\)</span>, and <span class="math notranslate nohighlight">\(\bl \in \R^{\nv}\)</span> and <span class="math notranslate nohighlight">\(\bu \in \R^{\nv}\)</span>
+with <span class="math notranslate nohighlight">\(\bl &lt; \bu\)</span> are respectively referred to as the <em>upper bound</em> and
+<em>lower bound</em> on the <em>decision variable</em> <span class="math notranslate nohighlight">\(\dv \in \R^{\nv}\)</span>.
+We denote the cardinal numbers of <span class="math notranslate nohighlight">\(\sub\)</span> and <span class="math notranslate nohighlight">\(\seq\)</span> respectively
+<span class="math notranslate nohighlight">\(\mub\)</span> and <span class="math notranslate nohighlight">\(\meq\)</span>.</p>
+<p>The Lagrangian function <span class="math notranslate nohighlight">\(\lag \colon \R^n \times \R^{\mub + \meq} \to \R\)</span>
+for problem <a class="reference internal" href="#equation-nlc">(1)</a> is given by</p>
+<div class="math notranslate nohighlight" id="equation-lag">
+<span class="eqno">(2)<a class="headerlink" href="#equation-lag" title="Permalink to this equation">¶</a></span>\[\lag(\dv, \lmv) = \obj(\dv) + \sum_{\icon \in \sub \cup \seq} \lmv_{\icon}
+\con(\dv),\]</div>
+<p>where <span class="math notranslate nohighlight">\(\lmv \in \R^{\mub + \meq}\)</span> is referred to as the <em>dual variable</em>.</p>
 </div>
 </div>
 
@@ -193,8 +212,8 @@
               
               <div class='prev-next-bottom'>
                 
-    <a class='left-prev' id="prev-link" href="../index.html" title="previous page">COBYQA Documentation</a>
-    <a class='right-next' id="next-link" href="optimize.html" title="next page">Optimization solver</a>
+    <a class='left-prev' id="prev-link" href="index.html" title="previous page">Description of the Algorithms</a>
+    <a class='right-next' id="next-link" href="linalg.html" title="next page">Linear Algebra</a>
 
               </div>
               

@@ -70,6 +70,37 @@
 \setcounter{tocdepth}{1}
 
 
+\usepackage{dsfont}
+
+% Mathematical constants, sets, and notations
+\def\eu{\ensuremath{\mathrm{e}}}
+\def\iu{\ensuremath{\mathrm{i}}}
+\def\du{\ensuremath{\mathrm{d}}}
+\def\C{\ensuremath{\mathds{C}}}
+\def\N{\ensuremath{\mathds{N}}}
+\def\Q{\ensuremath{\mathds{Q}}}
+\def\R{\ensuremath{\mathds{R}}}
+\def\Z{\ensuremath{\mathds{Z}}}
+\def\sft{\ensuremath{\mathsf{T}}}
+
+% Dedicated mathematical macros
+\newcommand{\dv}{x}
+\newcommand{\icon}{i}
+\newcommand{\iiter}{k}
+\newcommand{\lmv}{\lambda}
+\newcommand{\nv}{n}
+\newcommand{\tsv}{d}
+
+\newcommand{\bl}{l}
+\newcommand{\bu}{u}
+\newcommand{\con}[1][\icon]{c_{#1}}
+\newcommand{\lag}{\mathcal{L}}
+\newcommand{\meq}{n_{\scriptscriptstyle\seq}}
+\newcommand{\mub}{n_{\scriptscriptstyle\sub}}
+\newcommand{\obj}{f}
+\newcommand{\seq}{\mathcal{E}}
+\newcommand{\sub}{\mathcal{I}}
+    
 
 \title{COBYQA Reference}
 \date{September 30, 2021}
@@ -90,6 +121,41 @@
 
 \sphinxAtStartPar
 This page presents the framework of the method.
+
+
+\chapter{Optimization solver}
+\label{\detokenize{algo/optimize:optimization-solver}}\label{\detokenize{algo/optimize:optimize}}\label{\detokenize{algo/optimize::doc}}
+
+\section{Statement of the problem}
+\label{\detokenize{algo/optimize:statement-of-the-problem}}
+\sphinxAtStartPar
+We are interested in nonlinear constrained optimization problems of the form
+\begin{equation}\label{equation:algo/optimize:nlc}
+\begin{split}\begin{array}{ll}
+    \min        & \quad \obj(\dv)\\
+    \text{s.t.} & \quad \bl \le \dv \le \bu,\\
+                & \quad \con(\dv) \le 0, ~ \icon \in \sub,\\
+                & \quad \con(\dv) = 0, ~ \icon \in \seq.
+\end{array}\end{split}
+\end{equation}
+\sphinxAtStartPar
+where the \sphinxstyleemphasis{objective function} \(\obj\) and the \sphinxstyleemphasis{constraint functions}
+\(\con\), with \(\icon \in \sub \cup \seq\), are real\sphinxhyphen{}valued functions
+on \(\R^{\nv}\), and \(\bl \in \R^{\nv}\) and \(\bu \in \R^{\nv}\)
+with \(\bl < \bu\) are respectively referred to as the \sphinxstyleemphasis{upper bound} and
+\sphinxstyleemphasis{lower bound} on the \sphinxstyleemphasis{decision variable} \(\dv \in \R^{\nv}\).
+We denote the cardinal numbers of \(\sub\) and \(\seq\) respectively
+\(\mub\) and \(\meq\).
+
+\sphinxAtStartPar
+The Lagrangian function \(\lag \colon \R^n \times \R^{\mub + \meq} \to \R\)
+for problem \eqref{equation:algo/optimize:nlc} is given by
+\begin{equation}\label{equation:algo/optimize:lag}
+\begin{split}\lag(\dv, \lmv) = \obj(\dv) + \sum_{\icon \in \sub \cup \seq} \lmv_{\icon}
+\con(\dv),\end{split}
+\end{equation}
+\sphinxAtStartPar
+where \(\lmv \in \R^{\mub + \meq}\) is referred to as the \sphinxstyleemphasis{dual variable}.
 
 
 \chapter{Linear Algebra}
