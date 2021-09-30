@@ -3,28 +3,19 @@ from numpy.testing import assert_
 
 
 def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
-    r"""
-    Evaluate a constrained Cauchy step of
-
-    .. math::
-
-        \min_x | \Lambda_k ( x ) |,
-
-    subject to the bound constraints :math:`\mathtt{xl} \le x \le \mathtt{xu}`
-    and the trust region :math:`\| x - \mathtt{xopt} \|_2 \le \mathtt{delta}`,
-    where :math:`\Lambda_k` refers to the `k`-th Lagrange polynomial of the
-    interpolation points for a certain `k`, and where ``xopt`` is
-    ``xpt[kopt, :]``. The vector ``xopt`` must be feasible.
+    """
+    Evaluate Cauchy step on the absolute value of a Lagrange polynomial, subject
+    to bound constraints on its coordinates and its length.
 
     Parameters
     ----------
-    xpt : array_like, shape (m,n)
-        Point coordinates as shown above. Each row represents a point.
+    xpt : numpy.ndarray, shape (npt, n)
+        Set of points. Each row of `xpt` stores the coordinates of a point.
     kopt : int
-        Index ``kopt`` as shown above.
+        Index of the point from which the Cauchy step is evaluated.
     gq : array_like, shape (n,)
-        Gradient of a Lagrange polynomial of the interpolation points (not
-        necessarily the ``kopt``-th one) at ``xpt[kopt, :]``.
+        Gradient of the Lagrange polynomial of the points in `xpt` (not
+        necessarily the `kopt`-th one) at ``xpt[kopt, :]``.
     curv : callable
         Function providing the curvature of the Lagrange polynomial.
 
@@ -33,44 +24,38 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
         where ``x`` is an array with shape (n,) and ``args`` is the tuple of
         fixed parameters needed to specify the function.
     args : tuple
-        Extra arguments to pass to the curvature function.
+        Parameters to forward to the curvature function.
     xl : array_like, shape (n,)
-        Lower-bound constraints ``xl`` as shown above.
+        Lower-bound constraints on the decision variables. Use ``-numpy.inf`` to
+        disable the bounds on some variables.
     xu : array_like, shape (n,)
-        Upper-bound constraints ``xu`` as shown above.
+        Upper-bound constraints on the decision variables. Use ``numpy.inf`` to
+        disable the bounds on some variables.
     delta : float
-        Trust-region radius.
+        Upper bound on the length of the Cauchy step.
 
     Returns
     -------
     step : numpy.ndarray, shape (n,)
-        Cauchy step, namely :math:`x - \mathtt{xopt}` as shown above.
+        Cauchy step.
     cauchy : float
         Square of the Lagrange polynomial evaluation at the Cauchy point.
 
     Other Parameters
     ----------------
     bdtol : float, optional
-        Tolerance for comparisons.
-        Default is ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
+        Tolerance for comparisons on the bound constraints (the default is
+        ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
 
     Raises
     ------
     AssertionError
-        The vector ``xopt`` is not feasible.
+        The vector ``xpt[kopt, :]`` is not feasible.
 
     Notes
     -----
-    The method is adapted from the ALTMOV algorithm [1]_. The ``klag``-th
-    Lagrange polynomial :math:`\Lambda_{ \mathtt{klag} }`, defined by
-
-    .. math::
-
-        \Lambda_{ \mathtt{klag} } ( \mathtt{xpt}[k, :] ) =
-        \delta_{k, \mathtt{klag}}
-
-    The freedom bequeathed by the interpolation conditions is taken up by
-    minimizing :math:`\| \nabla^2 \Lambda_{ \mathtt{klag} } \|_{\mathsf{F}}`.
+    The method is adapted from the ALTMOV algorithm [1]_, and the vector
+    ``xpt[kopt, :]`` must be feasible.
 
     References
     ----------

@@ -5,74 +5,70 @@ from .utils import NullProjectedDirectionException, givens, qr
 
 
 def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
-    r"""
-    Minimize approximately the quadratic function
-
-    .. math::
-
-        \mathtt{gq}^{\mathsf{T}} ( x - \mathtt{xopt} ) + \frac{1}{2}
-        ( x - \mathtt{xopt} )^{\mathsf{T}} \mathtt{Hq} ( x - \mathtt{xopt} ),
-
-    subject to the linear constraints :math:`\mathtt{Aub} x \le \mathtt{bub}`
-    and :math:`\mathtt{Aeq} x = \mathtt{beq}`, the bound constraints
-    :math:`\mathtt{xl} \le x \le \mathtt{xu}`, and the trust region
-    :math:`\| x - \mathtt{xopt} \|_2 \le \mathtt{delta}`. This procedure assumes
-    that the matrix ``Hq`` is symmetric and the vector ``xopt`` is feasible.
+    """
+    Minimize approximately a quadratic function subject to bound, linear, and
+    trust-region constraints using a truncated conjugate gradient.
 
     Parameters
     ----------
-    xopt : array_like, shape (n,)
-        Array ``xopt`` as shown above.
+    xopt : numpy.ndarray, shape (n,)
+        Point around which the Taylor expansions of the quadratic function is
+        defined.
     gq : array_like, shape (n,)
-        Array ``gq`` as shown above.
+        Gradient of the quadratic function at `xopt`.
     hessp : callable
-        Function providing the product :math:`\mathtt{Hq} x` as shown above.
+        Function providing the product of the Hessian matrix of the quadratic
+        function with any vector.
 
             ``hessp(x, *args) -> array_like, shape(n,)``
 
-        where ``x`` is an array with shape (n,) and ``args`` is the tuple of
-        fixed parameters needed to specify the function. It is assumed that the
-        implicit Hessian matrix ``Hq`` in the function ``hessp`` is symmetric,
-        but not necessarily positive semidefinite.
+        where ``x`` is an array with shape (n,) and `args` is a tuple of
+        parameters to forward to the objective function. It is assumed that the
+        Hessian matrix implicitly defined by `hessp` is symmetric, but not
+        necessarily positive semidefinite.
     args : tuple
-        Extra arguments to pass to the Hessian function.
-    Aub : array_like, shape (mub, n)
-        Matrix ``Aub`` as shown above.
-    bub : array_like, shape (mub,)
-        Right-hand side vector ``bub`` as shown above.
-    Aeq : array_like, shape (meq, n)
-        Matrix ``Aeq`` as shown above.
-    beq : array_like, shape (meq,)
-        Right-hand side vector ``beq`` as shown above.
+        Parameters to forward to the Hessian product function.
+    Aub : array_like, shape (mlub, n), optional
+        Jacobian matrix of the linear inequality constraints. Each row of `Aub`
+        stores the gradient of a linear inequality constraint.
+    bub : array_like, shape (mlub,), optional
+        Right-hand side vector of the linear inequality constraints
+        ``Aub @ x <= bub``, where ``x`` has the same size than `xopt`.
+    Aeq : array_like, shape (mleq, n), optional
+        Jacobian matrix of the linear equality constraints. Each row of `Aeq`
+        stores the gradient of a linear equality constraint.
+    beq : array_like, shape (mleq,), optional
+        Right-hand side vector of the linear equality constraints
+        `Aeq @ x = beq`, where ``x`` has the same size than `xopt`.
     xl : array_like, shape (n,)
-        Lower-bound constraints ``xl`` as shown above.
+        Lower-bound constraints on the decision variables. Use ``-numpy.inf`` to
+        disable the bounds on some variables.
     xu : array_like, shape (n,)
-        Upper-bound constraints ``xu`` as shown above.
+        Upper-bound constraints on the decision variables. Use ``numpy.inf`` to
+        disable the bounds on some variables.
     delta : float
-        Trust-region radius.
+        Upper bound on the length of the step from `xopt`.
 
     Returns
     -------
     step : numpy.ndarray, shape (n,)
-        Step from ``xopt`` towards the solution, namely
-        :math:`x - \mathtt{xopt}` as shown above.
+        Step from `xopt` towards the estimated point.
 
     Other Parameters
     ----------------
     actf : float, optional
-        Factor of proximity to the linear constraints.
-        Default is 0.2.
+        Factor of proximity to the linear constraints (the default is 0.2).
     bdtol : float, optional
-        Tolerance for comparisons on the bound constraints.
-        Default is ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
+        Tolerance for comparisons on the bound constraints (the default is
+        ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
     lctol : float, optional
-        Tolerance for comparisons on the linear constraints.
-        Default is ``10 * eps * n * max(1, max(abs(bub)))``.
+        Tolerance for comparisons on the linear constraints (the default is
+        ``10 * eps * n * max(1, max(abs(bub)))``).
 
     Raises
     ------
     AssertionError
-        The vector ``xopt`` is not feasible.
+        The vector `xopt` is not feasible.
 
     Notes
     -----
@@ -80,7 +76,7 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     variation of the truncated conjugate gradient method, which maintains the QR
     factorization of the matrix whose columns are the gradients of the active
     constraints. The linear equality constraints are then handled by considering
-    that they are always active.
+    them are always active.
 
     References
     ----------

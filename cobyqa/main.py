@@ -6,30 +6,33 @@ from .utils import RestartRequiredException
 
 class OptimizeResult(dict):
     """
-    Result structure of an optimization algorithm.
+    Structure for the result of an optimization algorithm.
 
     Attributes
     ----------
     x : numpy.ndarray, shape (n,)
-        Solution point.
+        Solution point provided by the optimization solver.
     success : bool
-        Flag indicating whether the solver terminated successfully.
+        Flag indicating whether the optimization solver terminated successfully.
     status : int
-        Termination status of the solver.
+        Termination status of the optimization solver.
     message : str
-        Description of the termination status.
+        Description of the termination status of the optimization solver.
     fun : float
-        Value of the objective function at the solution point.
+        Value of the objective function at the solution point provided by the
+        optimization solver.
     jac : numpy.ndarray, shape (n,)
-        Approximation of the gradient of the objective function, based
-        on undetermined interpolation, at the solution point.
+        Approximation of the gradient of the objective function at the solution
+        point provided by the optimization solver, based on undetermined
+        interpolation.
     nfev : int
-        Number of function evaluations.
+        Number of objective and constraint function evaluations.
     nit : int
-        Number of iterations performed by the solver.
+        Number of iterations performed by the optimization solver.
     maxcv : float
-        Maximum constraint violation of the solution point. It is set
-        only if the problem admits at least one constraint.
+        Maximum constraint violation at the solution point provided by the
+        optimization solver. It is set only if the problem is not declared
+        unconstrained by the optimization solver.
     """
 
     def __dir__(self):
@@ -129,12 +132,13 @@ class OptimizeResult(dict):
 def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
              beq=None, cub=None, ceq=None, options=None, **kwargs):
     """
-    Minimize a real-valued function subject to bound, linear inequality,
-    linear equality, nonlinear inequality, and nonlinear equality constraints
-    using a derivative-free trust-region SQP method.
+    Minimize a real-valued function.
 
-    Although the solver may tackle infeasible points (including the initial
-    guess), the bounds constraints are always respected.
+    The minimization can be subject to bound, linear inequality, linear
+    equality, nonlinear inequality, and nonlinear equality constraints using a
+    derivative-free trust-region SQP method. Although the solver may tackle
+    infeasible points (including the initial guess), the bounds constraints (if
+    any) are always respected.
 
     Parameters
     ----------
@@ -144,7 +148,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             ``fun(x, *args) -> float``
 
         where ``x`` is an array with shape (n,) and `args` is a tuple of
-        parameters to pass to the objective function.
+        parameters to forward to the objective function.
     x0 : array_like, shape (n,)
         Initial guess.
     args : tuple, optional
@@ -157,12 +161,14 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         Upper-bound constraints on the decision variables. Use ``numpy.inf`` to
         disable the bounds on some variables.
     Aub : array_like, shape (mlub, n), optional
-        Jacobian matrix of the linear inequality constraints.
+        Jacobian matrix of the linear inequality constraints. Each row of `Aub`
+        stores the gradient of a linear inequality constraint.
     bub : array_like, shape (mlub,), optional
         Right-hand side vector of the linear inequality constraints
         ``Aub @ x <= bub``, where ``x`` has the same size than `x0`.
     Aeq : array_like, shape (mleq, n), optional
-        Jacobian matrix of the linear equality constraints.
+        Jacobian matrix of the linear equality constraints. Each row of `Aeq`
+        stores the gradient of a linear equality constraint.
     beq : array_like, shape (mleq,), optional
         Right-hand side vector of the linear equality constraints
         `Aeq @ x = beq`, where ``x`` has the same size than `x0`.
@@ -172,14 +178,14 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             ``cub(x, *args) -> array_like, shape (mnlub,)``
 
         where ``x`` is an array with shape (n,) and `args` is a tuple of
-        parameters to pass to the constraint function.
+        parameters to forward to the constraint function.
     ceq : callable
         Nonlinear equality constraint function ``ceq(x, *args) = 0``.
 
             ``ceq(x, *args) -> array_like, shape (mnleq,)``
 
         where ``x`` is an array with shape (n,) and `args` is a tuple of
-        parameters to pass to the constraint function.
+        parameters to forward to the constraint function.
     options : dict, optional
         Options to forward to the solver. Accepted options are:
 
@@ -208,28 +214,11 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     Returns
     -------
     OptimizeResult
-        Result of the optimization solver. Attributes are:
-
-            x : numpy.ndarray, shape (n,)
-                Solution point.
-            success : bool
-                Flag indicating whether the solver terminated successfully.
-            status : int
-                Termination status of the solver.
-            message : str
-                Description of the termination status.
-            fun : float
-                Value of the objective function at the solution point.
-            jac : numpy.ndarray, shape (n,)
-                Approximation of the gradient of the objective function, based
-                on undetermined interpolation, at the solution point.
-            nfev : int
-                Number of function evaluations.
-            nit : int
-                Number of iterations performed by the solver.
-            maxcv : float
-                Maximum constraint violation of the solution point. It is set
-                only if the problem admits at least one constraint.
+        Result of the optimization solver. Important attributes are: ``x`` the
+        solution point, ``success`` a flag indicating whether the optimization
+        terminated successfully, and ``message`` a description of the
+        termination status of the optimization. See `OptimizeResult` for a
+        description of other attributes.
 
     Other Parameters
     ----------------

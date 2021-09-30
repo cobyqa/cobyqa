@@ -64,9 +64,9 @@ html_theme_options = {
 
 html_title = f'{project} v{version} Manual'
 
-# html_logo = '_static/logo.svg'
+html_logo = '_static/logo.svg'
 
-# html_favicon = '_static/favicon.ico'
+html_favicon = '_static/favicon/favicon.ico'
 
 html_static_path = ['_static']
 
@@ -82,6 +82,32 @@ html_copy_source = False
 # -- Options for HTML help output ---------------------------------------------
 
 htmlhelp_basename = 'cobyqa'
+
+
+# -- Options for LaTeX output -------------------------------------------------
+
+# Paper size ('letter' or 'a4').
+latex_paper_size = 'a4'
+
+# Font size ('10pt', '11pt' or '12pt').
+# latex_font_size = '10pt'
+
+# Use XeLaTeX engine for better support of unicode characters
+latex_engine = 'xelatex'
+
+# Grouping the document tree into LaTeX files.
+_authors = 'Tom M. Ragonneau'
+latex_documents = [
+    ('algo/index', 'cobyqa-user.tex', 'COBYQA Reference', _authors, 'manual'),
+    ('refs/index', 'cobyqa-ref.tex', 'COBYQA User Guide', _authors, 'manual'),
+]
+
+latex_elements = {
+    'fontenc': r'\usepackage[LGR,T1]{fontenc}'
+}
+
+# Image to place at the top of the title page.
+latex_logo = '_static/logo.pdf'
 
 
 # -- Numpy’s Sphinx extensions ------------------------------------------------

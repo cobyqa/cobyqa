@@ -3,64 +3,53 @@ from numpy.testing import assert_
 
 
 def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
-    r"""
-    Select a point on a line joining the point ``xopt``, that is
-    ``xpt[kopt, :]``, to another point in ``xpt`` that maximizes the real
-    parameter given in Equation (3.9) of [1]_, subject to the bound constraints
-    :math:`\mathtt{xl} \le x \le \mathtt{xu}` and the trust region
-    :math:`\| x - \mathtt{xopt} \|_2 \le \mathtt{delta}`. The vector ``xopt``
-    must be feasible.
+    """
+    Estimate a point that maximizes a lower bound on the denominator of the
+    updating formula, subject to bound constraints on its coordinates and its
+    length.
 
     Parameters
     ----------
-    xpt : array_like, shape (m,n)
-        Point coordinates as shown above. Each row represents a point.
+    xpt : numpy.ndarray, shape (npt, n)
+        Set of points. Each row of `xpt` stores the coordinates of a point.
     kopt : int
-        Index of the common interpolation point of each line.
+        Index of a point in `xpt`. The estimated point will lie on a line
+        joining ``xpt[kopt, :]`` to another point in `xpt`.
     klag : int
-        Index at which the Lagrange polynomial is defined to be one.
+        Index of the point in `xpt`.
     gq : array_like, shape (n,)
-        Gradient of the ``klag``-th Lagrange polynomial at ``xopt``.
+        Gradient of the `klag`-th Lagrange polynomial at ``xpt[kopt, :]``.
     xl : array_like, shape (n,)
-        Lower-bound constraints ``xl`` as shown above.
+        Lower-bound constraints on the decision variables. Use ``-numpy.inf`` to
+        disable the bounds on some variables.
     xu : array_like, shape (n,)
-        Upper-bound constraints ``xu`` as shown above.
+        Upper-bound constraints on the decision variables. Use ``numpy.inf`` to
+        disable the bounds on some variables.
     delta : float
-        Trust-region radius.
+        Upper bound on the length of the step.
     alpha : float
-        Real parameter given in Equation (4.12) of [2]_.
+        Real parameter.
 
     Returns
     -------
     step : numpy.ndarray, shape (n,)
-        Step towards the point along the line between ``xopt`` and another
-        interpolation point with the greatest value of the predicted
-        denominator given in Equation (3.9) of [1]_, namely
-        :math:`x - \mathtt{xopt}` as shown above.
+        Step from ``xpt[kopt, :]`` towards the estimated point.
 
     Other Parameters
     ----------------
     bdtol : float, optional
-        Tolerance for comparisons.
-        Default is ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
+        Tolerance for comparisons on the bound constraints (the default is
+        ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
 
     Raises
     ------
     AssertionError
-        The vector ``xopt`` is not feasible.
+        The vector ``xpt[kopt, :]`` is not feasible.
 
     Notes
     -----
-    The calculations use the ``klag``-th Lagrange polynomial
-    :math:`\Lambda_{ \mathtt{klag} }`, defined by
-
-    .. math::
-
-        \Lambda_{ \mathtt{klag} } ( \mathtt{xpt}[k, :] ) =
-        \delta_{k, \mathtt{klag}}
-
-    The freedom bequeathed by the interpolation conditions is taken up by
-    minimizing :math:`\| \nabla^2 \Lambda_{ \mathtt{klag} } \|_{\mathsf{F}}`.
+    The denominator of the updating formula is given in Equation (3.9) of [1]_,
+    and the parameter `alpha` is the referred in Equation (4.12) of [2]_.
 
     References
     ----------

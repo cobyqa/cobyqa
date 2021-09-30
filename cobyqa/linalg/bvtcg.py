@@ -3,54 +3,53 @@ from numpy.testing import assert_
 
 
 def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
-    r"""
-    Minimize approximately the quadratic function
-
-    .. math::
-
-        \mathtt{gq}^{\mathsf{T}} ( x - \mathtt{xopt} ) + \frac{1}{2}
-        ( x - \mathtt{xopt} )^{\mathsf{T}} \mathtt{Hq} ( x - \mathtt{xopt} ),
-
-    subject to the bound constraints :math:`\mathtt{xl} \le x \le \mathtt{xu}`
-    and the trust region :math:`\| x - \mathtt{xopt} \|_2 \le \mathtt{delta}`.
-    It is essential to ensure the symmetricity of the matrix ``Hq``, and the
-    vector ``xopt`` must be feasible.
+    """
+    Minimize approximately a quadratic function subject to bound and
+    trust-region constraints using a truncated conjugate gradient.
 
     Parameters
     ----------
-    xopt : array_like, shape (n,)
-        Array ``xopt`` as shown above.
+    xopt : numpy.ndarray, shape (n,)
+        Point around which the Taylor expansions of the quadratic function is
+        defined.
     gq : array_like, shape (n,)
-        Array ``gq`` as shown above.
+        Gradient of the quadratic function at `xopt`.
     hessp : callable
-        Function providing the product :math`\mathtt{Hq} x` as shown above.
+        Function providing the product of the Hessian matrix of the quadratic
+        function with any vector.
 
             ``hessp(x, *args) -> array_like, shape(n,)``
 
-        where ``x`` is an array with shape (n,) and ``args`` is the tuple of
-        fixed parameters needed to specify the function. It is assumed that the
-        implicit Hessian matrix ``Hq`` in the function ``hessp`` is symmetric,
-        but not necessarily positive semidefinite.
+        where ``x`` is an array with shape (n,) and `args` is a tuple of
+        parameters to forward to the objective function. It is assumed that the
+        Hessian matrix implicitly defined by `hessp` is symmetric, but not
+        necessarily positive semidefinite.
     args : tuple
-        Extra arguments to pass to the Hessian function.
+        Parameters to forward to the Hessian product function.
     xl : array_like, shape (n,)
-        Lower-bound constraints ``xl`` as shown above.
+        Lower-bound constraints on the decision variables. Use ``-numpy.inf`` to
+        disable the bounds on some variables.
     xu : array_like, shape (n,)
-        Upper-bound constraints ``xu`` as shown above.
+        Upper-bound constraints on the decision variables. Use ``numpy.inf`` to
+        disable the bounds on some variables.
     delta : float
-        Trust-region radius.
+        Upper bound on the length of the step from `xopt`.
 
     Returns
     -------
     step : numpy.ndarray, shape (n,)
-        Step from ``xopt`` towards the solution, namely
-        :math:`x - \mathtt{xopt}` as shown above.
+        Step from `xopt` towards the estimated point.
 
     Other Parameters
     ----------------
     bdtol : float, optional
-        Tolerance for comparisons.
-        Default is ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
+        Tolerance for comparisons on the bound constraints (the default is
+        ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
+
+    Raises
+    ------
+    AssertionError
+        The vector `xopt` is not feasible.
 
     Notes
     -----

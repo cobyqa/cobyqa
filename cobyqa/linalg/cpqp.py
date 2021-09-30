@@ -6,57 +6,54 @@ from .utils import NullProjectedDirectionException, givens
 
 def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     r"""
-    Minimize approximately the convex piecewise quadratic function
+    Minimize approximately a convex piecewise quadratic function subject to
+    bound and trust-region constraints using a truncated conjugate gradient.
+
+    The method minimizes the function
 
     .. math::
 
-        \frac{1}{2} ( \| [ \mathtt{Aub} x - \mathtt{bub} ]_+\|_2^2 +
-        \| \mathtt{Aeq} x - \mathtt{beq} \|_2^2 ),
+        \frac{1}{2} ( \| [ \mathtt{Aub} \times x - \mathtt{bub} ]_+\|_2^2 +
+        \| \mathtt{Aeq} \times x - \mathtt{beq} \|_2^2 ),
 
-    subject to the bound constraints :math:`\mathtt{xl} \le x \le \mathtt{xu}`
-    and the trust region :math:`\| x - \mathtt{xopt} \|_2 \le \mathtt{delta}`.
-    This procedure assumes that the vector ``xopt`` is feasible.
+    where :math:`[ \cdot ]_+` denotes the componentwise positive part operator.
 
     Parameters
     ----------
-    xopt : array_like, shape (n,)
-        Array ``xopt`` as shown above.
-    Aub : array_like, shape (mub, n)
-        Matrix ``Aub`` as shown above.
-    bub : array_like, shape (mub,)
-        Right-hand side vector ``bub`` as shown above.
-    Aeq : array_like, shape (meq, n)
-        Matrix ``Aeq`` as shown above.
+    xopt : numpy.ndarray, shape (n,)
+        Center of the trust-region constraint.
+    Aub : array_like, shape (mlub, n)
+        Matrix `Aub` as shown above.
+    bub : array_like, shape (mlub,)
+        Vector `bub` as shown above.
+    Aeq : array_like, shape (mleq, n)
+        Matrix `Aeq` as shown above.
     beq : array_like, shape (meq,)
-        Right-hand side vector ``beq`` as shown above.
+        Vector `beq` as shown above.
     xl : array_like, shape (n,)
-        Lower-bound constraints ``xl`` as shown above.
+        Lower-bound constraints on the decision variables. Use ``-numpy.inf`` to
+        disable the bounds on some variables.
     xu : array_like, shape (n,)
-        Upper-bound constraints ``xu`` as shown above.
+        Upper-bound constraints on the decision variables. Use ``numpy.inf`` to
+        disable the bounds on some variables.
     delta : float
-        Trust-region radius.
+        Upper bound on the length of the step from `xopt`.
 
     Returns
     -------
     step : numpy.ndarray, shape (n,)
-       Step from ``xopt`` towards the solution, namely
-        :math:`x - \mathtt{xopt}` as shown above.
+        Step from `xopt` towards the estimated point.
 
     Other Parameters
     ----------------
-    actf : float, optional
-        Factor of proximity to the linear constraints.
-        Default is 0.2.
     bdtol : float, optional
-        Tolerance for comparisons on the bound constraints.
-        Default is ``10 * eps * N * max(1, max(abs(xl)), max(abs(xu)))``, where
-        ``N`` is the size of the reformulated problem, defined by
-        :math:`\mathtt{N} = \mathtt{mub} + \mathtt{n}`.
+        Tolerance for comparisons on the bound constraints (the default is
+        ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
 
     Raises
     ------
     AssertionError
-        The vector ``xopt`` is not feasible.
+        The vector `xopt` is not feasible.
 
     Notes
     -----
@@ -65,12 +62,11 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
 
     .. math::
 
-        \frac{1}{2} ( \| \mathtt{Aeq} x - \mathtt{beq} \|_2^2 + \| y \|_2^2 )
+        \frac{1}{2} ( \| \mathtt{Aeq} \times x - \mathtt{beq} \|_2^2 +
+        \| y \|_2^2 )
 
-    subject to the bound constraints :math:`\mathtt{xl} \le x \le \mathtt{xu}`
-    and :math:`0 \le y`, the linear inequality constraints
-    :math:`\mathtt{Aub} x - y \le \mathtt{bub}`, and the trust region
-    :math:`\| x - \mathtt{xopt} \|_2 \le \mathtt{delta}`.
+    subject to the original constraints, where the slack variable :math:`y` is
+    lower bounded by zero and :math:`\mathtt{Aub} \times x - \mathtt{bub}`.
 
     References
     ----------

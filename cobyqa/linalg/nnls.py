@@ -2,36 +2,35 @@ import numpy as np
 
 
 def nnls(A, b, k=None, maxiter=None, **kwargs):
-    r"""
+    """
     Compute the least-squares solution of ``A @ x = b`` subject to the
     nonnegativity constraints ``x[:k] >= 0``.
 
     Parameters
     ----------
     A : array_like, shape (m, n)
-        Matrix ``A`` as shown above.
+        Matrix `A` as shown above.
     b : array_like, shape (m,)
-        Right-hand side vector ``b`` as shown above.
+        Right-hand side vector `b` as shown above.
     k : int, optional
-        Number of nonnegativity constraints. The first ``k`` components of the
-        solution vector are nonnegative.
-        Default is ``A.shape[1]``.
+        Number of nonnegativity constraints. The first `k` components of the
+        solution vector are nonnegative (the default is ``A.shape[1]``).
     maxiter : int, optional
-        Maximum number of inner iterations, optional.
-        Default is ``3 * A.shape[1]``.
+        Maximum number of inner iterations (the default is ``3 * A.shape[1]``).
 
     Returns
     -------
     x : numpy.ndarray, shape (n,)
         Solution vector ``x`` as shown above.
     rnorm : float
-        Residual at the solution :math:`\| \mathtt{A} x - \mathtt{b} \|`.
+        Residual at the solution.
 
     Other Parameters
     ----------------
     lstol : float, optional
-        Tolerance on the approximate KKT conditions.
-        Default is ``10 * eps * max(n, m) * max(1, max(abs(b)))``.
+        Tolerance on the approximate KKT conditions for the calculations of the
+        least-squares Lagrange multipliers (the default is
+        ``10 * eps * max(n, m) * max(1, max(abs(b)))``).
 
     Notes
     -----

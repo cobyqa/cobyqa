@@ -1,0 +1,380 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cobyqa.minimize &#8212; COBYQA v1.0.dev0 Manual</title>
+    
+  <link href="../../_static/css/theme.css" rel="stylesheet" />
+  <link href="../../_static/css/index.c5995385ac14fb8791e8eb36b4908be2.css" rel="stylesheet" />
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css" />
+    
+  <link rel="preload" as="script" href="../../_static/js/index.1c5a1a01449ed65a7b51.js">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="cobyqa.OptimizeResult" href="cobyqa.OptimizeResult.html" />
+    <link rel="prev" title="Optimization framework" href="../optimize.html" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+    
+<link rel="stylesheet" href="../../_static/cobyqa.css" type="text/css" />
+
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="../../index.html">
+  <img src="../../_static/logo.svg" class="logo" alt="logo">
+</a>      
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../algo/index.html">
+  Algorithms
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../index.html">
+  API reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/ragonneau/cobyqa" rel="noopener" target="_blank" title="GitHub">
+            <span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label>
+          </a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="../optimize.html">
+   Optimization framework
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     cobyqa.minimize
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.OptimizeResult.html">
+     cobyqa.OptimizeResult
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.optimize.TrustRegion.html">
+     cobyqa.optimize.TrustRegion
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.optimize.Models.html">
+     cobyqa.optimize.Models
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.optimize.Quadratic.html">
+     cobyqa.optimize.Quadratic
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../linalg.html">
+   Linear Algebra
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../bugs.html">
+   Reporting bugs
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../license.html">
+   COBYQA license
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+
+<nav id="bd-toc-nav">
+    
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <div class="section" id="cobyqa-minimize">
+<h1>cobyqa.minimize<a class="headerlink" href="#cobyqa-minimize" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="cobyqa.minimize">
+<span class="sig-prename descclassname"><span class="pre">cobyqa.</span></span><span class="sig-name descname"><span class="pre">minimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fun</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aeq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ceq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cobyqa.minimize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Minimize a real-valued function.</p>
+<p>The minimization can be subject to bound, linear inequality, linear
+equality, nonlinear inequality, and nonlinear equality constraints using a
+derivative-free trust-region SQP method. Although the solver may tackle
+infeasible points (including the initial guess), the bounds constraints (if
+any) are always respected.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>fun</strong><span class="classifier">callable</span></dt><dd><p>Objective function to be minimized.</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">fun(x,</span> <span class="pre">*args)</span> <span class="pre">-&gt;</span> <span class="pre">float</span></code></p>
+</div></blockquote>
+<p>where <code class="docutils literal notranslate"><span class="pre">x</span></code> is an array with shape (n,) and <em class="xref py py-obj">args</em> is a tuple of
+parameters to forward to the objective function.</p>
+</dd>
+<dt><strong>x0</strong><span class="classifier">array_like, shape (n,)</span></dt><dd><p>Initial guess.</p>
+</dd>
+<dt><strong>args</strong><span class="classifier">tuple, optional</span></dt><dd><p>Parameters to forward to the objective, the nonlinear inequality
+constraint, and the nonlinear equality constraint functions.</p>
+</dd>
+<dt><strong>xl</strong><span class="classifier">array_like, shape (n,), optional</span></dt><dd><p>Lower-bound constraints on the decision variables. Use <code class="docutils literal notranslate"><span class="pre">-numpy.inf</span></code> to
+disable the bounds on some variables.</p>
+</dd>
+<dt><strong>xu</strong><span class="classifier">array_like, shape (n,), optional</span></dt><dd><p>Upper-bound constraints on the decision variables. Use <code class="docutils literal notranslate"><span class="pre">numpy.inf</span></code> to
+disable the bounds on some variables.</p>
+</dd>
+<dt><strong>Aub</strong><span class="classifier">array_like, shape (mlub, n), optional</span></dt><dd><p>Jacobian matrix of the linear inequality constraints. Each row of <em class="xref py py-obj">Aub</em>
+stores the gradient of a linear inequality constraint.</p>
+</dd>
+<dt><strong>bub</strong><span class="classifier">array_like, shape (mlub,), optional</span></dt><dd><p>Right-hand side vector of the linear inequality constraints
+<code class="docutils literal notranslate"><span class="pre">Aub</span> <span class="pre">&#64;</span> <span class="pre">x</span> <span class="pre">&lt;=</span> <span class="pre">bub</span></code>, where <code class="docutils literal notranslate"><span class="pre">x</span></code> has the same size than <em class="xref py py-obj">x0</em>.</p>
+</dd>
+<dt><strong>Aeq</strong><span class="classifier">array_like, shape (mleq, n), optional</span></dt><dd><p>Jacobian matrix of the linear equality constraints. Each row of <em class="xref py py-obj">Aeq</em>
+stores the gradient of a linear equality constraint.</p>
+</dd>
+<dt><strong>beq</strong><span class="classifier">array_like, shape (mleq,), optional</span></dt><dd><p>Right-hand side vector of the linear equality constraints
+<em class="xref py py-obj">Aeq &#64; x = beq</em>, where <code class="docutils literal notranslate"><span class="pre">x</span></code> has the same size than <em class="xref py py-obj">x0</em>.</p>
+</dd>
+<dt><strong>cub</strong><span class="classifier">callable</span></dt><dd><p>Nonlinear inequality constraint function <code class="docutils literal notranslate"><span class="pre">ceq(x,</span> <span class="pre">*args)</span> <span class="pre">&lt;=</span> <span class="pre">0</span></code>.</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">cub(x,</span> <span class="pre">*args)</span> <span class="pre">-&gt;</span> <span class="pre">array_like,</span> <span class="pre">shape</span> <span class="pre">(mnlub,)</span></code></p>
+</div></blockquote>
+<p>where <code class="docutils literal notranslate"><span class="pre">x</span></code> is an array with shape (n,) and <em class="xref py py-obj">args</em> is a tuple of
+parameters to forward to the constraint function.</p>
+</dd>
+<dt><strong>ceq</strong><span class="classifier">callable</span></dt><dd><p>Nonlinear equality constraint function <code class="docutils literal notranslate"><span class="pre">ceq(x,</span> <span class="pre">*args)</span> <span class="pre">=</span> <span class="pre">0</span></code>.</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">ceq(x,</span> <span class="pre">*args)</span> <span class="pre">-&gt;</span> <span class="pre">array_like,</span> <span class="pre">shape</span> <span class="pre">(mnleq,)</span></code></p>
+</div></blockquote>
+<p>where <code class="docutils literal notranslate"><span class="pre">x</span></code> is an array with shape (n,) and <em class="xref py py-obj">args</em> is a tuple of
+parameters to forward to the constraint function.</p>
+</dd>
+<dt><strong>options</strong><span class="classifier">dict, optional</span></dt><dd><p>Options to forward to the solver. Accepted options are:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>rhobeg<span class="classifier">float, optional</span></dt><dd><p>Initial trust-region radius (the default is 1).</p>
+</dd>
+<dt>rhoend<span class="classifier">float, optional</span></dt><dd><p>Final trust-region radius (the default is 1e-6).</p>
+</dd>
+<dt>npt<span class="classifier">int, optional</span></dt><dd><p>Number of interpolation points for the objective and constraint
+models (the default is <code class="docutils literal notranslate"><span class="pre">2</span> <span class="pre">*</span> <span class="pre">n</span> <span class="pre">+</span> <span class="pre">1</span></code>).</p>
+</dd>
+<dt>maxfev<span class="classifier">int, optional</span></dt><dd><p>Upper bound on the number of objective and constraint function
+evaluations (the default is <code class="docutils literal notranslate"><span class="pre">500</span> <span class="pre">*</span> <span class="pre">n</span></code>).</p>
+</dd>
+<dt>target<span class="classifier">float, optional</span></dt><dd><p>Target value on the objective function (the default is
+<code class="docutils literal notranslate"><span class="pre">-numpy.inf</span></code>). If the solver encounters a feasible point at
+which the objective function evaluations is below the target
+value, then the computations are stopped.</p>
+</dd>
+<dt>disp<span class="classifier">bool, optional</span></dt><dd><p>Whether to print pieces of information on the execution of the
+solver (the default is False).</p>
+</dd>
+<dt>debug<span class="classifier">bool, optional</span></dt><dd><p>Whether to make debugging tests during the execution, which is
+not recommended in production (the default is False).</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>OptimizeResult</dt><dd><p>Result of the optimization solver. Important attributes are: <code class="docutils literal notranslate"><span class="pre">x</span></code> the
+solution point, <code class="docutils literal notranslate"><span class="pre">success</span></code> a flag indicating whether the optimization
+terminated successfully, and <code class="docutils literal notranslate"><span class="pre">message</span></code> a description of the
+termination status of the optimization. See <a class="reference internal" href="cobyqa.OptimizeResult.html#cobyqa.OptimizeResult" title="cobyqa.OptimizeResult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OptimizeResult</span></code></a> for a
+description of other attributes.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-odd">Other Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>actf</strong><span class="classifier">float, optional</span></dt><dd><p>Factor of proximity to the linear constraints (the default is 0.2).</p>
+</dd>
+<dt><strong>nsf</strong><span class="classifier">float, optional</span></dt><dd><p>Shrinkage factor of the Byrd-Omojokun-like normal subproblem (the
+default is 0.8).</p>
+</dd>
+<dt><strong>bdtol</strong><span class="classifier">float, optional</span></dt><dd><p>Tolerance for comparisons on the bound constraints (the default is
+<code class="docutils literal notranslate"><span class="pre">10</span> <span class="pre">*</span> <span class="pre">eps</span> <span class="pre">*</span> <span class="pre">n</span> <span class="pre">*</span> <span class="pre">max(1,</span> <span class="pre">max(abs(xl)),</span> <span class="pre">max(abs(xu)))</span></code>, where the values
+of <code class="docutils literal notranslate"><span class="pre">xl</span></code> and <code class="docutils literal notranslate"><span class="pre">xu</span></code> evolve to include the shift of the origin).</p>
+</dd>
+<dt><strong>lctol</strong><span class="classifier">float, optional</span></dt><dd><p>Tolerance for comparisons on the linear constraints (the default is
+<code class="docutils literal notranslate"><span class="pre">10</span> <span class="pre">*</span> <span class="pre">eps</span> <span class="pre">*</span> <span class="pre">n</span> <span class="pre">*</span> <span class="pre">max(1,</span> <span class="pre">max(abs(bub)))</span></code>, where the values of <code class="docutils literal notranslate"><span class="pre">bub</span></code>
+evolve to include the shift of the origin).</p>
+</dd>
+<dt><strong>lstol</strong><span class="classifier">float, optional</span></dt><dd><p>Tolerance on the approximate KKT conditions for the calculations of the
+least-squares Lagrange multipliers (the default is
+<code class="docutils literal notranslate"><span class="pre">10</span> <span class="pre">*</span> <span class="pre">eps</span> <span class="pre">*</span> <span class="pre">max(n,</span> <span class="pre">m)</span> <span class="pre">*</span> <span class="pre">max(1,</span> <span class="pre">max(abs(g)))</span></code>, where <code class="docutils literal notranslate"><span class="pre">g</span></code> is the
+gradient of the current model of the objective function).</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='left-prev' id="prev-link" href="../optimize.html" title="previous page">Optimization framework</a>
+    <a class='right-next' id="next-link" href="cobyqa.OptimizeResult.html" title="next page">cobyqa.OptimizeResult</a>
+
+              </div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="../../_static/js/index.1c5a1a01449ed65a7b51.js"></script>
+
+  <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2021, Tom M. Ragonneau.<br/>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="last-updated">
+Last updated on September 30, 2021.<br/>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.2.0.<br/>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

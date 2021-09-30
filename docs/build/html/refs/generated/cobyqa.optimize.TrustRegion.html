@@ -1,0 +1,824 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cobyqa.optimize.TrustRegion &#8212; COBYQA v1.0.dev0 Manual</title>
+    
+  <link href="../../_static/css/theme.css" rel="stylesheet" />
+  <link href="../../_static/css/index.c5995385ac14fb8791e8eb36b4908be2.css" rel="stylesheet" />
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css" />
+    
+  <link rel="preload" as="script" href="../../_static/js/index.1c5a1a01449ed65a7b51.js">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="cobyqa.optimize.TrustRegion.__call__" href="cobyqa.optimize.TrustRegion.__call__.html" />
+    <link rel="prev" title="cobyqa.OptimizeResult.values" href="cobyqa.OptimizeResult.values.html" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+    
+<link rel="stylesheet" href="../../_static/cobyqa.css" type="text/css" />
+
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="../../index.html">
+  <img src="../../_static/logo.svg" class="logo" alt="logo">
+</a>      
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../algo/index.html">
+  Algorithms
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../index.html">
+  API reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/ragonneau/cobyqa" rel="noopener" target="_blank" title="GitHub">
+            <span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label>
+          </a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="../optimize.html">
+   Optimization framework
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.minimize.html">
+     cobyqa.minimize
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.OptimizeResult.html">
+     cobyqa.OptimizeResult
+    </a>
+   </li>
+   <li class="toctree-l2 current active has-children">
+    <a class="current reference internal" href="#">
+     cobyqa.optimize.TrustRegion
+    </a>
+    <input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.__call__.html">
+       cobyqa.optimize.TrustRegion.__call__
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.ceq.html">
+       cobyqa.optimize.TrustRegion.ceq
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.check_models.html">
+       cobyqa.optimize.TrustRegion.check_models
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.check_options.html">
+       cobyqa.optimize.TrustRegion.check_options
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.cub.html">
+       cobyqa.optimize.TrustRegion.cub
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.fun.html">
+       cobyqa.optimize.TrustRegion.fun
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.get_best_point.html">
+       cobyqa.optimize.TrustRegion.get_best_point
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.less_merit.html">
+       cobyqa.optimize.TrustRegion.less_merit
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq.html">
+       cobyqa.optimize.TrustRegion.model_ceq
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_alt.html">
+       cobyqa.optimize.TrustRegion.model_ceq_alt
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_alt_curv.html">
+       cobyqa.optimize.TrustRegion.model_ceq_alt_curv
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_alt_grad.html">
+       cobyqa.optimize.TrustRegion.model_ceq_alt_grad
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_alt_hess.html">
+       cobyqa.optimize.TrustRegion.model_ceq_alt_hess
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_alt_hessp.html">
+       cobyqa.optimize.TrustRegion.model_ceq_alt_hessp
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_curv.html">
+       cobyqa.optimize.TrustRegion.model_ceq_curv
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_grad.html">
+       cobyqa.optimize.TrustRegion.model_ceq_grad
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_hess.html">
+       cobyqa.optimize.TrustRegion.model_ceq_hess
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_hessp.html">
+       cobyqa.optimize.TrustRegion.model_ceq_hessp
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub.html">
+       cobyqa.optimize.TrustRegion.model_cub
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_alt.html">
+       cobyqa.optimize.TrustRegion.model_cub_alt
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_alt_curv.html">
+       cobyqa.optimize.TrustRegion.model_cub_alt_curv
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_alt_grad.html">
+       cobyqa.optimize.TrustRegion.model_cub_alt_grad
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_alt_hess.html">
+       cobyqa.optimize.TrustRegion.model_cub_alt_hess
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_alt_hessp.html">
+       cobyqa.optimize.TrustRegion.model_cub_alt_hessp
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_curv.html">
+       cobyqa.optimize.TrustRegion.model_cub_curv
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_grad.html">
+       cobyqa.optimize.TrustRegion.model_cub_grad
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_hess.html">
+       cobyqa.optimize.TrustRegion.model_cub_hess
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_hessp.html">
+       cobyqa.optimize.TrustRegion.model_cub_hessp
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag.html">
+       cobyqa.optimize.TrustRegion.model_lag
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_alt.html">
+       cobyqa.optimize.TrustRegion.model_lag_alt
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_alt_curv.html">
+       cobyqa.optimize.TrustRegion.model_lag_alt_curv
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_alt_grad.html">
+       cobyqa.optimize.TrustRegion.model_lag_alt_grad
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_alt_hess.html">
+       cobyqa.optimize.TrustRegion.model_lag_alt_hess
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_alt_hessp.html">
+       cobyqa.optimize.TrustRegion.model_lag_alt_hessp
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_curv.html">
+       cobyqa.optimize.TrustRegion.model_lag_curv
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_grad.html">
+       cobyqa.optimize.TrustRegion.model_lag_grad
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_hess.html">
+       cobyqa.optimize.TrustRegion.model_lag_hess
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_hessp.html">
+       cobyqa.optimize.TrustRegion.model_lag_hessp
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj.html">
+       cobyqa.optimize.TrustRegion.model_obj
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_alt.html">
+       cobyqa.optimize.TrustRegion.model_obj_alt
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_alt_curv.html">
+       cobyqa.optimize.TrustRegion.model_obj_alt_curv
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_alt_grad.html">
+       cobyqa.optimize.TrustRegion.model_obj_alt_grad
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_alt_hess.html">
+       cobyqa.optimize.TrustRegion.model_obj_alt_hess
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_alt_hessp.html">
+       cobyqa.optimize.TrustRegion.model_obj_alt_hessp
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_curv.html">
+       cobyqa.optimize.TrustRegion.model_obj_curv
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_grad.html">
+       cobyqa.optimize.TrustRegion.model_obj_grad
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_hess.html">
+       cobyqa.optimize.TrustRegion.model_obj_hess
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_hessp.html">
+       cobyqa.optimize.TrustRegion.model_obj_hessp
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.model_step.html">
+       cobyqa.optimize.TrustRegion.model_step
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.prepare_model_step.html">
+       cobyqa.optimize.TrustRegion.prepare_model_step
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.prepare_trust_region_step.html">
+       cobyqa.optimize.TrustRegion.prepare_trust_region_step
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.reduce_penalty_coefficients.html">
+       cobyqa.optimize.TrustRegion.reduce_penalty_coefficients
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.reset_models.html">
+       cobyqa.optimize.TrustRegion.reset_models
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.set_default_options.html">
+       cobyqa.optimize.TrustRegion.set_default_options
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.shift_origin.html">
+       cobyqa.optimize.TrustRegion.shift_origin
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.trust_region_step.html">
+       cobyqa.optimize.TrustRegion.trust_region_step
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.update.html">
+       cobyqa.optimize.TrustRegion.update
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.update_multipliers.html">
+       cobyqa.optimize.TrustRegion.update_multipliers
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.TrustRegion.update_penalty_coefficients.html">
+       cobyqa.optimize.TrustRegion.update_penalty_coefficients
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.optimize.Models.html">
+     cobyqa.optimize.Models
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.optimize.Quadratic.html">
+     cobyqa.optimize.Quadratic
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../linalg.html">
+   Linear Algebra
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../bugs.html">
+   Reporting bugs
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../license.html">
+   COBYQA license
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+
+<nav id="bd-toc-nav">
+    
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <div class="section" id="cobyqa-optimize-trustregion">
+<h1>cobyqa.optimize.TrustRegion<a class="headerlink" href="#cobyqa-optimize-trustregion" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="cobyqa.optimize.TrustRegion">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">cobyqa.optimize.</span></span><span class="sig-name descname"><span class="pre">TrustRegion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fun</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aeq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ceq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cobyqa.optimize.TrustRegion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Framework atomization of the derivative-free trust-region SQP method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.aeq.html#cobyqa.optimize.TrustRegion.aeq" title="cobyqa.optimize.TrustRegion.aeq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aeq</span></code></a></dt><dd><p>Jacobian matrix of the linear equality constraints.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.aub.html#cobyqa.optimize.TrustRegion.aub" title="cobyqa.optimize.TrustRegion.aub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aub</span></code></a></dt><dd><p>Jacobian matrix of the linear inequality constraints.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.beq.html#cobyqa.optimize.TrustRegion.beq" title="cobyqa.optimize.TrustRegion.beq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">beq</span></code></a></dt><dd><p>Right-hand side vector of the linear equality constraints.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.bub.html#cobyqa.optimize.TrustRegion.bub" title="cobyqa.optimize.TrustRegion.bub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bub</span></code></a></dt><dd><p>Right-hand side vector of the linear inequality constraints.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.copteq.html#cobyqa.optimize.TrustRegion.copteq" title="cobyqa.optimize.TrustRegion.copteq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copteq</span></code></a></dt><dd><p>Evaluation of the nonlinear equality constraint function of the nonlinear optimization problem at <a class="reference internal" href="cobyqa.optimize.TrustRegion.xopt.html#cobyqa.optimize.TrustRegion.xopt" title="cobyqa.optimize.TrustRegion.xopt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xopt</span></code></a>.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.coptub.html#cobyqa.optimize.TrustRegion.coptub" title="cobyqa.optimize.TrustRegion.coptub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">coptub</span></code></a></dt><dd><p>Evaluation of the nonlinear inequality constraint function of the nonlinear optimization problem at <a class="reference internal" href="cobyqa.optimize.TrustRegion.xopt.html#cobyqa.optimize.TrustRegion.xopt" title="cobyqa.optimize.TrustRegion.xopt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xopt</span></code></a>.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.cvaleq.html#cobyqa.optimize.TrustRegion.cvaleq" title="cobyqa.optimize.TrustRegion.cvaleq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvaleq</span></code></a></dt><dd><p>Evaluations of the nonlinear equality constraint function of the nonlinear optimization problem at the interpolation points.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.cvalub.html#cobyqa.optimize.TrustRegion.cvalub" title="cobyqa.optimize.TrustRegion.cvalub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cvalub</span></code></a></dt><dd><p>Evaluations of the nonlinear inequality constraint function of the nonlinear optimization problem at the interpolation points.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.fopt.html#cobyqa.optimize.TrustRegion.fopt" title="cobyqa.optimize.TrustRegion.fopt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fopt</span></code></a></dt><dd><p>Evaluation of the objective function of the nonlinear optimization problem at <a class="reference internal" href="cobyqa.optimize.TrustRegion.xopt.html#cobyqa.optimize.TrustRegion.xopt" title="cobyqa.optimize.TrustRegion.xopt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xopt</span></code></a>.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.fval.html#cobyqa.optimize.TrustRegion.fval" title="cobyqa.optimize.TrustRegion.fval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fval</span></code></a></dt><dd><p>Evaluations of the objective function of the nonlinear optimization problem at the interpolation points.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.is_model_step.html#cobyqa.optimize.TrustRegion.is_model_step" title="cobyqa.optimize.TrustRegion.is_model_step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_model_step</span></code></a></dt><dd><p>Flag indicating whether the current step is a model step.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.knew.html#cobyqa.optimize.TrustRegion.knew" title="cobyqa.optimize.TrustRegion.knew"><code class="xref py py-obj docutils literal notranslate"><span class="pre">knew</span></code></a></dt><dd><p>Index of the interpolation point to be removed from the interpolation set.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.kopt.html#cobyqa.optimize.TrustRegion.kopt" title="cobyqa.optimize.TrustRegion.kopt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kopt</span></code></a></dt><dd><p>Index of the best interpolation point so far, corresponding to the point around which the Taylor expansions of the quadratic models are defined.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.lmleq.html#cobyqa.optimize.TrustRegion.lmleq" title="cobyqa.optimize.TrustRegion.lmleq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lmleq</span></code></a></dt><dd><p>Lagrange multipliers associated with the linear equality constraints.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.lmlub.html#cobyqa.optimize.TrustRegion.lmlub" title="cobyqa.optimize.TrustRegion.lmlub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lmlub</span></code></a></dt><dd><p>Lagrange multipliers associated with the linear inequality constraints.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.lmnleq.html#cobyqa.optimize.TrustRegion.lmnleq" title="cobyqa.optimize.TrustRegion.lmnleq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lmnleq</span></code></a></dt><dd><p>Lagrange multipliers associated with the quadratic models of the nonlinear equality constraints.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.lmnlub.html#cobyqa.optimize.TrustRegion.lmnlub" title="cobyqa.optimize.TrustRegion.lmnlub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lmnlub</span></code></a></dt><dd><p>Lagrange multipliers associated with the quadratic models of the nonlinear inequality constraints.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.maxcv.html#cobyqa.optimize.TrustRegion.maxcv" title="cobyqa.optimize.TrustRegion.maxcv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">maxcv</span></code></a></dt><dd><p>Constraint violation evaluated on the nonlinear optimization problem at t`xopt`.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.mleq.html#cobyqa.optimize.TrustRegion.mleq" title="cobyqa.optimize.TrustRegion.mleq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mleq</span></code></a></dt><dd><p>Number of the linear equality constraints.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.mlub.html#cobyqa.optimize.TrustRegion.mlub" title="cobyqa.optimize.TrustRegion.mlub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mlub</span></code></a></dt><dd><p>Number of the linear inequality constraints.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.mnleq.html#cobyqa.optimize.TrustRegion.mnleq" title="cobyqa.optimize.TrustRegion.mnleq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mnleq</span></code></a></dt><dd><p>Number of the nonlinear equality constraints.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.mnlub.html#cobyqa.optimize.TrustRegion.mnlub" title="cobyqa.optimize.TrustRegion.mnlub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mnlub</span></code></a></dt><dd><p>Number of the nonlinear inequality constraints.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.options.html#cobyqa.optimize.TrustRegion.options" title="cobyqa.optimize.TrustRegion.options"><code class="xref py py-obj docutils literal notranslate"><span class="pre">options</span></code></a></dt><dd><p>Options forwarded to the solver.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.peneq.html#cobyqa.optimize.TrustRegion.peneq" title="cobyqa.optimize.TrustRegion.peneq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">peneq</span></code></a></dt><dd><p>Penalty coefficient associated with the equality constraints.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.penub.html#cobyqa.optimize.TrustRegion.penub" title="cobyqa.optimize.TrustRegion.penub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">penub</span></code></a></dt><dd><p>Penalty coefficient associated with the inequality constraints.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.rval.html#cobyqa.optimize.TrustRegion.rval" title="cobyqa.optimize.TrustRegion.rval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rval</span></code></a></dt><dd><p>Residuals associated with the constraints of the nonlinear optimization problem at the interpolation points.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.type.html#cobyqa.optimize.TrustRegion.type" title="cobyqa.optimize.TrustRegion.type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">type</span></code></a></dt><dd><p>Type of the nonlinear optimization problem.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.xbase.html#cobyqa.optimize.TrustRegion.xbase" title="cobyqa.optimize.TrustRegion.xbase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xbase</span></code></a></dt><dd><p>Shift of the origin in the calculations.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.xl.html#cobyqa.optimize.TrustRegion.xl" title="cobyqa.optimize.TrustRegion.xl"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xl</span></code></a></dt><dd><p>Lower-bound constraints on the decision variables.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.xopt.html#cobyqa.optimize.TrustRegion.xopt" title="cobyqa.optimize.TrustRegion.xopt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xopt</span></code></a></dt><dd><p>Best interpolation point so far, corresponding to the point around which the Taylor expansion of the quadratic models are defined.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.xpt.html#cobyqa.optimize.TrustRegion.xpt" title="cobyqa.optimize.TrustRegion.xpt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xpt</span></code></a></dt><dd><p>Displacements of the interpolation points from the origin.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.TrustRegion.xu.html#cobyqa.optimize.TrustRegion.xu" title="cobyqa.optimize.TrustRegion.xu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xu</span></code></a></dt><dd><p>Upper-bound constraints on the decision variables.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.__call__.html#cobyqa.optimize.TrustRegion.__call__" title="cobyqa.optimize.TrustRegion.__call__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__call__</span></code></a>(x, fx, cubx, ceqx[, model])</p></td>
+<td><p>Evaluate the merit function.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.ceq.html#cobyqa.optimize.TrustRegion.ceq" title="cobyqa.optimize.TrustRegion.ceq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ceq</span></code></a>(x)</p></td>
+<td><p>Evaluate the nonlinear equality constraint function of the nonlinear optimization problem.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.check_models.html#cobyqa.optimize.TrustRegion.check_models" title="cobyqa.optimize.TrustRegion.check_models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_models</span></code></a>([stack_level])</p></td>
+<td><p>Check the interpolation conditions.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.check_options.html#cobyqa.optimize.TrustRegion.check_options" title="cobyqa.optimize.TrustRegion.check_options"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_options</span></code></a>(n[, stack_level])</p></td>
+<td><p>Ensure that the options are consistent, and modify them if necessary.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.cub.html#cobyqa.optimize.TrustRegion.cub" title="cobyqa.optimize.TrustRegion.cub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cub</span></code></a>(x)</p></td>
+<td><p>Evaluate the nonlinear inequality constraint function of the nonlinear optimization problem.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.fun.html#cobyqa.optimize.TrustRegion.fun" title="cobyqa.optimize.TrustRegion.fun"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fun</span></code></a>(x)</p></td>
+<td><p>Evaluate the objective function of the nonlinear optimization problem.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.get_best_point.html#cobyqa.optimize.TrustRegion.get_best_point" title="cobyqa.optimize.TrustRegion.get_best_point"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_best_point</span></code></a>()</p></td>
+<td><p>Get the index of the optimal interpolation point.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.less_merit.html#cobyqa.optimize.TrustRegion.less_merit" title="cobyqa.optimize.TrustRegion.less_merit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">less_merit</span></code></a>(mval1, rval1, mval2, rval2)</p></td>
+<td><p>Indicates whether a point is better than another.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq.html#cobyqa.optimize.TrustRegion.model_ceq" title="cobyqa.optimize.TrustRegion.model_ceq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_ceq</span></code></a>(x, i)</p></td>
+<td><p>Evaluate an equality constraint function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_alt.html#cobyqa.optimize.TrustRegion.model_ceq_alt" title="cobyqa.optimize.TrustRegion.model_ceq_alt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_ceq_alt</span></code></a>(x, i)</p></td>
+<td><p>Evaluate an alternative equality constraint function of the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_alt_curv.html#cobyqa.optimize.TrustRegion.model_ceq_alt_curv" title="cobyqa.optimize.TrustRegion.model_ceq_alt_curv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_ceq_alt_curv</span></code></a>(x, i)</p></td>
+<td><p>Evaluate the curvature of an alternative equality constraint function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_alt_grad.html#cobyqa.optimize.TrustRegion.model_ceq_alt_grad" title="cobyqa.optimize.TrustRegion.model_ceq_alt_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_ceq_alt_grad</span></code></a>(x, i)</p></td>
+<td><p>Evaluate the gradient of an alternative equality constraint function of the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_alt_hess.html#cobyqa.optimize.TrustRegion.model_ceq_alt_hess" title="cobyqa.optimize.TrustRegion.model_ceq_alt_hess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_ceq_alt_hess</span></code></a>(i)</p></td>
+<td><p>Evaluate the Hessian matrix of an alternative equality constraint function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_alt_hessp.html#cobyqa.optimize.TrustRegion.model_ceq_alt_hessp" title="cobyqa.optimize.TrustRegion.model_ceq_alt_hessp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_ceq_alt_hessp</span></code></a>(x, i)</p></td>
+<td><p>Evaluate the product of the Hessian matrix of an alternative equality constraint function of the model with any vector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_curv.html#cobyqa.optimize.TrustRegion.model_ceq_curv" title="cobyqa.optimize.TrustRegion.model_ceq_curv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_ceq_curv</span></code></a>(x, i)</p></td>
+<td><p>Evaluate the curvature of an equality constraint function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_grad.html#cobyqa.optimize.TrustRegion.model_ceq_grad" title="cobyqa.optimize.TrustRegion.model_ceq_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_ceq_grad</span></code></a>(x, i)</p></td>
+<td><p>Evaluate the gradient of an equality constraint function of the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_hess.html#cobyqa.optimize.TrustRegion.model_ceq_hess" title="cobyqa.optimize.TrustRegion.model_ceq_hess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_ceq_hess</span></code></a>(i)</p></td>
+<td><p>Evaluate the Hessian matrix of an equality constraint function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_ceq_hessp.html#cobyqa.optimize.TrustRegion.model_ceq_hessp" title="cobyqa.optimize.TrustRegion.model_ceq_hessp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_ceq_hessp</span></code></a>(x, i)</p></td>
+<td><p>Evaluate the product of the Hessian matrix of an equality constraint function of the model with any vector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub.html#cobyqa.optimize.TrustRegion.model_cub" title="cobyqa.optimize.TrustRegion.model_cub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_cub</span></code></a>(x, i)</p></td>
+<td><p>Evaluate an inequality constraint function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_alt.html#cobyqa.optimize.TrustRegion.model_cub_alt" title="cobyqa.optimize.TrustRegion.model_cub_alt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_cub_alt</span></code></a>(x, i)</p></td>
+<td><p>Evaluate an alternative inequality constraint function of the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_alt_curv.html#cobyqa.optimize.TrustRegion.model_cub_alt_curv" title="cobyqa.optimize.TrustRegion.model_cub_alt_curv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_cub_alt_curv</span></code></a>(x, i)</p></td>
+<td><p>Evaluate the curvature of an alternative inequality constraint function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_alt_grad.html#cobyqa.optimize.TrustRegion.model_cub_alt_grad" title="cobyqa.optimize.TrustRegion.model_cub_alt_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_cub_alt_grad</span></code></a>(x, i)</p></td>
+<td><p>Evaluate the gradient of an alternative inequality constraint function of the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_alt_hess.html#cobyqa.optimize.TrustRegion.model_cub_alt_hess" title="cobyqa.optimize.TrustRegion.model_cub_alt_hess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_cub_alt_hess</span></code></a>(i)</p></td>
+<td><p>Evaluate the Hessian matrix of an alternative inequality constraint function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_alt_hessp.html#cobyqa.optimize.TrustRegion.model_cub_alt_hessp" title="cobyqa.optimize.TrustRegion.model_cub_alt_hessp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_cub_alt_hessp</span></code></a>(x, i)</p></td>
+<td><p>Evaluate the product of the Hessian matrix of an alternative inequality constraint function of the model with any vector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_curv.html#cobyqa.optimize.TrustRegion.model_cub_curv" title="cobyqa.optimize.TrustRegion.model_cub_curv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_cub_curv</span></code></a>(x, i)</p></td>
+<td><p>Evaluate the curvature of an inequality constraint function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_grad.html#cobyqa.optimize.TrustRegion.model_cub_grad" title="cobyqa.optimize.TrustRegion.model_cub_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_cub_grad</span></code></a>(x, i)</p></td>
+<td><p>Evaluate the gradient of an inequality constraint function of the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_hess.html#cobyqa.optimize.TrustRegion.model_cub_hess" title="cobyqa.optimize.TrustRegion.model_cub_hess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_cub_hess</span></code></a>(i)</p></td>
+<td><p>Evaluate the Hessian matrix of an inequality constraint function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_cub_hessp.html#cobyqa.optimize.TrustRegion.model_cub_hessp" title="cobyqa.optimize.TrustRegion.model_cub_hessp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_cub_hessp</span></code></a>(x, i)</p></td>
+<td><p>Evaluate the product of the Hessian matrix of an inequality constraint function of the model with any vector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag.html#cobyqa.optimize.TrustRegion.model_lag" title="cobyqa.optimize.TrustRegion.model_lag"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_lag</span></code></a>(x)</p></td>
+<td><p>Evaluate the Lagrangian function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_alt.html#cobyqa.optimize.TrustRegion.model_lag_alt" title="cobyqa.optimize.TrustRegion.model_lag_alt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_lag_alt</span></code></a>(x)</p></td>
+<td><p>Evaluate the alternative Lagrangian function of the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_alt_curv.html#cobyqa.optimize.TrustRegion.model_lag_alt_curv" title="cobyqa.optimize.TrustRegion.model_lag_alt_curv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_lag_alt_curv</span></code></a>(x)</p></td>
+<td><p>Evaluate the curvature of the alternative Lagrangian function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_alt_grad.html#cobyqa.optimize.TrustRegion.model_lag_alt_grad" title="cobyqa.optimize.TrustRegion.model_lag_alt_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_lag_alt_grad</span></code></a>(x)</p></td>
+<td><p>Evaluate the gradient of the alternative Lagrangian function of the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_alt_hess.html#cobyqa.optimize.TrustRegion.model_lag_alt_hess" title="cobyqa.optimize.TrustRegion.model_lag_alt_hess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_lag_alt_hess</span></code></a>()</p></td>
+<td><p>Evaluate the Hessian matrix of the alternative Lagrangian function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_alt_hessp.html#cobyqa.optimize.TrustRegion.model_lag_alt_hessp" title="cobyqa.optimize.TrustRegion.model_lag_alt_hessp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_lag_alt_hessp</span></code></a>(x)</p></td>
+<td><p>Evaluate the product of the Hessian matrix of the alternative Lagrangian function of the model with any vector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_curv.html#cobyqa.optimize.TrustRegion.model_lag_curv" title="cobyqa.optimize.TrustRegion.model_lag_curv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_lag_curv</span></code></a>(x)</p></td>
+<td><p>Evaluate the curvature of the Lagrangian function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_grad.html#cobyqa.optimize.TrustRegion.model_lag_grad" title="cobyqa.optimize.TrustRegion.model_lag_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_lag_grad</span></code></a>(x)</p></td>
+<td><p>Evaluate the gradient of Lagrangian function of the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_hess.html#cobyqa.optimize.TrustRegion.model_lag_hess" title="cobyqa.optimize.TrustRegion.model_lag_hess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_lag_hess</span></code></a>()</p></td>
+<td><p>Evaluate the Hessian matrix of the Lagrangian function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_lag_hessp.html#cobyqa.optimize.TrustRegion.model_lag_hessp" title="cobyqa.optimize.TrustRegion.model_lag_hessp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_lag_hessp</span></code></a>(x)</p></td>
+<td><p>Evaluate the product of the Hessian matrix of the Lagrangian function of the model with any vector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj.html#cobyqa.optimize.TrustRegion.model_obj" title="cobyqa.optimize.TrustRegion.model_obj"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_obj</span></code></a>(x)</p></td>
+<td><p>Evaluate the objective function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_alt.html#cobyqa.optimize.TrustRegion.model_obj_alt" title="cobyqa.optimize.TrustRegion.model_obj_alt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_obj_alt</span></code></a>(x)</p></td>
+<td><p>Evaluate the alternative objective function of the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_alt_curv.html#cobyqa.optimize.TrustRegion.model_obj_alt_curv" title="cobyqa.optimize.TrustRegion.model_obj_alt_curv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_obj_alt_curv</span></code></a>(x)</p></td>
+<td><p>Evaluate the curvature of the alternative objective function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_alt_grad.html#cobyqa.optimize.TrustRegion.model_obj_alt_grad" title="cobyqa.optimize.TrustRegion.model_obj_alt_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_obj_alt_grad</span></code></a>(x)</p></td>
+<td><p>Evaluate the gradient of the alternative objective function of the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_alt_hess.html#cobyqa.optimize.TrustRegion.model_obj_alt_hess" title="cobyqa.optimize.TrustRegion.model_obj_alt_hess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_obj_alt_hess</span></code></a>()</p></td>
+<td><p>Evaluate the Hessian matrix of the alternative objective function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_alt_hessp.html#cobyqa.optimize.TrustRegion.model_obj_alt_hessp" title="cobyqa.optimize.TrustRegion.model_obj_alt_hessp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_obj_alt_hessp</span></code></a>(x)</p></td>
+<td><p>Evaluate the product of the Hessian matrix of the alternative objective function of the model with any vector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_curv.html#cobyqa.optimize.TrustRegion.model_obj_curv" title="cobyqa.optimize.TrustRegion.model_obj_curv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_obj_curv</span></code></a>(x)</p></td>
+<td><p>Evaluate the curvature of the objective function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_grad.html#cobyqa.optimize.TrustRegion.model_obj_grad" title="cobyqa.optimize.TrustRegion.model_obj_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_obj_grad</span></code></a>(x)</p></td>
+<td><p>Evaluate the gradient of the objective function of the model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_hess.html#cobyqa.optimize.TrustRegion.model_obj_hess" title="cobyqa.optimize.TrustRegion.model_obj_hess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_obj_hess</span></code></a>()</p></td>
+<td><p>Evaluate the Hessian matrix of the objective function of the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_obj_hessp.html#cobyqa.optimize.TrustRegion.model_obj_hessp" title="cobyqa.optimize.TrustRegion.model_obj_hessp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_obj_hessp</span></code></a>(x)</p></td>
+<td><p>Evaluate the product of the Hessian matrix of the objective function of the model with any vector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.model_step.html#cobyqa.optimize.TrustRegion.model_step" title="cobyqa.optimize.TrustRegion.model_step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_step</span></code></a>(delta, **kwargs)</p></td>
+<td><p>Estimate a model-improvement step from <a class="reference internal" href="cobyqa.optimize.TrustRegion.xopt.html#cobyqa.optimize.TrustRegion.xopt" title="cobyqa.optimize.TrustRegion.xopt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xopt</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.prepare_model_step.html#cobyqa.optimize.TrustRegion.prepare_model_step" title="cobyqa.optimize.TrustRegion.prepare_model_step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_model_step</span></code></a>(delta)</p></td>
+<td><p>Set the next iteration to a model-step if necessary.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.prepare_trust_region_step.html#cobyqa.optimize.TrustRegion.prepare_trust_region_step" title="cobyqa.optimize.TrustRegion.prepare_trust_region_step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepare_trust_region_step</span></code></a>()</p></td>
+<td><p>Set the next iteration to a trust-region step.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.reduce_penalty_coefficients.html#cobyqa.optimize.TrustRegion.reduce_penalty_coefficients" title="cobyqa.optimize.TrustRegion.reduce_penalty_coefficients"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reduce_penalty_coefficients</span></code></a>()</p></td>
+<td><p>Reduce the penalty coefficients if possible, to prevent overflows.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.reset_models.html#cobyqa.optimize.TrustRegion.reset_models" title="cobyqa.optimize.TrustRegion.reset_models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset_models</span></code></a>()</p></td>
+<td><p>Reset the models.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.set_default_options.html#cobyqa.optimize.TrustRegion.set_default_options" title="cobyqa.optimize.TrustRegion.set_default_options"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_default_options</span></code></a>(n)</p></td>
+<td><p>Set the default options for the solvers.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.shift_origin.html#cobyqa.optimize.TrustRegion.shift_origin" title="cobyqa.optimize.TrustRegion.shift_origin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shift_origin</span></code></a>(delta)</p></td>
+<td><p>Shift the origin of the calculations if necessary.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.trust_region_step.html#cobyqa.optimize.TrustRegion.trust_region_step" title="cobyqa.optimize.TrustRegion.trust_region_step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trust_region_step</span></code></a>(delta, **kwargs)</p></td>
+<td><p>Evaluate a Byrd-Omojokun-like trust-region step from <a class="reference internal" href="cobyqa.optimize.TrustRegion.xopt.html#cobyqa.optimize.TrustRegion.xopt" title="cobyqa.optimize.TrustRegion.xopt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xopt</span></code></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.update.html#cobyqa.optimize.TrustRegion.update" title="cobyqa.optimize.TrustRegion.update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code></a>(step, **kwargs)</p></td>
+<td><p>Include a new point in the interpolation set.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.update_multipliers.html#cobyqa.optimize.TrustRegion.update_multipliers" title="cobyqa.optimize.TrustRegion.update_multipliers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_multipliers</span></code></a>(**kwargs)</p></td>
+<td><p>Set the least-squares Lagrange multipliers.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.TrustRegion.update_penalty_coefficients.html#cobyqa.optimize.TrustRegion.update_penalty_coefficients" title="cobyqa.optimize.TrustRegion.update_penalty_coefficients"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_penalty_coefficients</span></code></a>(step, fx, cubx, ceqx)</p></td>
+<td><p>Increase the penalty coefficients.</p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='left-prev' id="prev-link" href="cobyqa.OptimizeResult.values.html" title="previous page">cobyqa.OptimizeResult.values</a>
+    <a class='right-next' id="next-link" href="cobyqa.optimize.TrustRegion.__call__.html" title="next page">cobyqa.optimize.TrustRegion.__call__</a>
+
+              </div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="../../_static/js/index.1c5a1a01449ed65a7b51.js"></script>
+
+  <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2021, Tom M. Ragonneau.<br/>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="last-updated">
+Last updated on September 30, 2021.<br/>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.2.0.<br/>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>
