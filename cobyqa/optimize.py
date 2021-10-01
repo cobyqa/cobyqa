@@ -1857,16 +1857,37 @@ class TrustRegion:
             # method must be restarted.
             while ksav == self.kopt and mmx > mopt:
                 if self.penub > 0.:
-                    self._penub *= 2.
+                    self._penub *= 1.5
                 elif self.mlub + self.mnlub > 0:
                     self._penub = 1.
                 if self.peneq > 0.:
-                    self._peneq *= 2.
+                    self._peneq *= 1.5
                 elif self.mleq + self.mnleq > 0:
                     self._peneq = 1.
 
                 # When the penalty coefficients are modified, the index of the
                 # best interpolation point so far may changed.
+                mx, mmx = self(xnew, fx, cubx, ceqx, True)
+                self.kopt = self.get_best_point()
+                mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
+            self._penub *= 2.
+            self._peneq *= 2.
+            mx, mmx = self(xnew, fx, cubx, ceqx, True)
+            self.kopt = self.get_best_point()
+            mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
+        elif not self.is_model_step:
+            # If the current penalty coefficients are too close from failing
+            # mmx <= mopt, they are doubled.
+            self._penub = 2. * self.penub / 3.
+            self._peneq = 2. * self.peneq / 3.
+            _, mmx_test = self(xnew, fx, cubx, ceqx, True)
+            mopt_test = self(self.xopt, self.fopt, self.coptub, self.copteq)
+            self._penub = 3. * self.penub
+            self._peneq = 3. * self.peneq
+            if mmx_test <= mopt_test:
+                self._penub = .5 * self.penub
+                self._peneq = .5 * self.peneq
+            else:
                 mx, mmx = self(xnew, fx, cubx, ceqx, True)
                 self.kopt = self.get_best_point()
                 mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)

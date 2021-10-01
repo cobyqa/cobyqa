@@ -13,3 +13,4 @@ Linear Algebra
     linalg.cpqp
     linalg.lctcg
     linalg.nnls
+    linalg.qr

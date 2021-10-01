@@ -5836,6 +5836,13 @@ Minimize approximately a quadratic function subject to bound, linear, and trust\
 Compute the least\sphinxhyphen{}squares solution of \sphinxcode{\sphinxupquote{A @ x = b}} subject to the nonnegativity constraints \sphinxcode{\sphinxupquote{x{[}:k{]} >= 0}}.
 \\
 \hline
+\sphinxAtStartPar
+{\hyperref[\detokenize{refs/generated/cobyqa.linalg.qr:cobyqa.linalg.qr}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{linalg.qr}}}}}(a{[}, overwrite\_a, pivoting, ...{]})
+&
+\sphinxAtStartPar
+Compute the QR factorization \sphinxcode{\sphinxupquote{a = Q @ R}} where \sphinxcode{\sphinxupquote{Q}} is an orthogonal matrix and \sphinxcode{\sphinxupquote{R}} is an upper triangular matrix.
+\\
+\hline
 \end{longtable}\sphinxatlongtableend\end{savenotes}
 
 
@@ -6393,6 +6400,64 @@ The method is adapted from the NNLS algorithm \sphinxcite{refs/generated/cobyqa.
 
 \sphinxAtStartPar
 \sphinxcite{refs/generated/cobyqa.linalg.nnls:r345530570369-1}
+
+\end{fulllineitems}
+
+
+
+\section{cobyqa.linalg.qr}
+\label{\detokenize{refs/generated/cobyqa.linalg.qr:cobyqa-linalg-qr}}\label{\detokenize{refs/generated/cobyqa.linalg.qr::doc}}\index{qr() (in module cobyqa.linalg)@\spxentry{qr()}\spxextra{in module cobyqa.linalg}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{refs/generated/cobyqa.linalg.qr:cobyqa.linalg.qr}}\pysiglinewithargsret{\sphinxcode{\sphinxupquote{cobyqa.linalg.}}\sphinxbfcode{\sphinxupquote{qr}}}{\emph{\DUrole{n}{a}}, \emph{\DUrole{n}{overwrite\_a}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{pivoting}\DUrole{o}{=}\DUrole{default_value}{False}}, \emph{\DUrole{n}{check\_finite}\DUrole{o}{=}\DUrole{default_value}{True}}}{}
+\sphinxAtStartPar
+Compute the QR factorization \sphinxcode{\sphinxupquote{a = Q @ R}} where \sphinxcode{\sphinxupquote{Q}} is an orthogonal
+matrix and \sphinxcode{\sphinxupquote{R}} is an upper triangular matrix.
+\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{\sphinxstylestrong{a}}] \leavevmode{[}array\_like, shape (m, n){]}
+\sphinxAtStartPar
+Matrix to be factorized.
+
+\item[{\sphinxstylestrong{overwrite\_a}}] \leavevmode{[}bool, optional{]}
+\sphinxAtStartPar
+Whether to overwrite the data in \sphinxstyleemphasis{a} with the matrix \sphinxcode{\sphinxupquote{R}} (may improve
+the performance by limiting the memory cost).
+
+\item[{\sphinxstylestrong{pivoting}}] \leavevmode{[}bool, optional{]}
+\sphinxAtStartPar
+Whether the factorization should include column pivoting, in which case
+a permutation vector \sphinxcode{\sphinxupquote{P}} is returned such that \sphinxcode{\sphinxupquote{A{[}:, P{]} = Q @ R}}.
+
+\item[{\sphinxstylestrong{check\_finite}}] \leavevmode{[}bool, optional{]}
+\sphinxAtStartPar
+Whether to check that the input matrix contains only finite numbers.
+
+\end{description}
+
+\item[{Returns}] \leavevmode\begin{description}
+\item[{\sphinxstylestrong{Q}}] \leavevmode{[}numpy.ndarray, shape (m, m){]}
+\sphinxAtStartPar
+Above\sphinxhyphen{}mentioned orthogonal matrix \sphinxcode{\sphinxupquote{Q}}.
+
+\item[{\sphinxstylestrong{R}}] \leavevmode{[}numpy.ndarray, shape (m, n){]}
+\sphinxAtStartPar
+Above\sphinxhyphen{}mentioned upper triangular matrix \sphinxcode{\sphinxupquote{R}}.
+
+\item[{\sphinxstylestrong{P}}] \leavevmode{[}numpy.ndarray, shape (n,){]}
+\sphinxAtStartPar
+Indices of the permutation. Not returned if \sphinxcode{\sphinxupquote{pivoting=False}}.
+
+\end{description}
+
+\item[{Raises}] \leavevmode\begin{description}
+\item[{AssertionError}] \leavevmode
+\sphinxAtStartPar
+The matrix \sphinxstyleemphasis{a} is not two\sphinxhyphen{}dimensional.
+
+\end{description}
+
+\end{description}\end{quote}
 
 \end{fulllineitems}
 
