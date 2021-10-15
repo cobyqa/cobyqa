@@ -126,15 +126,15 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     # Remove the linear constraints whose gradients are zero, and normalize the
     # remaining constraints. The bound constraints are already normalized.
     temp = np.linalg.norm(Aub, axis=1)
-    izero = np.less_equal(np.abs(temp), tol * np.maximum(1., np.abs(bub)))
+    izero = np.abs(temp) <= tol * np.maximum(1., np.abs(bub))
     if np.any(izero):
         ikeep = np.logical_not(izero)
         Aub = Aub[ikeep, :]
         bub = bub[ikeep]
         temp = temp[ikeep]
         mlub -= np.count_nonzero(izero)
-    Aub = np.divide(Aub, temp[:, np.newaxis])
-    bub = np.divide(bub, temp)
+    Aub = Aub / temp[:, np.newaxis]
+    bub = bub / temp
 
     # Set the initial active set to the empty set, and calculate the normalized
     # residuals of the constraints at the origin. The residuals of the linear

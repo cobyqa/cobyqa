@@ -263,7 +263,6 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         if is_trust_region_step:
             step = fwk.trust_region_step(delta, **kwargs)
             snorm = np.linalg.norm(step)
-            # FIXME: Tests fail for condition ``snorm <= 0.1999 * delta``.
             if snorm <= .5 * delta:
                 delta = rho if delta <= 1.4 * rho else .5 * delta
                 if delsav > rho:

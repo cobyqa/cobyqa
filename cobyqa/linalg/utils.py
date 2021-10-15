@@ -275,13 +275,13 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
                 temp = -np.inner(rfac[kleq, kleq + 1:mleq + nact], vmu[k + 1:])
                 vmu[k] = temp / rfac[kleq, kleq]
             vmult = violmx
-            imult = np.greater(np.abs(vmu), tiny * np.abs(vlam[:nact]))
+            imult = np.abs(vmu) > tiny * np.abs(vlam[:nact])
             imult = imult & (vlam[:nact] >= vmult * vmu)
             imult[-1] = False
             k = -1
             if np.any(imult):
                 mult = np.copy(vlam[:nact])
-                mult[imult] = np.divide(mult[imult], vmu[imult])
+                mult[imult] = mult[imult] / vmu[imult]
                 mult[np.logical_not(imult)] = np.inf
                 k = np.argmin(mult)
                 vmult = mult[k]

@@ -166,11 +166,11 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
 
         # Reduce the steplength if necessary in order to preserve the simple
         # bounds, setting the index of the new constrained variable if any.
-        ipos = np.greater(sd, tiny * np.abs(xu - step))
-        ineg = np.less(sd, -tiny * np.abs(step - xl))
+        ipos = sd > tiny * np.abs(xu - step)
+        ineg = sd < -tiny * np.abs(step - xl)
         distbd = np.full_like(step, np.inf)
-        distbd[ipos] = np.divide(xu[ipos] - step[ipos], sd[ipos])
-        distbd[ineg] = np.divide(xl[ineg] - step[ineg], sd[ineg])
+        distbd[ipos] = (xu[ipos] - step[ipos]) / sd[ipos]
+        distbd[ineg] = (xl[ineg] - step[ineg]) / sd[ineg]
         inew = -1
         if np.any(np.isfinite(distbd)):
             inew = np.argmin(distbd)
@@ -299,25 +299,25 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
             ssq = np.square(step[ifree]) + np.square(sd[ifree])
             temp = np.full_like(step, -np.inf)
             temp[ifree] = ssq - np.square(xl[ifree])
-            itemp = np.greater(temp, 0.)
+            itemp = temp > 0.
             temp[itemp] = np.sqrt(temp[itemp]) - sd[itemp]
             temp[np.logical_not(itemp)] = -np.inf
-            isl = np.greater(angbd * temp - sl, tiny * temp)
+            isl = angbd * temp - sl > tiny * temp
             xbdisav = 0
             if np.any(isl):
                 ratio = np.full_like(step, np.inf)
-                ratio[isl] = np.divide(sl[isl], temp[isl])
+                ratio[isl] = sl[isl] / temp[isl]
                 inew = np.argmin(ratio)
                 angbd = ratio[inew]
                 xbdisav = -1
             temp[ifree] = ssq - np.square(xu[ifree])
-            itemp = np.greater(temp, 0.)
+            itemp = temp > 0.
             temp[itemp] = np.sqrt(temp[itemp]) + sd[itemp]
             temp[np.logical_not(itemp)] = -np.inf
-            isu = np.greater(angbd * temp - su, tiny * temp)
+            isu = angbd * temp - su > tiny * temp
             if np.any(isu):
                 ratio = np.full_like(step, np.inf)
-                ratio[isu] = np.divide(su[isu], temp[isu])
+                ratio[isu] = su[isu] / temp[isu]
                 inew = np.argmin(ratio)
                 angbd = ratio[inew]
                 xbdisav = 1
@@ -339,7 +339,7 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
             nalt = 20
             iu = int(float(nalt - 3) * angbd + 3.1)
             angt = angbd * np.arange(1, iu + 1, dtype=float) / float(iu)
-            sth = np.divide(2. * angt, 1. + np.square(angt))
+            sth = 2. * angt / (1. + np.square(angt))
             temp = sdhsd + angt * (stephred * angt - 2. * stephsd)
             rednew = sth * (gdstep * angt - gdsd)
             rednew -= sth * (.5 * sth * temp)

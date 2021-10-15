@@ -114,7 +114,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     # of the objective function of the reformulated problem. The bound
     # constraints are already normalized.
     lcn = np.sqrt(np.sum(np.square(Aub), axis=1) + 1.)
-    Aub = np.divide(Aub, lcn[:, np.newaxis])
+    Aub = Aub / lcn[:, np.newaxis]
 
     # Set the initial active set to the empty set.
     nact = np.array(0, dtype=int)
@@ -126,9 +126,9 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     # problem and the normalized the right-hand side of the linear inequality
     # constraints and the residuals of the constraints at the initial guess.
     gq = np.r_[np.dot(Aeq.T, -beq), np.maximum(0., -bub)]
-    bub = np.divide(bub, lcn)
+    bub /= lcn
     delbd = np.sqrt(np.inner(beq, beq) + np.inner(gq[n:], gq[n:]))
-    resid = np.r_[bub + np.divide(gq[n:], lcn), -xl, gq[n:], xu]
+    resid = np.r_[bub + gq[n:] / lcn, -xl, gq[n:], xu]
     resid = np.maximum(0., resid)
 
     # Start the iterative calculations. The truncated conjugate gradient method

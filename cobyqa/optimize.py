@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, givens, lctcg, nnls
-from .utils import RestartRequiredException, omega_product
+from .utils import RestartRequiredException, normalize_constraint, omega_product
 
 
 class TrustRegion:
@@ -443,25 +443,26 @@ class TrustRegion:
     @property
     def aub(self):
         """
-        Jacobian matrix of the linear inequality constraints.
+        Jacobian matrix of the normalized linear inequality constraints.
 
         Returns
         -------
         numpy.ndarray, shape (mlub, n)
-            Jacobian matrix of the linear inequality constraints. Each row
-            stores the gradient of a linear inequality constraint.
+            Jacobian matrix of the normalized linear inequality constraints.
+            Each row stores the gradient of a linear inequality constraint.
         """
         return self._models.aub
 
     @property
     def bub(self):
         """
-        Right-hand side vector of the linear inequality constraints.
+        Right-hand side vector of the normalized linear inequality constraints.
 
         Returns
         -------
         numpy.ndarray, shape (mlub,)
-            Right-hand side vector of the linear inequality constraints.
+            Right-hand side vector of the normalized linear inequality
+            constraints.
         """
         return self._models.bub
 
@@ -480,25 +481,26 @@ class TrustRegion:
     @property
     def aeq(self):
         """
-        Jacobian matrix of the linear equality constraints.
+        Jacobian matrix of the normalized linear equality constraints.
 
         Returns
         -------
         numpy.ndarray, shape (mleq, n)
-            Jacobian matrix of the linear equality constraints. Each row stores
-            the gradient of a linear equality constraint.
+            Jacobian matrix of the normalized linear equality constraints. Each
+            row stores the gradient of a linear equality constraint.
         """
         return self._models.aeq
 
     @property
     def beq(self):
         """
-        Right-hand side vector of the linear equality constraints.
+        Right-hand side vector of the normalized linear equality constraints.
 
         Returns
         -------
         numpy.ndarray, shape (mleq,)
-            Right-hand side vector of the linear equality constraints.
+            Right-hand side vector of the normalized linear equality
+            constraints.
         """
         return self._models.beq
 
@@ -1785,14 +1787,14 @@ class TrustRegion:
             eps = np.finfo(float).eps
             tol = 10. * eps * self.mlub * np.max(np.abs(self.bub), initial=1.)
             rub = np.dot(self.aub, self.xopt) - self.bub
-            ilub = np.less_equal(np.abs(rub), tol)
+            ilub = np.abs(rub) <= tol
             mlub = np.count_nonzero(ilub)
             abs_rub = np.abs(self.coptub)
             tol = 10. * eps * self.mlub * np.max(abs_rub, initial=1.)
             cub_jac = np.empty((self.mnlub, n), dtype=float)
             for i in range(self.mnlub):
                 cub_jac[i, :] = self.model_cub_grad(self.xopt, i)
-            inlub = np.less_equal(abs_rub, tol)
+            inlub = abs_rub <= tol
             mnlub = np.count_nonzero(inlub)
             ceq_jac = np.empty((self.mnleq, n), dtype=float)
             for i in range(self.mnleq):
@@ -1918,7 +1920,8 @@ class TrustRegion:
             resid = np.c_[resid, self.cvalub]
             cmin = np.min(resid, axis=1)
             cmax = np.max(resid, axis=1)
-            iub = np.less(cmin, 2. * cmax)
+            iub = (cmin <= -self.rhoend) | (cmax >= self.rhoend)
+            iub = iub & (cmin < 2. * cmax)
             if np.any(iub):
                 cmin_neg = np.minimum(0., cmin[iub])
                 denom = np.min(cmax[iub] - cmin_neg)
@@ -1931,13 +1934,14 @@ class TrustRegion:
             resid = np.c_[resid, self.cvaleq]
             cmin = np.min(resid, axis=1)
             cmax = np.max(resid, axis=1)
-            ieq_pos = np.less(cmin, 2. * cmax)
+            ieq = (cmin <= -self.rhoend) | (cmax >= self.rhoend)
+            ieq_pos = ieq & (cmin < 2. * cmax)
             if np.any(ieq_pos):
                 cmin_neg = np.minimum(0., cmin[ieq_pos])
                 denom = np.min(cmax[ieq_pos] - cmin_neg)
                 if denom > tiny * (fmax - fmin):
                     self._peneq = min(self.peneq, (fmax - fmin) / denom)
-            ieq_neg = np.less(cmin, .5 * cmax)
+            ieq_neg = ieq & (cmin < .5 * cmax)
             if np.any(ieq_neg):
                 cmax_pos = np.maximum(0., cmax[ieq_neg])
                 denom = np.min(cmax_pos - cmin[ieq_neg])
@@ -1945,6 +1949,10 @@ class TrustRegion:
                     self._peneq = min(self.peneq, (fmax - fmin) / denom)
             if np.all(np.logical_not(np.r_[ieq_pos, ieq_neg])):
                 self._peneq = 0.
+        # FIXME: Bound the ratio of the penalty coefficients.
+        if self.penub > 0. and self.peneq > 0.:
+            self._penub = max(self.penub, self.peneq)
+            self._peneq = self.penub
 
     def trust_region_step(self, delta, **kwargs):
         """
@@ -2233,6 +2241,7 @@ class Models:
         self._bub = bub
         self._Aeq = Aeq
         self._beq = beq
+        self.normalize_constraints()
         self.shift_constraints(x0)
         n = x0.size
         npt = options.get('npt')
@@ -2368,25 +2377,26 @@ class Models:
     @property
     def aub(self):
         """
-        Jacobian matrix of the linear inequality constraints.
+        Jacobian matrix of the normalized linear inequality constraints.
 
         Returns
         -------
         numpy.ndarray, shape (mlub, n)
-            Jacobian matrix of the linear inequality constraints. Each row
-            stores the gradient of a linear inequality constraint.
+            Jacobian matrix of the normalized linear inequality constraints.
+            Each row stores the gradient of a linear inequality constraint.
         """
         return self._Aub
 
     @property
     def bub(self):
         """
-        Right-hand side vector of the linear inequality constraints.
+        Right-hand side vector of the normalized linear inequality constraints.
 
         Returns
         -------
         numpy.ndarray, shape (mlub,)
-            Right-hand side vector of the linear inequality constraints.
+            Right-hand side vector of the normalized linear inequality
+            constraints.
         """
         return self._bub
 
@@ -2405,25 +2415,26 @@ class Models:
     @property
     def aeq(self):
         """
-        Jacobian matrix of the linear equality constraints.
+        Jacobian matrix of the normalized linear equality constraints.
 
         Returns
         -------
         numpy.ndarray, shape (mleq, n)
-            Jacobian matrix of the linear equality constraints. Each row stores
-            the gradient of a linear equality constraint.
+            Jacobian matrix of the normalized linear equality constraints. Each
+            row stores the gradient of a linear equality constraint.
         """
         return self._Aeq
 
     @property
     def beq(self):
         """
-        Right-hand side vector of the linear equality constraints.
+        Right-hand side vector of the normalized linear equality constraints.
 
         Returns
         -------
         numpy.ndarray, shape (mleq,)
-            Right-hand side vector of the linear equality constraints.
+            Right-hand side vector of the normalized linear equality
+            constraints.
         """
         return self._beq
 
@@ -3594,6 +3605,16 @@ class Models:
         for i in range(self.mnleq):
             cx += lmnleq[i] * self.ceq_alt_curv(x, i)
         return cx
+
+    def normalize_constraints(self):
+        """
+        Normalize the linear constraints.
+
+        Each linear inequality and equality constraint is normalized, so that
+        the Euclidean norm of its gradient is one (if not zero).
+        """
+        normalize_constraint(self._Aub, self._bub)
+        normalize_constraint(self._Aeq, self._beq)
 
     def shift_constraints(self, x):
         """

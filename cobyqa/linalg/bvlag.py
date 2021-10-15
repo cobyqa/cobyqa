@@ -117,31 +117,31 @@ def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
 
         # Update the lower and upper bounds to take into account the simple
         # bounds along the current line.
-        ipos = np.greater(xpt[k, :], tiny * np.maximum(np.abs(xl), np.abs(xu)))
+        ipos = xpt[k, :] > tiny * np.maximum(np.abs(xl), np.abs(xu))
         pxl = np.full_like(xopt, -np.inf)
-        pxl[ipos] = np.divide(xl[ipos], xpt[k, ipos])
+        pxl[ipos] = xl[ipos] / xpt[k, ipos]
         pxl[pxl <= xlbd] = -np.inf
         if np.any(np.isfinite(pxl)):
             ipxl = np.argmax(pxl)
             xlbd = pxl[ipxl]
             ilbd = -ipxl - 1
         pxl = np.full_like(xopt, np.inf)
-        pxl[ipos] = np.divide(xu[ipos], xpt[k, ipos])
+        pxl[ipos] = xu[ipos] / xpt[k, ipos]
         pxl[pxl >= xubd] = np.inf
         if np.any(np.isfinite(pxl)):
             ipxl = np.argmin(pxl)
             xubd = max(xumin, pxl[ipxl])
             iubd = ipxl + 1
-        ineg = np.less(xpt[k, :], -tiny * np.maximum(np.abs(xl), np.abs(xu)))
+        ineg = xpt[k, :] < -tiny * np.maximum(np.abs(xl), np.abs(xu))
         nxl = np.full_like(xopt, -np.inf)
-        nxl[ineg] = np.divide(xu[ineg], xpt[k, ineg])
+        nxl[ineg] = xu[ineg] / xpt[k, ineg]
         nxl[nxl <= xlbd] = -np.inf
         if np.any(np.isfinite(nxl)):
             inxl = np.argmax(nxl)
             xlbd = nxl[inxl]
             ilbd = inxl + 1
         nxl = np.full_like(xopt, np.inf)
-        nxl[ineg] = np.divide(xl[ineg], xpt[k, ineg])
+        nxl[ineg] = xl[ineg] / xpt[k, ineg]
         nxl[nxl >= xubd] = np.inf
         if np.any(np.isfinite(nxl)):
             inxl = np.argmin(nxl)

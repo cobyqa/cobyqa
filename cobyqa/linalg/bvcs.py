@@ -116,14 +116,14 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
         while ccsq > ccsqsav and np.sqrt(gqsq) >= tol * bigstp:
             ccsqsav = ccsq
             stplen = np.sqrt(delsq / gqsq)
-            ifree = np.less(np.abs(cc - bigstp), tol * bigstp)
+            ifree = np.abs(cc - bigstp) < tol * bigstp
             temp = np.full_like(cc, np.inf)
             temp[ifree] = -stplen * gq[ifree]
-            ixl = np.less_equal(temp, xl)
+            ixl = temp <= xl
             cc[ixl] = xl[ixl]
             ccsq += np.inner(cc[ixl], cc[ixl])
             temp[np.logical_not(ifree)] = -np.inf
-            ixu = np.greater_equal(temp, xu)
+            ixu = temp >= xu
             cc[ixu] = xu[ixu]
             ccsq += np.inner(cc[ixu], cc[ixu])
             ifree[ixl | ixu] = False
@@ -132,7 +132,7 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
 
         # Set the free components of the Cauchy step and all components of the
         # trial step. The Cauchy step may be scaled hereinafter.
-        ifree = np.less(np.abs(cc - bigstp), tol * bigstp)
+        ifree = np.abs(cc - bigstp) < tol * bigstp
         cc[ifree] = -stplen * gq[ifree]
         step[ifree] = np.maximum(xl[ifree], np.minimum(xu[ifree], cc[ifree]))
         iopt = np.logical_not(ifree) & (np.abs(cc) < tol * bigstp)

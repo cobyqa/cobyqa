@@ -98,7 +98,7 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
             iterc += 1
 
             # Update the trial point, keeping the first components nonnegative.
-            idiv = np.greater(np.abs(x[:k] - xact[:k]), tiny * np.abs(x[:k]))
+            idiv = np.abs(x[:k] - xact[:k]) > tiny * np.abs(x[:k])
             upd = inact[:k] & (xact[:k] <= 0.) & idiv
             iupd = np.flatnonzero(upd)
             rxupd = x[iupd] / (x[iupd] - xact[iupd])
