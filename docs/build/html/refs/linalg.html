@@ -156,6 +156,11 @@
     </a>
    </li>
    <li class="toctree-l2">
+    <a class="reference internal" href="generated/cobyqa.linalg.givens.html">
+     cobyqa.linalg.givens
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="generated/cobyqa.linalg.lctcg.html">
      cobyqa.linalg.lctcg
     </a>
@@ -171,6 +176,11 @@
     </a>
    </li>
   </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="tests.html">
+   Test support
+  </a>
  </li>
 </ul>
 <ul class="nav bd-sidenav">
@@ -240,13 +250,16 @@
 <tr class="row-even"><td><p><a class="reference internal" href="generated/cobyqa.linalg.cpqp.html#cobyqa.linalg.cpqp" title="cobyqa.linalg.cpqp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linalg.cpqp</span></code></a>(xopt, Aub, bub, Aeq, beq, xl, ...)</p></td>
 <td><p>Minimize approximately a convex piecewise quadratic function subject to bound and trust-region constraints using a truncated conjugate gradient.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/cobyqa.linalg.lctcg.html#cobyqa.linalg.lctcg" title="cobyqa.linalg.lctcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linalg.lctcg</span></code></a>(xopt, gq, hessp, args, Aub, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/cobyqa.linalg.givens.html#cobyqa.linalg.givens" title="cobyqa.linalg.givens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linalg.givens</span></code></a>(M, cval, sval, i, j, axis[, ...])</p></td>
+<td><p>Perform a Givens rotation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/cobyqa.linalg.lctcg.html#cobyqa.linalg.lctcg" title="cobyqa.linalg.lctcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linalg.lctcg</span></code></a>(xopt, gq, hessp, args, Aub, ...)</p></td>
 <td><p>Minimize approximately a quadratic function subject to bound, linear, and trust-region constraints using a truncated conjugate gradient.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/cobyqa.linalg.nnls.html#cobyqa.linalg.nnls" title="cobyqa.linalg.nnls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linalg.nnls</span></code></a>(A, b[, k, maxiter])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/cobyqa.linalg.nnls.html#cobyqa.linalg.nnls" title="cobyqa.linalg.nnls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linalg.nnls</span></code></a>(A, b[, k, maxiter])</p></td>
 <td><p>Compute the least-squares solution of <code class="docutils literal notranslate"><span class="pre">A</span> <span class="pre">&#64;</span> <span class="pre">x</span> <span class="pre">=</span> <span class="pre">b</span></code> subject to the nonnegativity constraints <code class="docutils literal notranslate"><span class="pre">x[:k]</span> <span class="pre">&gt;=</span> <span class="pre">0</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/cobyqa.linalg.qr.html#cobyqa.linalg.qr" title="cobyqa.linalg.qr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linalg.qr</span></code></a>(a[, overwrite_a, pivoting, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/cobyqa.linalg.qr.html#cobyqa.linalg.qr" title="cobyqa.linalg.qr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linalg.qr</span></code></a>(a[, overwrite_a, pivoting, ...])</p></td>
 <td><p>Compute the QR factorization <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">=</span> <span class="pre">Q</span> <span class="pre">&#64;</span> <span class="pre">R</span></code> where <code class="docutils literal notranslate"><span class="pre">Q</span></code> is an orthogonal matrix and <code class="docutils literal notranslate"><span class="pre">R</span></code> is an upper triangular matrix.</p></td>
 </tr>
 </tbody>
@@ -283,7 +296,7 @@
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on September 30, 2021.<br/>
+Last updated on October 15, 2021.<br/>
 </p>
     </div>
     

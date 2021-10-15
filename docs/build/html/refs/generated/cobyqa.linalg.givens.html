@@ -1,0 +1,318 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cobyqa.linalg.givens &#8212; COBYQA v1.0.dev0 Manual</title>
+    
+  <link href="../../_static/css/theme.css" rel="stylesheet" />
+  <link href="../../_static/css/index.c5995385ac14fb8791e8eb36b4908be2.css" rel="stylesheet" />
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    
+      
+
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css" />
+    
+  <link rel="preload" as="script" href="../../_static/js/index.1c5a1a01449ed65a7b51.js">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>window.MathJax = {"tex": {"macros": {"eu": "{\\mathrm{e}}", "iu": "{\\mathrm{i}}", "du": "{\\mathrm{d}}", "C": "{\\mathbb{C}}", "N": "{\\mathbb{N}}", "Q": "{\\mathbb{Q}}", "R": "{\\mathbb{R}}", "Z": "{\\mathbb{Z}}", "sft": "{\\mathsf{T}}", "dv": "{x}", "icon": "{i}", "iiter": "{k}", "lmv": "{\\lambda}", "nv": "{n}", "stv": "{d}", "bl": "{l}", "bu": "{u}", "con": ["{c_{#1}}", 1, "\\icon"], "lag": "{\\mathcal{L}}", "meq": "{n_{\\scriptscriptstyle\\seq}}", "mub": "{n_{\\scriptscriptstyle\\sub}}", "obj": "{f}", "seq": "{\\mathcal{E}}", "sub": "{\\mathcal{I}}"}}}</script>
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="cobyqa.linalg.lctcg" href="cobyqa.linalg.lctcg.html" />
+    <link rel="prev" title="cobyqa.linalg.cpqp" href="cobyqa.linalg.cpqp.html" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="en" />
+    
+<link rel="stylesheet" href="../../_static/cobyqa.css" type="text/css" />
+
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="../../index.html">
+  <img src="../../_static/logo.svg" class="logo" alt="logo">
+</a>      
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../algo/index.html">
+  Algorithms
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../index.html">
+  API reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <ul id="navbar-icon-links" class="navbar-nav" aria-label="Icon Links">
+        <li class="nav-item">
+          <a class="nav-link" href="https://github.com/ragonneau/cobyqa" rel="noopener" target="_blank" title="GitHub">
+            <span><i class="fab fa-github-square"></i></span>
+            <label class="sr-only">GitHub</label>
+          </a>
+        </li>
+      </ul>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../optimize.html">
+   Optimization framework
+  </a>
+ </li>
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="../linalg.html">
+   Linear Algebra
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.linalg.bvcs.html">
+     cobyqa.linalg.bvcs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.linalg.bvlag.html">
+     cobyqa.linalg.bvlag
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.linalg.bvtcg.html">
+     cobyqa.linalg.bvtcg
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.linalg.cpqp.html">
+     cobyqa.linalg.cpqp
+    </a>
+   </li>
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     cobyqa.linalg.givens
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.linalg.lctcg.html">
+     cobyqa.linalg.lctcg
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.linalg.nnls.html">
+     cobyqa.linalg.nnls
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.linalg.qr.html">
+     cobyqa.linalg.qr
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tests.html">
+   Test support
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../bugs.html">
+   Reporting bugs
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../license.html">
+   COBYQA license
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+
+<nav id="bd-toc-nav">
+    
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <div class="section" id="cobyqa-linalg-givens">
+<h1>cobyqa.linalg.givens<a class="headerlink" href="#cobyqa-linalg-givens" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="cobyqa.linalg.givens">
+<span class="sig-prename descclassname"><span class="pre">cobyqa.linalg.</span></span><span class="sig-name descname"><span class="pre">givens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">M</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cval</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sval</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slicing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/linalg/utils.py#L5-L46"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.linalg.givens" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a Givens rotation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>M</strong><span class="classifier">numpy.ndarray</span></dt><dd><p>Matrix on which the Givens rotation is performed in-place.</p>
+</dd>
+<dt><strong>cval</strong><span class="classifier">float</span></dt><dd><p>Multiple of the cosine value of the angle of rotation.</p>
+</dd>
+<dt><strong>sval</strong><span class="classifier">float</span></dt><dd><p>Multiple of the sine value of the angle of rotation.</p>
+</dd>
+<dt><strong>i</strong><span class="classifier">int</span></dt><dd><p>First index of the Givens rotation procedure.</p>
+</dd>
+<dt><strong>j</strong><span class="classifier">int</span></dt><dd><p>Second index of the Givens rotation procedure.</p>
+</dd>
+<dt><strong>axis</strong><span class="classifier">int</span></dt><dd><p>Axis over which to select values. If <em class="xref py py-obj">M</em> is a matrix with two
+dimensions, the calculations will be applied to the rows by setting
+<code class="docutils literal notranslate"><span class="pre">axis</span> <span class="pre">=</span> <span class="pre">0</span></code> and to the columns by setting <code class="docutils literal notranslate"><span class="pre">axis</span> <span class="pre">=</span> <span class="pre">1</span></code>.</p>
+</dd>
+<dt><strong>slicing</strong><span class="classifier">slice, optional</span></dt><dd><p>Part of the data at which the Givens rotation should be applied.
+Default applies it to to all the components.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>hval</strong><span class="classifier">float</span></dt><dd><p>Length of the two-dimensional vector of components <em class="xref py py-obj">cval</em> and
+<em class="xref py py-obj">sval</em>, given by <span class="math notranslate nohighlight">\(\sqrt{ \mathtt{cval}^2 + \mathtt{sval}^2 }\)</span>.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+
+
+              </div>
+              
+              
+              <div class='prev-next-bottom'>
+                
+    <a class='left-prev' id="prev-link" href="cobyqa.linalg.cpqp.html" title="previous page">cobyqa.linalg.cpqp</a>
+    <a class='right-next' id="next-link" href="cobyqa.linalg.lctcg.html" title="next page">cobyqa.linalg.lctcg</a>
+
+              </div>
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <script src="../../_static/js/index.1c5a1a01449ed65a7b51.js"></script>
+
+  <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2021, Tom M. Ragonneau.<br/>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="last-updated">
+Last updated on October 15, 2021.<br/>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.2.0.<br/>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

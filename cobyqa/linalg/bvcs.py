@@ -64,60 +64,51 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
        UK: Department of Applied Mathematics and Theoretical Physics, University
        of Cambridge, 2009.
     """
-    # Format the inputs. Copies of the gradient in GQ, the lower-bound
-    # constraints in XL, and the upper-bound constraints in XU are made to
-    # prevent the changes made in this function to affect the original vector.
-    xpt = np.asarray(xpt)
+    xpt = np.atleast_2d(xpt)
     if xpt.dtype.kind in np.typecodes['AllInteger']:
         xpt = np.asarray(xpt, dtype=float)
-    gq = np.array(gq, dtype=float)
-    xl = np.array(xl, dtype=float)
-    xu = np.array(xu, dtype=float)
-    xopt = xpt[kopt, :]
+    gq = np.atleast_1d(gq).astype(float)
+    xl = np.atleast_1d(xl).astype(float)
+    xu = np.atleast_1d(xu).astype(float)
 
     # Define the tolerances to compare floating-point numbers with zero.
     eps = np.finfo(float).eps
     tiny = np.finfo(float).tiny
     npt, n = xpt.shape
-    tol = 1e1 * eps * npt
-    tolbd = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
-    tolbd = kwargs.get('bdtol', tolbd)
+    tol = 10. * eps * npt
+    bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
+    bdtol = kwargs.get('bdtol', bdtol)
 
     # Shift the bounds to carry out all calculations at the origin.
-    xl -= xopt
-    xu -= xopt
+    xl -= xpt[kopt, :]
+    xu -= xpt[kopt, :]
 
     # Ensure the feasibility of the initial guess.
-    assert_(np.max(xl) < tolbd)
-    assert_(np.min(xu) > -tolbd)
+    assert_(np.max(xl) < bdtol)
+    assert_(np.min(xu) > -bdtol)
     assert_(np.isfinite(delta))
     assert_(delta > 0.)
 
-    # Initialize the procedure. The method sets
-    # 1. STEP       trial step from XOPT;
-    # 2. STPSAV     trial step from XOPT at the first iteration;
-    # 3. BIGSTP     diameter of the trust region;
-    # 4. CSAV       square root of the KNEW-th Lagrange polynomial at XOPT+STEP
-    #               for the first iteration, or zero.
-    step = np.zeros_like(xopt)
+    # Start the procedure.
+    step = np.zeros_like(gq)
     stpsav = np.empty_like(step)
     bigstp = 2. * delta
     csav = 0.
     cauchy = 0.
     for isign in range(2):
         # Initialize the computations of the Cauchy step. The free components of
-        # the Cauchy step are set to BIGSTP and the computations stop
+        # the Cauchy step are set to bigstp and the computations stop
         # immediately if every free component of the gradient is zero.
         ifree = np.minimum(-xl, gq) > 0.
         ifree = ifree | (np.maximum(-xu, gq) < 0.)
         cc = np.zeros_like(step)
         cc[ifree] = bigstp
         gqsq = np.inner(gq[ifree], gq[ifree])
-        if np.sqrt(gqsq) < tol * bigstp:
+        if np.sqrt(gqsq) < tol * max(1., bigstp):
             break
 
-        # Fix the remaining components of the Cauchy step in CC to the lower and
-        # upper bounds in XL and XU as the trust-region constraint allows.
+        # Fix the remaining components of the Cauchy step to the lower and
+        # upper bounds as the trust-region constraint allows.
         ccsq = 0.
         ccsqsav = -1.
         stplen = 0.
@@ -139,8 +130,8 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
             gqsq = np.inner(gq[ifree], gq[ifree])
             delsq = delta ** 2. - ccsq
 
-        # Set the free components of the Cauchy step in CC and all components of
-        # the trial step in STEP. The Cauchy step may be scaled later.
+        # Set the free components of the Cauchy step and all components of the
+        # trial step. The Cauchy step may be scaled hereinafter.
         ifree = np.less(np.abs(cc - bigstp), tol * bigstp)
         cc[ifree] = -stplen * gq[ifree]
         step[ifree] = np.maximum(xl[ifree], np.minimum(xu[ifree], cc[ifree]))
@@ -153,10 +144,9 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
         step[ixu] = xu[ixu]
         gqcc = np.inner(gq, cc)
 
-        # Set CRV to the curvature of the KNEW-th Lagrange function along the
-        # Cauchy step. Scale CC by a factor less than one if that can reduce the
-        # modulus of the Lagrange function at XOPT+CC. Set CAUCHY to the final
-        # value of the square of this function.
+        # Set the curvature of the knew-th Lagrange function along the Cauchy
+        # step. Scale the Cauchy step by a factor less than one if that can
+        # reduce the modulus of the Lagrange function.
         crv = curv(cc, *args)
         ubf = 1. + np.sqrt(2.)
         if isign == 1:
@@ -168,9 +158,9 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
         else:
             cauchy = (gqcc + .5 * crv) ** 2.
 
-        # If ISIGN is zero, then STEP is calculated as before after reversing
-        # the sign of GLAG. Thus two STEP vectors become available. The one that
-        # is chosen is the one that gives the larger value of CAUCHY.
+        # If isign is zero, then the step is calculated as before after
+        # reversing the sign of the gradient. Thus two step vectors become
+        # available. The chosen one gives the largest value of cauchy.
         if isign == 0:
             gq *= -1.
             np.copyto(stpsav, step)

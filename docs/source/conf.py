@@ -1,4 +1,6 @@
 # Configuration file for the Sphinx documentation builder.
+import inspect
+import os
 import re
 import sys
 from pathlib import Path
@@ -36,6 +38,7 @@ extensions = [
     'numpydoc',
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.linkcode',
     'sphinx.ext.mathjax',
 ]
 
@@ -140,7 +143,7 @@ latex_elements = {
 }
 
 # Image to place at the top of the title page.
-latex_logo = '_static/logo.pdf'
+# latex_logo = '_static/logo.pdf'
 
 
 # -- Numpy’s Sphinx extensions ------------------------------------------------
@@ -159,6 +162,60 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/dev', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
 }
+
+
+# -- Add external links to source code ----------------------------------------
+
+def linkcode_resolve(domain, info):
+    """
+    Get the URL to source code corresponding to the given object.
+    """
+    if domain != 'py':
+        return None
+
+    # Get the object indicated by the module name.
+    obj = sys.modules.get(info['module'])
+    if obj is None:
+        return None
+    for part in info['fullname'].split('.'):
+        try:
+            obj = getattr(obj, part)
+        except AttributeError:
+            return None
+
+    # Strip the decorators of the object.
+    try:
+        unwrap = inspect.unwrap
+    except AttributeError:
+        pass
+    else:
+        obj = unwrap(obj)
+
+    # Get the relative path to the source of the object.
+    try:
+        fn = Path(inspect.getsourcefile(obj)).resolve(strict=True)
+    except TypeError:
+        return None
+    else:
+        fn = fn.relative_to(Path(cobyqa.__file__).resolve(strict=True).parent)
+
+    # Ignore re-exports as their source files are not within the repository.
+    module = inspect.getmodule(obj)
+    if module is not None and not module.__name__.startswith('cobyqa'):
+        return None
+
+    # Get the line span of the object in the source file.
+    try:
+        source, lineno = inspect.getsourcelines(obj)
+        lines = f'#L{lineno}-L{lineno + len(source) - 1}'
+    except OSError:
+        lines = ''
+
+    repository = 'https://github.com/ragonneau/cobyqa'
+    if 'dev' in release:
+        return f'{repository}/blob/main/cobyqa/{fn}{lines}'
+    else:
+        return f'{repository}/blob/v{release}/cobyqa/{fn}{lines}'
 
 
 # -- Math support for HTML outputs --------------------------------------------

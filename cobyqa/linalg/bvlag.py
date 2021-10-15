@@ -61,53 +61,46 @@ def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
        without derivatives." In: Large-Scale Nonlinear Optimization. Ed. by G.
        Di Pillo and M. Roma. New York, NY, US: Springer, 2006, pp. 255-–297.
     """
-    # Format the inputs. Copies of the lower-bound constraints in XL and the
-    # upper-bound constraints in XU are made to prevent the changes made in this
-    # function to affect the original vector.
-    xpt = np.asarray(xpt)
-    if xpt.dtype.kind in np.typecodes['AllInteger']:
-        xpt = np.asarray(xpt, dtype=float)
-    gq = np.asarray(gq)
+    xpt = np.atleast_2d(xpt).astype(float)
+    gq = np.atleast_1d(gq)
     if gq.dtype.kind in np.typecodes['AllInteger']:
         gq = np.asarray(gq, dtype=float)
-    xl = np.array(xl, dtype=float)
-    xu = np.array(xu, dtype=float)
-    xopt = xpt[kopt, :]
-    xpt = xpt - xopt[np.newaxis, :]
+    xl = np.atleast_1d(xl).astype(float)
+    xu = np.atleast_1d(xu).astype(float)
+    xopt = np.copy(xpt[kopt, :])
+    xpt -= xopt[np.newaxis, :]
 
     # Define the tolerances to compare floating-point numbers with zero.
     eps = np.finfo(float).eps
     tiny = np.finfo(float).tiny
     npt, n = xpt.shape
     tol = 1e1 * eps * max(npt, n)
-    tolbd = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
-    tolbd = kwargs.get('bdtol', tolbd)
+    bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
+    bdtol = kwargs.get('bdtol', bdtol)
 
     # Shift the bounds to carry out all calculations at the origin.
     xl -= xopt
     xu -= xopt
 
     # Ensure the feasibility of the initial guess.
-    assert_(np.max(xl) < tolbd)
-    assert_(np.min(xu) > -tolbd)
+    assert_(np.max(xl) < bdtol)
+    assert_(np.min(xu) > -bdtol)
     assert_(np.isfinite(delta))
     assert_(delta > 0.)
 
-    # Start the iterative procedure. The method sets
-    # 1. SIGSAV     largest admissible value of the real parameter SIGMA so far;
-    # 2. STPSAV     length of the best step so far;
-    # 3. IBDSAV     index of the simple bound restraining the computations;
-    # 4. KSAV       index of the interpolation point defining the above line.
+    # Start the iterative procedure. The method sets the largest admissible
+    # value of the real parameter sigma so far in sigsav, the length of the best
+    # step so far in stpsav, the index of the simple bound restraining the
+    # computations in ibdsav, and index of the interpolation point defining the
+    # above line in ksav.
     sigsav = 0.
     stpsav = 0.
     ibdsav = 0.
     ksav = -1
     for k in range(npt):
-        # Search for a point on the line between XOPT and XPT[K,:]. By
+        # Search for a point on the line between xopt and xpt[k, :], by
         # considering only the trust-region constraint and ignoring the simple
-        # bounds, the method sets
-        # 1. XLBD       lower bound on the step along the line;
-        # 2. XUBD       upper bound on the step along the line.
+        # bounds for the moment.
         if k == kopt:
             continue
         xgq = np.inner(xpt[k, :], gq)
@@ -122,8 +115,8 @@ def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
         iubd = 0
         xumin = min(1., xubd)
 
-        # Update the lower and upper bound un XLBD and XUBD to take into account
-        # the simple bounds in XL and XU along the current line.
+        # Update the lower and upper bounds to take into account the simple
+        # bounds along the current line.
         ipos = np.greater(xpt[k, :], tiny * np.maximum(np.abs(xl), np.abs(xu)))
         pxl = np.full_like(xopt, -np.inf)
         pxl[ipos] = np.divide(xl[ipos], xpt[k, ipos])
@@ -155,7 +148,7 @@ def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
             xubd = max(xumin, nxl[inxl])
             iubd = -inxl - 1
 
-        # Compute the best point along the line joining XOPT and XPT[K,:] that
+        # Compute the best point along the line joining xopt and xpt[k, :] that
         # respects the trust-region constraint and the simple bounds.
         if k == klag:
             diff = xgq - 1.
@@ -201,7 +194,7 @@ def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
             ibdsav = isbd
             ksav = k
 
-    # Construct the vector XNEW as described above.
+    # Construct the returned step.
     step = np.maximum(xl, np.minimum(xu, stpsav * xpt[ksav, :]))
     if ibdsav < 0:
         step[-ibdsav - 1] = xl[-ibdsav - 1]

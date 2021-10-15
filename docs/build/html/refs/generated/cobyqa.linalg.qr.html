@@ -34,7 +34,7 @@
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Reporting bugs" href="../../bugs.html" />
+    <link rel="next" title="Test support" href="../tests.html" />
     <link rel="prev" title="cobyqa.linalg.nnls" href="cobyqa.linalg.nnls.html" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -156,6 +156,11 @@
     </a>
    </li>
    <li class="toctree-l2">
+    <a class="reference internal" href="cobyqa.linalg.givens.html">
+     cobyqa.linalg.givens
+    </a>
+   </li>
+   <li class="toctree-l2">
     <a class="reference internal" href="cobyqa.linalg.lctcg.html">
      cobyqa.linalg.lctcg
     </a>
@@ -171,6 +176,11 @@
     </a>
    </li>
   </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tests.html">
+   Test support
+  </a>
  </li>
 </ul>
 <ul class="nav bd-sidenav">
@@ -224,7 +234,7 @@
 <h1>cobyqa.linalg.qr<a class="headerlink" href="#cobyqa-linalg-qr" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="cobyqa.linalg.qr">
-<span class="sig-prename descclassname"><span class="pre">cobyqa.linalg.</span></span><span class="sig-name descname"><span class="pre">qr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite_a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pivoting</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_finite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cobyqa.linalg.qr" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">cobyqa.linalg.</span></span><span class="sig-name descname"><span class="pre">qr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite_a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pivoting</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_finite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/linalg/utils.py#L49-L102"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.linalg.qr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the QR factorization <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">=</span> <span class="pre">Q</span> <span class="pre">&#64;</span> <span class="pre">R</span></code> where <code class="docutils literal notranslate"><span class="pre">Q</span></code> is an orthogonal
 matrix and <code class="docutils literal notranslate"><span class="pre">R</span></code> is an upper triangular matrix.</p>
 <dl class="field-list simple">
@@ -248,7 +258,7 @@ a permutation vector <code class="docutils literal notranslate"><span class="pre
 </dd>
 <dt><strong>R</strong><span class="classifier">numpy.ndarray, shape (m, n)</span></dt><dd><p>Above-mentioned upper triangular matrix <code class="docutils literal notranslate"><span class="pre">R</span></code>.</p>
 </dd>
-<dt><strong>P</strong><span class="classifier">numpy.ndarray, shape (n,)</span></dt><dd><p>Indices of the permutation. Not returned if <code class="docutils literal notranslate"><span class="pre">pivoting=False</span></code>.</p>
+<dt><strong>P</strong><span class="classifier">numpy.ndarray, shape (n,)</span></dt><dd><p>Indices of the permutations. Not returned if <code class="docutils literal notranslate"><span class="pre">pivoting=False</span></code>.</p>
 </dd>
 </dl>
 </dd>
@@ -270,7 +280,7 @@ a permutation vector <code class="docutils literal notranslate"><span class="pre
               <div class='prev-next-bottom'>
                 
     <a class='left-prev' id="prev-link" href="cobyqa.linalg.nnls.html" title="previous page">cobyqa.linalg.nnls</a>
-    <a class='right-next' id="next-link" href="../../bugs.html" title="next page">Reporting bugs</a>
+    <a class='right-next' id="next-link" href="../tests.html" title="next page">Test support</a>
 
               </div>
               
@@ -293,7 +303,7 @@ a permutation vector <code class="docutils literal notranslate"><span class="pre
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on September 30, 2021.<br/>
+Last updated on October 15, 2021.<br/>
 </p>
     </div>
     

@@ -16,6 +16,7 @@ COBYQA. For a complete description of the software, see the
 
     optimize
     linalg
+    tests
 
 .. toctree::
     :hidden:

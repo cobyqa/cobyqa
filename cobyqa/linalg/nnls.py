@@ -41,10 +41,10 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
     .. [1] C. L. Lawson and R. J. Hanson. Solving Least Squares Problems.
        Classics Appl. Math. Philadelphia, PA, US: SIAM, 1974.
     """
-    A = np.asarray(A)
+    A = np.atleast_2d(A)
     if A.dtype.kind in np.typecodes['AllInteger']:
         A = np.asarray(A, dtype=float)
-    b = np.asarray(b)
+    b = np.atleast_1d(b)
     if b.dtype.kind in np.typecodes['AllInteger']:
         b = np.asarray(b, dtype=float)
     n = A.shape[1]
@@ -53,26 +53,17 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
     if maxiter is None:
         maxiter = 3 * n
 
-    # Define the tolerance to approximate the KKT conditions.
+    # Define the tolerance of the approximate KKT conditions.
     eps = np.finfo(float).eps
-    tiny = np.finfo(float).eps
-    tol = 1e1 * eps * np.max(A.shape) * np.max(np.abs(b), initial=1.)
+    tiny = np.finfo(float).tiny
+    tol = 10. * eps * np.max(A.shape) * np.max(np.abs(b), initial=1.)
     tol = kwargs.get('lstol', tol)
 
-    # Start the initialization procedure. The method sets
-    # 1. X          solution vector;
-    # 2. ACT        column activity flags for the first K components;
-    # 3. INACT      column inactivity flags for all the components;
-    # 4. IACT       indices of the active columns;
-    # 5. RESID      residual of the current iterate;
-    # 6. LSX        value of the least-squares objective function;
-    # 7. W          gradient of the objective function of the least-squares
-    #               problem at the initial guess, so that the first K
-    #               components of W store the dual variables of the problem.
+    # Initialize the working arrays at the origin of the calculations.
     x = np.zeros(n)
     act = np.ones(k, dtype=bool)
-    inact = np.r_[np.zeros(k, dtype=bool), np.ones(n - k, dtype=bool)]
     iact = np.arange(k)
+    inact = np.r_[np.zeros(k, dtype=bool), np.ones(n - k, dtype=bool)]
     resid = np.copy(b)
     lsx = np.inner(resid, resid)
     w = np.dot(A.T, resid)
@@ -81,8 +72,7 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
     # KKT conditions of the least-squares problem, up to a given tolerance.
     iterc = 0
     while np.any(act) and np.any(w[iact] > tol) or np.any(np.abs(w[k:]) > tol):
-        # Update the active set. The copy of the first K elements of W is
-        # crucial, are a slicing returns only a view of the subarray.
+        # Remove from the active set the least gradient coordinate.
         if k > 0:
             wact = np.copy(w[:k])
             wact[inact[:k]] = -np.inf
@@ -97,7 +87,7 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
         xact = np.zeros_like(x)
         xact[inact] = xlstsq
 
-        # Remove the indices from the inactive set which no longer belong.
+        # Increase the active set if necessary.
         while np.any(xact[ipos] <= 0.):
             # Stop the computation if the maximum number of iterations has been
             # reached. The break statement of the outer loop is then reached
@@ -107,14 +97,14 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
                 break
             iterc += 1
 
-            # Update X to keep the first K components nonnegative.
+            # Update the trial point, keeping the first components nonnegative.
             idiv = np.greater(np.abs(x[:k] - xact[:k]), tiny * np.abs(x[:k]))
             upd = inact[:k] & (xact[:k] <= 0.) & idiv
             iupd = np.flatnonzero(upd)
             rxupd = x[iupd] / (x[iupd] - xact[iupd])
             x += np.min(rxupd) * (xact - x)
 
-            # Update the active set according to the intermediate values of X.
+            # Update the active set according to the intermediate values.
             act[inact[:k] & (np.abs(x[:k]) < tol)] = True
             inact[:k] = np.logical_not(act)
             iact = np.flatnonzero(act)

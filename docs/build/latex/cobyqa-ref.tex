@@ -103,10 +103,10 @@
     
 
 \title{COBYQA User Guide}
-\date{September 30, 2021}
+\date{October 15, 2021}
 \release{1.0.dev0}
 \author{Tom M. Ragonneau}
-\newcommand{\sphinxlogo}{\sphinxincludegraphics{logo.pdf}\par}
+\newcommand{\sphinxlogo}{\vbox{}}
 \renewcommand{\releasename}{Release}
 \makeindex
 \begin{document}
@@ -125,7 +125,7 @@
 
 \item[{Date}] \leavevmode
 \sphinxAtStartPar
-September 30, 2021
+October 15, 2021
 
 \end{description}\end{quote}
 
@@ -344,15 +344,6 @@ description of other attributes.
 \end{description}
 
 \item[{Other Parameters}] \leavevmode\begin{description}
-\item[{\sphinxstylestrong{actf}}] \leavevmode{[}float, optional{]}
-\sphinxAtStartPar
-Factor of proximity to the linear constraints (the default is 0.2).
-
-\item[{\sphinxstylestrong{nsf}}] \leavevmode{[}float, optional{]}
-\sphinxAtStartPar
-Shrinkage factor of the Byrd\sphinxhyphen{}Omojokun\sphinxhyphen{}like normal subproblem (the
-default is 0.8).
-
 \item[{\sphinxstylestrong{bdtol}}] \leavevmode{[}float, optional{]}
 \sphinxAtStartPar
 Tolerance for comparisons on the bound constraints (the default is
@@ -2942,15 +2933,6 @@ Trust\sphinxhyphen{}region step from \sphinxcode{\sphinxupquote{xopt}}.
 \end{description}
 
 \item[{Other Parameters}] \leavevmode\begin{description}
-\item[{\sphinxstylestrong{actf}}] \leavevmode{[}float, optional{]}
-\sphinxAtStartPar
-Factor of proximity to the linear constraints (the default is 0.2).
-
-\item[{\sphinxstylestrong{nsf}}] \leavevmode{[}float, optional{]}
-\sphinxAtStartPar
-Shrinkage factor of the Byrd\sphinxhyphen{}Omojokun\sphinxhyphen{}like normal subproblem (the
-default is 0.8).
-
 \item[{\sphinxstylestrong{bdtol}}] \leavevmode{[}float, optional{]}
 \sphinxAtStartPar
 Tolerance for comparisons on the bound constraints (the default is
@@ -5823,6 +5805,13 @@ Minimize approximately a convex piecewise quadratic function subject to bound an
 \\
 \hline
 \sphinxAtStartPar
+{\hyperref[\detokenize{refs/generated/cobyqa.linalg.givens:cobyqa.linalg.givens}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{linalg.givens}}}}}(M, cval, sval, i, j, axis{[}, ...{]})
+&
+\sphinxAtStartPar
+Perform a Givens rotation.
+\\
+\hline
+\sphinxAtStartPar
 {\hyperref[\detokenize{refs/generated/cobyqa.linalg.lctcg:cobyqa.linalg.lctcg}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{linalg.lctcg}}}}}(xopt, gq, hessp, args, Aub, ...)
 &
 \sphinxAtStartPar
@@ -6218,6 +6207,62 @@ lower bounded by zero and \(\mathtt{Aub} \times x - \mathtt{bub}\).
 
 
 
+\section{cobyqa.linalg.givens}
+\label{\detokenize{refs/generated/cobyqa.linalg.givens:cobyqa-linalg-givens}}\label{\detokenize{refs/generated/cobyqa.linalg.givens::doc}}\index{givens() (in module cobyqa.linalg)@\spxentry{givens()}\spxextra{in module cobyqa.linalg}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{refs/generated/cobyqa.linalg.givens:cobyqa.linalg.givens}}\pysiglinewithargsret{\sphinxcode{\sphinxupquote{cobyqa.linalg.}}\sphinxbfcode{\sphinxupquote{givens}}}{\emph{\DUrole{n}{M}}, \emph{\DUrole{n}{cval}}, \emph{\DUrole{n}{sval}}, \emph{\DUrole{n}{i}}, \emph{\DUrole{n}{j}}, \emph{\DUrole{n}{axis}}, \emph{\DUrole{n}{slicing}\DUrole{o}{=}\DUrole{default_value}{None}}}{}
+\sphinxAtStartPar
+Perform a Givens rotation.
+\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{\sphinxstylestrong{M}}] \leavevmode{[}numpy.ndarray{]}
+\sphinxAtStartPar
+Matrix on which the Givens rotation is performed in\sphinxhyphen{}place.
+
+\item[{\sphinxstylestrong{cval}}] \leavevmode{[}float{]}
+\sphinxAtStartPar
+Multiple of the cosine value of the angle of rotation.
+
+\item[{\sphinxstylestrong{sval}}] \leavevmode{[}float{]}
+\sphinxAtStartPar
+Multiple of the sine value of the angle of rotation.
+
+\item[{\sphinxstylestrong{i}}] \leavevmode{[}int{]}
+\sphinxAtStartPar
+First index of the Givens rotation procedure.
+
+\item[{\sphinxstylestrong{j}}] \leavevmode{[}int{]}
+\sphinxAtStartPar
+Second index of the Givens rotation procedure.
+
+\item[{\sphinxstylestrong{axis}}] \leavevmode{[}int{]}
+\sphinxAtStartPar
+Axis over which to select values. If \sphinxstyleemphasis{M} is a matrix with two
+dimensions, the calculations will be applied to the rows by setting
+\sphinxcode{\sphinxupquote{axis = 0}} and to the columns by setting \sphinxcode{\sphinxupquote{axis = 1}}.
+
+\item[{\sphinxstylestrong{slicing}}] \leavevmode{[}slice, optional{]}
+\sphinxAtStartPar
+Part of the data at which the Givens rotation should be applied.
+Default applies it to to all the components.
+
+\end{description}
+
+\item[{Returns}] \leavevmode\begin{description}
+\item[{\sphinxstylestrong{hval}}] \leavevmode{[}float{]}
+\sphinxAtStartPar
+Length of the two\sphinxhyphen{}dimensional vector of components \sphinxstyleemphasis{cval} and
+\sphinxstyleemphasis{sval}, given by \(\sqrt{ \mathtt{cval}^2 + \mathtt{sval}^2 }\).
+
+\end{description}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+
 \section{cobyqa.linalg.lctcg}
 \label{\detokenize{refs/generated/cobyqa.linalg.lctcg:cobyqa-linalg-lctcg}}\label{\detokenize{refs/generated/cobyqa.linalg.lctcg::doc}}\index{lctcg() (in module cobyqa.linalg)@\spxentry{lctcg()}\spxextra{in module cobyqa.linalg}}
 
@@ -6301,10 +6346,6 @@ Step from \sphinxstyleemphasis{xopt} towards the estimated point.
 \end{description}
 
 \item[{Other Parameters}] \leavevmode\begin{description}
-\item[{\sphinxstylestrong{actf}}] \leavevmode{[}float, optional{]}
-\sphinxAtStartPar
-Factor of proximity to the linear constraints (the default is 0.2).
-
 \item[{\sphinxstylestrong{bdtol}}] \leavevmode{[}float, optional{]}
 \sphinxAtStartPar
 Tolerance for comparisons on the bound constraints (the default is
@@ -6446,7 +6487,7 @@ Above\sphinxhyphen{}mentioned upper triangular matrix \sphinxcode{\sphinxupquote
 
 \item[{\sphinxstylestrong{P}}] \leavevmode{[}numpy.ndarray, shape (n,){]}
 \sphinxAtStartPar
-Indices of the permutation. Not returned if \sphinxcode{\sphinxupquote{pivoting=False}}.
+Indices of the permutations. Not returned if \sphinxcode{\sphinxupquote{pivoting=False}}.
 
 \end{description}
 
@@ -6454,6 +6495,116 @@ Indices of the permutation. Not returned if \sphinxcode{\sphinxupquote{pivoting=
 \item[{AssertionError}] \leavevmode
 \sphinxAtStartPar
 The matrix \sphinxstyleemphasis{a} is not two\sphinxhyphen{}dimensional.
+
+\end{description}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+
+\chapter{Test support}
+\label{\detokenize{refs/tests:test-support}}\label{\detokenize{refs/tests::doc}}
+
+\begin{savenotes}\sphinxatlongtablestart\begin{longtable}[c]{\X{1}{2}\X{1}{2}}
+\hline
+
+\endfirsthead
+
+\multicolumn{2}{c}%
+{\makebox[0pt]{\sphinxtablecontinued{\tablename\ \thetable{} \textendash{} continued from previous page}}}\\
+\hline
+
+\endhead
+
+\hline
+\multicolumn{2}{r}{\makebox[0pt][r]{\sphinxtablecontinued{continues on next page}}}\\
+\endfoot
+
+\endlastfoot
+
+\sphinxAtStartPar
+{\hyperref[\detokenize{refs/generated/cobyqa.tests.assert_array_less_equal:cobyqa.tests.assert_array_less_equal}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{tests.assert\_array\_less\_equal}}}}}(x, y{[}, ...{]})
+&
+\sphinxAtStartPar
+Raise an AssertionError if two objects are not less\sphinxhyphen{}or\sphinxhyphen{}equal\sphinxhyphen{}ordered.
+\\
+\hline
+\sphinxAtStartPar
+{\hyperref[\detokenize{refs/generated/cobyqa.tests.assert_dtype_equal:cobyqa.tests.assert_dtype_equal}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{tests.assert\_dtype\_equal}}}}}(actual, desired)
+&
+\sphinxAtStartPar
+Compare the data type of two arrays.
+\\
+\hline
+\end{longtable}\sphinxatlongtableend\end{savenotes}
+
+
+\section{cobyqa.tests.assert\_array\_less\_equal}
+\label{\detokenize{refs/generated/cobyqa.tests.assert_array_less_equal:cobyqa-tests-assert-array-less-equal}}\label{\detokenize{refs/generated/cobyqa.tests.assert_array_less_equal::doc}}\index{assert\_array\_less\_equal() (in module cobyqa.tests)@\spxentry{assert\_array\_less\_equal()}\spxextra{in module cobyqa.tests}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{refs/generated/cobyqa.tests.assert_array_less_equal:cobyqa.tests.assert_array_less_equal}}\pysiglinewithargsret{\sphinxcode{\sphinxupquote{cobyqa.tests.}}\sphinxbfcode{\sphinxupquote{assert\_array\_less\_equal}}}{\emph{\DUrole{n}{x}}, \emph{\DUrole{n}{y}}, \emph{\DUrole{n}{err\_msg}\DUrole{o}{=}\DUrole{default_value}{''}}, \emph{\DUrole{n}{verbose}\DUrole{o}{=}\DUrole{default_value}{True}}}{}
+\sphinxAtStartPar
+Raise an AssertionError if two objects are not less\sphinxhyphen{}or\sphinxhyphen{}equal\sphinxhyphen{}ordered.
+\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{\sphinxstylestrong{x}}] \leavevmode{[}array\_like{]}
+\sphinxAtStartPar
+Smaller object to check.
+
+\item[{\sphinxstylestrong{y}}] \leavevmode{[}array\_like{]}
+\sphinxAtStartPar
+Larger object to compare.
+
+\item[{\sphinxstylestrong{err\_msg}}] \leavevmode{[}str, optional{]}
+\sphinxAtStartPar
+Error message to be printed in case of failure.
+
+\item[{\sphinxstylestrong{verbose}}] \leavevmode{[}bool, optional{]}
+\sphinxAtStartPar
+Whether the conflicting values are appended to the error message
+(default is True).
+
+\end{description}
+
+\item[{Raises}] \leavevmode\begin{description}
+\item[{AssertionError}] \leavevmode
+\sphinxAtStartPar
+The two arrays are not less\sphinxhyphen{}or\sphinxhyphen{}equal\sphinxhyphen{}ordered.
+
+\end{description}
+
+\end{description}\end{quote}
+
+\end{fulllineitems}
+
+
+
+\section{cobyqa.tests.assert\_dtype\_equal}
+\label{\detokenize{refs/generated/cobyqa.tests.assert_dtype_equal:cobyqa-tests-assert-dtype-equal}}\label{\detokenize{refs/generated/cobyqa.tests.assert_dtype_equal::doc}}\index{assert\_dtype\_equal() (in module cobyqa.tests)@\spxentry{assert\_dtype\_equal()}\spxextra{in module cobyqa.tests}}
+
+\begin{fulllineitems}
+\phantomsection\label{\detokenize{refs/generated/cobyqa.tests.assert_dtype_equal:cobyqa.tests.assert_dtype_equal}}\pysiglinewithargsret{\sphinxcode{\sphinxupquote{cobyqa.tests.}}\sphinxbfcode{\sphinxupquote{assert\_dtype\_equal}}}{\emph{\DUrole{n}{actual}}, \emph{\DUrole{n}{desired}}}{}
+\sphinxAtStartPar
+Compare the data type of two arrays.
+\begin{quote}\begin{description}
+\item[{Parameters}] \leavevmode\begin{description}
+\item[{\sphinxstylestrong{actual}}] \leavevmode{[}array\_like or type{]}
+\sphinxAtStartPar
+Array obtained.
+
+\item[{\sphinxstylestrong{desired}}] \leavevmode{[}array\_like or type{]}
+\sphinxAtStartPar
+Array desired.
+
+\end{description}
+
+\item[{Raises}] \leavevmode\begin{description}
+\item[{AssertionError}] \leavevmode
+\sphinxAtStartPar
+The two arrays do not share the same data type.
 
 \end{description}
 

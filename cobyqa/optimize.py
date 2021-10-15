@@ -97,33 +97,33 @@ class TrustRegion:
             gradient of the current model of the objective function).
         """
         self._fun = fun
-        x0 = np.atleast_1d(np.array(x0, dtype=float))
+        self._cub = cub
+        self._ceq = ceq
+        x0 = np.atleast_1d(x0).astype(float)
         n = x0.size
         if not isinstance(args, tuple):
             args = (args,)
         self._args = args
         if xl is None:
             xl = np.full_like(x0, -np.inf)
-        xl = np.atleast_1d(np.array(xl, dtype=float))
+        xl = np.atleast_1d(xl).astype(float)
         if xu is None:
             xu = np.full_like(x0, np.inf)
-        xu = np.atleast_1d(np.array(xu, dtype=float))
+        xu = np.atleast_1d(xu).astype(float)
         if Aub is None:
             Aub = np.empty((0, n))
-        Aub = np.atleast_2d(np.array(Aub, dtype=float))
+        Aub = np.atleast_2d(Aub).astype(float)
         if bub is None:
             bub = np.empty(0)
-        bub = np.atleast_1d(np.array(bub, dtype=float))
+        bub = np.atleast_1d(bub).astype(float)
         if Aeq is None:
             Aeq = np.empty((0, n))
-        Aeq = np.atleast_2d(np.array(Aeq, dtype=float))
+        Aeq = np.atleast_2d(Aeq).astype(float)
         if beq is None:
             beq = np.empty(0)
-        beq = np.atleast_1d(np.array(beq, dtype=float))
+        beq = np.atleast_1d(beq).astype(float)
         if options is None:
             options = {}
-        self._cub = cub
-        self._ceq = ceq
         self._options = dict(options)
         self.set_default_options(n)
         self.check_options(n)
@@ -210,7 +210,7 @@ class TrustRegion:
 
         # Calculate the penalty term associated with the linear inequality
         # constraints and add it to both merit values.
-        if abs(self.penub) > tiny * np.max(np.abs(self.lmlub), initial=0.):
+        if abs(self.penub) > tiny * np.max(np.abs(self.lmlub), initial=1.):
             tub = np.dot(self.aub, x) - self.bub + self.lmlub / self.penub
             tub = np.maximum(0., tub)
             alub = .5 * self.penub * np.inner(tub, tub)
@@ -220,7 +220,7 @@ class TrustRegion:
         # Calculate the penalty term associated with the nonlinear inequality
         # constraints and add it to the merit value evaluated on the nonlinear
         # optimization problem.
-        lmnlub_max = np.max(np.abs(self.lmnlub), initial=0.)
+        lmnlub_max = np.max(np.abs(self.lmnlub), initial=1.)
         if abs(self.penub) > tiny * lmnlub_max:
             tub = cubx + self.lmnlub / self.penub
             tub = np.maximum(0., tub)
@@ -228,7 +228,7 @@ class TrustRegion:
 
         # Calculate the penalty term associated with the linear equality
         # constraints and add it to both merit values.
-        if abs(self.peneq) > tiny * np.max(np.abs(self.lmleq), initial=0.):
+        if abs(self.peneq) > tiny * np.max(np.abs(self.lmleq), initial=1.):
             teq = np.dot(self.aeq, x) - self.beq + self.lmleq / self.peneq
             aleq = .5 * self.peneq * np.inner(teq, teq)
             ax += aleq
@@ -237,7 +237,7 @@ class TrustRegion:
         # Calculate the penalty term associated with the nonlinear equality
         # constraints and add it to the merit value evaluated on the nonlinear
         # optimization problem.
-        lmnleq_max = np.max(np.abs(self._lmnleq), initial=0.)
+        lmnleq_max = np.max(np.abs(self._lmnleq), initial=1.)
         if abs(self.peneq) > tiny * lmnleq_max:
             teq = ceqx + self.lmnleq / self.peneq
             ax += .5 * self.peneq * np.inner(teq, teq)
@@ -1601,7 +1601,7 @@ class TrustRegion:
         kopt = self.kopt
         mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
         for k in range(self.npt):
-            if k != kopt:
+            if k != self.kopt:
                 mval = self(self.xpt[k, :], self.fval[k], self.cvalub[k, :],
                             self.cvaleq[k, :])
                 if self.less_merit(mval, self.rval[k], mopt, self.rval[kopt]):
@@ -1866,15 +1866,16 @@ class TrustRegion:
                     self._peneq = 1.
 
                 # When the penalty coefficients are modified, the index of the
-                # best interpolation point so far may changed.
+                # best interpolation point so far may change.
                 mx, mmx = self(xnew, fx, cubx, ceqx, True)
                 self.kopt = self.get_best_point()
                 mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
-            self._penub *= 2.
-            self._peneq *= 2.
-            mx, mmx = self(xnew, fx, cubx, ceqx, True)
-            self.kopt = self.get_best_point()
-            mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
+            if ksav == self.kopt:
+                self._penub *= 2.
+                self._peneq *= 2.
+                mx, mmx = self(xnew, fx, cubx, ceqx, True)
+                self.kopt = self.get_best_point()
+                mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
         elif not self.is_model_step:
             # If the current penalty coefficients are too close from failing
             # mmx <= mopt, they are doubled.
@@ -1909,32 +1910,40 @@ class TrustRegion:
            Advances in Optimization and Numerical Analysis. Ed. by S. Gomez and
            J. P. Hennart. Dordrecht, NL: Springer, 1994, pp. 51--67.
         """
+        tiny = np.finfo(float).tiny
         fmin = np.min(self.fval)
         fmax = np.max(self.fval)
         if self.penub > 0.:
             resid = np.dot(self.xpt, self.aub.T) - self.bub[np.newaxis, :]
             resid = np.c_[resid, self.cvalub]
-            cmin = np.min(resid, axis=1, initial=0.)
-            cmax = np.max(resid, axis=1, initial=0.)
+            cmin = np.min(resid, axis=1)
+            cmax = np.max(resid, axis=1)
             iub = np.less(cmin, 2. * cmax)
-            cmin[iub] = np.minimum(0., cmin[iub])
             if np.any(iub):
-                denom = np.min(cmax[iub] - cmin[iub])
-                self._penub = (fmax - fmin) / denom
+                cmin_neg = np.minimum(0., cmin[iub])
+                denom = np.min(cmax[iub] - cmin_neg)
+                if denom > tiny * (fmax - fmin):
+                    self._penub = min(self.penub, (fmax - fmin) / denom)
             else:
                 self._penub = 0.
         if self.peneq > 0.:
             resid = np.dot(self.xpt, self.aeq.T) - self.beq[np.newaxis, :]
             resid = np.c_[resid, self.cvaleq]
-            cmin = np.min(resid, axis=1, initial=0.)
-            cmax = np.max(resid, axis=1, initial=0.)
-            ieq = (cmin < 2. * cmax) | (cmin < .5 * cmax)
-            cmax[ieq] = np.maximum(0., cmax[ieq])
-            cmin[ieq] = np.minimum(0., cmin[ieq])
-            if np.any(ieq):
-                denom = np.min(cmax[ieq] - cmin[ieq])
-                self._peneq = (fmax - fmin) / denom
-            else:
+            cmin = np.min(resid, axis=1)
+            cmax = np.max(resid, axis=1)
+            ieq_pos = np.less(cmin, 2. * cmax)
+            if np.any(ieq_pos):
+                cmin_neg = np.minimum(0., cmin[ieq_pos])
+                denom = np.min(cmax[ieq_pos] - cmin_neg)
+                if denom > tiny * (fmax - fmin):
+                    self._peneq = min(self.peneq, (fmax - fmin) / denom)
+            ieq_neg = np.less(cmin, .5 * cmax)
+            if np.any(ieq_neg):
+                cmax_pos = np.maximum(0., cmax[ieq_neg])
+                denom = np.min(cmax_pos - cmin[ieq_neg])
+                if denom > tiny * (fmax - fmin):
+                    self._peneq = min(self.peneq, (fmax - fmin) / denom)
+            if np.all(np.logical_not(np.r_[ieq_pos, ieq_neg])):
                 self._peneq = 0.
 
     def trust_region_step(self, delta, **kwargs):
@@ -1953,11 +1962,6 @@ class TrustRegion:
 
         Other Parameters
         ----------------
-        actf : float, optional
-            Factor of proximity to the linear constraints (the default is 0.2).
-        nsf : float, optional
-            Shrinkage factor of the Byrd-Omojokun-like normal subproblem (the
-            default is 0.8).
         bdtol : float, optional
             Tolerance for comparisons on the bound constraints (the default is
             ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``, where the
@@ -1980,6 +1984,7 @@ class TrustRegion:
            Methods. MPS-SIAM Ser. Optim. Philadelphia, PA, US: SIAM, 2009.
         """
         eps = np.finfo(float).eps
+        tiny = np.finfo(float).tiny
         tol = 10. * eps * self.xopt.size
 
         # Evaluate the normal step of the Byrd-Omojokun approach. The normal
@@ -1989,7 +1994,6 @@ class TrustRegion:
         # tangential subproblem for the computations whenever the trust-region
         # subproblem is infeasible.
         delta *= np.sqrt(.5)
-        nsf = kwargs.get('nsf', .8)
         mc = self.mlub + self.mnlub + self.mleq + self.mnleq
         aub = np.copy(self.aub)
         bub = np.copy(self.bub)
@@ -2005,12 +2009,20 @@ class TrustRegion:
             rhs = np.inner(self.xopt, lhs) - self.copteq[i]
             aeq = np.vstack([aeq, lhs])
             beq = np.r_[beq, rhs]
+        if self.penub > 0. and self.peneq > tiny * self.penub:
+            scale = self.penub / self.peneq
+            if scale <= 1.:
+                aub *= scale
+                bub *= scale
+            else:
+                aeq /= scale
+                beq /= scale
         if mc == 0:
             nstep = np.zeros_like(self.xopt)
             ssq = 0.
         else:
             nstep = cpqp(self.xopt, aub, bub, aeq, beq, self.xl, self.xu,
-                         nsf * delta, **kwargs)
+                         .8 * delta, **kwargs)
             ssq = np.inner(nstep, nstep)
 
         # Evaluate the tangential step of the trust-region subproblem, and set
@@ -2131,7 +2143,7 @@ class TrustRegion:
             cx = np.atleast_1d(con(x, *self._args))
             if cx.dtype.kind in np.typecodes['AllInteger']:
                 cx = np.asarray(cx, dtype=float)
-            if self.disp:
+            if self.disp and cx.size > 0:
                 print(f'{con.__name__}({x}) = {cx}.')
         else:
             cx = np.asarray([], dtype=float)

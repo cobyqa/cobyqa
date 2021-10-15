@@ -222,11 +222,6 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
     Other Parameters
     ----------------
-    actf : float, optional
-        Factor of proximity to the linear constraints (the default is 0.2).
-    nsf : float, optional
-        Shrinkage factor of the Byrd-Omojokun-like normal subproblem (the
-        default is 0.8).
     bdtol : float, optional
         Tolerance for comparisons on the bound constraints (the default is
         ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``, where the values
@@ -247,8 +242,6 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                       options, **kwargs)
 
     # Begin the iterative procedure.
-    eps = np.finfo(float).eps
-    actf = kwargs.get('actf', .2)
     rho = fwk.rhobeg
     delta = rho
     nf = fwk.npt
@@ -270,8 +263,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         if is_trust_region_step:
             step = fwk.trust_region_step(delta, **kwargs)
             snorm = np.linalg.norm(step)
-            stf = actf - np.sqrt(eps)
-            # FIXME: Tests fail for condition ``snorm <= stf * delta``.
+            # FIXME: Tests fail for condition ``snorm <= 0.1999 * delta``.
             if snorm <= .5 * delta:
                 delta = rho if delta <= 1.4 * rho else .5 * delta
                 if delsav > rho:
