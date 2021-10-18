@@ -1,4 +1,4 @@
-.. currentmodule:: cobyqa
+.. currentmodule:: cobyqa.linalg
 
 **************
 Linear Algebra
@@ -7,11 +7,11 @@ Linear Algebra
 .. autosummary::
     :toctree: generated/
 
-    linalg.bvcs
-    linalg.bvlag
-    linalg.bvtcg
-    linalg.cpqp
-    linalg.givens
-    linalg.lctcg
-    linalg.nnls
-    linalg.qr
+    bvcs
+    bvlag
+    bvtcg
+    cpqp
+    givens
+    lctcg
+    nnls
+    qr

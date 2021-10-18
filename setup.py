@@ -64,6 +64,7 @@ class CleanCommand(clean):
         for dirname in cwd.glob('*.egg-info'):
             shutil.rmtree(dirname)
         shutil.rmtree(cwd / '.pytest_cache', ignore_errors=True)
+        shutil.rmtree(cwd / '.tox', ignore_errors=True)
 
         # Remove the 'MANIFEST' file.
         if Path(cwd, 'MANIFEST').is_file():

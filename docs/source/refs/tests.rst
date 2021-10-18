@@ -1,4 +1,4 @@
-.. currentmodule:: cobyqa
+.. currentmodule:: cobyqa.tests
 
 ************
 Test support
@@ -7,5 +7,5 @@ Test support
 .. autosummary::
     :toctree: generated/
 
-    tests.assert_array_less_equal
-    tests.assert_dtype_equal
+    assert_array_less_equal
+    assert_dtype_equal

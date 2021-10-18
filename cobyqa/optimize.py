@@ -126,6 +126,23 @@ class TrustRegion:
         if options is None:
             options = {}
         self._options = dict(options)
+
+        # Remove the variables that are fixed by the bounds.
+        bdtol = get_bdtol(xl, xu, **kwargs)
+        self._fixed_indices = np.abs(xl - xu) <= bdtol
+        free_indices = np.logical_not(self.fixed_indices)
+        self._fixed_values = xl[self.fixed_indices] + xu[self.fixed_indices]
+        self._fixed_values *= .5
+        x0 = x0[free_indices]
+        xl = xl[free_indices]
+        xu = xu[free_indices]
+        bub -= np.dot(Aub[:, self.fixed_indices], self.fixed_values)
+        Aub = Aub[:, free_indices]
+        beq -= np.dot(Aeq[:, self.fixed_indices], self.fixed_values)
+        Aeq = Aeq[:, free_indices]
+
+        # Set the default options based on the reduced problem.
+        n -= np.count_nonzero(self.fixed_indices)
         self.set_default_options(n)
         self.check_options(n)
 
@@ -137,17 +154,18 @@ class TrustRegion:
         # initial guess should either equal the bound components or allow the
         # projection of the initial trust region onto the components to lie
         # entirely inside the bounds.
-        rhobeg = self.rhobeg
-        rhoend = self.rhoend
-        rhobeg = min(.5 * np.min(xu - xl), rhobeg)
-        rhoend = min(rhobeg, rhoend)
-        self._options.update({'rhobeg': rhobeg, 'rhoend': rhoend})
-        adj = (x0 - xl <= rhobeg) & (xl < x0)
-        if np.any(adj):
-            x0[adj] = xl[adj] + rhobeg
-        adj = (xu - x0 <= rhobeg) & (x0 < xu)
-        if np.any(adj):
-            x0[adj] = xu[adj] - rhobeg
+        if not np.all(self.fixed_indices):
+            rhobeg = self.rhobeg
+            rhoend = self.rhoend
+            rhobeg = min(.5 * np.min(xu - xl), rhobeg)
+            rhoend = min(rhobeg, rhoend)
+            self._options.update({'rhobeg': rhobeg, 'rhoend': rhoend})
+            adj = (x0 - xl <= rhobeg) & (xl < x0)
+            if np.any(adj):
+                x0[adj] = xl[adj] + rhobeg
+            adj = (xu - x0 <= rhobeg) & (x0 < xu)
+            if np.any(adj):
+                x0[adj] = xu[adj] - rhobeg
 
         # Set the initial shift of the origin, designed to manage the effects
         # of computer rounding errors in the calculations.
@@ -189,7 +207,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the merit function is to be evaluated.
         fx : float
             Value of the objective function at `x`.
@@ -308,10 +326,34 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Shift of the origin in the calculations.
         """
         return self._xbase
+
+    @property
+    def fixed_indices(self):
+        """
+        Indices of the fixed variables.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            Boolean array indicating whether a variable is fixed.
+        """
+        return self._fixed_indices
+
+    @property
+    def fixed_values(self):
+        """
+        Values of the fixed variables.
+
+        Returns
+        -------
+        numpy.ndarray, shape (nfixed,)
+            Values of the fixed variables.
+        """
+        return self._fixed_values
 
     @property
     def options(self):
@@ -441,7 +483,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Lower-bound constraints on the decision variables.
         """
         return self._models.xl
@@ -453,7 +495,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Upper-bound constraints on the decision variables.
         """
         return self._models.xu
@@ -465,7 +507,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (mlub, n)
+        numpy.ndarray, shape (mlub, n - nfixed)
             Jacobian matrix of the normalized linear inequality constraints.
             Each row stores the gradient of a linear inequality constraint.
         """
@@ -503,7 +545,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (mleq, n)
+        numpy.ndarray, shape (mleq, n - nfixed)
             Jacobian matrix of the normalized linear equality constraints. Each
             row stores the gradient of a linear equality constraint.
         """
@@ -541,7 +583,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (npt, n)
+        numpy.ndarray, shape (npt, n - nfixed)
             Displacements of the interpolation points from the origin. Each row
             stores the displacements of an interpolation point from the origin
             of the calculations.
@@ -670,7 +712,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Best interpolation point so far, corresponding to the point around
             which the Taylor expansion of the quadratic models are defined.
         """
@@ -771,7 +813,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : array_like, shape (n,)
+        x : array_like, shape (n - nfixed,)
             Point at which the objective function is to be evaluated.
 
         Returns
@@ -780,9 +822,10 @@ class TrustRegion:
             Value of the objective function of the nonlinear optimization
             problem at `x`.
         """
-        fx = float(self._fun(x, *self._args))
+        x_full = self.get_x(x)
+        fx = float(self._fun(x_full, *self._args))
         if self.disp:
-            print(f'{self._fun.__name__}({x}) = {fx}.')
+            print(f'{self._fun.__name__}({x_full}) = {fx}.')
         return fx
 
     def cub(self, x):
@@ -792,7 +835,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : array_like, shape (n,)
+        x : array_like, shape (n - nfixed,)
             Point at which the constraint function is to be evaluated.
 
         Returns
@@ -810,7 +853,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : array_like, shape (n,)
+        x : array_like, shape (n - nfixed,)
             Point at which the constraint function is to be evaluated.
 
         Returns
@@ -821,13 +864,31 @@ class TrustRegion:
         """
         return self._eval_con(self._ceq, x)
 
+    def get_x(self, x):
+        """
+        Build the full decision variables.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n - nfixed,)
+            The reduced vector of decision variables.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+        """
+        x_full = np.zeros(self.fixed_indices.size, dtype=float)
+        x_full[self.fixed_indices] = self.fixed_values
+        x_full[np.logical_not(self.fixed_indices)] = x
+        return x_full
+
     def model_obj(self, x):
         """
         Evaluate the objective function of the model.
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the quadratic function is to be evaluated.
 
         Returns
@@ -843,13 +904,13 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the gradient of the quadratic function is to be
             evaluated.
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Gradient of the objective function of the model at `x`.
         """
         return self._models.obj_grad(x)
@@ -860,7 +921,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n, n)
+        numpy.ndarray, shape (n - nfixed, n - nfixed)
             Hessian matrix of the objective function of the model.
         """
         return self._models.obj_hess()
@@ -872,13 +933,13 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Vector to be left-multiplied by the Hessian matrix of the quadratic
             function.
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Value of the product of the Hessian matrix of the objective function
             of the model with the vector `x`.
         """
@@ -890,7 +951,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the curvature of the quadratic function is to be
             evaluated.
 
@@ -907,7 +968,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the quadratic function is to be evaluated.
 
         Returns
@@ -924,13 +985,13 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the gradient of the quadratic function is to be
             evaluated.
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Gradient of the alternative objective function of the model at `x`.
         """
         return self._models.obj_alt_grad(x)
@@ -942,7 +1003,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n, n)
+        numpy.ndarray, shape (n - nfixed, n - nfixed)
             Hessian matrix of the alternative objective function of the model.
         """
         return self._models.obj_alt_hess()
@@ -954,13 +1015,13 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Vector to be left-multiplied by the Hessian matrix of the quadratic
             function.
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Value of the product of the Hessian matrix of the alternative
             objective function of the model with the vector `x`.
         """
@@ -973,7 +1034,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the curvature of the quadratic function is to be
             evaluated.
 
@@ -990,7 +1051,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the quadratic function is to be evaluated.
         i : int
             Index of the inequality constraint to be considered.
@@ -1009,7 +1070,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the gradient of the quadratic function is to be
             evaluated.
         i : int
@@ -1017,7 +1078,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Gradient of the `i`-th inequality constraint function of the model
             at `x`.
         """
@@ -1035,7 +1096,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n, n)
+        numpy.ndarray, shape (n - nfixed, n - nfixed)
             Hessian matrix of the `i`-th inequality constraint function of the
             model.
         """
@@ -1048,7 +1109,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Vector to be left-multiplied by the Hessian matrix of the quadratic
             function.
         i : int
@@ -1056,7 +1117,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Value of the product of the Hessian matrix of the `i`-th inequality
             constraint function of the model with the vector `x`.
         """
@@ -1069,7 +1130,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the curvature of the quadratic function is to be
             evaluated.
         i : int
@@ -1089,7 +1150,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the quadratic function is to be evaluated.
         i : int
             Index of the inequality constraint to be considered.
@@ -1109,7 +1170,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the gradient of the quadratic function is to be
             evaluated.
         i : int
@@ -1117,7 +1178,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Gradient of the `i`-th alternative inequality constraint function of
             the model at `x`.
         """
@@ -1135,7 +1196,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n, n)
+        numpy.ndarray, shape (n - nfixed, n - nfixed)
             Hessian matrix of the `i`-th alternative inequality constraint
             function of the model.
         """
@@ -1148,7 +1209,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Vector to be left-multiplied by the Hessian matrix of the quadratic
             function.
         i : int
@@ -1156,7 +1217,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Value of the product of the Hessian matrix of the `i`-th alternative
             inequality constraint function of the model with the vector `x`.
         """
@@ -1169,7 +1230,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the curvature of the quadratic function is to be
             evaluated.
         i : int
@@ -1189,7 +1250,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the quadratic function is to be evaluated.
         i : int
             Index of the equality constraint to be considered.
@@ -1208,7 +1269,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the gradient of the quadratic function is to be
             evaluated.
         i : int
@@ -1216,7 +1277,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Gradient of the `i`-th equality constraint function of the model at
             `x`.
         """
@@ -1234,7 +1295,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n, n)
+        numpy.ndarray, shape (n - nfixed, n - nfixed)
             Hessian matrix of the `i`-th equality constraint function of the
             model.
         """
@@ -1247,7 +1308,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Vector to be left-multiplied by the Hessian matrix of the quadratic
             function.
         i : int
@@ -1255,7 +1316,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Value of the product of the Hessian matrix of the `i`-th equality
             constraint function of the model with the vector `x`.
         """
@@ -1267,7 +1328,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the curvature of the quadratic function is to be
             evaluated.
         i : int
@@ -1287,7 +1348,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the quadratic function is to be evaluated.
         i : int
             Index of the equality constraint to be considered.
@@ -1307,7 +1368,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the gradient of the quadratic function is to be
             evaluated.
         i : int
@@ -1315,7 +1376,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Gradient of the `i`-th alternative equality constraint function of
             the model at `x`.
         """
@@ -1333,7 +1394,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n, n)
+        numpy.ndarray, shape (n - nfixed, n - nfixed)
             Hessian matrix of the `i`-th alternative equality constraint
             function of the model.
         """
@@ -1346,7 +1407,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Vector to be left-multiplied by the Hessian matrix of the quadratic
             function.
         i : int
@@ -1354,7 +1415,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Value of the product of the Hessian matrix of the `i`-th alternative
             equality constraint function of the model with the vector `x`.
         """
@@ -1367,7 +1428,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the curvature of the quadratic function is to be
             evaluated.
         i : int
@@ -1387,7 +1448,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the quadratic function is to be evaluated.
 
         Returns
@@ -1404,13 +1465,13 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the gradient of the quadratic function is to be
             evaluated.
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Gradient of the Lagrangian function of the model at `x`.
         """
         return self._models.lag_grad(x, self.lmlub, self.lmleq, self.lmnlub,
@@ -1422,7 +1483,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n, n)
+        numpy.ndarray, shape (n - nfixed, n - nfixed)
             Hessian matrix of the Lagrangian function of the model.
         """
         return self._models.lag_hess(self.lmnlub, self.lmnleq)
@@ -1434,13 +1495,13 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Vector to be left-multiplied by the Hessian matrix of the quadratic
             function.
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Value of the product of the Hessian matrix of the Lagrangian
             function of the model with the vector `x`.
         """
@@ -1452,7 +1513,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the curvature of the quadratic function is to be
             evaluated.
 
@@ -1469,7 +1530,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the quadratic function is to be evaluated.
 
         Returns
@@ -1487,13 +1548,13 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the gradient of the quadratic function is to be
             evaluated.
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Gradient of the alternative Lagrangian function of the model at `x`.
         """
         return self._models.lag_alt_grad(x, self.lmlub, self.lmleq, self.lmnlub,
@@ -1506,7 +1567,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n, n)
+        numpy.ndarray, shape (n - nfixed, n - nfixed)
             Hessian matrix of the alternative Lagrangian function of the model.
         """
         return self._models.lag_alt_hess(self.lmnlub, self.lmnleq)
@@ -1518,13 +1579,13 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Vector to be left-multiplied by the Hessian matrix of the quadratic
             function.
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Value of the product of the Hessian matrix of the alternative
             Lagrangian function of the model with the vector `x`.
         """
@@ -1537,7 +1598,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : numpy.ndarray, shape (n - nfixed,)
             Point at which the curvature of the quadratic function is to be
             evaluated.
 
@@ -1584,8 +1645,8 @@ class TrustRegion:
             The options are inconsistent and modified.
         """
         # Ensure that the option 'npt' is in the required interval.
-        npt_min = n + 2
         npt_max = (n + 1) * (n + 2) // 2
+        npt_min = min(n + 2, npt_max)
         npt = self.npt
         if not (npt_min <= npt <= npt_max):
             self._options['npt'] = min(npt_max, max(npt_min, npt))
@@ -1722,7 +1783,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        step : numpy.ndarray, shape (n,)
+        step : numpy.ndarray, shape (n - nfixed,)
             Step from `xopt` of the new point to include in the interpolation
             set.
 
@@ -1851,7 +1912,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        step : numpy.ndarray, shape (n,)
+        step : numpy.ndarray, shape (n - nfixed,)
             Trial step from `xopt`.
         fx : float
             Value of the objective function at the trial point.
@@ -1994,7 +2055,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Trust-region step from `xopt`.
 
         Other Parameters
@@ -2094,16 +2155,16 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        numpy.ndarray, shape (n - nfixed,)
             Model-improvement step from `xopt`.
 
         Other Parameters
         ----------------
         bdtol : float, optional
             Tolerance for comparisons on the bound constraints (the default is
-            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``, where the
-            values of ``xl`` and ``xu`` evolve to include the shift of the
-            origin).
+            ``10 * eps * (n  - nfixed) * max(1, max(abs(xl)), max(abs(xu)))``,
+            where the values of ``xl`` and ``xu`` evolve to include the shift of
+            the origin).
 
         Notes
         -----
@@ -2166,9 +2227,9 @@ class TrustRegion:
 
                 ``con(x, *args) -> numpy.ndarray, shape (mnl,)``
 
-            where ``x`` is an array with shape (n,) and `args` is a tuple of
-            parameters to specify the constraint function.
-        x : array_like, shape (n,)
+            where ``x`` is an array with shape (n - nfixed,) and `args` is a
+            tuple of parameters to specify the constraint function.
+        x : array_like, shape (n - nfixed,)
             Point at which the constraint function is to be evaluated.
 
         Returns
@@ -2177,11 +2238,12 @@ class TrustRegion:
             Value of the nonlinear constraint function at `x`.
         """
         if con is not None:
-            cx = np.atleast_1d(con(x, *self._args))
+            x_full = self.get_x(x)
+            cx = np.atleast_1d(con(x_full, *self._args))
             if cx.dtype.kind in np.typecodes['AllInteger']:
                 cx = np.asarray(cx, dtype=float)
             if self.disp and cx.size > 0:
-                print(f'{con.__name__}({x}) = {cx}.')
+                print(f'{con.__name__}({x_full}) = {cx}.')
         else:
             cx = np.asarray([], dtype=float)
         return cx

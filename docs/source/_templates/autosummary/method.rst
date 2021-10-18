@@ -1,9 +1,7 @@
-{% if objtype == 'property' %}
-:orphan:
-{% endif %}
-
-{{ fullname | escape | underline }}
+{{ fullname | escape | underline}}
 
 .. currentmodule:: {{ module }}
+
+method
 
 .. auto{{ objtype }}:: {{ fullname | replace("cobyqa.", "cobyqa::") }}

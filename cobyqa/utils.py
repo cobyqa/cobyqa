@@ -72,10 +72,11 @@ def normalize_constraint(A, b):
         b = np.asarray(b, dtype=float)
 
     tiny = np.finfo(float).tiny
-    norm = np.linalg.norm(A, axis=1)
-    isafe = norm > tiny * np.max(np.abs(A), axis=1)
-    isafe = isafe & (norm > tiny * np.abs(b))
-    if np.any(isafe):
-        A[isafe, :] = A[isafe, :] / norm[isafe, np.newaxis]
-        b[isafe] = b[isafe] / norm[isafe]
+    if A.shape[1] > 0:
+        norm = np.linalg.norm(A, axis=1)
+        isafe = norm > tiny * np.max(np.abs(A), axis=1)
+        isafe = isafe & (norm > tiny * np.abs(b))
+        if np.any(isafe):
+            A[isafe, :] = A[isafe, :] / norm[isafe, np.newaxis]
+            b[isafe] = b[isafe] / norm[isafe]
     return A, b

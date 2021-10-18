@@ -1,5 +1,6 @@
 import numpy as np
 
+from .linalg.utils import get_bdtol
 from .optimize import TrustRegion
 from .utils import RestartRequiredException
 
@@ -24,8 +25,8 @@ class OptimizeResult(dict):
     jac : numpy.ndarray, shape (n,)
         Approximation of the gradient of the objective function at the solution
         point provided by the optimization solver, based on undetermined
-        interpolation. It is not returned if the solver reached the target
-        function value before the initial models are built.
+        interpolation. If the value of a component (or more) of the gradient is
+        not known, it is replaced by ``numpy.nan``.
     nfev : int
         Number of objective and constraint function evaluations.
     nit : int
@@ -241,7 +242,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     exit_status = 0
     fwk = TrustRegion(fun, x0, args, xl, xu, Aub, bub, Aeq, beq, cub, ceq,
                       options, **kwargs)
-    if fwk.target_reached:
+    if np.all(fwk.fixed_indices):
+        exit_status = 13
+        nf = 1
+    elif fwk.target_reached:
         exit_status = 1
         nf = fwk.kopt + 1
     else:
@@ -355,12 +359,21 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             continue
         break
 
+    # Get the success flag.
+    if exit_status == 13:
+        bdtol = get_bdtol(fwk.xl, fwk.xu, **kwargs)
+        success = fwk.type == 'U' or fwk.maxcv <= bdtol
+    else:
+        success = exit_status in [0, 1]
+
     # Build the result structure and return.
     result = OptimizeResult()
-    result.x = fwk.xbase + fwk.xopt
+    result.x = fwk.get_x(fwk.xbase + fwk.xopt)
     result.fun = fwk.fopt
+    result.jac = np.full_like(result.x, np.nan)
     try:
-        result.jac = fwk.model_obj_grad(fwk.xopt)
+        free_indices = np.logical_not(fwk.fixed_indices)
+        result.jac[free_indices] = fwk.model_obj_grad(fwk.xopt)
     except AttributeError:
         pass
     result.nfev = nf
@@ -368,12 +381,13 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     if fwk.type != 'U':
         result.maxcv = fwk.maxcv
     result.status = exit_status
-    result.success = exit_status in [0, 1]
+    result.success = success
     result.message = {
         0: 'Lower bound for the trust-region radius has been reached.',
         1: 'Target function value has been achieved.',
         3: 'Maximum number of function evaluations has been exceeded.',
         9: 'Denominator of the updating formula is zero.',
+        13: 'All variables are fixed by the constraints.',
     }.get(exit_status, 'Unknown exit status.')
     if fwk.disp:
         _print(fwk, fun.__name__, nf, result.message)
@@ -381,9 +395,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
 
 def _print(problem, fun, nf, message):
+    x_full = problem.get_x(problem.xbase + problem.xopt)
     print()
     print(message)
     print(f'Number of function evaluations: {nf}.')
     print(f'Least value of {fun}: {problem.fopt}.')
-    print(f'Corresponding point: {problem.xbase + problem.xopt}.')
+    print(f'Corresponding point: {x_full}.')
     print()
