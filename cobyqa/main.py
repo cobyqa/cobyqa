@@ -24,7 +24,8 @@ class OptimizeResult(dict):
     jac : numpy.ndarray, shape (n,)
         Approximation of the gradient of the objective function at the solution
         point provided by the optimization solver, based on undetermined
-        interpolation.
+        interpolation. It is not returned if the solver reached the target
+        function value before the initial models are built.
     nfev : int
         Number of objective and constraint function evaluations.
     nit : int
@@ -228,8 +229,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         of ``xl`` and ``xu`` evolve to include the shift of the origin).
     lctol : float, optional
         Tolerance for comparisons on the linear constraints (the default is
-        ``10 * eps * n * max(1, max(abs(bub)))``, where the values of ``bub``
-        evolve to include the shift of the origin).
+        ``10 * eps * max(mlub, n) * max(1, max(abs(bub)))``, where the values
+        of ``bub`` evolve to include the shift of the origin).
     lstol : float, optional
         Tolerance on the approximate KKT conditions for the calculations of the
         least-squares Lagrange multipliers (the default is
@@ -240,14 +241,18 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     exit_status = 0
     fwk = TrustRegion(fun, x0, args, xl, xu, Aub, bub, Aeq, beq, cub, ceq,
                       options, **kwargs)
+    if fwk.target_reached:
+        exit_status = 1
+        nf = fwk.kopt + 1
+    else:
+        nf = fwk.npt
 
     # Begin the iterative procedure.
     rho = fwk.rhobeg
     delta = rho
-    nf = fwk.npt
     nit = 0
     itest = 0
-    while True:
+    while exit_status == 0:
         # Update the shift of the origin to manage computer rounding errors.
         fwk.shift_origin(delta)
 
@@ -285,6 +290,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 continue
             except ZeroDivisionError:
                 exit_status = 9
+                break
+            if fwk.target_reached:
+                exit_status = 1
                 break
 
             # Update the trust-region radius.
@@ -351,7 +359,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     result = OptimizeResult()
     result.x = fwk.xbase + fwk.xopt
     result.fun = fwk.fopt
-    result.jac = fwk.model_obj_grad(fwk.xopt)
+    try:
+        result.jac = fwk.model_obj_grad(fwk.xopt)
+    except AttributeError:
+        pass
     result.nfev = nf
     result.nit = nit
     if fwk.type != 'U':

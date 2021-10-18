@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_
 
-from .utils import getact, qr
+from .utils import getact, get_bdtol, get_lctol, qr
 
 
 def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
@@ -61,7 +61,7 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
         ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
     lctol : float, optional
         Tolerance for comparisons on the linear constraints (the default is
-        ``10 * eps * n * max(1, max(abs(bub)))``).
+        ``10 * eps * max(mlub, n) * max(1, max(abs(bub)))``).
 
     Raises
     ------
@@ -102,10 +102,8 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     tiny = np.finfo(float).tiny
     mlub, n = Aub.shape
     tol = 10. * eps * n
-    lctol = tol * np.max(np.abs(bub), initial=1.)
-    lctol = kwargs.get('lctol', lctol)
-    bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
-    bdtol = kwargs.get('bdtol', bdtol)
+    lctol = get_lctol(Aub, bub, **kwargs)
+    bdtol = get_bdtol(xl, xu, **kwargs)
 
     # Shift the constraints to carry out all calculations at the origin.
     bub -= np.dot(Aub, xopt)

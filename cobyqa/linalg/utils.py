@@ -102,6 +102,67 @@ def qr(a, overwrite_a=False, pivoting=False, check_finite=True):
     return Q, R
 
 
+def get_bdtol(xl, xu, **kwargs):
+    """
+    Get the tolerance for comparisons on the bound constraints.
+
+    Parameters
+    ----------
+    xl : array_like, shape (n,)
+        Lower-bound constraints on the decision variables.
+    xu : array_like, shape (n,)
+        Upper-bound constraints on the decision variables.
+
+    Returns
+    -------
+    float:
+        Tolerance for comparisons on the bound constraints.
+
+    Other Parameters
+    ----------------
+    bdtol : float
+        Default value for the tolerance.
+    """
+    xl = np.asarray(xl)
+    xu = np.asarray(xu)
+
+    eps = np.finfo(float).eps
+    tol = 10. * eps * xl.size
+    temp = np.nan_to_num(np.abs(np.r_[xl, xu]), nan=1., posinf=1.)
+    bdtol = tol * np.max(temp, initial=1.)
+    return kwargs.get('bdtol', bdtol)
+
+
+def get_lctol(A, b, **kwargs):
+    """
+    Get the tolerance for comparisons on the linear constraints.
+
+    Parameters
+    ----------
+    A : array_like, shape (m, n)
+        Jacobian matrix of the linear constraints.
+    b : array_like, shape (m,)
+        Right-hand side vector of the linear constraints.
+
+    Returns
+    -------
+    float:
+        Tolerance for comparisons on the linear constraints.
+
+    Other Parameters
+    ----------------
+    lctol : float
+        Default value for the tolerance.
+    """
+    A = np.asarray(A)
+    b = np.asarray(b)
+
+    eps = np.finfo(float).eps
+    tol = 10. * eps * max(A.shape)
+    lctol = tol * np.max(np.abs(b), initial=1.)
+    return kwargs.get('lctol', lctol)
+
+
 def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
     """
     Pick the current active set.

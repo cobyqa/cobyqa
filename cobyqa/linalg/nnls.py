@@ -1,5 +1,7 @@
 import numpy as np
 
+from .utils import get_lctol
+
 
 def nnls(A, b, k=None, maxiter=None, **kwargs):
     """
@@ -54,10 +56,8 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
         maxiter = 3 * n
 
     # Define the tolerance of the approximate KKT conditions.
-    eps = np.finfo(float).eps
     tiny = np.finfo(float).tiny
-    tol = 10. * eps * np.max(A.shape) * np.max(np.abs(b), initial=1.)
-    tol = kwargs.get('lstol', tol)
+    tol = get_lctol(A, b, **kwargs)
 
     # Initialize the working arrays at the origin of the calculations.
     x = np.zeros(n)

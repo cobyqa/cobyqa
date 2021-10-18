@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.testing import assert_
 
+from .utils import get_bdtol
+
 
 def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
     """
@@ -74,8 +76,7 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
     tiny = np.finfo(float).tiny
     n = gq.size
     tol = 10. * eps * n
-    bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
-    bdtol = kwargs.get('bdtol', bdtol)
+    bdtol = get_bdtol(xl, xu, **kwargs)
 
     # Shift the bounds to carry out all calculations at the origin.
     xl -= xopt

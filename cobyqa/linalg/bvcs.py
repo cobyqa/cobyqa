@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.testing import assert_
 
+from .utils import get_bdtol
+
 
 def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
     """
@@ -76,8 +78,7 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
     tiny = np.finfo(float).tiny
     npt, n = xpt.shape
     tol = 10. * eps * npt
-    bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
-    bdtol = kwargs.get('bdtol', bdtol)
+    bdtol = get_bdtol(xl, xu, **kwargs)
 
     # Shift the bounds to carry out all calculations at the origin.
     xl -= xpt[kopt, :]

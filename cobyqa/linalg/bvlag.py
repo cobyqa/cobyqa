@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.testing import assert_
 
+from .utils import get_bdtol
+
 
 def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
     """
@@ -71,12 +73,9 @@ def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
     xpt -= xopt[np.newaxis, :]
 
     # Define the tolerances to compare floating-point numbers with zero.
-    eps = np.finfo(float).eps
     tiny = np.finfo(float).tiny
-    npt, n = xpt.shape
-    tol = 1e1 * eps * max(npt, n)
-    bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
-    bdtol = kwargs.get('bdtol', bdtol)
+    npt = xpt.shape[0]
+    bdtol = get_bdtol(xl, xu, **kwargs)
 
     # Shift the bounds to carry out all calculations at the origin.
     xl -= xopt

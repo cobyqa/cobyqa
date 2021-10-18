@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_
 
-from .utils import getact
+from .utils import getact, get_bdtol
 
 
 def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
@@ -89,12 +89,9 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     xu = np.atleast_1d(xu).astype(float)
 
     # Define the tolerances to compare floating-point numbers with zero.
-    eps = np.finfo(float).eps
     tiny = np.finfo(float).tiny
     mlub, n = Aub.shape
-    tol = 10. * eps * n
-    bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
-    bdtol = kwargs.get('bdtol', bdtol)
+    bdtol = get_bdtol(xl, xu, **kwargs)
 
     # Shift the constraints to carry out all calculations at the origin.
     bub -= np.dot(Aub, xopt)

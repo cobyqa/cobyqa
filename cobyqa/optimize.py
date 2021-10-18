@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, givens, lctcg, nnls
+from .linalg.utils import get_bdtol
 from .utils import RestartRequiredException, normalize_constraint, omega_product
 
 
@@ -155,27 +156,30 @@ class TrustRegion:
         # Set the initial models of the problem.
         self._models = Models(self.fun, self.xbase, xl, xu, Aub, bub, Aeq, beq,
                               self.cub, self.ceq, self.options)
-        if self.debug:
-            self.check_models()
+        self._target_reached = self._models.target_reached
+        if not self.target_reached:
+            if self.debug:
+                self.check_models()
 
-        # Determine the initial least-squares multipliers.
-        self._penub = 0.
-        self._peneq = 0.
-        self._lmlub = np.zeros_like(bub)
-        self._lmleq = np.zeros_like(beq)
-        self._lmnlub = np.zeros(self.mnlub, dtype=float)
-        self._lmnleq = np.zeros(self.mnleq, dtype=float)
-        self.update_multipliers(**kwargs)
+            # Determine the initial least-squares multipliers.
+            self._penub = 0.
+            self._peneq = 0.
+            self._lmlub = np.zeros_like(bub)
+            self._lmleq = np.zeros_like(beq)
+            self._lmnlub = np.zeros(self.mnlub, dtype=float)
+            self._lmnleq = np.zeros(self.mnleq, dtype=float)
+            self.update_multipliers(**kwargs)
 
-        # Determine the optimal point so far.
-        self.kopt = self.get_best_point()
-        if self.debug:
-            self.check_models()
+            # Determine the optimal point so far.
+            self.kopt = self.get_best_point()
+            if self.debug:
+                self.check_models()
 
-        # The attribute knew contains the index of the interpolation point to be
-        # removed from the interpolation set. It is set only during model step.
-        # Therefore, if set to None, the current step is a trust-region step.
-        self._knew = None
+            # The attribute knew contains the index of the interpolation point
+            # to be removed from the interpolation set. It is set only during
+            # model step. Therefore, if set to None, the current step is a
+            # trust-region step.
+            self._knew = None
 
     def __call__(self, x, fx, cubx, ceqx, model=False):
         """
@@ -398,6 +402,20 @@ class TrustRegion:
             nonlinear equality constraints.
         """
         return self._lmnleq
+
+    @property
+    def target_reached(self):
+        """
+        Indicate whether the computations have been stopped because the target
+        value has been reached.
+
+        Returns
+        -------
+        bool
+            Flag indicating whether the computations have been stopped because
+            the target value has been reached.
+        """
+        return self._target_reached
 
     @property
     def knew(self):
@@ -1717,6 +1735,9 @@ class TrustRegion:
 
         Other Parameters
         ----------------
+        bdtol : float, optional
+            Tolerance for comparisons on the bound constraints (the default is
+            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
         lstol : float, optional
             Tolerance on the approximate KKT conditions for the calculations of
             the least-squares Lagrange multipliers (the default is
@@ -1732,38 +1753,46 @@ class TrustRegion:
         # Evaluate the objective function, the nonlinear inequality constraint
         # function, and the nonlinear equality constraint function at the trial
         # point. The functions are defined in the space centered at the origin.
+        bdtol = get_bdtol(self.xl, self.xu, **kwargs)
         xsav = np.copy(self.xopt)
         xnew = xsav + step
         fx = self.fun(self.xbase + xnew)
         cubx = self.cub(self.xbase + xnew)
         ceqx = self.ceq(self.xbase + xnew)
+        rx = self._models.resid(xnew, cubx, ceqx)
+        self._target_reached = fx <= self.target and rx <= bdtol
 
         # Update the Lagrange multipliers and the penalty parameters for the
         # trust-region ratio to be well-defined.
-        self.update_multipliers(**kwargs)
-        ksav = self.kopt
-        mx, mmx, mopt = self.update_penalty_coefficients(step, fx, cubx, ceqx)
-        if ksav != self.kopt:
-            # When increasing the penalty parameters to make the trust-region
-            # ratio meaningful, the index of the optimal point changed. A
-            # trust-region iteration has to be entertained.
-            self.prepare_trust_region_step()
-            raise RestartRequiredException
+        if not self._target_reached:
+            self.update_multipliers(**kwargs)
+            ksav = self.kopt
+            mx, mmx, mopt = self.update_penalty_parameters(step, fx, cubx, ceqx)
+            if ksav != self.kopt:
+                # When increasing the penalty parameters to make the ]
+                # trust-region ratio meaningful, the index of the optimal point
+                # changed. A trust-region iteration has to be entertained.
+                self.prepare_trust_region_step()
+                raise RestartRequiredException
 
-        # Determine the trust-region ratio.
-        tiny = np.finfo(float).tiny
-        if not self.is_model_step and abs(mopt - mmx) > tiny * abs(mopt - mx):
-            ratio = (mopt - mx) / (mopt - mmx)
+            # Determine the trust-region ratio.
+            tiny = np.finfo(float).tiny
+            is_trust_region_step = not self.is_model_step
+            if is_trust_region_step and abs(mopt - mmx) > tiny * abs(mopt - mx):
+                ratio = (mopt - mx) / (mopt - mmx)
+            else:
+                ratio = -1.
         else:
+            mx = self(xnew, fx, cubx, ceqx)
+            mopt = mx
             ratio = -1.
 
         # Update the models of the problem.
-        rx = self._models.resid(xnew, cubx, ceqx)
         self._knew = self._models.update(step, fx, cubx, ceqx, self.knew)
-        if self.less_merit(mx, rx, mopt, self.maxcv):
+        if self.target_reached or self.less_merit(mx, rx, mopt, self.maxcv):
             self.kopt = self.knew
             mopt = mx
-        if self.debug:
+        if not self.target_reached and self.debug:
             self.check_models()
         return mopt, ratio
 
@@ -1812,7 +1841,7 @@ class TrustRegion:
             self._lmleq = lm[mlub + mnlub:mlub + mnlub + self.mleq]
             self._lmnleq = lm[mlub + mnlub + self.mleq:]
 
-    def update_penalty_coefficients(self, step, fx, cubx, ceqx):
+    def update_penalty_parameters(self, step, fx, cubx, ceqx):
         """
         Increase the penalty coefficients.
 
@@ -1977,8 +2006,8 @@ class TrustRegion:
             origin).
         lctol : float, optional
             Tolerance for comparisons on the linear constraints (the default is
-            ``10 * eps * n * max(1, max(abs(bub)))``, where the values of
-            ``bub`` evolve to include the shift of the origin).
+            ``10 * eps * max(mlub, n) * max(1, max(abs(bub)))``, where the
+            values of ``bub`` evolve to include the shift of the origin).
 
         Notes
         -----
@@ -2180,7 +2209,8 @@ class Models:
        pp. 183--215.
     """
 
-    def __init__(self, fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options):
+    def __init__(self, fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options,
+                 **kwargs):
         """
         Construct the initial models of an optimization problem.
 
@@ -2234,6 +2264,35 @@ class Models:
 
             where ``x`` is an array with shape (n,).
         options : dict
+            Options to forward to the solver. Accepted options are:
+
+                rhobeg : float, optional
+                    Initial trust-region radius (the default is 1).
+                rhoend : float, optional
+                    Final trust-region radius (the default is 1e-6).
+                npt : int, optional
+                    Number of interpolation points for the objective and
+                    constraint models (the default is ``2 * n + 1``).
+                maxfev : int, optional
+                    Upper bound on the number of objective and constraint
+                    function evaluations (the default is ``500 * n``).
+                target : float, optional
+                    Target value on the objective function (the default is
+                    ``-numpy.inf``). If the solver encounters a feasible point
+                    at which the objective function evaluations is below the
+                    target value, then the computations are stopped.
+                disp : bool, optional
+                    Whether to print pieces of information on the execution of
+                    the solver (the default is False).
+                debug : bool, optional
+                    Whether to make debugging tests during the execution, which
+                    is not recommended in production (the default is False).
+
+        Other Parameters
+        ----------------
+        bdtol : float, optional
+            Tolerance for comparisons on the bound constraints (the default is
+            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
         """
         self._xl = xl
         self._xu = xu
@@ -2246,6 +2305,7 @@ class Models:
         n = x0.size
         npt = options.get('npt')
         rhobeg = options.get('rhobeg')
+        target = options.get('target')
         cub_x0 = cub(x0)
         mnlub = cub_x0.size
         ceq_x0 = ceq(x0)
@@ -2261,6 +2321,7 @@ class Models:
         self._kopt = 0
         stepa = 0.
         stepb = 0.
+        bdtol = get_bdtol(xl, xu, **kwargs)
         for k in range(npt):
             km = k - 1
             kx = km - n
@@ -2295,7 +2356,8 @@ class Models:
 
             # Evaluate the objective and the nonlinear constraint functions at
             # the interpolations points and set the residual of each
-            # interpolation point in rval.
+            # interpolation point in rval. Stop the computations if a feasible
+            # point has reached the target value.
             self._fval[k] = fun(x0 + self.xpt[k, :])
             if k == 0:
                 # The constraints functions have already been evaluated at x0
@@ -2306,6 +2368,10 @@ class Models:
                 self._cvalub[k, :] = cub(x0 + self.xpt[k, :])
                 self._cvaleq[k, :] = ceq(x0 + self.xpt[k, :])
             self._rval[k] = self.resid(k)
+            if self._fval[k] <= target and self._rval[k] <= bdtol:
+                self._kopt = k
+                self._target_reached = True
+                break
 
             # Set the initial inverse KKT matrix of interpolation. The matrix
             # bmat holds its last n columns, while zmat stored the rank
@@ -2332,23 +2398,25 @@ class Models:
                 self._zmat[k, kx] = 1. / rhobeg ** 2.
                 self._zmat[ipt + 1, kx] = -1. / rhobeg ** 2.
                 self._zmat[jpt + 1, kx] = -1. / rhobeg ** 2.
-
-        # Set the initial models of the objective and nonlinear constraint
-        # functions. The standard models minimize the updates of their Hessian
-        # matrices in Frobenius norm when a point of xpt is modified, while the
-        # alternative models minimizes their Hessian matrices in Frobenius norm.
-        self._obj = self.new_model(self.fval)
-        self._obj_alt = copy.deepcopy(self._obj)
-        self._cub = np.empty(mnlub, dtype=Quadratic)
-        self._cub_alt = np.empty(mnlub, dtype=Quadratic)
-        for i in range(mnlub):
-            self._cub[i] = self.new_model(self.cvalub[:, i])
-            self._cub_alt[i] = copy.deepcopy(self._cub[i])
-        self._ceq = np.empty(mnleq, dtype=Quadratic)
-        self._ceq_alt = np.empty(mnleq, dtype=Quadratic)
-        for i in range(mnleq):
-            self._ceq[i] = self.new_model(self.cvaleq[:, i])
-            self._ceq_alt[i] = copy.deepcopy(self._ceq[i])
+        else:
+            # Set the initial models of the objective and nonlinear constraint
+            # functions. The standard models minimize the updates of their
+            # Hessian matrices in Frobenius norm when a point of xpt is
+            # modified, while the alternative models minimizes their Hessian
+            # matrices in Frobenius norm.
+            self._target_reached = False
+            self._obj = self.new_model(self.fval)
+            self._obj_alt = copy.deepcopy(self._obj)
+            self._cub = np.empty(mnlub, dtype=Quadratic)
+            self._cub_alt = np.empty(mnlub, dtype=Quadratic)
+            for i in range(mnlub):
+                self._cub[i] = self.new_model(self.cvalub[:, i])
+                self._cub_alt[i] = copy.deepcopy(self._cub[i])
+            self._ceq = np.empty(mnleq, dtype=Quadratic)
+            self._ceq_alt = np.empty(mnleq, dtype=Quadratic)
+            for i in range(mnleq):
+                self._ceq[i] = self.new_model(self.cvaleq[:, i])
+                self._ceq_alt[i] = copy.deepcopy(self._ceq[i])
 
     @property
     def xl(self):
@@ -2733,6 +2801,20 @@ class Models:
             return 'X'
         else:
             return 'B'
+
+    @property
+    def target_reached(self):
+        """
+        Indicate whether the computations have been stopped because the target
+        value has been reached.
+
+        Returns
+        -------
+        bool
+            Flag indicating whether the computations have been stopped because
+            the target value has been reached.
+        """
+        return self._target_reached
 
     def obj(self, x):
         """
