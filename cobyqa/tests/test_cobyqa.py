@@ -11,17 +11,11 @@ class TestBase(ABC):
 
     @staticmethod
     def arwhead(x):
-        """
-        The ARWHEAD function.
-        """
         x = np.asarray(x)
         return np.sum((x[:-1] ** 2. + x[-1] ** 2.) ** 2. - 4. * x[:-1] + 3.)
 
     @staticmethod
     def dixonpr(x):
-        """
-        The Dixon-Price function.
-        """
         x = np.asarray(x)
         n = x.size
         ssq = np.sum(np.arange(2, n + 1) * (2. * x[1:] ** 2. - x[:-1]) ** 2.)
@@ -29,9 +23,6 @@ class TestBase(ABC):
 
     @staticmethod
     def perm0d(x):
-        """
-        The Perm 0, d function.
-        """
         x = np.asarray(x)
         n = x.size
         nrg = np.arange(1, n + 1)
@@ -42,9 +33,6 @@ class TestBase(ABC):
 
     @staticmethod
     def permd(x):
-        """
-        The Perm d function.
-        """
         x = np.asarray(x)
         n = x.size
         nrg = np.arange(1, n + 1)
@@ -55,9 +43,6 @@ class TestBase(ABC):
 
     @staticmethod
     def powell(x):
-        """
-        The Powell function.
-        """
         x = np.asarray(x)
         n = x.size
         fx = 1e1 * (x[-4] - x[-1]) ** 4. if n % 4 == 0 else 0.
@@ -74,75 +59,51 @@ class TestBase(ABC):
 
     @staticmethod
     def power(x):
-        """
-        The sum of squares function.
-        """
         x = np.asarray(x)
         n = x.size
         return np.sum(np.arange(1, n + 1) * x ** 2.)
 
     @staticmethod
     def rosen(x):
-        """
-        The Rosenbrock function.
-        """
         x = np.asarray(x)
         return np.sum(100. * (x[1:] - x[:-1] ** 2.) ** 2. + (1. - x[:-1]) ** 2.)
 
     @staticmethod
     def rothyp(x):
-        """
-        The rotated hyper-ellipsoid function.
-        """
         x = np.asarray(x)
         n = x.size
         return np.sum(np.arange(n, 0, -1) * x ** 2.)
 
     @staticmethod
     def sphere(x):
-        """
-        The sphere function.
-        """
         x = np.asarray(x)
         return np.inner(x, x)
 
     @staticmethod
     def stybtang(x):
-        """
-        The Styblinski-Tang function.
-        """
         x = np.asarray(x)
         return .5 * np.sum(x ** 4. - 16. * x ** 2. + 5. * x)
 
     @staticmethod
     def sumpow(x):
-        """
-        The sum of different powers function.
-        """
         x = np.asarray(x)
         n = x.size
         return np.sum(np.abs(x) ** np.arange(2, n + 2))
 
     @staticmethod
     def trid(x):
-        """
-        The Trid function.
-        """
         x = np.asarray(x)
         return np.sum((x - 1.) ** 2.) - np.sum(x[1:] * x[:-1])
 
     @staticmethod
     def zakharov(x):
-        """
-        The Zakharov function.
-        """
         x = np.asarray(x)
         n = x.size
         swi = .5 * np.sum(np.arange(1, n + 1) * x)
         return np.inner(x, x) + swi ** 2. + swi ** 4.
 
     @staticmethod
-    def assert_(res, n, x_sol, f_sol, maxcv=False):
+    def assert_optimize(res, n, x_sol, f_sol, maxcv=False):
         assert_allclose(res.x, x_sol, atol=1e-4)
         assert_allclose(res.fun, f_sol, atol=1e-4)
         assert_(res.nfev <= 500 * n)
@@ -253,10 +214,42 @@ class TestUnconstrained(TestBase):
             x0=x0,
             options={'debug': True},
         )
-        self.assert_(res, n, x_sol, f_sol)
+        self.assert_optimize(res, n, x_sol, f_sol)
 
 
 class TestBoundConstrained(TestBase):
+
+    @pytest.fixture
+    def xl2(self, fun, n):
+        return {
+            'arwhead': -.5 * np.ones(n),
+            'power': .5 * np.ones(n),
+            'sphere': np.arange(n),
+        }.get(fun)
+
+    @pytest.fixture
+    def xu2(self, fun, n):
+        return {
+            'arwhead': .5 * np.ones(n),
+            'power': np.ones(n),
+            'sphere': 2. * n * np.ones(n),
+        }.get(fun)
+
+    @pytest.fixture
+    def x_sol2(self, fun, n):
+        return {
+            'arwhead': np.r_[.5 * np.ones(n - 1), 0.],
+            'power': .5 * np.ones(n),
+            'sphere': np.arange(n),
+        }.get(fun)
+
+    @pytest.fixture
+    def f_sol2(self, fun, n):
+        return {
+            'arwhead': 1.0625 * (n - 1),
+            'power': .25 * (n * (n + 1) // 2),
+            'sphere': n * (n - 1) * (2 * n - 1) // 6,
+        }.get(fun)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['arwhead', 'dixonpr', 'power', 'rosen',
@@ -269,7 +262,19 @@ class TestBoundConstrained(TestBase):
             xu=xu,
             options={'debug': True},
         )
-        self.assert_(res, n, x_sol, f_sol, maxcv=True)
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    def test_restricted(self, fun, n, x0, xl2, xu2, x_sol2, f_sol2):
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl2,
+            xu=xu2,
+            options={'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol2, f_sol2, maxcv=True)
 
 
 class TestLinearEqualityConstrained(TestBase):
@@ -317,7 +322,7 @@ class TestLinearEqualityConstrained(TestBase):
             beq=beq,
             options={'debug': True},
         )
-        self.assert_(res, n, x_sol, f_sol, maxcv=True)
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
 
         res = minimize(
             fun=getattr(self, fun),
@@ -328,7 +333,7 @@ class TestLinearEqualityConstrained(TestBase):
             beq=beq,
             options={'debug': True},
         )
-        self.assert_(res, n, x_sol, f_sol, maxcv=True)
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
 
 
 class TestLinearInequalityConstrained(TestBase):
@@ -337,14 +342,152 @@ class TestLinearInequalityConstrained(TestBase):
     def aub(self, fun, n):
         return {
             'arwhead': np.c_[np.ones((1, n - 1)), 0.],
-            'power': np.ones((1, n)),
-            'sphere': np.ones((1, n)),
+            'power': -np.ones((1, n)),
+            'sphere': -np.ones((1, n)),
         }.get(fun)
 
     @pytest.fixture
     def bub(self, fun):
         return {
             'arwhead': np.ones(1),
-            'power': np.ones(1),
-            'sphere': np.ones(1),
+            'power': -np.ones(1),
+            'sphere': -np.ones(1),
         }.get(fun)
+
+    @pytest.fixture
+    def x_sol(self, fun, n):
+        nrg = np.arange(1, n + 1)
+        return {
+            'arwhead': np.r_[(1. / (n - 1.)) * np.ones(n - 1), 0.],
+            'power': (1. / np.sum(1. / nrg)) / nrg,
+            'sphere': (1. / n) * np.ones(n),
+        }.get(fun)
+
+    @pytest.fixture
+    def f_sol(self, fun, n):
+        return {
+            'arwhead': 1. / (n - 1.) ** 3. + 3. * (n - 1.) - 4.,
+            'power': 1. / np.sum(1. / np.arange(1, n + 1)),
+            'sphere': 1. / n
+        }.get(fun)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    def test_simple(self, fun, n, x0, xl, xu, aub, bub, x_sol, f_sol):
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            Aub=aub,
+            bub=bub,
+            options={'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            Aub=aub,
+            bub=bub,
+            options={'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+
+class TestNonlinearEqualityConstrained(TestBase):
+
+    @pytest.fixture
+    def ceq(self, fun):
+        return lambda x: {
+            'arwhead': np.sum(x[:-1]) - 1.,
+            'power': np.sum(x) - 1.,
+            'sphere': np.sum(x) - 1.,
+        }.get(fun)
+
+    @pytest.fixture
+    def x_sol(self, fun, n):
+        nrg = np.arange(1, n + 1)
+        return {
+            'arwhead': np.r_[(1. / (n - 1.)) * np.ones(n - 1), 0.],
+            'power': (1. / np.sum(1. / nrg)) / nrg,
+            'sphere': (1. / n) * np.ones(n),
+        }.get(fun)
+
+    @pytest.fixture
+    def f_sol(self, fun, n):
+        return {
+            'arwhead': 1. / (n - 1.) ** 3. + 3. * (n - 1.) - 4.,
+            'power': 1. / np.sum(1. / np.arange(1, n + 1)),
+            'sphere': 1. / n
+        }.get(fun)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    def test_simple(self, fun, n, x0, xl, xu, ceq, x_sol, f_sol):
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            ceq=ceq,
+            options={'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            ceq=ceq,
+            options={'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+
+class TestNonlinearInequalityConstrained(TestBase):
+
+    @pytest.fixture
+    def cub(self, fun):
+        return lambda x: {
+            'arwhead': np.sum(x[:-1]) - 1.,
+            'power': 1. - np.sum(x),
+            'sphere': 1. - np.sum(x),
+        }.get(fun)
+
+    @pytest.fixture
+    def x_sol(self, fun, n):
+        nrg = np.arange(1, n + 1)
+        return {
+            'arwhead': np.r_[(1. / (n - 1.)) * np.ones(n - 1), 0.],
+            'power': (1. / np.sum(1. / nrg)) / nrg,
+            'sphere': (1. / n) * np.ones(n),
+        }.get(fun)
+
+    @pytest.fixture
+    def f_sol(self, fun, n):
+        return {
+            'arwhead': 1. / (n - 1.) ** 3. + 3. * (n - 1.) - 4.,
+            'power': 1. / np.sum(1. / np.arange(1, n + 1)),
+            'sphere': 1. / n
+        }.get(fun)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    def test_simple(self, fun, n, x0, xl, xu, cub, x_sol, f_sol):
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            cub=cub,
+            options={'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            cub=cub,
+            options={'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
