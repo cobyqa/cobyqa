@@ -1,6 +1,5 @@
 # Configuration file for the Sphinx documentation builder.
 import inspect
-import os
 import re
 import sys
 from pathlib import Path
@@ -244,10 +243,10 @@ mathjax3_config = {
 
             'bl': '{l}',
             'bu': '{u}',
-            'con': [r'{c_{#1}}', 1, '\icon'],
+            'con': ['{c_{#1}}', 1, r'\icon'],
             'lag': r'{\mathcal{L}}',
-            'meq': '{n_{\scriptscriptstyle\seq}}',
-            'mub': '{n_{\scriptscriptstyle\sub}}',
+            'meq': r'{n_{\scriptscriptstyle\seq}}',
+            'mub': r'{n_{\scriptscriptstyle\sub}}',
             'obj': '{f}',
             'seq': r'{\mathcal{E}}',
             'sub': r'{\mathcal{I}}',

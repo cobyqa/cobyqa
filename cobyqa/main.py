@@ -1,3 +1,5 @@
+from contextlib import suppress
+
 import numpy as np
 
 from .linalg.utils import get_bdtol
@@ -26,7 +28,7 @@ class OptimizeResult(dict):
         Approximation of the gradient of the objective function at the solution
         point provided by the optimization solver, based on undetermined
         interpolation. If the value of a component (or more) of the gradient is
-        not known, it is replaced by ``numpy.nan``.
+        unknown, it is replaced by ``numpy.nan``.
     nfev : int
         Number of objective and constraint function evaluations.
     nit : int
@@ -238,64 +240,66 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         ``10 * eps * max(n, m) * max(1, max(abs(g)))``, where ``g`` is the
         gradient of the current model of the objective function).
     """
-    # Build the initial models of the optimization problem.
-    exit_status = 0
-    fwk = TrustRegion(fun, x0, args, xl, xu, Aub, bub, Aeq, beq, cub, ceq,
-                      options, **kwargs)
-    if np.all(fwk.fixed_indices):
+    # Build the initial models of the optimization problem. The computations
+    # must be stopped immediately if all indices are fixed by the bound
+    # constraints or if the target function value has been reached by an initial
+    # interpolation point (in which case the initial models are not built).
+    framework = TrustRegion(fun, x0, args, xl, xu, Aub, bub, Aeq, beq, cub, ceq,
+                            options, **kwargs)
+    nf = framework.kopt + 1
+    if np.all(framework.ifix):
         exit_status = 13
-        nf = 1
-    elif fwk.target_reached:
+    elif framework.target_reached:
         exit_status = 1
-        nf = fwk.kopt + 1
     else:
-        nf = fwk.npt
+        exit_status = 0
+        nf = framework.npt
 
     # Begin the iterative procedure.
-    rho = fwk.rhobeg
+    rho = framework.rhobeg
     delta = rho
     nit = 0
     itest = 0
     while exit_status == 0:
         # Update the shift of the origin to manage computer rounding errors.
-        fwk.shift_origin(delta)
+        framework.shift_origin(delta)
 
         # Evaluate the trial step.
         delsav = delta
-        fopt = fwk.fopt
-        kopt = fwk.kopt
-        coptub = np.copy(fwk.coptub)
-        copteq = np.copy(fwk.copteq)
-        xopt = np.copy(fwk.xopt)
+        fopt = framework.fopt
+        kopt = framework.kopt
+        coptub = np.copy(framework.coptub)
+        copteq = np.copy(framework.copteq)
+        xopt = np.copy(framework.xopt)
+        is_trust_region_step = not framework.is_model_step
         nit += 1
-        is_trust_region_step = not fwk.is_model_step
         if is_trust_region_step:
-            step = fwk.trust_region_step(delta, **kwargs)
+            step = framework.trust_region_step(delta, **kwargs)
             snorm = np.linalg.norm(step)
             if snorm <= .5 * delta:
                 delta = rho if delta <= 1.4 * rho else .5 * delta
                 if delsav > rho:
-                    fwk.prepare_model_step(delta)
+                    framework.prepare_model_step(delta)
                     continue
         else:
-            step = fwk.model_step(max(.1 * delta, rho), **kwargs)
+            step = framework.model_step(max(.1 * delta, rho), **kwargs)
             snorm = np.linalg.norm(step)
 
         if not is_trust_region_step or snorm > .5 * delta:
             # Evaluate the objective function, include the trial point in the
             # interpolation set, and update accordingly the models.
-            if nf >= fwk.maxfev:
+            if nf >= framework.maxfev:
                 exit_status = 3
                 break
             nf += 1
             try:
-                mopt, ratio = fwk.update(step, **kwargs)
+                mopt, ratio = framework.update(step, **kwargs)
             except RestartRequiredException:
                 continue
             except ZeroDivisionError:
                 exit_status = 9
                 break
-            if fwk.target_reached:
+            if framework.target_reached:
                 exit_status = 1
                 break
 
@@ -317,69 +321,69 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                     itest = 0
                 else:
                     itest += 1
-                    gd = fwk.model_obj_grad(fwk.xopt)
-                    gd_alt = fwk.model_obj_alt_grad(fwk.xopt)
+                    gd = framework.model_obj_grad(framework.xopt)
+                    gd_alt = framework.model_obj_alt_grad(framework.xopt)
                     if np.linalg.norm(gd) < 10. * np.linalg.norm(gd_alt):
                         itest = 0
                     if itest >= 3:
-                        fwk.reset_models()
+                        framework.reset_models()
                         itest = 0
 
             # If a trust-region step has provided a sufficient decrease or if a
             # model-improvement step has just been computed, then the next
             # iteration is a trust-region step.
             if not is_trust_region_step or ratio >= .1:
-                fwk.prepare_trust_region_step()
+                framework.prepare_trust_region_step()
                 continue
 
             # If an interpolation point is substantially far from the
             # trust-region center, a model-improvement step is entertained.
-            fwk.prepare_model_step(max(delta, 2. * rho))
-            if fwk.is_model_step or delsav > rho:
+            framework.prepare_model_step(max(delta, 2. * rho))
+            if framework.is_model_step or delsav > rho:
                 continue
-            msav = fwk(xopt, fopt, coptub, copteq)
-            if fwk.less_merit(mopt, fwk.rval[fwk.kopt], msav, fwk.rval[kopt]):
+            ropt = framework.rval[framework.kopt]
+            msav = framework(xopt, fopt, coptub, copteq)
+            rsav = framework.rval[kopt]
+            if framework.less_merit(mopt, ropt, msav, rsav):
                 continue
 
         # Update the lower bound on the trust-region radius.
-        if rho > fwk.rhoend:
+        if rho > framework.rhoend:
             delta = .5 * rho
-            if rho > 2.5e2 * fwk.rhoend:
+            if rho > 2.5e2 * framework.rhoend:
                 rho *= .1
             elif rho <= 1.6e1:
-                rho = fwk.rhoend
+                rho = framework.rhoend
             else:
-                rho = np.sqrt(rho * fwk.rhoend)
+                rho = np.sqrt(rho * framework.rhoend)
             delta = max(delta, rho)
-            fwk.prepare_trust_region_step()
-            fwk.reduce_penalty_coefficients()
-            if fwk.disp:
+            framework.prepare_trust_region_step()
+            framework.reduce_penalty_coefficients()
+            if framework.disp:
                 message = f'New trust-region radius: {rho}.'
-                _print(fwk, fun.__name__, nf, message)
+                _print(framework, fun.__name__, nf, message)
             continue
         break
 
     # Get the success flag.
     if exit_status == 13:
-        bdtol = get_bdtol(fwk.xl, fwk.xu, **kwargs)
-        success = fwk.type == 'U' or fwk.maxcv <= bdtol
+        bdtol = get_bdtol(framework.xl, framework.xu, **kwargs)
+        success = framework.type == 'U' or framework.maxcv <= bdtol
     else:
         success = exit_status in [0, 1]
 
     # Build the result structure and return.
     result = OptimizeResult()
-    result.x = fwk.get_x(fwk.xbase + fwk.xopt)
-    result.fun = fwk.fopt
+    result.x = framework.get_x(framework.xbase + framework.xopt)
+    result.fun = framework.fopt
     result.jac = np.full_like(result.x, np.nan)
-    try:
-        free_indices = np.logical_not(fwk.fixed_indices)
-        result.jac[free_indices] = fwk.model_obj_grad(fwk.xopt)
-    except AttributeError:
-        pass
+    with suppress(AttributeError):
+        free_indices = np.logical_not(framework.ifix)
+        result.jac[free_indices] = framework.model_obj_grad(framework.xopt)
     result.nfev = nf
     result.nit = nit
-    if fwk.type != 'U':
-        result.maxcv = fwk.maxcv
+    if framework.type != 'U':
+        result.maxcv = framework.maxcv
     result.status = exit_status
     result.success = success
     result.message = {
@@ -389,8 +393,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         9: 'Denominator of the updating formula is zero.',
         13: 'All variables are fixed by the constraints.',
     }.get(exit_status, 'Unknown exit status.')
-    if fwk.disp:
-        _print(fwk, fun.__name__, nf, result.message)
+    if framework.disp:
+        _print(framework, fun.__name__, nf, result.message)
     return result
 
 

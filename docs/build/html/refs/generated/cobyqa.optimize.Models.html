@@ -4,11 +4,12 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>cobyqa.optimize.Models &#8212; COBYQA v1.0.dev0 Manual</title>
     
-  <link href="../../_static/css/theme.css" rel="stylesheet" />
-  <link href="../../_static/css/index.c5995385ac14fb8791e8eb36b4908be2.css" rel="stylesheet" />
+  <link href="../../_static/css/theme.css" rel="stylesheet">
+  <link href="../../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
 
     
   <link rel="stylesheet"
@@ -23,9 +24,9 @@
 
     
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/basic.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/blank.css" />
     
-  <link rel="preload" as="script" href="../../_static/js/index.1c5a1a01449ed65a7b51.js">
+  <link rel="preload" as="script" href="../../_static/js/index.be7d3bbb2ef33a8344ce.js">
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
@@ -35,10 +36,13 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="cobyqa.optimize.Models.ceq" href="cobyqa.optimize.Models.ceq.html" />
-    <link rel="prev" title="cobyqa.optimize.TrustRegion.update_penalty_coefficients" href="cobyqa.optimize.TrustRegion.update_penalty_coefficients.html" />
+    <link rel="prev" title="cobyqa.optimize.TrustRegion.update_penalty_parameters" href="cobyqa.optimize.TrustRegion.update_penalty_parameters.html" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="en" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
     
 <link rel="stylesheet" href="../../_static/cobyqa.css" type="text/css" />
 
@@ -321,6 +325,11 @@
       </a>
      </li>
      <li class="toctree-l3">
+      <a class="reference internal" href="cobyqa.optimize.Models.normalize_constraints.html">
+       cobyqa.optimize.Models.normalize_constraints
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="cobyqa.optimize.Models.obj.html">
        cobyqa.optimize.Models.obj
       </a>
@@ -462,11 +471,11 @@
               
               <div>
                 
-  <div class="section" id="cobyqa-optimize-models">
+  <section id="cobyqa-optimize-models">
 <h1>cobyqa.optimize.Models<a class="headerlink" href="#cobyqa-optimize-models" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="cobyqa.optimize.Models">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">cobyqa.optimize.</span></span><span class="sig-name descname"><span class="pre">Models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fun</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aeq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ceq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/optimize.py#L2153-L4070"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.optimize.Models" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">cobyqa.optimize.</span></span><span class="sig-name descname"><span class="pre">Models</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fun</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aeq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ceq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/optimize.py#L2256-L4242"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.optimize.Models" title="Permalink to this definition">¶</a></dt>
 <dd><p>Model a nonlinear optimization problem.</p>
 <p>The nonlinear optimization problem is modeled using quadratic functions
 obtained by underdetermined interpolation. The interpolation points may be
@@ -487,15 +496,15 @@ pp. 183–215.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Attributes</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><a class="reference internal" href="cobyqa.optimize.Models.aeq.html#cobyqa.optimize.Models.aeq" title="cobyqa.optimize.Models.aeq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aeq</span></code></a></dt><dd><p>Jacobian matrix of the linear equality constraints.</p>
+<dt><a class="reference internal" href="cobyqa.optimize.Models.aeq.html#cobyqa.optimize.Models.aeq" title="cobyqa.optimize.Models.aeq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aeq</span></code></a></dt><dd><p>Jacobian matrix of the normalized linear equality constraints.</p>
 </dd>
-<dt><a class="reference internal" href="cobyqa.optimize.Models.aub.html#cobyqa.optimize.Models.aub" title="cobyqa.optimize.Models.aub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aub</span></code></a></dt><dd><p>Jacobian matrix of the linear inequality constraints.</p>
+<dt><a class="reference internal" href="cobyqa.optimize.Models.aub.html#cobyqa.optimize.Models.aub" title="cobyqa.optimize.Models.aub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aub</span></code></a></dt><dd><p>Jacobian matrix of the normalized linear inequality constraints.</p>
 </dd>
-<dt><a class="reference internal" href="cobyqa.optimize.Models.beq.html#cobyqa.optimize.Models.beq" title="cobyqa.optimize.Models.beq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">beq</span></code></a></dt><dd><p>Right-hand side vector of the linear equality constraints.</p>
+<dt><a class="reference internal" href="cobyqa.optimize.Models.beq.html#cobyqa.optimize.Models.beq" title="cobyqa.optimize.Models.beq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">beq</span></code></a></dt><dd><p>Right-hand side vector of the normalized linear equality constraints.</p>
 </dd>
 <dt><a class="reference internal" href="cobyqa.optimize.Models.bmat.html#cobyqa.optimize.Models.bmat" title="cobyqa.optimize.Models.bmat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bmat</span></code></a></dt><dd><p>Last <code class="docutils literal notranslate"><span class="pre">n</span></code> columns of the inverse KKT matrix of interpolation.</p>
 </dd>
-<dt><a class="reference internal" href="cobyqa.optimize.Models.bub.html#cobyqa.optimize.Models.bub" title="cobyqa.optimize.Models.bub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bub</span></code></a></dt><dd><p>Right-hand side vector of the linear inequality constraints.</p>
+<dt><a class="reference internal" href="cobyqa.optimize.Models.bub.html#cobyqa.optimize.Models.bub" title="cobyqa.optimize.Models.bub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bub</span></code></a></dt><dd><p>Right-hand side vector of the normalized linear inequality constraints.</p>
 </dd>
 <dt><a class="reference internal" href="cobyqa.optimize.Models.copteq.html#cobyqa.optimize.Models.copteq" title="cobyqa.optimize.Models.copteq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copteq</span></code></a></dt><dd><p>Evaluation of the nonlinear equality constraint function of the nonlinear optimization problem at <a class="reference internal" href="cobyqa.optimize.Models.xopt.html#cobyqa.optimize.Models.xopt" title="cobyqa.optimize.Models.xopt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xopt</span></code></a>.</p>
 </dd>
@@ -524,6 +533,8 @@ pp. 183–215.</p>
 <dt><a class="reference internal" href="cobyqa.optimize.Models.ropt.html#cobyqa.optimize.Models.ropt" title="cobyqa.optimize.Models.ropt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ropt</span></code></a></dt><dd><p>Residual associated with the constraints of the nonlinear optimization problem at <a class="reference internal" href="cobyqa.optimize.Models.xopt.html#cobyqa.optimize.Models.xopt" title="cobyqa.optimize.Models.xopt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xopt</span></code></a>.</p>
 </dd>
 <dt><a class="reference internal" href="cobyqa.optimize.Models.rval.html#cobyqa.optimize.Models.rval" title="cobyqa.optimize.Models.rval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rval</span></code></a></dt><dd><p>Residuals associated with the constraints of the nonlinear optimization problem at the interpolation points.</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.optimize.Models.target_reached.html#cobyqa.optimize.Models.target_reached" title="cobyqa.optimize.Models.target_reached"><code class="xref py py-obj docutils literal notranslate"><span class="pre">target_reached</span></code></a></dt><dd><p>Indicate whether the computations have been stopped because the target value has been reached.</p>
 </dd>
 <dt><a class="reference internal" href="cobyqa.optimize.Models.type.html#cobyqa.optimize.Models.type" title="cobyqa.optimize.Models.type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">type</span></code></a></dt><dd><p>Type of the nonlinear optimization problem.</p>
 </dd>
@@ -646,67 +657,81 @@ pp. 183–215.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.new_model.html#cobyqa.optimize.Models.new_model" title="cobyqa.optimize.Models.new_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">new_model</span></code></a>(val)</p></td>
 <td><p>Generate a model obtained by underdetermined interpolation.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj.html#cobyqa.optimize.Models.obj" title="cobyqa.optimize.Models.obj"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj</span></code></a>(x)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.normalize_constraints.html#cobyqa.optimize.Models.normalize_constraints" title="cobyqa.optimize.Models.normalize_constraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize_constraints</span></code></a>()</p></td>
+<td><p>Normalize the linear constraints.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj.html#cobyqa.optimize.Models.obj" title="cobyqa.optimize.Models.obj"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj</span></code></a>(x)</p></td>
 <td><p>Evaluate the objective function of the model.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_alt.html#cobyqa.optimize.Models.obj_alt" title="cobyqa.optimize.Models.obj_alt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_alt</span></code></a>(x)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_alt.html#cobyqa.optimize.Models.obj_alt" title="cobyqa.optimize.Models.obj_alt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_alt</span></code></a>(x)</p></td>
 <td><p>Evaluate the alternative objective function of the model.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_alt_curv.html#cobyqa.optimize.Models.obj_alt_curv" title="cobyqa.optimize.Models.obj_alt_curv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_alt_curv</span></code></a>(x)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_alt_curv.html#cobyqa.optimize.Models.obj_alt_curv" title="cobyqa.optimize.Models.obj_alt_curv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_alt_curv</span></code></a>(x)</p></td>
 <td><p>Evaluate the curvature of the alternative objective function of the model.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_alt_grad.html#cobyqa.optimize.Models.obj_alt_grad" title="cobyqa.optimize.Models.obj_alt_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_alt_grad</span></code></a>(x)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_alt_grad.html#cobyqa.optimize.Models.obj_alt_grad" title="cobyqa.optimize.Models.obj_alt_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_alt_grad</span></code></a>(x)</p></td>
 <td><p>Evaluate the gradient of the alternative objective function of the model.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_alt_hess.html#cobyqa.optimize.Models.obj_alt_hess" title="cobyqa.optimize.Models.obj_alt_hess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_alt_hess</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_alt_hess.html#cobyqa.optimize.Models.obj_alt_hess" title="cobyqa.optimize.Models.obj_alt_hess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_alt_hess</span></code></a>()</p></td>
 <td><p>Evaluate the Hessian matrix of the alternative objective function of the model.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_alt_hessp.html#cobyqa.optimize.Models.obj_alt_hessp" title="cobyqa.optimize.Models.obj_alt_hessp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_alt_hessp</span></code></a>(x)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_alt_hessp.html#cobyqa.optimize.Models.obj_alt_hessp" title="cobyqa.optimize.Models.obj_alt_hessp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_alt_hessp</span></code></a>(x)</p></td>
 <td><p>Evaluate the product of the Hessian matrix of the alternative objective function of the model with any vector.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_curv.html#cobyqa.optimize.Models.obj_curv" title="cobyqa.optimize.Models.obj_curv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_curv</span></code></a>(x)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_curv.html#cobyqa.optimize.Models.obj_curv" title="cobyqa.optimize.Models.obj_curv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_curv</span></code></a>(x)</p></td>
 <td><p>Evaluate the curvature of the objective function of the model.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_grad.html#cobyqa.optimize.Models.obj_grad" title="cobyqa.optimize.Models.obj_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_grad</span></code></a>(x)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_grad.html#cobyqa.optimize.Models.obj_grad" title="cobyqa.optimize.Models.obj_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_grad</span></code></a>(x)</p></td>
 <td><p>Evaluate the gradient of the objective function of the model.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_hess.html#cobyqa.optimize.Models.obj_hess" title="cobyqa.optimize.Models.obj_hess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_hess</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_hess.html#cobyqa.optimize.Models.obj_hess" title="cobyqa.optimize.Models.obj_hess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_hess</span></code></a>()</p></td>
 <td><p>Evaluate the Hessian matrix of the objective function of the model.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_hessp.html#cobyqa.optimize.Models.obj_hessp" title="cobyqa.optimize.Models.obj_hessp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_hessp</span></code></a>(x)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.obj_hessp.html#cobyqa.optimize.Models.obj_hessp" title="cobyqa.optimize.Models.obj_hessp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">obj_hessp</span></code></a>(x)</p></td>
 <td><p>Evaluate the product of the Hessian matrix of the objective function of the model with any vector.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.reset_models.html#cobyqa.optimize.Models.reset_models" title="cobyqa.optimize.Models.reset_models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset_models</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.reset_models.html#cobyqa.optimize.Models.reset_models" title="cobyqa.optimize.Models.reset_models"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset_models</span></code></a>()</p></td>
 <td><p>Reset the models.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.resid.html#cobyqa.optimize.Models.resid" title="cobyqa.optimize.Models.resid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resid</span></code></a>(x[, cubx, ceqx])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.resid.html#cobyqa.optimize.Models.resid" title="cobyqa.optimize.Models.resid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resid</span></code></a>(x[, cubx, ceqx])</p></td>
 <td><p>Evaluate the residual associated with the constraints of the nonlinear optimization problem.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.shift_constraints.html#cobyqa.optimize.Models.shift_constraints" title="cobyqa.optimize.Models.shift_constraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shift_constraints</span></code></a>(x)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.shift_constraints.html#cobyqa.optimize.Models.shift_constraints" title="cobyqa.optimize.Models.shift_constraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shift_constraints</span></code></a>(x)</p></td>
 <td><p>Shift the bound and linear constraints.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.shift_origin.html#cobyqa.optimize.Models.shift_origin" title="cobyqa.optimize.Models.shift_origin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shift_origin</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.shift_origin.html#cobyqa.optimize.Models.shift_origin" title="cobyqa.optimize.Models.shift_origin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shift_origin</span></code></a>()</p></td>
 <td><p>Update the models when the origin of the calculations is modified.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="cobyqa.optimize.Models.update.html#cobyqa.optimize.Models.update" title="cobyqa.optimize.Models.update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code></a>(step, fx, cubx, ceqx[, knew])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="cobyqa.optimize.Models.update.html#cobyqa.optimize.Models.update" title="cobyqa.optimize.Models.update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code></a>(step, fx, cubx, ceqx[, knew])</p></td>
 <td><p>Update the models of the nonlinear optimization problem when a point of the interpolation set is modified.</p></td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
+</section>
+
+
+              </div>
+              
+              
+              <!-- Previous / next buttons -->
+<div class='prev-next-area'> 
+    <a class='left-prev' id="prev-link" href="cobyqa.optimize.TrustRegion.update_penalty_parameters.html" title="previous page">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">previous</p>
+            <p class="prev-next-title">cobyqa.optimize.TrustRegion.update_penalty_parameters</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="cobyqa.optimize.Models.ceq.html" title="next page">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">cobyqa.optimize.Models.ceq</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
 </div>
-
-
-              </div>
-              
-              
-              <div class='prev-next-bottom'>
-                
-    <a class='left-prev' id="prev-link" href="cobyqa.optimize.TrustRegion.update_penalty_coefficients.html" title="previous page">cobyqa.optimize.TrustRegion.update_penalty_coefficients</a>
-    <a class='right-next' id="next-link" href="cobyqa.optimize.Models.ceq.html" title="next page">cobyqa.optimize.Models.ceq</a>
-
-              </div>
               
           </main>
           
@@ -714,26 +739,25 @@ pp. 183–215.</p>
       </div>
     </div>
   
-  <script src="../../_static/js/index.1c5a1a01449ed65a7b51.js"></script>
-
-  <footer class="footer mt-5 mt-md-0">
+  <script src="../../_static/js/index.be7d3bbb2ef33a8344ce.js"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
       <p class="copyright">
-    &copy; Copyright 2021, Tom M. Ragonneau.<br/>
+    &copy; Copyright 2021, Tom M. Ragonneau.<br>
 </p>
     </div>
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 15, 2021.<br/>
+Last updated on October 19, 2021.<br>
 </p>
     </div>
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.2.0.<br/>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.2.0.<br>
 </p>
     </div>
     

@@ -56,7 +56,7 @@ class CleanCommand(clean):
     def run(self):
         super().run()
 
-        # Remove the 'build', 'dist', '*.egg-info', and '.pytest_cache'
+        # Remove the 'build', 'dist', '*.egg-info', '.pytest_cache', and '.tox'
         # directories from the current working directory.
         cwd = Path(__file__).resolve(strict=True).parent
         shutil.rmtree(cwd / 'build', ignore_errors=True)
@@ -132,11 +132,11 @@ def setup_package():
         long_description_content_type='text/x-rst',
         keywords='',
         license='BSD-3-Clause',
-        url='https://github.com/ragonneau/cobyqa',
+        url='https://ragonneau.github.io/cobyqa',
         download_url='https://pypi.org/project/cobyqa/#files',
         project_urls={
             'Bug Tracker': 'https://github.com/ragonneau/cobyqa/issues',
-            'Documentation': 'https://github.com/ragonneau/cobyqa',
+            'Documentation': 'https://ragonneau.github.io/cobyqa',
             'Source Code': 'https://github.com/ragonneau/cobyqa',
         },
         classifiers=[
