@@ -3,7 +3,8 @@ import importlib
 import os
 import shutil
 import sys
-from distutils.version import LooseVersion
+
+from pkg_resources import parse_version
 
 if sys.version_info < (3, 6):
     raise RuntimeError('Python version >= 3.6 required.')
@@ -112,7 +113,7 @@ def check_pkg_status(pkg, min_version):
     try:
         module = importlib.import_module(pkg)
         pkg_version = module.__version__  # noqa
-        if LooseVersion(pkg_version) < LooseVersion(min_version):
+        if parse_version(pkg_version) < parse_version(min_version):
             message += ' The current version is {}.'.format(pkg_version)
             raise ValueError(message)
     except ModuleNotFoundError:
@@ -150,6 +151,7 @@ def setup_package():
             'Operating System :: POSIX',
             'Operating System :: POSIX :: Linux',
             'Operating System :: Unix',
+            'Programming Language :: Cython',
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3 :: Only',
@@ -157,6 +159,7 @@ def setup_package():
             'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: 3.8',
             'Programming Language :: Python :: 3.9',
+            'Programming Language :: Python :: 3.10',
             'Programming Language :: Python :: Implementation :: CPython',
             'Topic :: Scientific/Engineering',
             'Topic :: Scientific/Engineering :: Mathematics',
