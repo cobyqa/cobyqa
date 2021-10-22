@@ -1,10 +1,23 @@
 .. _linalg:
 
-**************
-Linear Algebra
-**************
+.. currentmodule:: cobyqa.linalg
 
-This part presents the linear algebra.
+********************************
+Linear algebra (`cobyqa.linalg`)
+********************************
+
+This section presents the mathematical frameworks underneath the subproblem
+solvers of COBYQA.
+
+.. seealso::
+    `bvcs`,
+    `bvlag`,
+    `bvtcg`,
+    `cpqp`,
+    `givens`,
+    `lctcg`,
+    `nnls`,
+    `qr`
 
 .. toctree::
     :maxdepth: 1

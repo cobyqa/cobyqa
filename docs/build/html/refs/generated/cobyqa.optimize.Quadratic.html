@@ -126,7 +126,13 @@
     <ul class="current nav bd-sidenav">
  <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="../optimize.html">
-   Optimization framework
+   Optimization solver (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa
+    </span>
+   </code>
+   )
   </a>
   <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
@@ -215,12 +221,24 @@
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../linalg.html">
-   Linear Algebra
+   Linear algebra (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa.linalg
+    </span>
+   </code>
+   )
   </a>
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../tests.html">
-   Test support
+   Test support (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa.tests
+    </span>
+   </code>
+   )
   </a>
  </li>
 </ul>
@@ -275,20 +293,21 @@
 <h1>cobyqa.optimize.Quadratic<a class="headerlink" href="#cobyqa-optimize-quadratic" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="cobyqa.optimize.Quadratic">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">cobyqa.optimize.</span></span><span class="sig-name descname"><span class="pre">Quadratic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bmat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zmat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fval</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/optimize.py#L4245-L4605"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.optimize.Quadratic" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">cobyqa.optimize.</span></span><span class="sig-name descname"><span class="pre">Quadratic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bmat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zmat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fval</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/optimize.py#L4247-L4608"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.optimize.Quadratic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Representation of a quadratic multivariate function.</p>
 <p class="rubric">Notes</p>
 <p>To improve the computational efficiency of the updates of the quadratic
 functions, the Hessian matrices of a quadratic functions are stored as
 explicit and implicit parts, which define the model relatively to the
-coordinates of the interpolation points <a class="reference internal" href="#r121380ef860e-1" id="id1">[1]</a>. Initially, the explicit part
-of an Hessian matrix is zero and so, is not explicitly stored.</p>
+coordinates of the interpolation points <a class="reference internal" href="#r121380ef860e-powe06" id="id1">[Powe06]</a>. Initially, the explicit
+part of an Hessian matrix is zero and so, is not explicitly stored.</p>
 <p class="rubric">References</p>
 <dl class="citation">
-<dt class="label" id="r121380ef860e-1"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
-<dd><p>M. J. D. Powell. “The NEWUOA software for unconstrained optimization
-without derivatives.” In: Large-Scale Nonlinear Optimization. Ed. by G.
-Di Pillo and M. Roma. New York, NY, US: Springer, 2006, pp. 255–297.</p>
+<dt class="label" id="r121380ef860e-powe06"><span class="brackets"><a class="fn-backref" href="#id1">Powe06</a></span></dt>
+<dd><p>M. J. D. Powell. “The NEWUOA software for unconstrained
+optimization without derivatives.” In: Large-Scale Nonlinear
+Optimization. Ed. by G. Di Pillo and M. Roma. New York, NY, US: Springer,
+2006, pp. 255–297.</p>
 </dd>
 </dl>
 <dl class="field-list simple">
@@ -383,7 +402,7 @@ Di Pillo and M. Roma. New York, NY, US: Springer, 2006, pp. 255–297.</p>
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 19, 2021.<br>
+Last updated on October 22, 2021.<br>
 </p>
     </div>
     

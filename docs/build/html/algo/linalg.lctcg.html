@@ -32,6 +32,8 @@
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>window.MathJax = {"tex": {"macros": {"eu": "{\\mathrm{e}}", "iu": "{\\mathrm{i}}", "du": "{\\mathrm{d}}", "vspan": "\\operatorname{span}", "abs": ["#1\\lvert#2#1\\rvert", 2, ""], "ceil": ["#1\\lceil#2#1\\rceil", 2, ""], "floor": ["#1\\lfloor#2#1\\rfloor", 2, ""], "norm": ["#1\\lVert#2#1\\rVert", 2, ""], "set": ["#1\\{#2#1\\}", 2, ""], "inner": ["#1\\langle#2#1\\rangle", 2, ""], "C": "{\\mathbb{C}}", "N": "{\\mathbb{N}}", "Q": "{\\mathbb{Q}}", "R": "{\\mathbb{R}}", "Z": "{\\mathbb{Z}}", "T": "{\\mathsf{T}}"}}}</script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -126,12 +128,24 @@
     <ul class="current nav bd-sidenav">
  <li class="toctree-l1">
   <a class="reference internal" href="optimize.html">
-   Optimization solver
+   Optimization framework (
+   <code class="xref py py-obj docutils literal notranslate">
+    <span class="pre">
+     cobyqa
+    </span>
+   </code>
+   )
   </a>
  </li>
  <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="linalg.html">
-   Linear Algebra
+   Linear algebra (
+   <code class="xref py py-obj docutils literal notranslate">
+    <span class="pre">
+     cobyqa.linalg
+    </span>
+   </code>
+   )
   </a>
   <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
@@ -141,7 +155,7 @@
   <ul class="current">
    <li class="toctree-l2">
     <a class="reference internal" href="linalg.altmov.html">
-     Geometry improvement of the interpolation set
+     Geometry of the interpolation set
     </a>
    </li>
    <li class="toctree-l2">
@@ -180,9 +194,19 @@
               
               <div class="toc-item">
                 
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
 
 <nav id="bd-toc-nav">
-    
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#description-of-the-method">
+   Description of the method
+  </a>
+ </li>
+</ul>
+
 </nav>
               </div>
               
@@ -204,6 +228,30 @@
                 
   <section id="linear-constrained-truncated-conjugate-gradient">
 <span id="linalg-lctcg"></span><h1>Linear constrained truncated conjugate gradient<a class="headerlink" href="#linear-constrained-truncated-conjugate-gradient" title="Permalink to this headline">¶</a></h1>
+<p>In general (that is when some linear and/or nonlinear constraints are
+provided), to determine a trust-region tangential step, COBYQA must solve a
+problem of the form</p>
+<div class="math notranslate nohighlight" id="equation-lctcg">
+<span class="eqno">(1)<a class="headerlink" href="#equation-lctcg" title="Permalink to this equation">¶</a></span>\[\begin{split}\begin{array}{ll}
+    \min        &amp; \quad f(x) = \inner{x, g} + \frac{1}{2} \inner{x, H x}\\
+    \text{s.t.} &amp; \quad Ax \le b,\\
+                &amp; \quad Cx = d,\\
+                &amp; \quad \norm{x} \le \Delta,\\
+                &amp; \quad x \in \R^n,
+\end{array}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(g \in \R^n\)</span> approximates the gradient of the nonlinear objective
+function at the origin, <span class="math notranslate nohighlight">\(H \in \R^{n \times n}\)</span> is a symmetric matrix
+that approximates the Hessian matrix of the nonlinear objective function at the
+origin, <span class="math notranslate nohighlight">\(A \in \R^{m_1 \times n}\)</span> and <span class="math notranslate nohighlight">\(C \in \R^{m_2 \times n}\)</span> are
+the Jacobian matrices of the linear inequality and equality constraints,
+<span class="math notranslate nohighlight">\(b \in \R^{m_1}\)</span> and <span class="math notranslate nohighlight">\(d \in \R^{m_2}\)</span> are the corresponding
+right-hand sides, and <span class="math notranslate nohighlight">\(\Delta &gt; 0\)</span> is the current trust-region radius.</p>
+<p>As mentioned in the section <a class="reference internal" href="linalg.bvtcg.html#tcg-base"><span class="std std-ref">The unconstrained case</span></a> of the description of the <a class="reference internal" href="../refs/generated/cobyqa.linalg.bvtcg.html#cobyqa.linalg.bvtcg" title="cobyqa.linalg.bvtcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bvtcg</span></code></a>
+method, it is usual to solve inexactly problem <a class="reference internal" href="#equation-lctcg">(1)</a> using a truncated
+conjugate gradient method.</p>
+<section id="description-of-the-method">
+<h2>Description of the method<a class="headerlink" href="#description-of-the-method" title="Permalink to this headline">¶</a></h2>
+</section>
 </section>
 
 
@@ -246,7 +294,7 @@
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 19, 2021.<br>
+Last updated on October 22, 2021.<br>
 </p>
     </div>
     

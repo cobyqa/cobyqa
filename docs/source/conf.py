@@ -36,6 +36,7 @@ release = cobyqa.__version__
 extensions = [
     'numpydoc',
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosectionlabel',
     'sphinx.ext.intersphinx',
     'sphinx.ext.linkcode',
     'sphinx.ext.mathjax',
@@ -110,34 +111,29 @@ latex_elements = {
     'preamble': r'''
 \usepackage{dsfont}
 
-% Mathematical constants, sets, and notations
+% Constants and mathematical functions in Roman style font.
 \def\eu{\ensuremath{\mathrm{e}}}
 \def\iu{\ensuremath{\mathrm{i}}}
 \def\du{\ensuremath{\mathrm{d}}}
+\DeclareMathOperator{\vspan}{span}
+
+% Extra mathematical functions
+\newcommand{\abs}[2][]{#1\lvert#2#1\rvert}
+\newcommand{\ceil}[2][]{#1\lceil#2#1\rceil}
+\newcommand{\floor}[2][]{#1\lfloor#2#1\rfloor}
+\newcommand{\norm}[2][]{#1\lVert#2#1\rVert}
+\newcommand{\set}[2][]{#1\{#2#1\}}
+\newcommand{\inner}[2][]{#1\langle#2#1\rangle}
+
+% Sets in blackboard-bold style font.
 \def\C{\ensuremath{\mathds{C}}}
 \def\N{\ensuremath{\mathds{N}}}
 \def\Q{\ensuremath{\mathds{Q}}}
 \def\R{\ensuremath{\mathds{R}}}
 \def\Z{\ensuremath{\mathds{Z}}}
-\def\sft{\ensuremath{\mathsf{T}}}
 
-% Dedicated mathematical macros
-\newcommand{\dv}{x}
-\newcommand{\icon}{i}
-\newcommand{\iiter}{k}
-\newcommand{\lmv}{\lambda}
-\newcommand{\nv}{n}
-\newcommand{\tsv}{d}
-
-\newcommand{\bl}{l}
-\newcommand{\bu}{u}
-\newcommand{\con}[1][\icon]{c_{#1}}
-\newcommand{\lag}{\mathcal{L}}
-\newcommand{\meq}{n_{\scriptscriptstyle\seq}}
-\newcommand{\mub}{n_{\scriptscriptstyle\sub}}
-\newcommand{\obj}{f}
-\newcommand{\seq}{\mathcal{E}}
-\newcommand{\sub}{\mathcal{I}}
+% Mathematical operators in sans serif style font
+\def\T{\ensuremath{\mathsf{T}}}
     ''',
 }
 
@@ -222,34 +218,29 @@ def linkcode_resolve(domain, info):
 mathjax3_config = {
     'tex': {
         'macros': {
-            # Mathematical constants, sets, and notations
+            # Constants and mathematical functions in Roman style font.
             'eu': r'{\mathrm{e}}',
             'iu': r'{\mathrm{i}}',
             'du': r'{\mathrm{d}}',
+            'vspan': r'\operatorname{span}',
+
+            # Extra mathematical functions
+            'abs': [r'#1\lvert#2#1\rvert', 2, ''],
+            'ceil': [r'#1\lceil#2#1\rceil', 2, ''],
+            'floor': [r'#1\lfloor#2#1\rfloor', 2, ''],
+            'norm': [r'#1\lVert#2#1\rVert', 2, ''],
+            'set': [r'#1\{#2#1\}', 2, ''],
+            'inner': [r'#1\langle#2#1\rangle', 2, ''],
+
+            # Sets in blackboard-bold style font.
             'C': r'{\mathbb{C}}',
             'N': r'{\mathbb{N}}',
             'Q': r'{\mathbb{Q}}',
             'R': r'{\mathbb{R}}',
             'Z': r'{\mathbb{Z}}',
-            'sft': r'{\mathsf{T}}',
 
-            # Dedicated mathematical macros
-            'dv': '{x}',
-            'icon': '{i}',
-            'iiter': '{k}',
-            'lmv': r'{\lambda}',
-            'nv': '{n}',
-            'stv': '{d}',
-
-            'bl': '{l}',
-            'bu': '{u}',
-            'con': ['{c_{#1}}', 1, r'\icon'],
-            'lag': r'{\mathcal{L}}',
-            'meq': r'{n_{\scriptscriptstyle\seq}}',
-            'mub': r'{n_{\scriptscriptstyle\sub}}',
-            'obj': '{f}',
-            'seq': r'{\mathcal{E}}',
-            'sub': r'{\mathcal{I}}',
+            # Mathematical operators in sans serif style font
+            'T': r'{\mathsf{T}}',
         }
     }
 }

@@ -32,10 +32,12 @@
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>window.MathJax = {"tex": {"macros": {"eu": "{\\mathrm{e}}", "iu": "{\\mathrm{i}}", "du": "{\\mathrm{d}}", "vspan": "\\operatorname{span}", "abs": ["#1\\lvert#2#1\\rvert", 2, ""], "ceil": ["#1\\lceil#2#1\\rceil", 2, ""], "floor": ["#1\\lfloor#2#1\\rfloor", 2, ""], "norm": ["#1\\lVert#2#1\\rVert", 2, ""], "set": ["#1\\{#2#1\\}", 2, ""], "inner": ["#1\\langle#2#1\\rangle", 2, ""], "C": "{\\mathbb{C}}", "N": "{\\mathbb{N}}", "Q": "{\\mathbb{Q}}", "R": "{\\mathbb{R}}", "Z": "{\\mathbb{Z}}", "T": "{\\mathsf{T}}"}}}</script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="COBYQA Reference" href="../refs/index.html" />
+    <link rel="next" title="COBYQA reference" href="../refs/index.html" />
     <link rel="prev" title="Linear constrained truncated conjugate gradient" href="linalg.lctcg.html" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -126,12 +128,24 @@
     <ul class="current nav bd-sidenav">
  <li class="toctree-l1">
   <a class="reference internal" href="optimize.html">
-   Optimization solver
+   Optimization framework (
+   <code class="xref py py-obj docutils literal notranslate">
+    <span class="pre">
+     cobyqa
+    </span>
+   </code>
+   )
   </a>
  </li>
  <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="linalg.html">
-   Linear Algebra
+   Linear algebra (
+   <code class="xref py py-obj docutils literal notranslate">
+    <span class="pre">
+     cobyqa.linalg
+    </span>
+   </code>
+   )
   </a>
   <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
@@ -141,7 +155,7 @@
   <ul class="current">
    <li class="toctree-l2">
     <a class="reference internal" href="linalg.altmov.html">
-     Geometry improvement of the interpolation set
+     Geometry of the interpolation set
     </a>
    </li>
    <li class="toctree-l2">
@@ -180,9 +194,36 @@
               
               <div class="toc-item">
                 
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
 
 <nav id="bd-toc-nav">
-    
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#description-of-the-method">
+   Description of the method
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#convergence-of-the-method">
+   Convergence of the method
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#termination-of-the-inner-loop">
+     Termination of the inner loop
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#termination-of-the-outer-loop">
+     Termination of the outer loop
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
 </nav>
               </div>
               
@@ -204,6 +245,150 @@
                 
   <section id="nonnegative-least-squares">
 <span id="linalg-nnls"></span><h1>Nonnegative least squares<a class="headerlink" href="#nonnegative-least-squares" title="Permalink to this headline">¶</a></h1>
+<p>The update mechanism of the Lagrange multipliers in COBYQA is based on a
+constrained least-squares problem, where some variables must remain nonnegative
+(in order to satisfy some complementary slackness conditions). The problem we
+solve is of the form</p>
+<div class="math notranslate nohighlight" id="equation-nnls">
+<span class="eqno">(1)<a class="headerlink" href="#equation-nnls" title="Permalink to this equation">¶</a></span>\[\begin{split}\begin{array}{ll}
+    \min        &amp; \quad f(x) = \frac{1}{2} \norm{Ax - b}^2\\
+    \text{s.t.} &amp; \quad x_i \ge 0, ~ i = 1, 2, \dots, n_0,\\
+                &amp; \quad x \in \R^n,
+\end{array}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(A \in \R^{m \times n}\)</span>, <span class="math notranslate nohighlight">\(b \in \R^m\)</span>, <span class="math notranslate nohighlight">\(n_0\)</span> is a
+nonnegative integer with <span class="math notranslate nohighlight">\(n_0 \le n\)</span>, and <span class="math notranslate nohighlight">\(\norm{\cdot}\)</span> is the
+Euclidean norm. We observe that if <span class="math notranslate nohighlight">\(n_0 = 0\)</span>, problem <a class="reference internal" href="#equation-nnls">(1)</a> is a
+simple unconstrained least-squares problem, which can be solved using
+traditional methods (see, e.g., <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.linalg.lstsq.html#numpy.linalg.lstsq" title="(in NumPy v1.21)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy.linalg.lstsq</span></code></a>).</p>
+<section id="description-of-the-method">
+<h2>Description of the method<a class="headerlink" href="#description-of-the-method" title="Permalink to this headline">¶</a></h2>
+<p>In order to solve problem <a class="reference internal" href="#equation-nnls">(1)</a> when <span class="math notranslate nohighlight">\(n_0 \ge 1\)</span>, we construct an
+active-set method based on Algorithm 23.10 of <a class="reference internal" href="#laha74" id="id1"><span>[LaHa74]</span></a>, referred to as <a class="reference internal" href="../refs/generated/cobyqa.linalg.nnls.html#cobyqa.linalg.nnls" title="cobyqa.linalg.nnls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nnls</span></code></a>.
+The framework of the method is described below.</p>
+<ol class="arabic simple">
+<li><p>Set the active set <span class="math notranslate nohighlight">\(\mathcal{I}^0\)</span> initially to
+<span class="math notranslate nohighlight">\(\set{1, 2, \dots, n_0}\)</span>, the initial guess <span class="math notranslate nohighlight">\(x^0\)</span> to the
+origin, and <span class="math notranslate nohighlight">\(k = 0\)</span>.</p></li>
+<li><p>Evaluate the gradient of the objective function of <a class="reference internal" href="#equation-nnls">(1)</a> at
+<span class="math notranslate nohighlight">\(x^k\)</span>, namely <span class="math notranslate nohighlight">\(\nabla f(x^k) = A^{\T} (Ax^k - b)\)</span>.</p></li>
+<li><p>If the KKT conditions for problem <a class="reference internal" href="#equation-nnls">(1)</a> hold at <span class="math notranslate nohighlight">\(x^k\)</span>, stop the
+computations.</p></li>
+<li><p>Remove from the active set <span class="math notranslate nohighlight">\(\mathcal{I}^k\)</span> an index yielding
+<span class="math notranslate nohighlight">\(\min \set{\partial_i f(x) : i \in \mathcal{I}^k}\)</span> to build
+<span class="math notranslate nohighlight">\(\mathcal{I}^{k + 1}\)</span>.</p></li>
+<li><p>Let <span class="math notranslate nohighlight">\(A_{\scriptscriptstyle\mathcal{I}}^{k + 1}\)</span> be the matrix whose
+<span class="math notranslate nohighlight">\(i\)</span>-th column if the <span class="math notranslate nohighlight">\(i\)</span>-th column of <span class="math notranslate nohighlight">\(A\)</span> if
+<span class="math notranslate nohighlight">\(i \notin \mathcal{I}^{k + 1}\)</span>, and zero otherwise.</p></li>
+<li><p>Let <span class="math notranslate nohighlight">\(z^{k + 1}\)</span> be a solution of the least squares
+<span class="math notranslate nohighlight">\(\min \norm{A_{\scriptscriptstyle\mathcal{I}}^{k + 1} z - b}\)</span> with
+<span class="math notranslate nohighlight">\(z_i^{k + 1} = 0\)</span> for <span class="math notranslate nohighlight">\(i \in \mathcal{I}^{k + 1}\)</span>, and increment
+<span class="math notranslate nohighlight">\(k\)</span>.</p></li>
+<li><p>If <span class="math notranslate nohighlight">\(z_i^k &gt; 0\)</span> for all <span class="math notranslate nohighlight">\(i \notin \mathcal{I}^k\)</span> with
+<span class="math notranslate nohighlight">\(i \le n_0\)</span>, update <span class="math notranslate nohighlight">\(x^k = z^k\)</span> and go to step 2. Set otherwise
+<span class="math notranslate nohighlight">\(x^k = x^{k - 1}\)</span>.</p></li>
+<li><p>Set <span class="math notranslate nohighlight">\(\alpha_k = \min \set{x_i^k / (x_i^k - z_i^k) : z_i^k \le 0, ~ i \notin \mathcal{I}^k, ~ i \le n_0}\)</span>.</p></li>
+<li><p>Update <span class="math notranslate nohighlight">\(x^{k + 1} = x^k + \alpha_k (z^k - x^k)\)</span>,
+<span class="math notranslate nohighlight">\(\mathcal{I}^{k + 1} = \mathcal{I}^k \cup \set{i \le n_0 : x_i^{k + 1} = 0}\)</span>,
+increment <span class="math notranslate nohighlight">\(k\)</span>, and go to step 5.</p></li>
+</ol>
+<p>The unconstrained least-squares subproblem of <a class="reference internal" href="../refs/generated/cobyqa.linalg.nnls.html#cobyqa.linalg.nnls" title="cobyqa.linalg.nnls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nnls</span></code></a> at step 6 is solved using
+<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.linalg.lstsq.html#numpy.linalg.lstsq" title="(in NumPy v1.21)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy.linalg.lstsq</span></code></a>. Several refinements of this framework have been made in
+the implementation.</p>
+<ol class="arabic simple">
+<li><p>The number of past iterations is maintained to stop the computations if a
+given threshold is exceeded.</p></li>
+<li><p>Numerical difficulties may arise at step 8 of the method whenever the
+denominator comes close to zero (although it remains theoretically nonzero).
+The division is then safeguarded.</p></li>
+<li><p>Computer rounding errors may engender infinite cycling if the solution has
+been found when checking the KKT conditions. Therefore, the computations are
+stopped if no progress is made from an iteration to another in terms of
+objective function reduction. The theoretical analysis below show that
+strict function decrease must occur from an iteration to another.</p></li>
+</ol>
+</section>
+<section id="convergence-of-the-method">
+<h2>Convergence of the method<a class="headerlink" href="#convergence-of-the-method" title="Permalink to this headline">¶</a></h2>
+<p>To study the theoretical properties of the framework, we regard it as
+consisting of two nested loops. The inner loop (steps 5–9) has unique entry
+and exit points at steps 5 and 7, and only broadens the active set. The outer
+loop (steps 2–9) also has unique entry and exit points at steps 2 and 3, and
+only narrows the active set. Since the termination criteria of the outer loop
+are the KKT conditions for problem <a class="reference internal" href="#equation-nnls">(1)</a>, it is clear that the termination
+of the algorithm implies its convergence. In order to prove the termination of
+the algorithm, we necessitate the following result whose proof is established
+in Lemma 23.17 of <a class="reference internal" href="#laha74" id="id2"><span>[LaHa74]</span></a>.</p>
+<p><strong>Lemma 1.</strong> Assume that a matrix <span class="math notranslate nohighlight">\(A \in \R^{m \times n}\)</span> is a full
+column rank matrix (with <span class="math notranslate nohighlight">\(n \le m\)</span>) and that a vector <span class="math notranslate nohighlight">\(b \in \R^m\)</span>
+satisfies <span class="math notranslate nohighlight">\(\inner{b, Ae_i} = 0\)</span> for
+<span class="math notranslate nohighlight">\(i \in \set{1, 2, \dots, n} \setminus \set{j}\)</span> and
+<span class="math notranslate nohighlight">\(\inner{b, Ae_j} &gt; 0\)</span> with <span class="math notranslate nohighlight">\(j \in \set{1, 2, \dots, n}\)</span>. Then
+the solution vector <span class="math notranslate nohighlight">\(\bar{x}\)</span> of the least-squares problem
+<span class="math notranslate nohighlight">\(\min \norm{Ax - b}\)</span> satisfies <span class="math notranslate nohighlight">\(\bar{x}_j &gt; 0\)</span>.</p>
+<p>Assume that the KKT conditions for problem <a class="reference internal" href="#equation-nnls">(1)</a> do not hold at the
+origin. At the first iteration, the algorithm selects the index
+(<span class="math notranslate nohighlight">\(j\)</span>, say) of the most negative component of
+<span class="math notranslate nohighlight">\(\nabla f(0) = -A^{\T} b\)</span> and remove it from the active set
+<span class="math notranslate nohighlight">\(\mathcal{I}^0\)</span>. According to Lemma 1, the solution of the least-squares
+problem at step 6 satisfies <span class="math notranslate nohighlight">\(z_j^1 &gt; 0\)</span>. It is then easy to see that at
+each iteration, the solution satisfies <span class="math notranslate nohighlight">\(z_j^{k + 1} &gt; 0\)</span>, where <span class="math notranslate nohighlight">\(j\)</span>
+is the index selected at step 4. Such a solution is then modified by the inner
+loop to ensure that <span class="math notranslate nohighlight">\(x_i^{k + 1} \ge 0\)</span> for any
+<span class="math notranslate nohighlight">\(i \in \set{1, 2, \dots, n_0}\)</span>. To do so, it will select the closest
+point to <span class="math notranslate nohighlight">\(z^{k + 1}\)</span> on the line joining <span class="math notranslate nohighlight">\(x^k\)</span> to <span class="math notranslate nohighlight">\(z^{k + 1}\)</span>
+that is feasible.</p>
+<section id="termination-of-the-inner-loop">
+<h3>Termination of the inner loop<a class="headerlink" href="#termination-of-the-inner-loop" title="Permalink to this headline">¶</a></h3>
+<p>It is clear at this step that all operations made in the inner loop are
+well-defined. Moreover, at each inner loop iteration, the cardinal number of
+the active set <span class="math notranslate nohighlight">\(\mathcal{I}^k\)</span> is incremented. If <span class="math notranslate nohighlight">\(\mathcal{I}^k\)</span>
+is maximal, that is <span class="math notranslate nohighlight">\(\mathcal{I}^k = \set{1, 2, \dots, n_0}\)</span>, then the
+condition at step 7 is always true, and the loop terminates. Therefore, the
+inner loop must terminate in at most <span class="math notranslate nohighlight">\(n_0 - \abs{\mathcal{I}^k} + 1\)</span>
+iterations, where <span class="math notranslate nohighlight">\(\abs{\mathcal{I}^k}\)</span> denotes the cardinal number of
+the active set when the first inner iteration started.</p>
+</section>
+<section id="termination-of-the-outer-loop">
+<h3>Termination of the outer loop<a class="headerlink" href="#termination-of-the-outer-loop" title="Permalink to this headline">¶</a></h3>
+<p>Termination of the outer loop can be directly inferred by showing that the
+value of <span class="math notranslate nohighlight">\(f\)</span> strictly decreases at each outer loop iteration. Such a
+condition ensures that the active set <span class="math notranslate nohighlight">\(\mathcal{I}^k\)</span> at a given outer
+loop iteration is different from all its previous instances, as the feasibility
+of each iterate of the outer loop has already been shown (it is specifically
+the purpose of the inner loop).</p>
+<p>When an inner loop iteration finishes, the value of <span class="math notranslate nohighlight">\(x^{k + 1}\)</span> is solves</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll}
+    \min        &amp; \quad f(x) = \frac{1}{2} \norm{Ax - b}^2\\
+    \text{s.t.} &amp; \quad x_i = 0, ~ i \in \mathcal{I}^{k + 1},\\
+                &amp; \quad x_i &gt; 0, ~ i \notin \mathcal{I}^{k + 1}, ~ i \le n_0,\\
+                &amp; \quad x \in \R^n.
+\end{array}\end{split}\]</div>
+<p>If the KKT conditions for problem <a class="reference internal" href="#equation-nnls">(1)</a> hold at <span class="math notranslate nohighlight">\(x^{k + 1}\)</span>, then
+termination occurs. Otherwise, after incrementing <span class="math notranslate nohighlight">\(k\)</span>, the index yielding
+the least value of <span class="math notranslate nohighlight">\(\nabla f(x^k)\)</span> is removed from the active set
+<span class="math notranslate nohighlight">\(\mathcal{I}^k\)</span>, and the tentative solution vector <span class="math notranslate nohighlight">\(z^{k + 1}\)</span>
+clearly provides <span class="math notranslate nohighlight">\(f(z^{k + 1}) &lt; f(x^k)\)</span>. The result is then proven if no
+inner loop is entertained (that is, if condition at step 7 holds). Otherwise,
+at the end of each inner loop, we have</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+    \sqrt{2 f\big(x^{k + 1}\big)}
+        &amp;= \norm[\big]{A (x^k + \alpha_k (z^k - x^k)) - b}\\
+        &amp;= \norm[\big]{(1 - \alpha_k) (Ax^k - b) + \alpha_k (Az^k - b)}\\
+        &amp;&lt; \norm{Ax^k - b} = \sqrt{2 f(x^k)},
+\end{aligned}\end{split}\]</div>
+<p>since <span class="math notranslate nohighlight">\(\alpha_k \in (0, 1)\)</span>. The termination of the outer loop is then
+proven, as well as the convergence of the method.</p>
+<p class="rubric">References</p>
+<dl class="citation">
+<dt class="label" id="laha74"><span class="brackets">LaHa74</span><span class="fn-backref">(<a href="#id1">1</a>,<a href="#id2">2</a>)</span></dt>
+<dd><p>C. L. Lawson and R. J. Hanson. Solving Least Squares Problems.
+Classics Appl. Math. Philadelphia, PA, US: SIAM, 1974.</p>
+</dd>
+</dl>
+</section>
+</section>
 </section>
 
 
@@ -222,7 +407,7 @@
     <a class='right-next' id="next-link" href="../refs/index.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">COBYQA Reference</p>
+        <p class="prev-next-title">COBYQA reference</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>
@@ -246,7 +431,7 @@
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 19, 2021.<br>
+Last updated on October 22, 2021.<br>
 </p>
     </div>
     

@@ -34,13 +34,19 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
         least-squares Lagrange multipliers (the default is
         ``10 * eps * max(n, m) * max(1, max(abs(b)))``).
 
+    See Also
+    --------
+    bvtcg : Bounded variable truncated conjugate gradient
+    cpqp : Convex piecewise quadratic programming
+    lctcg : Linear constrained truncated conjugate gradient
+
     Notes
     -----
-    The method is adapted from the NNLS algorithm [1]_.
+    The method is adapted from the NNLS algorithm [LaHa74]_.
 
     References
     ----------
-    .. [1] C. L. Lawson and R. J. Hanson. Solving Least Squares Problems.
+    .. [LaHa74] C. L. Lawson and R. J. Hanson. Solving Least Squares Problems.
        Classics Appl. Math. Philadelphia, PA, US: SIAM, 1974.
     """
     A = np.atleast_2d(A)

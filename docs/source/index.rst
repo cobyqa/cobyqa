@@ -1,7 +1,7 @@
 .. _cobyqa_docs_mainpage:
 
 ********************
-COBYQA Documentation
+COBYQA documentation
 ********************
 
 .. toctree::

@@ -126,12 +126,24 @@
     <ul class="current nav bd-sidenav">
  <li class="toctree-l1">
   <a class="reference internal" href="../optimize.html">
-   Optimization framework
+   Optimization solver (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa
+    </span>
+   </code>
+   )
   </a>
  </li>
  <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="../linalg.html">
-   Linear Algebra
+   Linear algebra (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa.linalg
+    </span>
+   </code>
+   )
   </a>
   <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
@@ -183,7 +195,13 @@
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../tests.html">
-   Test support
+   Test support (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa.tests
+    </span>
+   </code>
+   )
   </a>
  </li>
 </ul>
@@ -238,7 +256,7 @@
 <h1>cobyqa.linalg.bvtcg<a class="headerlink" href="#cobyqa-linalg-bvtcg" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="cobyqa.linalg.bvtcg">
-<span class="sig-prename descclassname"><span class="pre">linalg.</span></span><span class="sig-name descname"><span class="pre">bvtcg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xopt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hessp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/linalg/bvtcg.py#L7-L411"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.linalg.bvtcg" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">linalg.</span></span><span class="sig-name descname"><span class="pre">bvtcg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xopt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hessp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/linalg/bvtcg.py#L7-L417"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.linalg.bvtcg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Minimize approximately a quadratic function subject to bound and
 trust-region constraints using a truncated conjugate gradient.</p>
 <dl class="field-list">
@@ -291,11 +309,22 @@ disable the bounds on some variables.</p>
 </dl>
 </dd>
 </dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="cobyqa.linalg.cpqp.html#cobyqa.linalg.cpqp" title="cobyqa.linalg.cpqp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpqp</span></code></a></dt><dd><p>Convex piecewise quadratic programming</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.linalg.lctcg.html#cobyqa.linalg.lctcg" title="cobyqa.linalg.lctcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lctcg</span></code></a></dt><dd><p>Linear constrained truncated conjugate gradient</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.linalg.nnls.html#cobyqa.linalg.nnls" title="cobyqa.linalg.nnls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nnls</span></code></a></dt><dd><p>Nonnegative least squares</p>
+</dd>
+</dl>
+</div>
 <p class="rubric">Notes</p>
-<p>The method is adapted from the TRSBOX algorithm <a class="reference internal" href="#r6fcb056338c2-1" id="id1">[1]</a>.</p>
+<p>The method is adapted from the TRSBOX algorithm <a class="reference internal" href="#r6fcb056338c2-powe09" id="id1">[Powe09]</a>.</p>
 <p class="rubric">References</p>
 <dl class="citation">
-<dt class="label" id="r6fcb056338c2-1"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dt class="label" id="r6fcb056338c2-powe09"><span class="brackets"><a class="fn-backref" href="#id1">Powe09</a></span></dt>
 <dd><p>M. J. D. Powell. The BOBYQA algorithm for bound constrained
 optimization without derivatives. Tech. rep. DAMTP 2009/NA06. Cambridge,
 UK: Department of Applied Mathematics and Theoretical Physics, University
@@ -346,7 +375,7 @@ of Cambridge, 2009.</p>
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 19, 2021.<br>
+Last updated on October 22, 2021.<br>
 </p>
     </div>
     

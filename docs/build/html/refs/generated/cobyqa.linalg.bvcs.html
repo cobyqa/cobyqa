@@ -36,7 +36,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="cobyqa.linalg.bvlag" href="cobyqa.linalg.bvlag.html" />
-    <link rel="prev" title="Linear Algebra" href="../linalg.html" />
+    <link rel="prev" title="Linear algebra (cobyqa.linalg)" href="../linalg.html" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
@@ -126,12 +126,24 @@
     <ul class="current nav bd-sidenav">
  <li class="toctree-l1">
   <a class="reference internal" href="../optimize.html">
-   Optimization framework
+   Optimization solver (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa
+    </span>
+   </code>
+   )
   </a>
  </li>
  <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="../linalg.html">
-   Linear Algebra
+   Linear algebra (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa.linalg
+    </span>
+   </code>
+   )
   </a>
   <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
@@ -183,7 +195,13 @@
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../tests.html">
-   Test support
+   Test support (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa.tests
+    </span>
+   </code>
+   )
   </a>
  </li>
 </ul>
@@ -238,7 +256,7 @@
 <h1>cobyqa.linalg.bvcs<a class="headerlink" href="#cobyqa-linalg-bvcs" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="cobyqa.linalg.bvcs">
-<span class="sig-prename descclassname"><span class="pre">linalg.</span></span><span class="sig-name descname"><span class="pre">bvcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xpt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kopt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/linalg/bvcs.py#L7-L175"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.linalg.bvcs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">linalg.</span></span><span class="sig-name descname"><span class="pre">bvcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xpt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kopt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">curv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/linalg/bvcs.py#L7-L179"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.linalg.bvcs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluate Cauchy step on the absolute value of a Lagrange polynomial, subject
 to bound constraints on its coordinates and its length.</p>
 <dl class="field-list">
@@ -292,12 +310,19 @@ disable the bounds on some variables.</p>
 </dl>
 </dd>
 </dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="cobyqa.linalg.bvlag.html#cobyqa.linalg.bvlag" title="cobyqa.linalg.bvlag"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bvlag</span></code></a></dt><dd><p>Bounded variable absolute Lagrange polynomial maximization</p>
+</dd>
+</dl>
+</div>
 <p class="rubric">Notes</p>
-<p>The method is adapted from the ALTMOV algorithm <a class="reference internal" href="#r2db323da3536-1" id="id1">[1]</a>, and the vector
+<p>The method is adapted from the ALTMOV algorithm <a class="reference internal" href="#r2db323da3536-powe09" id="id1">[Powe09]</a>, and the vector
 <code class="docutils literal notranslate"><span class="pre">xpt[kopt,</span> <span class="pre">:]</span></code> must be feasible.</p>
 <p class="rubric">References</p>
 <dl class="citation">
-<dt class="label" id="r2db323da3536-1"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dt class="label" id="r2db323da3536-powe09"><span class="brackets"><a class="fn-backref" href="#id1">Powe09</a></span></dt>
 <dd><p>M. J. D. Powell. The BOBYQA algorithm for bound constrained
 optimization without derivatives. Tech. rep. DAMTP 2009/NA06. Cambridge,
 UK: Department of Applied Mathematics and Theoretical Physics, University
@@ -318,7 +343,7 @@ of Cambridge, 2009.</p>
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">Linear Algebra</p>
+            <p class="prev-next-title">Linear algebra (<code class="xref py py-mod docutils literal notranslate"><span class="pre">cobyqa.linalg</span></code>)</p>
         </div>
     </a>
     <a class='right-next' id="next-link" href="cobyqa.linalg.bvlag.html" title="next page">
@@ -348,7 +373,7 @@ of Cambridge, 2009.</p>
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 19, 2021.<br>
+Last updated on October 22, 2021.<br>
 </p>
     </div>
     

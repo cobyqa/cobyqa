@@ -33,7 +33,7 @@
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script>window.MathJax = {"tex": {"macros": {"eu": "{\\mathrm{e}}", "iu": "{\\mathrm{i}}", "du": "{\\mathrm{d}}", "C": "{\\mathbb{C}}", "N": "{\\mathbb{N}}", "Q": "{\\mathbb{Q}}", "R": "{\\mathbb{R}}", "Z": "{\\mathbb{Z}}", "sft": "{\\mathsf{T}}", "dv": "{x}", "icon": "{i}", "iiter": "{k}", "lmv": "{\\lambda}", "nv": "{n}", "stv": "{d}", "bl": "{l}", "bu": "{u}", "con": ["{c_{#1}}", 1, "\\icon"], "lag": "{\\mathcal{L}}", "meq": "{n_{\\scriptscriptstyle\\seq}}", "mub": "{n_{\\scriptscriptstyle\\sub}}", "obj": "{f}", "seq": "{\\mathcal{E}}", "sub": "{\\mathcal{I}}"}}}</script>
+    <script>window.MathJax = {"tex": {"macros": {"eu": "{\\mathrm{e}}", "iu": "{\\mathrm{i}}", "du": "{\\mathrm{d}}", "vspan": "\\operatorname{span}", "abs": ["#1\\lvert#2#1\\rvert", 2, ""], "ceil": ["#1\\lceil#2#1\\rceil", 2, ""], "floor": ["#1\\lfloor#2#1\\rfloor", 2, ""], "norm": ["#1\\lVert#2#1\\rVert", 2, ""], "set": ["#1\\{#2#1\\}", 2, ""], "inner": ["#1\\langle#2#1\\rangle", 2, ""], "C": "{\\mathbb{C}}", "N": "{\\mathbb{N}}", "Q": "{\\mathbb{Q}}", "R": "{\\mathbb{R}}", "Z": "{\\mathbb{Z}}", "T": "{\\mathsf{T}}"}}}</script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -128,12 +128,24 @@
     <ul class="current nav bd-sidenav">
  <li class="toctree-l1">
   <a class="reference internal" href="../optimize.html">
-   Optimization framework
+   Optimization solver (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa
+    </span>
+   </code>
+   )
   </a>
  </li>
  <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="../linalg.html">
-   Linear Algebra
+   Linear algebra (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa.linalg
+    </span>
+   </code>
+   )
   </a>
   <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
@@ -185,7 +197,13 @@
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../tests.html">
-   Test support
+   Test support (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa.tests
+    </span>
+   </code>
+   )
   </a>
  </li>
 </ul>
@@ -240,7 +258,7 @@
 <h1>cobyqa.linalg.cpqp<a class="headerlink" href="#cobyqa-linalg-cpqp" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="cobyqa.linalg.cpqp">
-<span class="sig-prename descclassname"><span class="pre">linalg.</span></span><span class="sig-name descname"><span class="pre">cpqp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xopt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aeq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/linalg/cpqp.py#L7-L327"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.linalg.cpqp" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">linalg.</span></span><span class="sig-name descname"><span class="pre">cpqp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xopt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aeq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/linalg/cpqp.py#L7-L333"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.linalg.cpqp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Minimize approximately a convex piecewise quadratic function subject to
 bound and trust-region constraints using a truncated conjugate gradient.</p>
 <p>The method minimizes the function</p>
@@ -291,8 +309,19 @@ disable the bounds on some variables.</p>
 </dl>
 </dd>
 </dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="cobyqa.linalg.bvtcg.html#cobyqa.linalg.bvtcg" title="cobyqa.linalg.bvtcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bvtcg</span></code></a></dt><dd><p>Bounded variable truncated conjugate gradient</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.linalg.lctcg.html#cobyqa.linalg.lctcg" title="cobyqa.linalg.lctcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lctcg</span></code></a></dt><dd><p>Linear constrained truncated conjugate gradient</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.linalg.nnls.html#cobyqa.linalg.nnls" title="cobyqa.linalg.nnls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nnls</span></code></a></dt><dd><p>Nonnegative least squares</p>
+</dd>
+</dl>
+</div>
 <p class="rubric">Notes</p>
-<p>The method is adapted from the TRSTEP algorithm <a class="reference internal" href="#r5fb36fa06800-1" id="id1">[1]</a>. To cope with the
+<p>The method is adapted from the TRSTEP algorithm <a class="reference internal" href="#r5fb36fa06800-powe15" id="id1">[Powe15]</a>. To cope with the
 convex piecewise quadratic objective function, the method minimizes</p>
 <div class="math notranslate nohighlight">
 \[\frac{1}{2} ( \| \mathtt{Aeq} \times x - \mathtt{beq} \|_2^2 +
@@ -301,9 +330,9 @@ convex piecewise quadratic objective function, the method minimizes</p>
 lower bounded by zero and <span class="math notranslate nohighlight">\(\mathtt{Aub} \times x - \mathtt{bub}\)</span>.</p>
 <p class="rubric">References</p>
 <dl class="citation">
-<dt class="label" id="r5fb36fa06800-1"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
-<dd><p>M. J. D. Powell. “On fast trust region methods for quadratic models
-with linear constraints.” In: Math. Program. Comput. 7 (2015), pp.
+<dt class="label" id="r5fb36fa06800-powe15"><span class="brackets"><a class="fn-backref" href="#id1">Powe15</a></span></dt>
+<dd><p>M. J. D. Powell. “On fast trust region methods for quadratic
+models with linear constraints.” In: Math. Program. Comput. 7 (2015), pp.
 237–-267.</p>
 </dd>
 </dl>
@@ -351,7 +380,7 @@ with linear constraints.” In: Math. Program. Comput. 7 (2015), pp.
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 19, 2021.<br>
+Last updated on October 22, 2021.<br>
 </p>
     </div>
     

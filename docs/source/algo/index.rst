@@ -1,8 +1,8 @@
 .. _algo:
 
-*****************************
-Description of the Algorithms
-*****************************
+#############################
+Description of the algorithms
+#############################
 
 This page presents the framework of the method.
 

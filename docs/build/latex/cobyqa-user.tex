@@ -72,38 +72,33 @@
 
 \usepackage{dsfont}
 
-% Mathematical constants, sets, and notations
+% Constants and mathematical functions in Roman style font.
 \def\eu{\ensuremath{\mathrm{e}}}
 \def\iu{\ensuremath{\mathrm{i}}}
 \def\du{\ensuremath{\mathrm{d}}}
+\DeclareMathOperator{\vspan}{span}
+
+% Extra mathematical functions
+\newcommand{\abs}[2][]{#1\lvert#2#1\rvert}
+\newcommand{\ceil}[2][]{#1\lceil#2#1\rceil}
+\newcommand{\floor}[2][]{#1\lfloor#2#1\rfloor}
+\newcommand{\norm}[2][]{#1\lVert#2#1\rVert}
+\newcommand{\set}[2][]{#1\{#2#1\}}
+\newcommand{\inner}[2][]{#1\langle#2#1\rangle}
+
+% Sets in blackboard-bold style font.
 \def\C{\ensuremath{\mathds{C}}}
 \def\N{\ensuremath{\mathds{N}}}
 \def\Q{\ensuremath{\mathds{Q}}}
 \def\R{\ensuremath{\mathds{R}}}
 \def\Z{\ensuremath{\mathds{Z}}}
-\def\sft{\ensuremath{\mathsf{T}}}
 
-% Dedicated mathematical macros
-\newcommand{\dv}{x}
-\newcommand{\icon}{i}
-\newcommand{\iiter}{k}
-\newcommand{\lmv}{\lambda}
-\newcommand{\nv}{n}
-\newcommand{\tsv}{d}
-
-\newcommand{\bl}{l}
-\newcommand{\bu}{u}
-\newcommand{\con}[1][\icon]{c_{#1}}
-\newcommand{\lag}{\mathcal{L}}
-\newcommand{\meq}{n_{\scriptscriptstyle\seq}}
-\newcommand{\mub}{n_{\scriptscriptstyle\sub}}
-\newcommand{\obj}{f}
-\newcommand{\seq}{\mathcal{E}}
-\newcommand{\sub}{\mathcal{I}}
+% Mathematical operators in sans serif style font
+\def\T{\ensuremath{\mathsf{T}}}
     
 
 \title{COBYQA Reference}
-\date{October 19, 2021}
+\date{October 22, 2021}
 \release{1.0.dev0}
 \author{Tom M. Ragonneau}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -123,61 +118,547 @@
 This page presents the framework of the method.
 
 
-\chapter{Optimization solver}
-\label{\detokenize{algo/optimize:optimization-solver}}\label{\detokenize{algo/optimize:optimize}}\label{\detokenize{algo/optimize::doc}}
+\chapter{Optimization framework (\sphinxstyleliteralintitle{\sphinxupquote{cobyqa}})}
+\label{\detokenize{algo/optimize:optimization-framework-cobyqa}}\label{\detokenize{algo/optimize:optimize}}\label{\detokenize{algo/optimize::doc}}
+
+\sphinxstrong{See also:}
+\nopagebreak
+
+
+\sphinxAtStartPar
+\sphinxcode{\sphinxupquote{minimize}},
+\sphinxcode{\sphinxupquote{OptimizeResult}}
+
+
+
 
 \section{Statement of the problem}
 \label{\detokenize{algo/optimize:statement-of-the-problem}}
-\sphinxAtStartPar
-We are interested in nonlinear constrained optimization problems of the form
-\begin{equation}\label{equation:algo/optimize:nlc}
-\begin{split}\begin{array}{ll}
-    \min        & \quad \obj(\dv)\\
-    \text{s.t.} & \quad \bl \le \dv \le \bu,\\
-                & \quad \con(\dv) \le 0, ~ \icon \in \sub,\\
-                & \quad \con(\dv) = 0, ~ \icon \in \seq.
-\end{array}\end{split}
-\end{equation}
-\sphinxAtStartPar
-where the \sphinxstyleemphasis{objective function} \(\obj\) and the \sphinxstyleemphasis{constraint functions}
-\(\con\), with \(\icon \in \sub \cup \seq\), are real\sphinxhyphen{}valued functions
-on \(\R^{\nv}\), and \(\bl \in \R^{\nv}\) and \(\bu \in \R^{\nv}\)
-with \(\bl < \bu\) are respectively referred to as the \sphinxstyleemphasis{upper bound} and
-\sphinxstyleemphasis{lower bound} on the \sphinxstyleemphasis{decision variable} \(\dv \in \R^{\nv}\).
-We denote the cardinal numbers of \(\sub\) and \(\seq\) respectively
-\(\mub\) and \(\meq\).
 
+\chapter{Linear algebra (\sphinxstyleliteralintitle{\sphinxupquote{cobyqa.linalg}})}
+\label{\detokenize{algo/linalg:linear-algebra-cobyqa-linalg}}\label{\detokenize{algo/linalg:linalg}}\label{\detokenize{algo/linalg::doc}}
 \sphinxAtStartPar
-The Lagrangian function \(\lag \colon \R^n \times \R^{\mub + \meq} \to \R\)
-for problem \eqref{equation:algo/optimize:nlc} is given by
-\begin{equation}\label{equation:algo/optimize:lag}
-\begin{split}\lag(\dv, \lmv) = \obj(\dv) + \sum_{\icon \in \sub \cup \seq} \lmv_{\icon}
-\con(\dv),\end{split}
-\end{equation}
-\sphinxAtStartPar
-where \(\lmv \in \R^{\mub + \meq}\) is referred to as the \sphinxstyleemphasis{dual variable}.
+This section presents the mathematical frameworks underneath the subproblem
+solvers of COBYQA.
 
 
-\chapter{Linear Algebra}
-\label{\detokenize{algo/linalg:linear-algebra}}\label{\detokenize{algo/linalg:linalg}}\label{\detokenize{algo/linalg::doc}}
+\sphinxstrong{See also:}
+\nopagebreak
+
+
 \sphinxAtStartPar
-This part presents the linear algebra.
+\sphinxcode{\sphinxupquote{bvcs}},
+\sphinxcode{\sphinxupquote{bvlag}},
+\sphinxcode{\sphinxupquote{bvtcg}},
+\sphinxcode{\sphinxupquote{cpqp}},
+\sphinxcode{\sphinxupquote{givens}},
+\sphinxcode{\sphinxupquote{lctcg}},
+\sphinxcode{\sphinxupquote{nnls}},
+\sphinxcode{\sphinxupquote{qr}}
 
 
-\section{Geometry improvement of the interpolation set}
-\label{\detokenize{algo/linalg.altmov:geometry-improvement-of-the-interpolation-set}}\label{\detokenize{algo/linalg.altmov:linalg-altmov}}\label{\detokenize{algo/linalg.altmov::doc}}
+
+
+\section{Geometry of the interpolation set}
+\label{\detokenize{algo/linalg.altmov:geometry-of-the-interpolation-set}}\label{\detokenize{algo/linalg.altmov:linalg-altmov}}\label{\detokenize{algo/linalg.altmov::doc}}
 
 \section{Bound constrained truncated conjugate gradient}
 \label{\detokenize{algo/linalg.bvtcg:bound-constrained-truncated-conjugate-gradient}}\label{\detokenize{algo/linalg.bvtcg:linalg-bvtcg}}\label{\detokenize{algo/linalg.bvtcg::doc}}
+\sphinxAtStartPar
+When no linear nor nonlinear constraints are provided to COBYQA (that is when
+the considered problem is bound constrained), the trust\sphinxhyphen{}region subproblem to
+solve at each iteration is of the form
+\begin{equation}\label{equation:algo/linalg.bvtcg:bvtcg}
+\begin{split}\begin{array}{ll}
+    \min        & \quad f(x) = \inner{x, g} + \frac{1}{2} \inner{x, H x}\\
+    \text{s.t.} & \quad l \le x \le u,\\
+                & \quad \norm{x} \le \Delta,\\
+                & \quad x \in \R^n,
+\end{array}\end{split}
+\end{equation}
+\sphinxAtStartPar
+where \(g \in \R^n\) approximates the gradient of the nonlinear objective
+function at the origin, \(H \in \R^{n \times n}\) is a symmetric matrix
+that approximates the Hessian matrix of the nonlinear objective function at the
+origin, \(l \in \R^n\) and \(u \in \R^n\) are the lower and upper
+bounds of the problems (with \(l < u\)), and \(\Delta > 0\) is the
+current trust\sphinxhyphen{}region radius.
+
+
+\subsection{The unconstrained case}
+\label{\detokenize{algo/linalg.bvtcg:the-unconstrained-case}}\label{\detokenize{algo/linalg.bvtcg:tcg-base}}
+\sphinxAtStartPar
+We assume in this section that the lower and upper bounds in \eqref{equation:algo/linalg.bvtcg:bvtcg} are
+respectively set to \(-\infty\) and \(+\infty\). Powell showed in
+\sphinxcite{algo/linalg.bvtcg:powe75} that a trust\sphinxhyphen{}region method is convergent if the trust\sphinxhyphen{}region step
+\(\bar{x} \in \R^n\) satisfies
+\begin{equation*}
+\begin{split}f(x^0) - f(\bar{x}) \ge \gamma \norm{g} \min \set{\Delta, \norm{g} / \norm{H}},\end{split}
+\end{equation*}
+\sphinxAtStartPar
+for some \(\gamma > 0\), where \(\norm{\cdot}\) is the Euclidean norm.
+It is easy to see that a Cauchy step satisfies such a condition
+(with \(\gamma = 1/2\)). Therefore, to preserve the computational
+efficiency of a trust\sphinxhyphen{}region method, it is usual to solve inexactly problem
+\eqref{equation:algo/linalg.bvtcg:bvtcg} using the truncated conjugate gradient method of Steihaug \sphinxcite{algo/linalg.bvtcg:stei83}
+and Toint \sphinxcite{algo/linalg.bvtcg:toin81}. Given the initial values \(x^0 = 0\) and
+\(d^0 = -g\), it generates the sequence of iterates
+\begin{equation*}
+\begin{split}\left\{
+\begin{array}{l}
+    \alpha_k = -\inner{d^k, g^k} / \inner{d^k, Hd^k},\\
+    \beta_k = \norm{g^{k + 1}}^2 / \norm{g^k}^2,\\
+    x^{k + 1} = x^k + \alpha_k d^k,\\
+    d^{k + 1} = -g^k + \beta_k d^k,
+\end{array}
+\right.\end{split}
+\end{equation*}
+\sphinxAtStartPar
+where \(g^k = \nabla f(x^k) = g + Hx^k\). The computations are stopped if
+either
+\begin{enumerate}
+\sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
+\item {} 
+\sphinxAtStartPar
+\(g^k = 0\) and \(\inner{d^k, Hd^k} \ge 0\), in which case the
+global minimizer is found; or
+
+\item {} 
+\sphinxAtStartPar
+\(\norm{x^{k + 1}} \ge \Delta\) or \(\inner{d^k, Hd^k} < 0\), in
+which case \(x^k + \alpha_{\Delta} d^k\) is returned, where
+\(\alpha_{\Delta} > 0\) is chosen so that
+\(\norm{x^k + \alpha_{\Delta} d^k} = \Delta\).
+
+\end{enumerate}
+
+\sphinxAtStartPar
+It is known that the truncated conjugate gradient method terminates after at
+most \(n\) iterations, and that the reduction in the objective function
+obtained with the truncated conjugate gradient method is at least half of the
+reduction obtained by the global minimizer.
+
+
+\subsection{The constrained case}
+\label{\detokenize{algo/linalg.bvtcg:the-constrained-case}}
+\sphinxAtStartPar
+We assume in this section that at least some values of the lower and upper
+bounds in \eqref{equation:algo/linalg.bvtcg:bvtcg} are finite. When no linear nor nonlinear constraints are
+provided, COBYQA solves the trust\sphinxhyphen{}region subproblem using the TRSBOX algorithm
+\sphinxcite{algo/linalg.bvtcg:powe09}, which is presented below.
+
+
+\subsubsection{The bound constrained truncated conjugate gradient procedure}
+\label{\detokenize{algo/linalg.bvtcg:the-bound-constrained-truncated-conjugate-gradient-procedure}}
+\sphinxAtStartPar
+The strategy employed by \sphinxcode{\sphinxupquote{bvtcg}} to tackle the bound constraints in the
+truncated conjugate gradient procedure is the use of an active set. At each
+iteration of the method, a truncate conjugate gradient step is performed on the
+coordinates that are not fixed by the active set. If a new bound is hit during
+such iteration, the bound is added to the active set, and the procedure is
+restarted. The active set is only enlarged through the iterations, which then
+ensures the termination of the method.
+
+\sphinxAtStartPar
+The initial active set is a subset of the active bounds at the origin. Clearly,
+a active bound should not be included in the active set if a Cauchy step (a
+positive step along \(-g\)) would depart from the bound, as the bound is
+never removed from the active set. The complete framework of \sphinxcode{\sphinxupquote{bvtcg}} is
+described below. For sake of clarity, we denote \(\mathcal{I}^k\) the
+active set of the \(k\)\sphinxhyphen{}th iteration and \(\Pi_k(v)\) the vector whose
+\(i\)\sphinxhyphen{}th coordinate is \(v_i\) if \(i \notin \mathcal{I}^k\), and
+zero otherwise.
+\begin{enumerate}
+\sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
+\item {} 
+\sphinxAtStartPar
+Set \(x^0 = 0\) and the initial active set \(\mathcal{I}^0\) to the
+indices for which either \(l_i = 0\) and \(g_i \ge 0\) or
+\(u_i = 0\) and \(g_i \le 0\).
+
+\item {} 
+\sphinxAtStartPar
+Set \(d^0 = -\Pi_0(g)\), \(g^0 = g\), and
+\(k = 0\).
+
+\item {} 
+\sphinxAtStartPar
+Let \(\alpha_{\Delta, k}\) be the largest number such that
+\(\norm{x^k + \alpha_{\Delta, k} d^k} = \Delta\).
+
+\item {} 
+\sphinxAtStartPar
+Let \(\alpha_{Q, k}\) be \(-\inner{d^k, g^k} / \inner{d^k, Hd^k}\)
+if \(\inner{d^k, Hd^k} > 0\) and \(+\infty\) otherwise.
+
+\item {} 
+\sphinxAtStartPar
+Let \(\alpha_{B, k}\) be the largest number such that
+\(l \le x^k + \alpha_{B, k} d^k \le u\) and
+\(\alpha_k = \min \set{\alpha_{\Delta, k}, \alpha_{Q, k}, \alpha_{B, k}}\).
+
+\item {} 
+\sphinxAtStartPar
+Update \(x^{k + 1} = x^k + \alpha_k d^k\),
+\(g^{k + 1} = g^k + \alpha_k H d^k\), and
+\(\beta_k = \norm{g^{k + 1}}^2 / \norm{g^k}^2\).
+
+\item {} 
+\sphinxAtStartPar
+If \(\alpha_k = \alpha_{\Delta, k}\) or \(g^{k + 1} = 0\), stop the
+computations.
+
+\item {} 
+\sphinxAtStartPar
+If \(\alpha_k = \alpha_{B, k}\), set
+\(\mathcal{I}^0 = \mathcal{I}^k \cup \set{j}\) where \(j\) is a
+new active coordinate, \(x^0 = x^{k + 1}\), \(k = 0\), and go to
+step 2.
+
+\item {} 
+\sphinxAtStartPar
+Update \(d^{k + 1} = -\Pi_k(g^k) + \beta_k d^k\),
+\(\mathcal{I}^{k + 1} = \mathcal{I}^k\), increment \(k\), and go to
+step 3.
+
+\end{enumerate}
+
+\sphinxAtStartPar
+An important remark is that when the algorithm is restarted at step 8, the
+assignment \(x^0 = x^{k + 1}\) should not modify the evaluation of the
+objective function in \eqref{equation:algo/linalg.bvtcg:bvtcg}, neither the center of its trust\sphinxhyphen{}region
+constraint.
+
+
+\subsubsection{Further refinement of the trial step}
+\label{\detokenize{algo/linalg.bvtcg:further-refinement-of-the-trial-step}}
+\sphinxAtStartPar
+If the step \(x^k\) returned by the constrained truncated conjugate
+gradient procedure satisfies \(\norm{x^k} = \Delta\), it is likely that
+the objective function in \eqref{equation:algo/linalg.bvtcg:bvtcg} can be further decreased by moving this
+point round the trust\sphinxhyphen{}region boundary. In fact, the global solution of problem
+\eqref{equation:algo/linalg.bvtcg:bvtcg} is on the trust\sphinxhyphen{}region boundary. The method \sphinxcode{\sphinxupquote{bvtcg}} then may
+further reduce the function evaluation by returning in this case an approximate
+solution to
+\begin{equation*}
+\begin{split}\begin{array}{ll}
+    \min        & \quad f(x) = \inner{x - x^0, g} + \frac{1}{2} \inner{x - x^0, H (x - x^0)}\\
+    \text{s.t.} & \quad l \le x \le u,\\
+                & \quad \norm{x - x^0} = \Delta,\\
+                & \quad x \in \vspan \set{\Pi_k(x^k), \Pi_k(g^k)} \subseteq \R^n.
+\end{array}\end{split}
+\end{equation*}
+\sphinxAtStartPar
+To do so, the method builds an orthogonal basis \(\set{\Pi_k(x^k), s}\) of
+\(\vspan \set{\Pi_k(x^k), \Pi_k(g^k)}\) by selecting the vector
+\(s \in \R^n\) such that \(\inner{s, \Pi_k(x^k)} = 0\),
+\(\inner{s, \Pi_k(g^k)} < 0\), and \(\norm{s} = \norm{\Pi_k(x^k)}\).
+Further, the method considers the function
+\(x(\theta) = x^k + (\cos \theta - 1) \Pi_k(x^k) + \sin \theta s\) with
+\(0 \le \theta \le \pi / 4\) and solves approximately
+\begin{equation*}
+\begin{split}\begin{array}{ll}
+    \min        & \quad f(x(\theta))\\
+    \text{s.t.} & \quad l \le x(\theta) \le u,\\
+                & \quad 0 \le \theta \le \pi / 4,
+\end{array}\end{split}
+\end{equation*}
+\sphinxAtStartPar
+the trust\sphinxhyphen{}region condition being automatically ensured by the choice of
+\(s\). If the value of \(\theta\) is restricted by a bound, it is added
+to the active set \(\mathcal{I}^k\), and the refinement procedure is
+restarted. Since the active set is very reduced, this procedure terminates in
+at most \(n - \abs{\mathcal{I}^k}\), where \(\abs{\mathcal{I}^k}\)
+denotes the number of active bounds at the end of the constrained truncated
+conjugate gradient procedure.
+\subsubsection*{References}
+
 
 \section{Convex piecewise quadratic programming}
 \label{\detokenize{algo/linalg.cpqp:convex-piecewise-quadratic-programming}}\label{\detokenize{algo/linalg.cpqp:linalg-cpqp}}\label{\detokenize{algo/linalg.cpqp::doc}}
+\sphinxAtStartPar
+In general (that is when some linear and/or nonlinear constraints are
+provided), to determine a trust\sphinxhyphen{}region normal step, COBYQA must solve a problem
+of the form
+\begin{equation}\label{equation:algo/linalg.cpqp:cpqp}
+\begin{split}\begin{array}{ll}
+    \min        & \quad f(x) = \frac{1}{2} \norm{[Ax - b]_+}^2 + \frac{1}{2} \norm{Cx - d}^2\\
+    \text{s.t.} & \quad l \le x \le u,\\
+                & \quad \norm{x} \le \Delta,\\
+                & \quad x \in \R^n,
+\end{array}\end{split}
+\end{equation}
+\sphinxAtStartPar
+where \(A \in \R^{m_1 \times n}\), \(b \in \R^{m_1}\),
+\(C \in \R^{m_2 \times n}\), \(d \in \R^{m_2}\), \(l \in \R^n\) and
+\(u \in \R^n\) are the lower and upper bounds of the problems
+(with \(l < u\)), and \(\Delta > 0\) is the current trust\sphinxhyphen{}region
+radius.
+
 
 \section{Linear constrained truncated conjugate gradient}
 \label{\detokenize{algo/linalg.lctcg:linear-constrained-truncated-conjugate-gradient}}\label{\detokenize{algo/linalg.lctcg:linalg-lctcg}}\label{\detokenize{algo/linalg.lctcg::doc}}
+\sphinxAtStartPar
+In general (that is when some linear and/or nonlinear constraints are
+provided), to determine a trust\sphinxhyphen{}region tangential step, COBYQA must solve a
+problem of the form
+\begin{equation}\label{equation:algo/linalg.lctcg:lctcg}
+\begin{split}\begin{array}{ll}
+    \min        & \quad f(x) = \inner{x, g} + \frac{1}{2} \inner{x, H x}\\
+    \text{s.t.} & \quad Ax \le b,\\
+                & \quad Cx = d,\\
+                & \quad \norm{x} \le \Delta,\\
+                & \quad x \in \R^n,
+\end{array}\end{split}
+\end{equation}
+\sphinxAtStartPar
+where \(g \in \R^n\) approximates the gradient of the nonlinear objective
+function at the origin, \(H \in \R^{n \times n}\) is a symmetric matrix
+that approximates the Hessian matrix of the nonlinear objective function at the
+origin, \(A \in \R^{m_1 \times n}\) and \(C \in \R^{m_2 \times n}\) are
+the Jacobian matrices of the linear inequality and equality constraints,
+\(b \in \R^{m_1}\) and \(d \in \R^{m_2}\) are the corresponding
+right\sphinxhyphen{}hand sides, and \(\Delta > 0\) is the current trust\sphinxhyphen{}region radius.
+
+\sphinxAtStartPar
+As mentioned in the section {\hyperref[\detokenize{algo/linalg.bvtcg:tcg-base}]{\sphinxcrossref{\DUrole{std,std-ref}{The unconstrained case}}}} of the description of the \sphinxcode{\sphinxupquote{bvtcg}}
+method, it is usual to solve inexactly problem \eqref{equation:algo/linalg.lctcg:lctcg} using a truncated
+conjugate gradient method.
+
+
+\subsection{Description of the method}
+\label{\detokenize{algo/linalg.lctcg:description-of-the-method}}
 
 \section{Nonnegative least squares}
 \label{\detokenize{algo/linalg.nnls:nonnegative-least-squares}}\label{\detokenize{algo/linalg.nnls:linalg-nnls}}\label{\detokenize{algo/linalg.nnls::doc}}
+\sphinxAtStartPar
+The update mechanism of the Lagrange multipliers in COBYQA is based on a
+constrained least\sphinxhyphen{}squares problem, where some variables must remain nonnegative
+(in order to satisfy some complementary slackness conditions). The problem we
+solve is of the form
+\begin{equation}\label{equation:algo/linalg.nnls:nnls}
+\begin{split}\begin{array}{ll}
+    \min        & \quad f(x) = \frac{1}{2} \norm{Ax - b}^2\\
+    \text{s.t.} & \quad x_i \ge 0, ~ i = 1, 2, \dots, n_0,\\
+                & \quad x \in \R^n,
+\end{array}\end{split}
+\end{equation}
+\sphinxAtStartPar
+where \(A \in \R^{m \times n}\), \(b \in \R^m\), \(n_0\) is a
+nonnegative integer with \(n_0 \le n\), and \(\norm{\cdot}\) is the
+Euclidean norm. We observe that if \(n_0 = 0\), problem \eqref{equation:algo/linalg.nnls:nnls} is a
+simple unconstrained least\sphinxhyphen{}squares problem, which can be solved using
+traditional methods (see, e.g., \sphinxhref{https://numpy.org/doc/stable/reference/generated/numpy.linalg.lstsq.html\#numpy.linalg.lstsq}{\sphinxcode{\sphinxupquote{numpy.linalg.lstsq}}}).
+
+
+\subsection{Description of the method}
+\label{\detokenize{algo/linalg.nnls:description-of-the-method}}
+\sphinxAtStartPar
+In order to solve problem \eqref{equation:algo/linalg.nnls:nnls} when \(n_0 \ge 1\), we construct an
+active\sphinxhyphen{}set method based on Algorithm 23.10 of \sphinxcite{algo/linalg.nnls:laha74}, referred to as \sphinxcode{\sphinxupquote{nnls}}.
+The framework of the method is described below.
+\begin{enumerate}
+\sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
+\item {} 
+\sphinxAtStartPar
+Set the active set \(\mathcal{I}^0\) initially to
+\(\set{1, 2, \dots, n_0}\), the initial guess \(x^0\) to the
+origin, and \(k = 0\).
+
+\item {} 
+\sphinxAtStartPar
+Evaluate the gradient of the objective function of \eqref{equation:algo/linalg.nnls:nnls} at
+\(x^k\), namely \(\nabla f(x^k) = A^{\T} (Ax^k - b)\).
+
+\item {} 
+\sphinxAtStartPar
+If the KKT conditions for problem \eqref{equation:algo/linalg.nnls:nnls} hold at \(x^k\), stop the
+computations.
+
+\item {} 
+\sphinxAtStartPar
+Remove from the active set \(\mathcal{I}^k\) an index yielding
+\(\min \set{\partial_i f(x) : i \in \mathcal{I}^k}\) to build
+\(\mathcal{I}^{k + 1}\).
+
+\item {} 
+\sphinxAtStartPar
+Let \(A_{\scriptscriptstyle\mathcal{I}}^{k + 1}\) be the matrix whose
+\(i\)\sphinxhyphen{}th column if the \(i\)\sphinxhyphen{}th column of \(A\) if
+\(i \notin \mathcal{I}^{k + 1}\), and zero otherwise.
+
+\item {} 
+\sphinxAtStartPar
+Let \(z^{k + 1}\) be a solution of the least squares
+\(\min \norm{A_{\scriptscriptstyle\mathcal{I}}^{k + 1} z - b}\) with
+\(z_i^{k + 1} = 0\) for \(i \in \mathcal{I}^{k + 1}\), and increment
+\(k\).
+
+\item {} 
+\sphinxAtStartPar
+If \(z_i^k > 0\) for all \(i \notin \mathcal{I}^k\) with
+\(i \le n_0\), update \(x^k = z^k\) and go to step 2. Set otherwise
+\(x^k = x^{k - 1}\).
+
+\item {} 
+\sphinxAtStartPar
+Set \(\alpha_k = \min \set{x_i^k / (x_i^k - z_i^k) : z_i^k \le 0, ~ i \notin \mathcal{I}^k, ~ i \le n_0}\).
+
+\item {} 
+\sphinxAtStartPar
+Update \(x^{k + 1} = x^k + \alpha_k (z^k - x^k)\),
+\(\mathcal{I}^{k + 1} = \mathcal{I}^k \cup \set{i \le n_0 : x_i^{k + 1} = 0}\),
+increment \(k\), and go to step 5.
+
+\end{enumerate}
+
+\sphinxAtStartPar
+The unconstrained least\sphinxhyphen{}squares subproblem of \sphinxcode{\sphinxupquote{nnls}} at step 6 is solved using
+\sphinxhref{https://numpy.org/doc/stable/reference/generated/numpy.linalg.lstsq.html\#numpy.linalg.lstsq}{\sphinxcode{\sphinxupquote{numpy.linalg.lstsq}}}. Several refinements of this framework have been made in
+the implementation.
+\begin{enumerate}
+\sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
+\item {} 
+\sphinxAtStartPar
+The number of past iterations is maintained to stop the computations if a
+given threshold is exceeded.
+
+\item {} 
+\sphinxAtStartPar
+Numerical difficulties may arise at step 8 of the method whenever the
+denominator comes close to zero (although it remains theoretically nonzero).
+The division is then safeguarded.
+
+\item {} 
+\sphinxAtStartPar
+Computer rounding errors may engender infinite cycling if the solution has
+been found when checking the KKT conditions. Therefore, the computations are
+stopped if no progress is made from an iteration to another in terms of
+objective function reduction. The theoretical analysis below show that
+strict function decrease must occur from an iteration to another.
+
+\end{enumerate}
+
+
+\subsection{Convergence of the method}
+\label{\detokenize{algo/linalg.nnls:convergence-of-the-method}}
+\sphinxAtStartPar
+To study the theoretical properties of the framework, we regard it as
+consisting of two nested loops. The inner loop (steps 5–9) has unique entry
+and exit points at steps 5 and 7, and only broadens the active set. The outer
+loop (steps 2–9) also has unique entry and exit points at steps 2 and 3, and
+only narrows the active set. Since the termination criteria of the outer loop
+are the KKT conditions for problem \eqref{equation:algo/linalg.nnls:nnls}, it is clear that the termination
+of the algorithm implies its convergence. In order to prove the termination of
+the algorithm, we necessitate the following result whose proof is established
+in Lemma 23.17 of \sphinxcite{algo/linalg.nnls:laha74}.
+
+\sphinxAtStartPar
+\sphinxstylestrong{Lemma 1.} Assume that a matrix \(A \in \R^{m \times n}\) is a full
+column rank matrix (with \(n \le m\)) and that a vector \(b \in \R^m\)
+satisfies \(\inner{b, Ae_i} = 0\) for
+\(i \in \set{1, 2, \dots, n} \setminus \set{j}\) and
+\(\inner{b, Ae_j} > 0\) with \(j \in \set{1, 2, \dots, n}\). Then
+the solution vector \(\bar{x}\) of the least\sphinxhyphen{}squares problem
+\(\min \norm{Ax - b}\) satisfies \(\bar{x}_j > 0\).
+
+\sphinxAtStartPar
+Assume that the KKT conditions for problem \eqref{equation:algo/linalg.nnls:nnls} do not hold at the
+origin. At the first iteration, the algorithm selects the index
+(\(j\), say) of the most negative component of
+\(\nabla f(0) = -A^{\T} b\) and remove it from the active set
+\(\mathcal{I}^0\). According to Lemma 1, the solution of the least\sphinxhyphen{}squares
+problem at step 6 satisfies \(z_j^1 > 0\). It is then easy to see that at
+each iteration, the solution satisfies \(z_j^{k + 1} > 0\), where \(j\)
+is the index selected at step 4. Such a solution is then modified by the inner
+loop to ensure that \(x_i^{k + 1} \ge 0\) for any
+\(i \in \set{1, 2, \dots, n_0}\). To do so, it will select the closest
+point to \(z^{k + 1}\) on the line joining \(x^k\) to \(z^{k + 1}\)
+that is feasible.
+
+
+\subsubsection{Termination of the inner loop}
+\label{\detokenize{algo/linalg.nnls:termination-of-the-inner-loop}}
+\sphinxAtStartPar
+It is clear at this step that all operations made in the inner loop are
+well\sphinxhyphen{}defined. Moreover, at each inner loop iteration, the cardinal number of
+the active set \(\mathcal{I}^k\) is incremented. If \(\mathcal{I}^k\)
+is maximal, that is \(\mathcal{I}^k = \set{1, 2, \dots, n_0}\), then the
+condition at step 7 is always true, and the loop terminates. Therefore, the
+inner loop must terminate in at most \(n_0 - \abs{\mathcal{I}^k} + 1\)
+iterations, where \(\abs{\mathcal{I}^k}\) denotes the cardinal number of
+the active set when the first inner iteration started.
+
+
+\subsubsection{Termination of the outer loop}
+\label{\detokenize{algo/linalg.nnls:termination-of-the-outer-loop}}
+\sphinxAtStartPar
+Termination of the outer loop can be directly inferred by showing that the
+value of \(f\) strictly decreases at each outer loop iteration. Such a
+condition ensures that the active set \(\mathcal{I}^k\) at a given outer
+loop iteration is different from all its previous instances, as the feasibility
+of each iterate of the outer loop has already been shown (it is specifically
+the purpose of the inner loop).
+
+\sphinxAtStartPar
+When an inner loop iteration finishes, the value of \(x^{k + 1}\) is solves
+\begin{equation*}
+\begin{split}\begin{array}{ll}
+    \min        & \quad f(x) = \frac{1}{2} \norm{Ax - b}^2\\
+    \text{s.t.} & \quad x_i = 0, ~ i \in \mathcal{I}^{k + 1},\\
+                & \quad x_i > 0, ~ i \notin \mathcal{I}^{k + 1}, ~ i \le n_0,\\
+                & \quad x \in \R^n.
+\end{array}\end{split}
+\end{equation*}
+\sphinxAtStartPar
+If the KKT conditions for problem \eqref{equation:algo/linalg.nnls:nnls} hold at \(x^{k + 1}\), then
+termination occurs. Otherwise, after incrementing \(k\), the index yielding
+the least value of \(\nabla f(x^k)\) is removed from the active set
+\(\mathcal{I}^k\), and the tentative solution vector \(z^{k + 1}\)
+clearly provides \(f(z^{k + 1}) < f(x^k)\). The result is then proven if no
+inner loop is entertained (that is, if condition at step 7 holds). Otherwise,
+at the end of each inner loop, we have
+\begin{equation*}
+\begin{split}\begin{aligned}
+    \sqrt{2 f\big(x^{k + 1}\big)}
+        &= \norm[\big]{A (x^k + \alpha_k (z^k - x^k)) - b}\\
+        &= \norm[\big]{(1 - \alpha_k) (Ax^k - b) + \alpha_k (Az^k - b)}\\
+        &< \norm{Ax^k - b} = \sqrt{2 f(x^k)},
+\end{aligned}\end{split}
+\end{equation*}
+\sphinxAtStartPar
+since \(\alpha_k \in (0, 1)\). The termination of the outer loop is then
+proven, as well as the convergence of the method.
+\subsubsection*{References}
+
+\begin{sphinxthebibliography}{Powe75}
+\bibitem[Powe75]{algo/linalg.bvtcg:powe75}
+\sphinxAtStartPar
+M. J. D. Powell. “Convergence properties of a class of minimization
+algorithms.” In: Nonlinear Programming. Ed. by O. L. Mangasarian, R. R.
+Meyer, and S. M. Robinson. Vol. 2. London, UK: Academic Press, 1975, pp.
+1–27.
+\bibitem[Powe09]{algo/linalg.bvtcg:powe09}
+\sphinxAtStartPar
+M. J. D. Powell. The BOBYQA algorithm for bound constrained
+optimization without derivatives. Tech. rep. DAMTP 2009/NA06. Cambridge, UK:
+Department of Applied Mathematics and Theoretical Physics, University of
+Cambridge, 2009.
+\bibitem[Stei83]{algo/linalg.bvtcg:stei83}
+\sphinxAtStartPar
+T. Steihaug. “The conjugate gradient method and trust regions in
+large scale optimization.” In: IMA J. Numer. Anal. 20 (1983), pp. 626–637.
+\bibitem[Toin81]{algo/linalg.bvtcg:toin81}
+\sphinxAtStartPar
+Ph. L. Toint. “Towards an efficient sparsity exploiting Newton
+method for minimization.” In: Sparse Matrices and Their Uses. Ed. by I. S.
+Duff. London, UK: Academic Press, 1981, pp. 57–88.
+\bibitem[LaHa74]{algo/linalg.nnls:laha74}
+\sphinxAtStartPar
+C. L. Lawson and R. J. Hanson. Solving Least Squares Problems.
+Classics Appl. Math. Philadelphia, PA, US: SIAM, 1974.
+\end{sphinxthebibliography}
+
 
 
 \renewcommand{\indexname}{Index}

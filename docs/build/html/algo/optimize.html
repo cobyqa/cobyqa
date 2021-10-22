@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Optimization solver &#8212; COBYQA v1.0.dev0 Manual</title>
+    <title>Optimization framework (cobyqa) &#8212; COBYQA v1.0.dev0 Manual</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -32,13 +32,11 @@
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
-    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script>window.MathJax = {"tex": {"macros": {"eu": "{\\mathrm{e}}", "iu": "{\\mathrm{i}}", "du": "{\\mathrm{d}}", "C": "{\\mathbb{C}}", "N": "{\\mathbb{N}}", "Q": "{\\mathbb{Q}}", "R": "{\\mathbb{R}}", "Z": "{\\mathbb{Z}}", "sft": "{\\mathsf{T}}", "dv": "{x}", "icon": "{i}", "iiter": "{k}", "lmv": "{\\lambda}", "nv": "{n}", "stv": "{d}", "bl": "{l}", "bu": "{u}", "con": ["{c_{#1}}", 1, "\\icon"], "lag": "{\\mathcal{L}}", "meq": "{n_{\\scriptscriptstyle\\seq}}", "mub": "{n_{\\scriptscriptstyle\\sub}}", "obj": "{f}", "seq": "{\\mathcal{E}}", "sub": "{\\mathcal{I}}"}}}</script>
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Linear Algebra" href="linalg.html" />
-    <link rel="prev" title="Description of the Algorithms" href="index.html" />
+    <link rel="next" title="Linear algebra (cobyqa.linalg)" href="linalg.html" />
+    <link rel="prev" title="Description of the algorithms" href="index.html" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
@@ -128,12 +126,24 @@
     <ul class="current nav bd-sidenav">
  <li class="toctree-l1 current active">
   <a class="current reference internal" href="#">
-   Optimization solver
+   Optimization framework (
+   <code class="xref py py-obj docutils literal notranslate">
+    <span class="pre">
+     cobyqa
+    </span>
+   </code>
+   )
   </a>
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="linalg.html">
-   Linear Algebra
+   Linear algebra (
+   <code class="xref py py-obj docutils literal notranslate">
+    <span class="pre">
+     cobyqa.linalg
+    </span>
+   </code>
+   )
   </a>
  </li>
 </ul>
@@ -182,31 +192,15 @@
               
               <div>
                 
-  <section id="optimization-solver">
-<span id="optimize"></span><h1>Optimization solver<a class="headerlink" href="#optimization-solver" title="Permalink to this headline">¶</a></h1>
+  <section id="optimization-framework-cobyqa">
+<span id="optimize"></span><h1>Optimization framework (<a class="reference internal" href="../refs/optimize.html#module-cobyqa" title="cobyqa"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cobyqa</span></code></a>)<a class="headerlink" href="#optimization-framework-cobyqa" title="Permalink to this headline">¶</a></h1>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../refs/generated/cobyqa.minimize.html#cobyqa.minimize" title="cobyqa.minimize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">minimize</span></code></a>,
+<a class="reference internal" href="../refs/generated/cobyqa.OptimizeResult.html#cobyqa.OptimizeResult" title="cobyqa.OptimizeResult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OptimizeResult</span></code></a></p>
+</div>
 <section id="statement-of-the-problem">
 <h2>Statement of the problem<a class="headerlink" href="#statement-of-the-problem" title="Permalink to this headline">¶</a></h2>
-<p>We are interested in nonlinear constrained optimization problems of the form</p>
-<div class="math notranslate nohighlight" id="equation-nlc">
-<span class="eqno">(1)<a class="headerlink" href="#equation-nlc" title="Permalink to this equation">¶</a></span>\[\begin{split}\begin{array}{ll}
-    \min        &amp; \quad \obj(\dv)\\
-    \text{s.t.} &amp; \quad \bl \le \dv \le \bu,\\
-                &amp; \quad \con(\dv) \le 0, ~ \icon \in \sub,\\
-                &amp; \quad \con(\dv) = 0, ~ \icon \in \seq.
-\end{array}\end{split}\]</div>
-<p>where the <em>objective function</em> <span class="math notranslate nohighlight">\(\obj\)</span> and the <em>constraint functions</em>
-<span class="math notranslate nohighlight">\(\con\)</span>, with <span class="math notranslate nohighlight">\(\icon \in \sub \cup \seq\)</span>, are real-valued functions
-on <span class="math notranslate nohighlight">\(\R^{\nv}\)</span>, and <span class="math notranslate nohighlight">\(\bl \in \R^{\nv}\)</span> and <span class="math notranslate nohighlight">\(\bu \in \R^{\nv}\)</span>
-with <span class="math notranslate nohighlight">\(\bl &lt; \bu\)</span> are respectively referred to as the <em>upper bound</em> and
-<em>lower bound</em> on the <em>decision variable</em> <span class="math notranslate nohighlight">\(\dv \in \R^{\nv}\)</span>.
-We denote the cardinal numbers of <span class="math notranslate nohighlight">\(\sub\)</span> and <span class="math notranslate nohighlight">\(\seq\)</span> respectively
-<span class="math notranslate nohighlight">\(\mub\)</span> and <span class="math notranslate nohighlight">\(\meq\)</span>.</p>
-<p>The Lagrangian function <span class="math notranslate nohighlight">\(\lag \colon \R^n \times \R^{\mub + \meq} \to \R\)</span>
-for problem <a class="reference internal" href="#equation-nlc">(1)</a> is given by</p>
-<div class="math notranslate nohighlight" id="equation-lag">
-<span class="eqno">(2)<a class="headerlink" href="#equation-lag" title="Permalink to this equation">¶</a></span>\[\lag(\dv, \lmv) = \obj(\dv) + \sum_{\icon \in \sub \cup \seq} \lmv_{\icon}
-\con(\dv),\]</div>
-<p>where <span class="math notranslate nohighlight">\(\lmv \in \R^{\mub + \meq}\)</span> is referred to as the <em>dual variable</em>.</p>
 </section>
 </section>
 
@@ -220,13 +214,13 @@ for problem <a class="reference internal" href="#equation-nlc">(1)</a> is given 
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">Description of the Algorithms</p>
+            <p class="prev-next-title">Description of the algorithms</p>
         </div>
     </a>
     <a class='right-next' id="next-link" href="linalg.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Linear Algebra</p>
+        <p class="prev-next-title">Linear algebra (<code class="xref py py-obj docutils literal notranslate"><span class="pre">cobyqa.linalg</span></code>)</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>
@@ -250,7 +244,7 @@ for problem <a class="reference internal" href="#equation-nlc">(1)</a> is given 
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 19, 2021.<br>
+Last updated on October 22, 2021.<br>
 </p>
     </div>
     

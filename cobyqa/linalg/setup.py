@@ -1,6 +1,6 @@
 # import numpy as np
 
-from cobyqa._build_utils import numpy_nodepr_api  # noqa
+# from cobyqa._build_utils import numpy_nodepr_api  # noqa
 
 
 def configuration(parent_package='', top_path=None):

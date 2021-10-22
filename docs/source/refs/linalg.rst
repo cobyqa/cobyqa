@@ -1,8 +1,15 @@
+.. module:: cobyqa.linalg
+
+*************************************
+Linear algebra (:mod:`cobyqa.linalg`)
+*************************************
+
 .. currentmodule:: cobyqa.linalg
 
-**************
-Linear Algebra
-**************
+This module implements the subproblem solvers of COBYQA. They should be
+investigated for specific purposes only, and users who just wish to solve
+general derivative-free optimization problems should instead refer to the
+function `cobyqa.minimize`.
 
 .. autosummary::
     :toctree: generated/

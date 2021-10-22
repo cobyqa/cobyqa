@@ -33,7 +33,7 @@
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script>window.MathJax = {"tex": {"macros": {"eu": "{\\mathrm{e}}", "iu": "{\\mathrm{i}}", "du": "{\\mathrm{d}}", "C": "{\\mathbb{C}}", "N": "{\\mathbb{N}}", "Q": "{\\mathbb{Q}}", "R": "{\\mathbb{R}}", "Z": "{\\mathbb{Z}}", "sft": "{\\mathsf{T}}", "dv": "{x}", "icon": "{i}", "iiter": "{k}", "lmv": "{\\lambda}", "nv": "{n}", "stv": "{d}", "bl": "{l}", "bu": "{u}", "con": ["{c_{#1}}", 1, "\\icon"], "lag": "{\\mathcal{L}}", "meq": "{n_{\\scriptscriptstyle\\seq}}", "mub": "{n_{\\scriptscriptstyle\\sub}}", "obj": "{f}", "seq": "{\\mathcal{E}}", "sub": "{\\mathcal{I}}"}}}</script>
+    <script>window.MathJax = {"tex": {"macros": {"eu": "{\\mathrm{e}}", "iu": "{\\mathrm{i}}", "du": "{\\mathrm{d}}", "vspan": "\\operatorname{span}", "abs": ["#1\\lvert#2#1\\rvert", 2, ""], "ceil": ["#1\\lceil#2#1\\rceil", 2, ""], "floor": ["#1\\lfloor#2#1\\rfloor", 2, ""], "norm": ["#1\\lVert#2#1\\rVert", 2, ""], "set": ["#1\\{#2#1\\}", 2, ""], "inner": ["#1\\langle#2#1\\rangle", 2, ""], "C": "{\\mathbb{C}}", "N": "{\\mathbb{N}}", "Q": "{\\mathbb{Q}}", "R": "{\\mathbb{R}}", "Z": "{\\mathbb{Z}}", "T": "{\\mathsf{T}}"}}}</script>
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
@@ -128,12 +128,24 @@
     <ul class="current nav bd-sidenav">
  <li class="toctree-l1">
   <a class="reference internal" href="../optimize.html">
-   Optimization framework
+   Optimization solver (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa
+    </span>
+   </code>
+   )
   </a>
  </li>
  <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="../linalg.html">
-   Linear Algebra
+   Linear algebra (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa.linalg
+    </span>
+   </code>
+   )
   </a>
   <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
@@ -185,7 +197,13 @@
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../tests.html">
-   Test support
+   Test support (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa.tests
+    </span>
+   </code>
+   )
   </a>
  </li>
 </ul>
@@ -316,7 +334,7 @@ Default applies it to to all the components.</p>
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 19, 2021.<br>
+Last updated on October 22, 2021.<br>
 </p>
     </div>
     

@@ -1,8 +1,14 @@
+.. module:: cobyqa
+
+***********************************
+Optimization solver (:mod:`cobyqa`)
+***********************************
+
 .. currentmodule:: cobyqa
 
-**********************
-Optimization framework
-**********************
+This module includes the main functions, methods, and objects of COBYQA. Most
+users should be contended with the function `cobyqa.minimize`, being the entry
+point of the COBYQA method.
 
 .. autosummary::
     :toctree: generated/

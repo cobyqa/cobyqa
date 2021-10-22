@@ -54,14 +54,18 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
     AssertionError
         The vector ``xpt[kopt, :]`` is not feasible.
 
+    See Also
+    --------
+    bvlag : Bounded variable absolute Lagrange polynomial maximization
+
     Notes
     -----
-    The method is adapted from the ALTMOV algorithm [1]_, and the vector
+    The method is adapted from the ALTMOV algorithm [Powe09]_, and the vector
     ``xpt[kopt, :]`` must be feasible.
 
     References
     ----------
-    .. [1] M. J. D. Powell. The BOBYQA algorithm for bound constrained
+    .. [Powe09] M. J. D. Powell. The BOBYQA algorithm for bound constrained
        optimization without derivatives. Tech. rep. DAMTP 2009/NA06. Cambridge,
        UK: Department of Applied Mathematics and Theoretical Physics, University
        of Cambridge, 2009.

@@ -126,7 +126,13 @@
     <ul class="current nav bd-sidenav">
  <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="../optimize.html">
-   Optimization framework
+   Optimization solver (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa
+    </span>
+   </code>
+   )
   </a>
   <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
@@ -415,12 +421,24 @@
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../linalg.html">
-   Linear Algebra
+   Linear algebra (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa.linalg
+    </span>
+   </code>
+   )
   </a>
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../tests.html">
-   Test support
+   Test support (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa.tests
+    </span>
+   </code>
+   )
   </a>
  </li>
 </ul>
@@ -476,7 +494,7 @@
 <p>method</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="cobyqa.optimize.Models.update">
-<span class="sig-prename descclassname"><span class="pre">optimize.Models.</span></span><span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cubx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ceqx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">knew</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/optimize.py#L3830-L3991"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.optimize.Models.update" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">optimize.Models.</span></span><span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cubx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ceqx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">knew</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/optimize.py#L3832-L3993"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.optimize.Models.update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Update the models of the nonlinear optimization problem when a point of
 the interpolation set is modified.</p>
 <dl class="field-list simple">
@@ -514,14 +532,14 @@ chosen if it is not provided.</p>
 <p class="rubric">Notes</p>
 <p>When the index <em class="xref py py-obj">knew</em> of the interpolation point to be removed is not
 provided, it is chosen by the method to maximize the product absolute
-value of the denominator in Equation (2.12) of <a class="reference internal" href="#rfdf445c32e0f-1" id="id1">[1]</a> with the quartic
-power of the distance between the point and <a class="reference internal" href="cobyqa.optimize.Models.xopt.html#cobyqa.optimize.Models.xopt" title="cobyqa.optimize.Models.xopt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xopt</span></code></a>.</p>
+value of the denominator in Equation (2.12) of <a class="reference internal" href="#rfdf445c32e0f-powe04" id="id1">[Powe04]</a> with the
+quartic power of the distance between the point and <a class="reference internal" href="cobyqa.optimize.Models.xopt.html#cobyqa.optimize.Models.xopt" title="cobyqa.optimize.Models.xopt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xopt</span></code></a>.</p>
 <p class="rubric">References</p>
 <dl class="citation">
-<dt class="label" id="rfdf445c32e0f-1"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
-<dd><p>M. J. D. Powell. “On updating the inverse of a KKT matrix.” In:
-Numerical Linear Algebra and Optimization. Ed. by Y. Yuan. Beijing,
-CN: Science Press, 2004, pp. 56–78.</p>
+<dt class="label" id="rfdf445c32e0f-powe04"><span class="brackets"><a class="fn-backref" href="#id1">Powe04</a></span></dt>
+<dd><p>M. J. D. Powell. “On updating the inverse of a KKT matrix.”
+In: Numerical Linear Algebra and Optimization. Ed. by Y. Yuan.
+Beijing, CN: Science Press, 2004, pp. 56–78.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -568,7 +586,7 @@ CN: Science Press, 2004, pp. 56–78.</p>
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 19, 2021.<br>
+Last updated on October 22, 2021.<br>
 </p>
     </div>
     

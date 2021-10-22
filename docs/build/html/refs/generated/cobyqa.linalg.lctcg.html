@@ -126,12 +126,24 @@
     <ul class="current nav bd-sidenav">
  <li class="toctree-l1">
   <a class="reference internal" href="../optimize.html">
-   Optimization framework
+   Optimization solver (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa
+    </span>
+   </code>
+   )
   </a>
  </li>
  <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="../linalg.html">
-   Linear Algebra
+   Linear algebra (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa.linalg
+    </span>
+   </code>
+   )
   </a>
   <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
@@ -183,7 +195,13 @@
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="../tests.html">
-   Test support
+   Test support (
+   <code class="xref py py-mod docutils literal notranslate">
+    <span class="pre">
+     cobyqa.tests
+    </span>
+   </code>
+   )
   </a>
  </li>
 </ul>
@@ -238,7 +256,7 @@
 <h1>cobyqa.linalg.lctcg<a class="headerlink" href="#cobyqa-linalg-lctcg" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="cobyqa.linalg.lctcg">
-<span class="sig-prename descclassname"><span class="pre">linalg.</span></span><span class="sig-name descname"><span class="pre">lctcg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xopt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hessp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aeq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/linalg/lctcg.py#L7-L324"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.linalg.lctcg" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">linalg.</span></span><span class="sig-name descname"><span class="pre">lctcg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xopt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hessp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Aeq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/linalg/lctcg.py#L7-L330"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.linalg.lctcg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Minimize approximately a quadratic function subject to bound, linear, and
 trust-region constraints using a truncated conjugate gradient.</p>
 <dl class="field-list">
@@ -306,17 +324,28 @@ disable the bounds on some variables.</p>
 </dl>
 </dd>
 </dl>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt><a class="reference internal" href="cobyqa.linalg.bvtcg.html#cobyqa.linalg.bvtcg" title="cobyqa.linalg.bvtcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bvtcg</span></code></a></dt><dd><p>Bounded variable truncated conjugate gradient</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.linalg.cpqp.html#cobyqa.linalg.cpqp" title="cobyqa.linalg.cpqp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpqp</span></code></a></dt><dd><p>Convex piecewise quadratic programming</p>
+</dd>
+<dt><a class="reference internal" href="cobyqa.linalg.nnls.html#cobyqa.linalg.nnls" title="cobyqa.linalg.nnls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nnls</span></code></a></dt><dd><p>Nonnegative least squares</p>
+</dd>
+</dl>
+</div>
 <p class="rubric">Notes</p>
-<p>The method is adapted from the TRSTEP algorithm <a class="reference internal" href="#rc911f6dd4c28-1" id="id1">[1]</a>. It is an active-set
-variation of the truncated conjugate gradient method, which maintains the QR
-factorization of the matrix whose columns are the gradients of the active
-constraints. The linear equality constraints are then handled by considering
-them are always active.</p>
+<p>The method is adapted from the TRSTEP algorithm <a class="reference internal" href="#rc911f6dd4c28-powe15" id="id1">[Powe15]</a>. It is an
+active-set variation of the truncated conjugate gradient method, which
+maintains the QR factorization of the matrix whose columns are the gradients
+of the active constraints. The linear equality constraints are then handled
+by considering them as always active.</p>
 <p class="rubric">References</p>
 <dl class="citation">
-<dt class="label" id="rc911f6dd4c28-1"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
-<dd><p>M. J. D. Powell. “On fast trust region methods for quadratic models
-with linear constraints.” In: Math. Program. Comput. 7 (2015), pp.
+<dt class="label" id="rc911f6dd4c28-powe15"><span class="brackets"><a class="fn-backref" href="#id1">Powe15</a></span></dt>
+<dd><p>M. J. D. Powell. “On fast trust region methods for quadratic
+models with linear constraints.” In: Math. Program. Comput. 7 (2015), pp.
 237–267.</p>
 </dd>
 </dl>
@@ -364,7 +393,7 @@ with linear constraints.” In: Math. Program. Comput. 7 (2015), pp.
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 19, 2021.<br>
+Last updated on October 22, 2021.<br>
 </p>
     </div>
     

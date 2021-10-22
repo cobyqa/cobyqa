@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Linear Algebra &#8212; COBYQA v1.0.dev0 Manual</title>
+    <title>Linear algebra (cobyqa.linalg) &#8212; COBYQA v1.0.dev0 Manual</title>
     
   <link href="../_static/css/theme.css" rel="stylesheet">
   <link href="../_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -35,8 +35,8 @@
     <link rel="shortcut icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Geometry improvement of the interpolation set" href="linalg.altmov.html" />
-    <link rel="prev" title="Optimization solver" href="optimize.html" />
+    <link rel="next" title="Geometry of the interpolation set" href="linalg.altmov.html" />
+    <link rel="prev" title="Optimization framework (cobyqa)" href="optimize.html" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
@@ -126,12 +126,24 @@
     <ul class="current nav bd-sidenav">
  <li class="toctree-l1">
   <a class="reference internal" href="optimize.html">
-   Optimization solver
+   Optimization framework (
+   <code class="xref py py-obj docutils literal notranslate">
+    <span class="pre">
+     cobyqa
+    </span>
+   </code>
+   )
   </a>
  </li>
  <li class="toctree-l1 current active has-children">
   <a class="current reference internal" href="#">
-   Linear Algebra
+   Linear algebra (
+   <code class="xref py py-obj docutils literal notranslate">
+    <span class="pre">
+     cobyqa.linalg
+    </span>
+   </code>
+   )
   </a>
   <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
@@ -141,7 +153,7 @@
   <ul>
    <li class="toctree-l2">
     <a class="reference internal" href="linalg.altmov.html">
-     Geometry improvement of the interpolation set
+     Geometry of the interpolation set
     </a>
    </li>
    <li class="toctree-l2">
@@ -202,12 +214,24 @@
               
               <div>
                 
-  <section id="linear-algebra">
-<span id="linalg"></span><h1>Linear Algebra<a class="headerlink" href="#linear-algebra" title="Permalink to this headline">¶</a></h1>
-<p>This part presents the linear algebra.</p>
+  <section id="linear-algebra-cobyqa-linalg">
+<span id="linalg"></span><h1>Linear algebra (<a class="reference internal" href="../refs/linalg.html#module-cobyqa.linalg" title="cobyqa.linalg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cobyqa.linalg</span></code></a>)<a class="headerlink" href="#linear-algebra-cobyqa-linalg" title="Permalink to this headline">¶</a></h1>
+<p>This section presents the mathematical frameworks underneath the subproblem
+solvers of COBYQA.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../refs/generated/cobyqa.linalg.bvcs.html#cobyqa.linalg.bvcs" title="cobyqa.linalg.bvcs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bvcs</span></code></a>,
+<a class="reference internal" href="../refs/generated/cobyqa.linalg.bvlag.html#cobyqa.linalg.bvlag" title="cobyqa.linalg.bvlag"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bvlag</span></code></a>,
+<a class="reference internal" href="../refs/generated/cobyqa.linalg.bvtcg.html#cobyqa.linalg.bvtcg" title="cobyqa.linalg.bvtcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bvtcg</span></code></a>,
+<a class="reference internal" href="../refs/generated/cobyqa.linalg.cpqp.html#cobyqa.linalg.cpqp" title="cobyqa.linalg.cpqp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cpqp</span></code></a>,
+<a class="reference internal" href="../refs/generated/cobyqa.linalg.givens.html#cobyqa.linalg.givens" title="cobyqa.linalg.givens"><code class="xref py py-obj docutils literal notranslate"><span class="pre">givens</span></code></a>,
+<a class="reference internal" href="../refs/generated/cobyqa.linalg.lctcg.html#cobyqa.linalg.lctcg" title="cobyqa.linalg.lctcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lctcg</span></code></a>,
+<a class="reference internal" href="../refs/generated/cobyqa.linalg.nnls.html#cobyqa.linalg.nnls" title="cobyqa.linalg.nnls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nnls</span></code></a>,
+<a class="reference internal" href="../refs/generated/cobyqa.linalg.qr.html#cobyqa.linalg.qr" title="cobyqa.linalg.qr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">qr</span></code></a></p>
+</div>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="linalg.altmov.html">Geometry improvement of the interpolation set</a></li>
+<li class="toctree-l1"><a class="reference internal" href="linalg.altmov.html">Geometry of the interpolation set</a></li>
 <li class="toctree-l1"><a class="reference internal" href="linalg.bvtcg.html">Bound constrained truncated conjugate gradient</a></li>
 <li class="toctree-l1"><a class="reference internal" href="linalg.cpqp.html">Convex piecewise quadratic programming</a></li>
 <li class="toctree-l1"><a class="reference internal" href="linalg.lctcg.html">Linear constrained truncated conjugate gradient</a></li>
@@ -226,13 +250,13 @@
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">Optimization solver</p>
+            <p class="prev-next-title">Optimization framework (<code class="xref py py-obj docutils literal notranslate"><span class="pre">cobyqa</span></code>)</p>
         </div>
     </a>
     <a class='right-next' id="next-link" href="linalg.altmov.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Geometry improvement of the interpolation set</p>
+        <p class="prev-next-title">Geometry of the interpolation set</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>
@@ -256,7 +280,7 @@
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 19, 2021.<br>
+Last updated on October 22, 2021.<br>
 </p>
     </div>
     

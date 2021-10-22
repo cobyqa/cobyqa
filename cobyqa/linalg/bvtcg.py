@@ -53,13 +53,19 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
     AssertionError
         The vector `xopt` is not feasible.
 
+    See Also
+    --------
+    cpqp : Convex piecewise quadratic programming
+    lctcg : Linear constrained truncated conjugate gradient
+    nnls : Nonnegative least squares
+
     Notes
     -----
-    The method is adapted from the TRSBOX algorithm [1]_.
+    The method is adapted from the TRSBOX algorithm [Powe09]_.
 
     References
     ----------
-    .. [1] M. J. D. Powell. The BOBYQA algorithm for bound constrained
+    .. [Powe09] M. J. D. Powell. The BOBYQA algorithm for bound constrained
        optimization without derivatives. Tech. rep. DAMTP 2009/NA06. Cambridge,
        UK: Department of Applied Mathematics and Theoretical Physics, University
        of Cambridge, 2009.

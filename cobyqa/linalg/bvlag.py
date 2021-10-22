@@ -48,20 +48,26 @@ def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
     AssertionError
         The vector ``xpt[kopt, :]`` is not feasible.
 
+    See Also
+    --------
+    bvcs : Bounded variable Cauchy step
+
     Notes
     -----
-    The denominator of the updating formula is given in Equation (3.9) of [1]_,
-    and the parameter `alpha` is the referred in Equation (4.12) of [2]_.
+    The denominator of the updating formula is given in Equation (3.9) of
+    [Powe09]_, and the parameter `alpha` is the referred in Equation (4.12) of
+    [Powe06]_.
 
     References
     ----------
-    .. [1] M. J. D. Powell. The BOBYQA algorithm for bound constrained
+    .. [Powe06] M. J. D. Powell. "The NEWUOA software for unconstrained
+       optimization without derivatives." In: Large-Scale Nonlinear
+       Optimization. Ed. by G. Di Pillo and M. Roma. New York, NY, US: Springer,
+       2006, pp. 255-–297.
+    .. [Powe09] M. J. D. Powell. The BOBYQA algorithm for bound constrained
        optimization without derivatives. Tech. rep. DAMTP 2009/NA06. Cambridge,
        UK: Department of Applied Mathematics and Theoretical Physics, University
        of Cambridge, 2009.
-    .. [2] M. J. D. Powell. "The NEWUOA software for unconstrained optimization
-       without derivatives." In: Large-Scale Nonlinear Optimization. Ed. by G.
-       Di Pillo and M. Roma. New York, NY, US: Springer, 2006, pp. 255-–297.
     """
     xpt = np.atleast_2d(xpt).astype(float)
     gq = np.atleast_1d(gq)
