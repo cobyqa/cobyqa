@@ -38,6 +38,7 @@ SETUPTOOLS_COMMANDS = {
     'develop',
     'easy_install',
     'egg_info',
+    'install',
     'install_egg_info',
     'upload',
 }

@@ -789,12 +789,11 @@ class TrustRegion:
         -------
         str
             Type of the nonlinear optimization problem:
-
-                - 'U' : the problem is unconstrained.
-                - 'X' : the problem only constraints are fixed variables.
-                - 'B' : the problem only constraints are bounds constraints.
-                - 'L' : the problem constraints are linear.
-                - 'O' : the problem constraints general.
+                - U : the problem is unconstrained.
+                - X : the problem's only constraints are fixed variables.
+                - B : the problem's only constraints are bounds constraints.
+                - L : the problem's constraints are linear.
+                - O : the problem's constraints general.
         """
         return self._models.type
 
@@ -2853,12 +2852,11 @@ class Models:
         -------
         str
             Type of the nonlinear optimization problem:
-
-                - 'U' : the problem is unconstrained.
-                - 'X' : the problem only constraints are fixed variables.
-                - 'B' : the problem only constraints are bounds constraints.
-                - 'L' : the problem constraints are linear.
-                - 'O' : the problem constraints general.
+                - U : the problem is unconstrained.
+                - X : the problem's only constraints are fixed variables.
+                - B : the problem's only constraints are bounds constraints.
+                - L : the problem's constraints are linear.
+                - O : the problem's constraints general.
         """
         n = self.xpt.shape[1]
         eps = np.finfo(float).eps

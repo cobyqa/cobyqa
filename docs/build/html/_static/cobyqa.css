@@ -3,3 +3,7 @@
 body {
     font-family: 'Lato', sans-serif;
 }
+
+#navbar-icon-links i:before {
+    color: #333333;
+}

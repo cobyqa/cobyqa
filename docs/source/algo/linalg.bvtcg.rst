@@ -23,8 +23,8 @@ where :math:`g \in \R^n` approximates the gradient of the nonlinear objective
 function at the origin, :math:`H \in \R^{n \times n}` is a symmetric matrix
 that approximates the Hessian matrix of the nonlinear objective function at the
 origin, :math:`l \in \R^n` and :math:`u \in \R^n` are the lower and upper
-bounds of the problems (with :math:`l < u`), and :math:`\Delta > 0` is the
-current trust-region radius.
+bounds of the problems (with :math:`l < u`), :math:`\Delta > 0` is the current
+trust-region radius, and :math:`\norm{\cdot}` is the Euclidean norm.
 
 .. _tcg_base:
 
@@ -34,11 +34,11 @@ The unconstrained case
 We assume in this section that the lower and upper bounds in :eq:`bvtcg` are
 respectively set to :math:`-\infty` and :math:`+\infty`. Powell showed in
 [Powe75]_ that a trust-region method is convergent if the trust-region step
-:math:`\bar{x} \in \R^n` satisfies
+:math:`x^{\ast} \in \R^n` satisfies
 
 .. math::
 
-    f(x^0) - f(\bar{x}) \ge \gamma \norm{g} \min \set{\Delta, \norm{g} / \norm{H}},
+    f(x^0) - f(x^{\ast}) \ge \gamma \norm{g} \min \set{\Delta, \norm{g} / \norm{H}},
 
 for some :math:`\gamma > 0`, where :math:`\norm{\cdot}` is the Euclidean norm.
 It is easy to see that a Cauchy step satisfies such a condition
@@ -97,16 +97,14 @@ The initial active set is a subset of the active bounds at the origin. Clearly,
 a active bound should not be included in the active set if a Cauchy step (a
 positive step along :math:`-g`) would depart from the bound, as the bound is
 never removed from the active set. The complete framework of `bvtcg` is
-described below. For sake of clarity, we denote :math:`\mathcal{I}^k` the
-active set of the :math:`k`-th iteration and :math:`\Pi_k(v)` the vector whose
-:math:`i`-th coordinate is :math:`v_i` if :math:`i \notin \mathcal{I}^k`, and
-zero otherwise.
+described below. For sake of clarity, we denote :math:`\mathcal{I}` the active
+set and :math:`\Pi(v)` the vector whose :math:`i`-th coordinate is :math:`v_i`
+if :math:`i \notin \mathcal{I}`, and zero otherwise.
 
-#. Set :math:`x^0 = 0` and the initial active set :math:`\mathcal{I}^0` to the
-   indices for which either :math:`l_i = 0` and :math:`g_i \ge 0` or
-   :math:`u_i = 0` and :math:`g_i \le 0`.
-#. Set :math:`d^0 = -\Pi_0(g)`, :math:`g^0 = g`, and
-   :math:`k = 0`.
+#. Set :math:`x^0 = 0` and the active set :math:`\mathcal{I}` to the indices
+   for which either :math:`l_i = 0` and :math:`g_i \ge 0` or :math:`u_i = 0`
+   and :math:`g_i \le 0`.
+#. Set :math:`d^0 = -\Pi(g)`, :math:`g^0 = g`, and :math:`k = 0`.
 #. Let :math:`\alpha_{\Delta, k}` be the largest number such that
    :math:`\norm{x^k + \alpha_{\Delta, k} d^k} = \Delta`.
 #. Let :math:`\alpha_{Q, k}` be :math:`-\inner{d^k, g^k} / \inner{d^k, Hd^k}`
@@ -119,18 +117,10 @@ zero otherwise.
    :math:`\beta_k = \norm{g^{k + 1}}^2 / \norm{g^k}^2`.
 #. If :math:`\alpha_k = \alpha_{\Delta, k}` or :math:`g^{k + 1} = 0`, stop the
    computations.
-#. If :math:`\alpha_k = \alpha_{B, k}`, set
-   :math:`\mathcal{I}^0 = \mathcal{I}^k \cup \set{j}` where :math:`j` is a
-   new active coordinate, :math:`x^0 = x^{k + 1}`, :math:`k = 0`, and go to
-   step 2.
-#. Update :math:`d^{k + 1} = -\Pi_k(g^k) + \beta_k d^k`,
-   :math:`\mathcal{I}^{k + 1} = \mathcal{I}^k`, increment :math:`k`, and go to
-   step 3.
-
-An important remark is that when the algorithm is restarted at step 8, the
-assignment :math:`x^0 = x^{k + 1}` should not modify the evaluation of the
-objective function in :eq:`bvtcg`, neither the center of its trust-region
-constraint.
+#. If :math:`\alpha_k = \alpha_{B, k}`, add a new active coordinate to
+   :math:`\mathcal{I}`, set :math:`x^0 = x^{k + 1}`, and go to step 2.
+#. Update :math:`d^{k + 1} = -\Pi(g^k) + \beta_k d^k`, increment :math:`k`, and
+   go to step 3.
 
 Further refinement of the trial step
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -149,15 +139,15 @@ solution to
         \min        & \quad f(x) = \inner{x - x^0, g} + \frac{1}{2} \inner{x - x^0, H (x - x^0)}\\
         \text{s.t.} & \quad l \le x \le u,\\
                     & \quad \norm{x - x^0} = \Delta,\\
-                    & \quad x \in \vspan \set{\Pi_k(x^k), \Pi_k(g^k)} \subseteq \R^n.
+                    & \quad x \in \vspan \set{\Pi(x^k), \Pi(g^k)} \subseteq \R^n.
     \end{array}
 
-To do so, the method builds an orthogonal basis :math:`\set{\Pi_k(x^k), s}` of
-:math:`\vspan \set{\Pi_k(x^k), \Pi_k(g^k)}` by selecting the vector
-:math:`s \in \R^n` such that :math:`\inner{s, \Pi_k(x^k)} = 0`,
-:math:`\inner{s, \Pi_k(g^k)} < 0`, and :math:`\norm{s} = \norm{\Pi_k(x^k)}`.
+To do so, the method builds an orthogonal basis :math:`\set{\Pi(x^k), s}` of
+:math:`\vspan \set{\Pi(x^k), \Pi(g^k)}` by selecting the vector
+:math:`s \in \R^n` such that :math:`\inner{s, \Pi(x^k)} = 0`,
+:math:`\inner{s, \Pi(g^k)} < 0`, and :math:`\norm{s} = \norm{\Pi(x^k)}`.
 Further, the method considers the function
-:math:`x(\theta) = x^k + (\cos \theta - 1) \Pi_k(x^k) + \sin \theta s` with
+:math:`x(\theta) = x^k + (\cos \theta - 1) \Pi(x^k) + \sin \theta s` with
 :math:`0 \le \theta \le \pi / 4` and solves approximately
 
 .. math::
@@ -170,11 +160,11 @@ Further, the method considers the function
 
 the trust-region condition being automatically ensured by the choice of
 :math:`s`. If the value of :math:`\theta` is restricted by a bound, it is added
-to the active set :math:`\mathcal{I}^k`, and the refinement procedure is
+to the active set :math:`\mathcal{I}`, and the refinement procedure is
 restarted. Since the active set is very reduced, this procedure terminates in
-at most :math:`n - \abs{\mathcal{I}^k}`, where :math:`\abs{\mathcal{I}^k}`
-denotes the number of active bounds at the end of the constrained truncated
-conjugate gradient procedure.
+at most :math:`n - \abs{\mathcal{I}}`, where :math:`\abs{\mathcal{I}}` denotes
+the number of active bounds at the end of the constrained truncated conjugate
+gradient procedure.
 
 .. rubric:: References
 

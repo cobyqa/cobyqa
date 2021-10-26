@@ -102,6 +102,12 @@
             <label class="sr-only">GitHub</label>
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://pypi.org/project/cobyqa" rel="noopener" target="_blank" title="PyPI">
+            <span><i class="fab fa-python"></i></span>
+            <label class="sr-only">PyPI</label>
+          </a>
+        </li>
       </ul>
       </div>
       
@@ -164,19 +170,19 @@
 <dd><p>Type of the nonlinear optimization problem.</p>
 <p>It follows the CUTEst classification scheme for the constraint types
 (see <a class="reference external" href="https://www.cuter.rl.ac.uk/Problems/classification.shtml">https://www.cuter.rl.ac.uk/Problems/classification.shtml</a>).</p>
-<dl class="field-list">
+<dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl>
-<dt>str</dt><dd><p>Type of the nonlinear optimization problem:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>‘U’ : the problem is unconstrained.</p></li>
-<li><p>‘X’ : the problem only constraints are fixed variables.</p></li>
-<li><p>‘B’ : the problem only constraints are bounds constraints.</p></li>
-<li><p>‘L’ : the problem constraints are linear.</p></li>
-<li><p>‘O’ : the problem constraints general.</p></li>
+<dd class="field-odd"><dl class="simple">
+<dt>str</dt><dd><dl class="simple">
+<dt>Type of the nonlinear optimization problem:</dt><dd><ul class="simple">
+<li><p>U : the problem is unconstrained.</p></li>
+<li><p>X : the problem’s only constraints are fixed variables.</p></li>
+<li><p>B : the problem’s only constraints are bounds constraints.</p></li>
+<li><p>L : the problem’s constraints are linear.</p></li>
+<li><p>O : the problem’s constraints general.</p></li>
 </ul>
-</div></blockquote>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd>
@@ -211,7 +217,7 @@
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 22, 2021.<br>
+Last updated on October 26, 2021.<br>
 </p>
     </div>
     

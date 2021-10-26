@@ -36,7 +36,6 @@ release = cobyqa.__version__
 extensions = [
     'numpydoc',
     'sphinx.ext.autodoc',
-    'sphinx.ext.autosectionlabel',
     'sphinx.ext.intersphinx',
     'sphinx.ext.linkcode',
     'sphinx.ext.mathjax',
@@ -62,7 +61,19 @@ html_theme = 'pydata_sphinx_theme'
 html_theme_options = {
     'collapse_navigation': True,
     'footer_items': ['copyright', 'last-updated', 'sphinx-version'],
-    'github_url': 'https://github.com/ragonneau/cobyqa',
+    # 'github_url': 'https://github.com/ragonneau/cobyqa',
+    'icon_links': [
+        {
+            'name': 'GitHub',
+            'url': 'https://github.com/ragonneau/cobyqa',
+            'icon': 'fab fa-github-square',
+        },
+        {
+            'name': 'PyPI',
+            'url': 'https://pypi.org/project/cobyqa',
+            'icon': 'fab fa-python',
+        },
+    ],
     'logo_link': 'index',
 }
 

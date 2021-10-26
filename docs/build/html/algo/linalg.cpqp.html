@@ -106,6 +106,12 @@
             <label class="sr-only">GitHub</label>
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://pypi.org/project/cobyqa" rel="noopener" target="_blank" title="PyPI">
+            <span><i class="fab fa-python"></i></span>
+            <label class="sr-only">PyPI</label>
+          </a>
+        </li>
       </ul>
       </div>
       
@@ -223,7 +229,7 @@ provided), to determine a trust-region normal step, COBYQA must solve a problem
 of the form</p>
 <div class="math notranslate nohighlight" id="equation-cpqp">
 <span class="eqno">(1)<a class="headerlink" href="#equation-cpqp" title="Permalink to this equation">¶</a></span>\[\begin{split}\begin{array}{ll}
-    \min        &amp; \quad f(x) = \frac{1}{2} \norm{[Ax - b]_+}^2 + \frac{1}{2} \norm{Cx - d}^2\\
+    \min        &amp; \quad f(x) = \frac{1}{2} \big(\norm{[Ax - b]_+}^2 + \norm{Cx - d}^2\big)\\
     \text{s.t.} &amp; \quad l \le x \le u,\\
                 &amp; \quad \norm{x} \le \Delta,\\
                 &amp; \quad x \in \R^n,
@@ -231,8 +237,8 @@ of the form</p>
 <p>where <span class="math notranslate nohighlight">\(A \in \R^{m_1 \times n}\)</span>, <span class="math notranslate nohighlight">\(b \in \R^{m_1}\)</span>,
 <span class="math notranslate nohighlight">\(C \in \R^{m_2 \times n}\)</span>, <span class="math notranslate nohighlight">\(d \in \R^{m_2}\)</span>, <span class="math notranslate nohighlight">\(l \in \R^n\)</span> and
 <span class="math notranslate nohighlight">\(u \in \R^n\)</span> are the lower and upper bounds of the problems
-(with <span class="math notranslate nohighlight">\(l &lt; u\)</span>), and <span class="math notranslate nohighlight">\(\Delta &gt; 0\)</span> is the current trust-region
-radius.</p>
+(with <span class="math notranslate nohighlight">\(l &lt; u\)</span>), <span class="math notranslate nohighlight">\(\Delta &gt; 0\)</span> is the current trust-region radius,
+and <span class="math notranslate nohighlight">\(\norm{\cdot}\)</span> is the Euclidean norm.</p>
 </section>
 
 
@@ -275,7 +281,7 @@ radius.</p>
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 22, 2021.<br>
+Last updated on October 26, 2021.<br>
 </p>
     </div>
     

@@ -106,6 +106,12 @@
             <label class="sr-only">GitHub</label>
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://pypi.org/project/cobyqa" rel="noopener" target="_blank" title="PyPI">
+            <span><i class="fab fa-python"></i></span>
+            <label class="sr-only">PyPI</label>
+          </a>
+        </li>
       </ul>
       </div>
       
@@ -259,16 +265,16 @@ solve at each iteration is of the form</p>
 function at the origin, <span class="math notranslate nohighlight">\(H \in \R^{n \times n}\)</span> is a symmetric matrix
 that approximates the Hessian matrix of the nonlinear objective function at the
 origin, <span class="math notranslate nohighlight">\(l \in \R^n\)</span> and <span class="math notranslate nohighlight">\(u \in \R^n\)</span> are the lower and upper
-bounds of the problems (with <span class="math notranslate nohighlight">\(l &lt; u\)</span>), and <span class="math notranslate nohighlight">\(\Delta &gt; 0\)</span> is the
-current trust-region radius.</p>
+bounds of the problems (with <span class="math notranslate nohighlight">\(l &lt; u\)</span>), <span class="math notranslate nohighlight">\(\Delta &gt; 0\)</span> is the current
+trust-region radius, and <span class="math notranslate nohighlight">\(\norm{\cdot}\)</span> is the Euclidean norm.</p>
 <section id="the-unconstrained-case">
 <span id="tcg-base"></span><h2>The unconstrained case<a class="headerlink" href="#the-unconstrained-case" title="Permalink to this headline">¶</a></h2>
 <p>We assume in this section that the lower and upper bounds in <a class="reference internal" href="#equation-bvtcg">(1)</a> are
 respectively set to <span class="math notranslate nohighlight">\(-\infty\)</span> and <span class="math notranslate nohighlight">\(+\infty\)</span>. Powell showed in
 <a class="reference internal" href="#powe75" id="id1"><span>[Powe75]</span></a> that a trust-region method is convergent if the trust-region step
-<span class="math notranslate nohighlight">\(\bar{x} \in \R^n\)</span> satisfies</p>
+<span class="math notranslate nohighlight">\(x^{\ast} \in \R^n\)</span> satisfies</p>
 <div class="math notranslate nohighlight">
-\[f(x^0) - f(\bar{x}) \ge \gamma \norm{g} \min \set{\Delta, \norm{g} / \norm{H}},\]</div>
+\[f(x^0) - f(x^{\ast}) \ge \gamma \norm{g} \min \set{\Delta, \norm{g} / \norm{H}},\]</div>
 <p>for some <span class="math notranslate nohighlight">\(\gamma &gt; 0\)</span>, where <span class="math notranslate nohighlight">\(\norm{\cdot}\)</span> is the Euclidean norm.
 It is easy to see that a Cauchy step satisfies such a condition
 (with <span class="math notranslate nohighlight">\(\gamma = 1/2\)</span>). Therefore, to preserve the computational
@@ -319,16 +325,14 @@ ensures the termination of the method.</p>
 a active bound should not be included in the active set if a Cauchy step (a
 positive step along <span class="math notranslate nohighlight">\(-g\)</span>) would depart from the bound, as the bound is
 never removed from the active set. The complete framework of <a class="reference internal" href="../refs/generated/cobyqa.linalg.bvtcg.html#cobyqa.linalg.bvtcg" title="cobyqa.linalg.bvtcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bvtcg</span></code></a> is
-described below. For sake of clarity, we denote <span class="math notranslate nohighlight">\(\mathcal{I}^k\)</span> the
-active set of the <span class="math notranslate nohighlight">\(k\)</span>-th iteration and <span class="math notranslate nohighlight">\(\Pi_k(v)\)</span> the vector whose
-<span class="math notranslate nohighlight">\(i\)</span>-th coordinate is <span class="math notranslate nohighlight">\(v_i\)</span> if <span class="math notranslate nohighlight">\(i \notin \mathcal{I}^k\)</span>, and
-zero otherwise.</p>
+described below. For sake of clarity, we denote <span class="math notranslate nohighlight">\(\mathcal{I}\)</span> the active
+set and <span class="math notranslate nohighlight">\(\Pi(v)\)</span> the vector whose <span class="math notranslate nohighlight">\(i\)</span>-th coordinate is <span class="math notranslate nohighlight">\(v_i\)</span>
+if <span class="math notranslate nohighlight">\(i \notin \mathcal{I}\)</span>, and zero otherwise.</p>
 <ol class="arabic simple">
-<li><p>Set <span class="math notranslate nohighlight">\(x^0 = 0\)</span> and the initial active set <span class="math notranslate nohighlight">\(\mathcal{I}^0\)</span> to the
-indices for which either <span class="math notranslate nohighlight">\(l_i = 0\)</span> and <span class="math notranslate nohighlight">\(g_i \ge 0\)</span> or
-<span class="math notranslate nohighlight">\(u_i = 0\)</span> and <span class="math notranslate nohighlight">\(g_i \le 0\)</span>.</p></li>
-<li><p>Set <span class="math notranslate nohighlight">\(d^0 = -\Pi_0(g)\)</span>, <span class="math notranslate nohighlight">\(g^0 = g\)</span>, and
-<span class="math notranslate nohighlight">\(k = 0\)</span>.</p></li>
+<li><p>Set <span class="math notranslate nohighlight">\(x^0 = 0\)</span> and the active set <span class="math notranslate nohighlight">\(\mathcal{I}\)</span> to the indices
+for which either <span class="math notranslate nohighlight">\(l_i = 0\)</span> and <span class="math notranslate nohighlight">\(g_i \ge 0\)</span> or <span class="math notranslate nohighlight">\(u_i = 0\)</span>
+and <span class="math notranslate nohighlight">\(g_i \le 0\)</span>.</p></li>
+<li><p>Set <span class="math notranslate nohighlight">\(d^0 = -\Pi(g)\)</span>, <span class="math notranslate nohighlight">\(g^0 = g\)</span>, and <span class="math notranslate nohighlight">\(k = 0\)</span>.</p></li>
 <li><p>Let <span class="math notranslate nohighlight">\(\alpha_{\Delta, k}\)</span> be the largest number such that
 <span class="math notranslate nohighlight">\(\norm{x^k + \alpha_{\Delta, k} d^k} = \Delta\)</span>.</p></li>
 <li><p>Let <span class="math notranslate nohighlight">\(\alpha_{Q, k}\)</span> be <span class="math notranslate nohighlight">\(-\inner{d^k, g^k} / \inner{d^k, Hd^k}\)</span>
@@ -341,18 +345,11 @@ if <span class="math notranslate nohighlight">\(\inner{d^k, Hd^k} &gt; 0\)</span
 <span class="math notranslate nohighlight">\(\beta_k = \norm{g^{k + 1}}^2 / \norm{g^k}^2\)</span>.</p></li>
 <li><p>If <span class="math notranslate nohighlight">\(\alpha_k = \alpha_{\Delta, k}\)</span> or <span class="math notranslate nohighlight">\(g^{k + 1} = 0\)</span>, stop the
 computations.</p></li>
-<li><p>If <span class="math notranslate nohighlight">\(\alpha_k = \alpha_{B, k}\)</span>, set
-<span class="math notranslate nohighlight">\(\mathcal{I}^0 = \mathcal{I}^k \cup \set{j}\)</span> where <span class="math notranslate nohighlight">\(j\)</span> is a
-new active coordinate, <span class="math notranslate nohighlight">\(x^0 = x^{k + 1}\)</span>, <span class="math notranslate nohighlight">\(k = 0\)</span>, and go to
-step 2.</p></li>
-<li><p>Update <span class="math notranslate nohighlight">\(d^{k + 1} = -\Pi_k(g^k) + \beta_k d^k\)</span>,
-<span class="math notranslate nohighlight">\(\mathcal{I}^{k + 1} = \mathcal{I}^k\)</span>, increment <span class="math notranslate nohighlight">\(k\)</span>, and go to
-step 3.</p></li>
+<li><p>If <span class="math notranslate nohighlight">\(\alpha_k = \alpha_{B, k}\)</span>, add a new active coordinate to
+<span class="math notranslate nohighlight">\(\mathcal{I}\)</span>, set <span class="math notranslate nohighlight">\(x^0 = x^{k + 1}\)</span>, and go to step 2.</p></li>
+<li><p>Update <span class="math notranslate nohighlight">\(d^{k + 1} = -\Pi(g^k) + \beta_k d^k\)</span>, increment <span class="math notranslate nohighlight">\(k\)</span>, and
+go to step 3.</p></li>
 </ol>
-<p>An important remark is that when the algorithm is restarted at step 8, the
-assignment <span class="math notranslate nohighlight">\(x^0 = x^{k + 1}\)</span> should not modify the evaluation of the
-objective function in <a class="reference internal" href="#equation-bvtcg">(1)</a>, neither the center of its trust-region
-constraint.</p>
 </section>
 <section id="further-refinement-of-the-trial-step">
 <h3>Further refinement of the trial step<a class="headerlink" href="#further-refinement-of-the-trial-step" title="Permalink to this headline">¶</a></h3>
@@ -368,14 +365,14 @@ solution to</p>
     \min        &amp; \quad f(x) = \inner{x - x^0, g} + \frac{1}{2} \inner{x - x^0, H (x - x^0)}\\
     \text{s.t.} &amp; \quad l \le x \le u,\\
                 &amp; \quad \norm{x - x^0} = \Delta,\\
-                &amp; \quad x \in \vspan \set{\Pi_k(x^k), \Pi_k(g^k)} \subseteq \R^n.
+                &amp; \quad x \in \vspan \set{\Pi(x^k), \Pi(g^k)} \subseteq \R^n.
 \end{array}\end{split}\]</div>
-<p>To do so, the method builds an orthogonal basis <span class="math notranslate nohighlight">\(\set{\Pi_k(x^k), s}\)</span> of
-<span class="math notranslate nohighlight">\(\vspan \set{\Pi_k(x^k), \Pi_k(g^k)}\)</span> by selecting the vector
-<span class="math notranslate nohighlight">\(s \in \R^n\)</span> such that <span class="math notranslate nohighlight">\(\inner{s, \Pi_k(x^k)} = 0\)</span>,
-<span class="math notranslate nohighlight">\(\inner{s, \Pi_k(g^k)} &lt; 0\)</span>, and <span class="math notranslate nohighlight">\(\norm{s} = \norm{\Pi_k(x^k)}\)</span>.
+<p>To do so, the method builds an orthogonal basis <span class="math notranslate nohighlight">\(\set{\Pi(x^k), s}\)</span> of
+<span class="math notranslate nohighlight">\(\vspan \set{\Pi(x^k), \Pi(g^k)}\)</span> by selecting the vector
+<span class="math notranslate nohighlight">\(s \in \R^n\)</span> such that <span class="math notranslate nohighlight">\(\inner{s, \Pi(x^k)} = 0\)</span>,
+<span class="math notranslate nohighlight">\(\inner{s, \Pi(g^k)} &lt; 0\)</span>, and <span class="math notranslate nohighlight">\(\norm{s} = \norm{\Pi(x^k)}\)</span>.
 Further, the method considers the function
-<span class="math notranslate nohighlight">\(x(\theta) = x^k + (\cos \theta - 1) \Pi_k(x^k) + \sin \theta s\)</span> with
+<span class="math notranslate nohighlight">\(x(\theta) = x^k + (\cos \theta - 1) \Pi(x^k) + \sin \theta s\)</span> with
 <span class="math notranslate nohighlight">\(0 \le \theta \le \pi / 4\)</span> and solves approximately</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}\begin{array}{ll}
@@ -385,11 +382,11 @@ Further, the method considers the function
 \end{array}\end{split}\]</div>
 <p>the trust-region condition being automatically ensured by the choice of
 <span class="math notranslate nohighlight">\(s\)</span>. If the value of <span class="math notranslate nohighlight">\(\theta\)</span> is restricted by a bound, it is added
-to the active set <span class="math notranslate nohighlight">\(\mathcal{I}^k\)</span>, and the refinement procedure is
+to the active set <span class="math notranslate nohighlight">\(\mathcal{I}\)</span>, and the refinement procedure is
 restarted. Since the active set is very reduced, this procedure terminates in
-at most <span class="math notranslate nohighlight">\(n - \abs{\mathcal{I}^k}\)</span>, where <span class="math notranslate nohighlight">\(\abs{\mathcal{I}^k}\)</span>
-denotes the number of active bounds at the end of the constrained truncated
-conjugate gradient procedure.</p>
+at most <span class="math notranslate nohighlight">\(n - \abs{\mathcal{I}}\)</span>, where <span class="math notranslate nohighlight">\(\abs{\mathcal{I}}\)</span> denotes
+the number of active bounds at the end of the constrained truncated conjugate
+gradient procedure.</p>
 <p class="rubric">References</p>
 <dl class="citation">
 <dt class="label" id="powe75"><span class="brackets"><a class="fn-backref" href="#id1">Powe75</a></span></dt>
@@ -458,7 +455,7 @@ Duff. London, UK: Academic Press, 1981, pp. 57–88.</p>
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 22, 2021.<br>
+Last updated on October 26, 2021.<br>
 </p>
     </div>
     

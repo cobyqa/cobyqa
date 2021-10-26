@@ -4,18 +4,7 @@ include MANIFEST.in
 include pyproject.toml
 
 # Add documentation to sdist-generated tarballs
-recursive-include docs *
-prune docs/build
+include docs/index.html
+include docs/Makefile
+recursive-include docs/source *.bib *.css *.html *.ico *.png *.svg *.py *.rst
 prune docs/source/**/generated
-
-# Exclude undesirable files
-global-exclude *.AppleDouble
-global-exclude *.DS_Store
-global-exclude *.LSOverride
-global-exclude *.egg-info
-global-exclude *.dll
-global-exclude *.dylib
-global-exclude *.o
-global-exclude *.pyc
-global-exclude *.pyd
-global-exclude *.so

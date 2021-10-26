@@ -85,13 +85,13 @@ of the algorithm implies its convergence. In order to prove the termination of
 the algorithm, we necessitate the following result whose proof is established
 in Lemma 23.17 of [LaHa74]_.
 
-**Lemma 1.** Assume that a matrix :math:`A \in \R^{m \times n}` is a full
-column rank matrix (with :math:`n \le m`) and that a vector :math:`b \in \R^m`
-satisfies :math:`\inner{b, Ae_i} = 0` for
-:math:`i \in \set{1, 2, \dots, n} \setminus \set{j}` and
-:math:`\inner{b, Ae_j} > 0` with :math:`j \in \set{1, 2, \dots, n}`. Then
-the solution vector :math:`\bar{x}` of the least-squares problem
-:math:`\min \norm{Ax - b}` satisfies :math:`\bar{x}_j > 0`.
+    **Lemma 1.** Assume that a matrix :math:`A \in \R^{m \times n}` is a full
+    column rank matrix (with :math:`n \le m`) and that a vector
+    :math:`b \in \R^m` satisfies :math:`\inner{b, Ae_i} = 0` for
+    :math:`i \in \set{1, 2, \dots, n} \setminus \set{j}` and
+    :math:`\inner{b, Ae_j} > 0` with :math:`j \in \set{1, 2, \dots, n}`. Then
+    the solution vector :math:`x^{\ast}` of the least-squares problem
+    :math:`\min \norm{Ax - b}` satisfies :math:`x_j^{\ast} > 0`.
 
 Assume that the KKT conditions for problem :eq:`nnls` do not hold at the
 origin. At the first iteration, the algorithm selects the index

@@ -4,7 +4,10 @@
 Description of the algorithms
 #############################
 
-This page presents the framework of the method.
+:Date: |today|
+
+This section presents in depth the derivative trust-region method employed by
+COBYQA to tackle nonlinear constrained problems.
 
 .. toctree::
     :maxdepth: 2

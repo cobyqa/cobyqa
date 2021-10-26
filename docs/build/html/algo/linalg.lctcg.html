@@ -106,6 +106,12 @@
             <label class="sr-only">GitHub</label>
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://pypi.org/project/cobyqa" rel="noopener" target="_blank" title="PyPI">
+            <span><i class="fab fa-python"></i></span>
+            <label class="sr-only">PyPI</label>
+          </a>
+        </li>
       </ul>
       </div>
       
@@ -201,9 +207,21 @@
 <nav id="bd-toc-nav">
     <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#description-of-the-method">
-   Description of the method
+  <a class="reference internal nav-link" href="#the-unconstrained-case">
+   The unconstrained case
   </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#the-constrained-case">
+   The constrained case
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#management-of-the-active-set">
+     Management of the active set
+    </a>
+   </li>
+  </ul>
  </li>
 </ul>
 
@@ -245,12 +263,102 @@ that approximates the Hessian matrix of the nonlinear objective function at the
 origin, <span class="math notranslate nohighlight">\(A \in \R^{m_1 \times n}\)</span> and <span class="math notranslate nohighlight">\(C \in \R^{m_2 \times n}\)</span> are
 the Jacobian matrices of the linear inequality and equality constraints,
 <span class="math notranslate nohighlight">\(b \in \R^{m_1}\)</span> and <span class="math notranslate nohighlight">\(d \in \R^{m_2}\)</span> are the corresponding
-right-hand sides, and <span class="math notranslate nohighlight">\(\Delta &gt; 0\)</span> is the current trust-region radius.</p>
+right-hand sides, <span class="math notranslate nohighlight">\(\Delta &gt; 0\)</span> is the current trust-region radius, and
+<span class="math notranslate nohighlight">\(\norm{\cdot}\)</span> is the Euclidean norm.</p>
+<section id="the-unconstrained-case">
+<h2>The unconstrained case<a class="headerlink" href="#the-unconstrained-case" title="Permalink to this headline">¶</a></h2>
 <p>As mentioned in the section <a class="reference internal" href="linalg.bvtcg.html#tcg-base"><span class="std std-ref">The unconstrained case</span></a> of the description of the <a class="reference internal" href="../refs/generated/cobyqa.linalg.bvtcg.html#cobyqa.linalg.bvtcg" title="cobyqa.linalg.bvtcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bvtcg</span></code></a>
 method, it is usual to solve inexactly problem <a class="reference internal" href="#equation-lctcg">(1)</a> using a truncated
-conjugate gradient method.</p>
-<section id="description-of-the-method">
-<h2>Description of the method<a class="headerlink" href="#description-of-the-method" title="Permalink to this headline">¶</a></h2>
+conjugate gradient method of Steihaug <a class="reference internal" href="#stei83" id="id1"><span>[Stei83]</span></a> and Toint <a class="reference internal" href="#toin81" id="id2"><span>[Toin81]</span></a> in the
+unconstrained case. Given the initial values <span class="math notranslate nohighlight">\(x^0 = 0\)</span> and
+<span class="math notranslate nohighlight">\(d^0 = -g\)</span>, it generates the sequence of iterates</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\left\{
+\begin{array}{l}
+    \alpha_k = -\inner{d^k, g^k} / \inner{d^k, Hd^k},\\
+    \beta_k = \norm{g^{k + 1}}^2 / \norm{g^k}^2,\\
+    x^{k + 1} = x^k + \alpha_k d^k,\\
+    d^{k + 1} = -g^k + \beta_k d^k,
+\end{array}
+\right.\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(g^k = \nabla f(x^k) = g + Hx^k\)</span>. The computations are stopped if
+either</p>
+<ol class="arabic simple">
+<li><p><span class="math notranslate nohighlight">\(g^k = 0\)</span> and <span class="math notranslate nohighlight">\(\inner{d^k, Hd^k} \ge 0\)</span>, in which case the
+global minimizer is found; or</p></li>
+<li><p><span class="math notranslate nohighlight">\(\norm{x^{k + 1}} \ge \Delta\)</span> or <span class="math notranslate nohighlight">\(\inner{d^k, Hd^k} &lt; 0\)</span>, in
+which case <span class="math notranslate nohighlight">\(x^k + \alpha_{\Delta} d^k\)</span> is returned, where
+<span class="math notranslate nohighlight">\(\alpha_{\Delta} &gt; 0\)</span> is chosen so that
+<span class="math notranslate nohighlight">\(\norm{x^k + \alpha_{\Delta} d^k} = \Delta\)</span>.</p></li>
+</ol>
+</section>
+<section id="the-constrained-case">
+<h2>The constrained case<a class="headerlink" href="#the-constrained-case" title="Permalink to this headline">¶</a></h2>
+<p>When linear and/or nonlinear constraints are provided, COBYQA solves its
+trust-region tangential subproblems using a modified TRSTEP algorithm
+<a class="reference internal" href="#powe15" id="id3"><span>[Powe15]</span></a>. It is an active-set variation of the truncated conjugate gradient
+algorithm, which maintains the QR factorization of the matrix whose columns are
+the gradients of the active constraints. As for <a class="reference internal" href="../refs/generated/cobyqa.linalg.bvtcg.html#cobyqa.linalg.bvtcg" title="cobyqa.linalg.bvtcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bvtcg</span></code></a>, if a new constraint is
+added to the active set, the procedure is restarted. However, we allow
+constraints to be removed from the active set in this method.</p>
+<section id="management-of-the-active-set">
+<h3>Management of the active set<a class="headerlink" href="#management-of-the-active-set" title="Permalink to this headline">¶</a></h3>
+<p>For convenience, we denote
+<span class="math notranslate nohighlight">\(a_j\)</span>, for <span class="math notranslate nohighlight">\(j \in \set{1, 2, \dots, m_1}\)</span> and
+<span class="math notranslate nohighlight">\(c_j\)</span>, for <span class="math notranslate nohighlight">\(j \in \set{1, 2, \dots, m_2}\)</span> the rows of the matrices
+<span class="math notranslate nohighlight">\(A\)</span> and <span class="math notranslate nohighlight">\(C\)</span>. We assume that the initial guess <span class="math notranslate nohighlight">\(x^0\)</span> is
+feasible and that an inequality constraint <span class="math notranslate nohighlight">\(b_j - \inner{a_j, x}\)</span> is
+positive and tiny for some <span class="math notranslate nohighlight">\(j \le m_1\)</span>. If <span class="math notranslate nohighlight">\(j\)</span> do not belong to the
+active set and if <span class="math notranslate nohighlight">\(\inner{a_j, g} &lt; 0\)</span>, then it is likely that the
+<span class="math notranslate nohighlight">\(\norm{x^1 - x^0}\)</span> is small, as a step along the search direction
+<span class="math notranslate nohighlight">\(d^0 = -g\)</span> quickly exits the feasible set. Therefore, we must consider a
+constraint active whenever its residual becomes small. More precisely, for some
+feasible <span class="math notranslate nohighlight">\(x \in \R^n\)</span>, we let</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{J}(x) = \set[\big]{j \le m_1 : b_j - \inner{a_j, x} \le \eta \Delta \norm{a_j}},\]</div>
+<p>where <span class="math notranslate nohighlight">\(\eta\)</span> is some positive constant
+(set to <span class="math notranslate nohighlight">\(\eta = 0.2\)</span> in <a class="reference internal" href="../refs/generated/cobyqa.linalg.lctcg.html#cobyqa.linalg.lctcg" title="cobyqa.linalg.lctcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lctcg</span></code></a>). At each iteration, the active set is a
+subset of <span class="math notranslate nohighlight">\(\mathcal{J}(x^k)\)</span>. Moreover, the initial search direction
+<span class="math notranslate nohighlight">\(d^0\)</span> should be close to <span class="math notranslate nohighlight">\(-g\)</span> and prevent the point <span class="math notranslate nohighlight">\(x^1\)</span> to
+be close from <span class="math notranslate nohighlight">\(x^0\)</span>. Therefore, the initial search direction <span class="math notranslate nohighlight">\(d^0\)</span>
+is the unique solution of</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{array}{ll}
+    \min        &amp; \quad \frac{1}{2} \norm{g + d}^2\\
+    \text{s.t.} &amp; \quad \inner{a_j, d} \le 0, ~ j \in \mathcal{J}(x^k),\\
+                &amp; \quad \inner{c_j, d} = 0, ~ j \in \set{1, 2, \dots, m_2}\\
+                &amp; \quad d \in \R^n.
+\end{array}\end{split}\]</div>
+<p>If <span class="math notranslate nohighlight">\(\inner{a_j, d^0} &lt; 0\)</span> for some <span class="math notranslate nohighlight">\(j\)</span>, then the point <span class="math notranslate nohighlight">\(x^1\)</span>
+will be further from this constraint than the initial guess. Therefore, the
+active set <span class="math notranslate nohighlight">\(\mathcal{I}\)</span> is chosen to be
+<span class="math notranslate nohighlight">\(\set{j \in \mathcal{J}(x^0) : \inner{a_j, d^0} = 0}\)</span> (or a subset of it,
+chosen so that <span class="math notranslate nohighlight">\(\set{a_j : j \in \mathcal{I}}\)</span> is a basis of
+<span class="math notranslate nohighlight">\(\vspan \set{a_j : j \in \mathcal{J}(x^0), ~ \inner{a_j, d^0} = 0}\)</span>.</p>
+<p>The solution of such a problem is calculated using the Goldfarb and Idnani
+method for quadratic programming <a class="reference internal" href="#goid83" id="id4"><span>[GoId83]</span></a>.</p>
+<p class="rubric">References</p>
+<dl class="citation">
+<dt class="label" id="goid83"><span class="brackets"><a class="fn-backref" href="#id4">GoId83</a></span></dt>
+<dd><p>D. Goldfarb and A. Idnani. “A numerically stable dual method for
+solving strictly convex quadratic programs.” In: Math. Program. 27 (1983),
+pp. 1–33.</p>
+</dd>
+<dt class="label" id="powe15"><span class="brackets"><a class="fn-backref" href="#id3">Powe15</a></span></dt>
+<dd><p>M. J. D. Powell. “On fast trust region methods for quadratic models
+with linear constraints.” In: Math. Program. Comput. 7 (2015), pp. 237–267.</p>
+</dd>
+<dt class="label" id="stei83"><span class="brackets"><a class="fn-backref" href="#id1">Stei83</a></span></dt>
+<dd><p>T. Steihaug. “The conjugate gradient method and trust regions in
+large scale optimization.” In: IMA J. Numer. Anal. 20 (1983), pp. 626–637.</p>
+</dd>
+<dt class="label" id="toin81"><span class="brackets"><a class="fn-backref" href="#id2">Toin81</a></span></dt>
+<dd><p>Ph. L. Toint. “Towards an efficient sparsity exploiting Newton
+method for minimization.” In: Sparse Matrices and Their Uses. Ed. by I. S.
+Duff. London, UK: Academic Press, 1981, pp. 57–88.</p>
+</dd>
+</dl>
+</section>
 </section>
 </section>
 
@@ -294,7 +402,7 @@ conjugate gradient method.</p>
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 22, 2021.<br>
+Last updated on October 26, 2021.<br>
 </p>
     </div>
     

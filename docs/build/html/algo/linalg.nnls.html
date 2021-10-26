@@ -106,6 +106,12 @@
             <label class="sr-only">GitHub</label>
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="https://pypi.org/project/cobyqa" rel="noopener" target="_blank" title="PyPI">
+            <span><i class="fab fa-python"></i></span>
+            <label class="sr-only">PyPI</label>
+          </a>
+        </li>
       </ul>
       </div>
       
@@ -318,13 +324,15 @@ are the KKT conditions for problem <a class="reference internal" href="#equation
 of the algorithm implies its convergence. In order to prove the termination of
 the algorithm, we necessitate the following result whose proof is established
 in Lemma 23.17 of <a class="reference internal" href="#laha74" id="id2"><span>[LaHa74]</span></a>.</p>
-<p><strong>Lemma 1.</strong> Assume that a matrix <span class="math notranslate nohighlight">\(A \in \R^{m \times n}\)</span> is a full
-column rank matrix (with <span class="math notranslate nohighlight">\(n \le m\)</span>) and that a vector <span class="math notranslate nohighlight">\(b \in \R^m\)</span>
-satisfies <span class="math notranslate nohighlight">\(\inner{b, Ae_i} = 0\)</span> for
+<blockquote>
+<div><p><strong>Lemma 1.</strong> Assume that a matrix <span class="math notranslate nohighlight">\(A \in \R^{m \times n}\)</span> is a full
+column rank matrix (with <span class="math notranslate nohighlight">\(n \le m\)</span>) and that a vector
+<span class="math notranslate nohighlight">\(b \in \R^m\)</span> satisfies <span class="math notranslate nohighlight">\(\inner{b, Ae_i} = 0\)</span> for
 <span class="math notranslate nohighlight">\(i \in \set{1, 2, \dots, n} \setminus \set{j}\)</span> and
 <span class="math notranslate nohighlight">\(\inner{b, Ae_j} &gt; 0\)</span> with <span class="math notranslate nohighlight">\(j \in \set{1, 2, \dots, n}\)</span>. Then
-the solution vector <span class="math notranslate nohighlight">\(\bar{x}\)</span> of the least-squares problem
-<span class="math notranslate nohighlight">\(\min \norm{Ax - b}\)</span> satisfies <span class="math notranslate nohighlight">\(\bar{x}_j &gt; 0\)</span>.</p>
+the solution vector <span class="math notranslate nohighlight">\(x^{\ast}\)</span> of the least-squares problem
+<span class="math notranslate nohighlight">\(\min \norm{Ax - b}\)</span> satisfies <span class="math notranslate nohighlight">\(x_j^{\ast} &gt; 0\)</span>.</p>
+</div></blockquote>
 <p>Assume that the KKT conditions for problem <a class="reference internal" href="#equation-nnls">(1)</a> do not hold at the
 origin. At the first iteration, the algorithm selects the index
 (<span class="math notranslate nohighlight">\(j\)</span>, say) of the most negative component of
@@ -431,7 +439,7 @@ Classics Appl. Math. Philadelphia, PA, US: SIAM, 1974.</p>
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 22, 2021.<br>
+Last updated on October 26, 2021.<br>
 </p>
     </div>
     
