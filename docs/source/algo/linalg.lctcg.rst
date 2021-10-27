@@ -34,9 +34,9 @@ The unconstrained case
 
 As mentioned in the section :ref:`tcg_base` of the description of the `bvtcg`
 method, it is usual to solve inexactly problem :eq:`lctcg` using a truncated
-conjugate gradient method of Steihaug [Stei83]_ and Toint [Toin81]_ in the
-unconstrained case. Given the initial values :math:`x^0 = 0` and
-:math:`d^0 = -g`, it generates the sequence of iterates
+conjugate gradient method of Steihaug :cite:`lctcg-Steihaug_1983` and Toint
+:cite:`lctcg-Toint_1981` in the unconstrained case. Given the initial values
+:math:`x^0 = 0` and :math:`d^0 = -g`, it generates the sequence of iterates
 
 .. math::
 
@@ -64,11 +64,12 @@ The constrained case
 
 When linear and/or nonlinear constraints are provided, COBYQA solves its
 trust-region tangential subproblems using a modified TRSTEP algorithm
-[Powe15]_. It is an active-set variation of the truncated conjugate gradient
-algorithm, which maintains the QR factorization of the matrix whose columns are
-the gradients of the active constraints. As for `bvtcg`, if a new constraint is
-added to the active set, the procedure is restarted. However, we allow
-constraints to be removed from the active set in this method.
+:cite:`lctcg-Powell_2015`. It is an active-set variation of the truncated
+conjugate gradient algorithm, which maintains the QR factorization of the
+matrix whose columns are the gradients of the active constraints. As for
+`bvtcg`, if a new constraint is added to the active set, the procedure is
+restarted. However, we allow constraints to be removed from the active set in
+this method.
 
 Management of the active set
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -111,22 +112,10 @@ active set :math:`\mathcal{I}` is chosen to be
 :math:`\set{j \in \mathcal{J}(x^0) : \inner{a_j, d^0} = 0}` (or a subset of it,
 chosen so that :math:`\set{a_j : j \in \mathcal{I}}` is a basis of
 :math:`\vspan \set{a_j : j \in \mathcal{J}(x^0), ~ \inner{a_j, d^0} = 0}`.
-
+bibtex spohinx
 The solution of such a problem is calculated using the Goldfarb and Idnani
-method for quadratic programming [GoId83]_.
+method for quadratic programming :cite:`lctcg-Goldfarb_Idnani_1983`.
 
-.. rubric:: References
-
-.. [GoId83] D. Goldfarb and A. Idnani. "A numerically stable dual method for
-   solving strictly convex quadratic programs." In: Math. Program. 27 (1983),
-   pp. 1--33.
-
-.. [Powe15] M. J. D. Powell. "On fast trust region methods for quadratic models
-   with linear constraints." In: Math. Program. Comput. 7 (2015), pp. 237--267.
-
-.. [Stei83] T. Steihaug. "The conjugate gradient method and trust regions in
-   large scale optimization." In: IMA J. Numer. Anal. 20 (1983), pp. 626--637.
-
-.. [Toin81] Ph. L. Toint. "Towards an efficient sparsity exploiting Newton
-   method for minimization." In: Sparse Matrices and Their Uses. Ed. by I. S.
-   Duff. London, UK: Academic Press, 1981, pp. 57--88.
+.. bibliography::
+    :labelprefix: L
+    :keyprefix: lctcg-

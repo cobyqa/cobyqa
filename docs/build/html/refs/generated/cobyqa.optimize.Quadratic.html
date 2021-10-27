@@ -299,21 +299,20 @@
 <h1>cobyqa.optimize.Quadratic<a class="headerlink" href="#cobyqa-optimize-quadratic" title="Permalink to this headline">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="cobyqa.optimize.Quadratic">
-<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">cobyqa.optimize.</span></span><span class="sig-name descname"><span class="pre">Quadratic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bmat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zmat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fval</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/optimize.py#L4245-L4606"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.optimize.Quadratic" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">cobyqa.optimize.</span></span><span class="sig-name descname"><span class="pre">Quadratic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bmat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zmat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fval</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/optimize.py#L4243-L4603"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.optimize.Quadratic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Representation of a quadratic multivariate function.</p>
 <p class="rubric">Notes</p>
 <p>To improve the computational efficiency of the updates of the quadratic
 functions, the Hessian matrices of a quadratic functions are stored as
 explicit and implicit parts, which define the model relatively to the
-coordinates of the interpolation points <a class="reference internal" href="#r121380ef860e-powe06" id="id1">[Powe06]</a>. Initially, the explicit
-part of an Hessian matrix is zero and so, is not explicitly stored.</p>
+coordinates of the interpolation points <a class="reference internal" href="#r121380ef860e-1" id="id1">[1]</a>. Initially, the explicit part
+of an Hessian matrix is zero and so, is not explicitly stored.</p>
 <p class="rubric">References</p>
 <dl class="citation">
-<dt class="label" id="r121380ef860e-powe06"><span class="brackets"><a class="fn-backref" href="#id1">Powe06</a></span></dt>
-<dd><p>M. J. D. Powell. “The NEWUOA software for unconstrained
-optimization without derivatives.” In: Large-Scale Nonlinear
-Optimization. Ed. by G. Di Pillo and M. Roma. New York, NY, US: Springer,
-2006, pp. 255–297.</p>
+<dt class="label" id="r121380ef860e-1"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dd><p>M. J. D. Powell. “The NEWUOA software for unconstrained optimization
+without derivatives.” In: Large-Scale Nonlinear Optimization. Ed. by G.
+Di Pillo and M. Roma. New York, NY, US: Springer, 2006, pp. 255–297.</p>
 </dd>
 </dl>
 <dl class="field-list simple">
@@ -408,7 +407,7 @@ Optimization. Ed. by G. Di Pillo and M. Roma. New York, NY, US: Springer,
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 26, 2021.<br>
+Last updated on October 27, 2021.<br>
 </p>
     </div>
     

@@ -262,7 +262,7 @@
 <h1>cobyqa.linalg.bvlag<a class="headerlink" href="#cobyqa-linalg-bvlag" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="cobyqa.linalg.bvlag">
-<span class="sig-prename descclassname"><span class="pre">linalg.</span></span><span class="sig-name descname"><span class="pre">bvlag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xpt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kopt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">klag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/linalg/bvlag.py#L7-L209"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.linalg.bvlag" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">linalg.</span></span><span class="sig-name descname"><span class="pre">bvlag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xpt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kopt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">klag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/ragonneau/cobyqa/blob/main/cobyqa/linalg/bvlag.py#L7-L207"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cobyqa.linalg.bvlag" title="Permalink to this definition">¶</a></dt>
 <dd><p>Estimate a point that maximizes a lower bound on the denominator of the
 updating formula, subject to bound constraints on its coordinates and its
 length.</p>
@@ -318,18 +318,16 @@ disable the bounds on some variables.</p>
 </dl>
 </div>
 <p class="rubric">Notes</p>
-<p>The denominator of the updating formula is given in Equation (3.9) of
-<a class="reference internal" href="#rebe7aed9360b-powe09" id="id1">[Powe09]</a>, and the parameter <em class="xref py py-obj">alpha</em> is the referred in Equation (4.12) of
-<a class="reference internal" href="#rebe7aed9360b-powe06" id="id2">[Powe06]</a>.</p>
+<p>The denominator of the updating formula is given in Equation (3.9) of <a class="reference internal" href="#rebe7aed9360b-2" id="id1">[2]</a>,
+and the parameter <em class="xref py py-obj">alpha</em> is the referred in Equation (4.12) of <a class="reference internal" href="#rebe7aed9360b-1" id="id2">[1]</a>.</p>
 <p class="rubric">References</p>
 <dl class="citation">
-<dt class="label" id="rebe7aed9360b-powe06"><span class="brackets"><a class="fn-backref" href="#id2">Powe06</a></span></dt>
-<dd><p>M. J. D. Powell. “The NEWUOA software for unconstrained
-optimization without derivatives.” In: Large-Scale Nonlinear
-Optimization. Ed. by G. Di Pillo and M. Roma. New York, NY, US: Springer,
-2006, pp. 255-–297.</p>
+<dt class="label" id="rebe7aed9360b-1"><span class="brackets"><a class="fn-backref" href="#id2">1</a></span></dt>
+<dd><p>M. J. D. Powell. “The NEWUOA software for unconstrained optimization
+without derivatives.” In: Large-Scale Nonlinear Optimization. Ed. by G.
+Di Pillo and M. Roma. New York, NY, US: Springer, 2006, pp. 255-–297.</p>
 </dd>
-<dt class="label" id="rebe7aed9360b-powe09"><span class="brackets"><a class="fn-backref" href="#id1">Powe09</a></span></dt>
+<dt class="label" id="rebe7aed9360b-2"><span class="brackets"><a class="fn-backref" href="#id1">2</a></span></dt>
 <dd><p>M. J. D. Powell. The BOBYQA algorithm for bound constrained
 optimization without derivatives. Tech. rep. DAMTP 2009/NA06. Cambridge,
 UK: Department of Applied Mathematics and Theoretical Physics, University
@@ -380,7 +378,7 @@ of Cambridge, 2009.</p>
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 26, 2021.<br>
+Last updated on October 27, 2021.<br>
 </p>
     </div>
     

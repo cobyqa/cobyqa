@@ -63,7 +63,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
 
     Notes
     -----
-    The method is adapted from the TRSTEP algorithm [Powe15]_. To cope with the
+    The method is adapted from the TRSTEP algorithm [1]_. To cope with the
     convex piecewise quadratic objective function, the method minimizes
 
     .. math::
@@ -76,8 +76,8 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
 
     References
     ----------
-    .. [Powe15] M. J. D. Powell. "On fast trust region methods for quadratic
-       models with linear constraints." In: Math. Program. Comput. 7 (2015), pp.
+    .. [1] M. J. D. Powell. "On fast trust region methods for quadratic models
+       with linear constraints." In: Math. Program. Comput. 7 (2015), pp.
        237–-267.
     """
     xopt = np.atleast_1d(xopt)

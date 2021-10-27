@@ -33,8 +33,8 @@ The unconstrained case
 
 We assume in this section that the lower and upper bounds in :eq:`bvtcg` are
 respectively set to :math:`-\infty` and :math:`+\infty`. Powell showed in
-[Powe75]_ that a trust-region method is convergent if the trust-region step
-:math:`x^{\ast} \in \R^n` satisfies
+:cite:`bvtcg-Powell_1975` that a trust-region method is convergent if the
+trust-region step :math:`x^{\ast} \in \R^n` satisfies
 
 .. math::
 
@@ -44,9 +44,10 @@ for some :math:`\gamma > 0`, where :math:`\norm{\cdot}` is the Euclidean norm.
 It is easy to see that a Cauchy step satisfies such a condition
 (with :math:`\gamma = 1/2`). Therefore, to preserve the computational
 efficiency of a trust-region method, it is usual to solve inexactly problem
-:eq:`bvtcg` using the truncated conjugate gradient method of Steihaug [Stei83]_
-and Toint [Toin81]_. Given the initial values :math:`x^0 = 0` and
-:math:`d^0 = -g`, it generates the sequence of iterates
+:eq:`bvtcg` using the truncated conjugate gradient method of Steihaug
+:cite:`bvtcg-Steihaug_1983` and Toint :cite:`bvtcg-Toint_1981`. Given the
+initial values :math:`x^0 = 0` and :math:`d^0 = -g`, it generates the sequence
+of iterates
 
 .. math::
 
@@ -80,7 +81,7 @@ The constrained case
 We assume in this section that at least some values of the lower and upper
 bounds in :eq:`bvtcg` are finite. When no linear nor nonlinear constraints are
 provided, COBYQA solves the trust-region subproblem using the TRSBOX algorithm
-[Powe09]_, which is presented below.
+:cite:`bvtcg-Powell_2009`, which is presented below.
 
 The bound constrained truncated conjugate gradient procedure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -166,21 +167,6 @@ at most :math:`n - \abs{\mathcal{I}}`, where :math:`\abs{\mathcal{I}}` denotes
 the number of active bounds at the end of the constrained truncated conjugate
 gradient procedure.
 
-.. rubric:: References
-
-.. [Powe75] M. J. D. Powell. "Convergence properties of a class of minimization
-   algorithms." In: Nonlinear Programming. Ed. by O. L. Mangasarian, R. R.
-   Meyer, and S. M. Robinson. Vol. 2. London, UK: Academic Press, 1975, pp.
-   1--27.
-
-.. [Powe09] M. J. D. Powell. The BOBYQA algorithm for bound constrained
-   optimization without derivatives. Tech. rep. DAMTP 2009/NA06. Cambridge, UK:
-   Department of Applied Mathematics and Theoretical Physics, University of
-   Cambridge, 2009.
-
-.. [Stei83] T. Steihaug. "The conjugate gradient method and trust regions in
-   large scale optimization." In: IMA J. Numer. Anal. 20 (1983), pp. 626--637.
-
-.. [Toin81] Ph. L. Toint. "Towards an efficient sparsity exploiting Newton
-   method for minimization." In: Sparse Matrices and Their Uses. Ed. by I. S.
-   Duff. London, UK: Academic Press, 1981, pp. 57--88.
+.. bibliography::
+    :labelprefix: B
+    :keyprefix: bvtcg-

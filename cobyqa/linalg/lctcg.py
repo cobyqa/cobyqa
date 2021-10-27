@@ -76,16 +76,16 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
 
     Notes
     -----
-    The method is adapted from the TRSTEP algorithm [Powe15]_. It is an
-    active-set variation of the truncated conjugate gradient method, which
-    maintains the QR factorization of the matrix whose columns are the gradients
-    of the active constraints. The linear equality constraints are then handled
-    by considering them as always active.
+    The method is adapted from the TRSTEP algorithm [1]_. It is an active-set
+    variation of the truncated conjugate gradient method, which maintains the QR
+    factorization of the matrix whose columns are the gradients of the active
+    constraints. The linear equality constraints are then handled by considering
+    them as always active.
 
     References
     ----------
-    .. [Powe15] M. J. D. Powell. "On fast trust region methods for quadratic
-       models with linear constraints." In: Math. Program. Comput. 7 (2015), pp.
+    .. [1] M. J. D. Powell. "On fast trust region methods for quadratic models
+       with linear constraints." In: Math. Program. Comput. 7 (2015), pp.
        237--267.
     """
     xopt = np.atleast_1d(xopt)

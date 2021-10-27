@@ -269,9 +269,9 @@ right-hand sides, <span class="math notranslate nohighlight">\(\Delta &gt; 0\)</
 <h2>The unconstrained case<a class="headerlink" href="#the-unconstrained-case" title="Permalink to this headline">¶</a></h2>
 <p>As mentioned in the section <a class="reference internal" href="linalg.bvtcg.html#tcg-base"><span class="std std-ref">The unconstrained case</span></a> of the description of the <a class="reference internal" href="../refs/generated/cobyqa.linalg.bvtcg.html#cobyqa.linalg.bvtcg" title="cobyqa.linalg.bvtcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bvtcg</span></code></a>
 method, it is usual to solve inexactly problem <a class="reference internal" href="#equation-lctcg">(1)</a> using a truncated
-conjugate gradient method of Steihaug <a class="reference internal" href="#stei83" id="id1"><span>[Stei83]</span></a> and Toint <a class="reference internal" href="#toin81" id="id2"><span>[Toin81]</span></a> in the
-unconstrained case. Given the initial values <span class="math notranslate nohighlight">\(x^0 = 0\)</span> and
-<span class="math notranslate nohighlight">\(d^0 = -g\)</span>, it generates the sequence of iterates</p>
+conjugate gradient method of Steihaug <span id="id1">[<a class="reference internal" href="#cite-1-lctcg-steihaug-1983" title="T. Steihaug. The conjugate gradient method and trust regions in large scale optimization. IMA J. Numer. Anal., 20:626–637, 1983.">L3</a>]</span> and Toint
+<span id="id2">[<a class="reference internal" href="#cite-1-lctcg-toint-1981" title="Ph. L. Toint. Towards an efficient sparsity exploiting Newton method for minimization. In I. S. Duff, editor, Sparse Matrices and Their Uses, pages 57–88. Academic Press, London, UK, 1981.">L4</a>]</span> in the unconstrained case. Given the initial values
+<span class="math notranslate nohighlight">\(x^0 = 0\)</span> and <span class="math notranslate nohighlight">\(d^0 = -g\)</span>, it generates the sequence of iterates</p>
 <div class="math notranslate nohighlight">
 \[\begin{split}\left\{
 \begin{array}{l}
@@ -296,11 +296,12 @@ which case <span class="math notranslate nohighlight">\(x^k + \alpha_{\Delta} d^
 <h2>The constrained case<a class="headerlink" href="#the-constrained-case" title="Permalink to this headline">¶</a></h2>
 <p>When linear and/or nonlinear constraints are provided, COBYQA solves its
 trust-region tangential subproblems using a modified TRSTEP algorithm
-<a class="reference internal" href="#powe15" id="id3"><span>[Powe15]</span></a>. It is an active-set variation of the truncated conjugate gradient
-algorithm, which maintains the QR factorization of the matrix whose columns are
-the gradients of the active constraints. As for <a class="reference internal" href="../refs/generated/cobyqa.linalg.bvtcg.html#cobyqa.linalg.bvtcg" title="cobyqa.linalg.bvtcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bvtcg</span></code></a>, if a new constraint is
-added to the active set, the procedure is restarted. However, we allow
-constraints to be removed from the active set in this method.</p>
+<span id="id3">[<a class="reference internal" href="#cite-1-lctcg-powell-2015" title="M. J. D. Powell. On fast trust region methods for quadratic models with linear constraints. Math. Program. Comput., 7:237–267, 2015.">L2</a>]</span>. It is an active-set variation of the truncated
+conjugate gradient algorithm, which maintains the QR factorization of the
+matrix whose columns are the gradients of the active constraints. As for
+<a class="reference internal" href="../refs/generated/cobyqa.linalg.bvtcg.html#cobyqa.linalg.bvtcg" title="cobyqa.linalg.bvtcg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bvtcg</span></code></a>, if a new constraint is added to the active set, the procedure is
+restarted. However, we allow constraints to be removed from the active set in
+this method.</p>
 <section id="management-of-the-active-set">
 <h3>Management of the active set<a class="headerlink" href="#management-of-the-active-set" title="Permalink to this headline">¶</a></h3>
 <p>For convenience, we denote
@@ -334,28 +335,23 @@ will be further from this constraint than the initial guess. Therefore, the
 active set <span class="math notranslate nohighlight">\(\mathcal{I}\)</span> is chosen to be
 <span class="math notranslate nohighlight">\(\set{j \in \mathcal{J}(x^0) : \inner{a_j, d^0} = 0}\)</span> (or a subset of it,
 chosen so that <span class="math notranslate nohighlight">\(\set{a_j : j \in \mathcal{I}}\)</span> is a basis of
-<span class="math notranslate nohighlight">\(\vspan \set{a_j : j \in \mathcal{J}(x^0), ~ \inner{a_j, d^0} = 0}\)</span>.</p>
-<p>The solution of such a problem is calculated using the Goldfarb and Idnani
-method for quadratic programming <a class="reference internal" href="#goid83" id="id4"><span>[GoId83]</span></a>.</p>
-<p class="rubric">References</p>
+<span class="math notranslate nohighlight">\(\vspan \set{a_j : j \in \mathcal{J}(x^0), ~ \inner{a_j, d^0} = 0}\)</span>.
+bibtex spohinx
+The solution of such a problem is calculated using the Goldfarb and Idnani
+method for quadratic programming <span id="id4">[<a class="reference internal" href="#cite-1-lctcg-goldfarb-idnani-1983" title="D. Goldfarb and A. Idnani. A numerically stable dual method for solving strictly convex quadratic programs. Math. Program., 27:1–33, 1983.">L1</a>]</span>.</p>
+<p class="rubric" id="bibliography-1">References</p>
 <dl class="citation">
-<dt class="label" id="goid83"><span class="brackets"><a class="fn-backref" href="#id4">GoId83</a></span></dt>
-<dd><p>D. Goldfarb and A. Idnani. “A numerically stable dual method for
-solving strictly convex quadratic programs.” In: Math. Program. 27 (1983),
-pp. 1–33.</p>
+<dt class="label" id="cite-1-lctcg-goldfarb-idnani-1983"><span class="brackets">L1</span></dt>
+<dd><p>D. Goldfarb and A. Idnani. A numerically stable dual method for solving strictly convex quadratic programs. <em>Math. Program.</em>, 27:1–33, 1983.</p>
 </dd>
-<dt class="label" id="powe15"><span class="brackets"><a class="fn-backref" href="#id3">Powe15</a></span></dt>
-<dd><p>M. J. D. Powell. “On fast trust region methods for quadratic models
-with linear constraints.” In: Math. Program. Comput. 7 (2015), pp. 237–267.</p>
+<dt class="label" id="cite-1-lctcg-powell-2015"><span class="brackets">L2</span></dt>
+<dd><p>M. J. D. Powell. On fast trust region methods for quadratic models with linear constraints. <em>Math. Program. Comput.</em>, 7:237–267, 2015.</p>
 </dd>
-<dt class="label" id="stei83"><span class="brackets"><a class="fn-backref" href="#id1">Stei83</a></span></dt>
-<dd><p>T. Steihaug. “The conjugate gradient method and trust regions in
-large scale optimization.” In: IMA J. Numer. Anal. 20 (1983), pp. 626–637.</p>
+<dt class="label" id="cite-1-lctcg-steihaug-1983"><span class="brackets">L3</span></dt>
+<dd><p>T. Steihaug. The conjugate gradient method and trust regions in large scale optimization. <em>IMA J. Numer. Anal.</em>, 20:626–637, 1983.</p>
 </dd>
-<dt class="label" id="toin81"><span class="brackets"><a class="fn-backref" href="#id2">Toin81</a></span></dt>
-<dd><p>Ph. L. Toint. “Towards an efficient sparsity exploiting Newton
-method for minimization.” In: Sparse Matrices and Their Uses. Ed. by I. S.
-Duff. London, UK: Academic Press, 1981, pp. 57–88.</p>
+<dt class="label" id="cite-1-lctcg-toint-1981"><span class="brackets">L4</span></dt>
+<dd><p>Ph. L. Toint. Towards an efficient sparsity exploiting Newton method for minimization. In I. S. Duff, editor, <em>Sparse Matrices and Their Uses</em>, pages 57–88. Academic Press, London, UK, 1981.</p>
 </dd>
 </dl>
 </section>
@@ -402,7 +398,7 @@ Duff. London, UK: Academic Press, 1981, pp. 57–88.</p>
     
     <div class="footer-item">
       <p class="last-updated">
-Last updated on October 26, 2021.<br>
+Last updated on October 27, 2021.<br>
 </p>
     </div>
     

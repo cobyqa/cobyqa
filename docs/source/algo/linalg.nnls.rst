@@ -29,8 +29,8 @@ Description of the method
 -------------------------
 
 In order to solve problem :eq:`nnls` when :math:`n_0 \ge 1`, we construct an
-active-set method based on Algorithm 23.10 of [LaHa74]_, referred to as `nnls`.
-The framework of the method is described below.
+active-set method based on Algorithm 23.10 of :cite:`nnls-Lawson_Hanson_1974`,
+referred to as `nnls`. The framework of the method is described below.
 
 #. Set the active set :math:`\mathcal{I}^0` initially to
    :math:`\set{1, 2, \dots, n_0}`, the initial guess :math:`x^0` to the
@@ -83,7 +83,7 @@ only narrows the active set. Since the termination criteria of the outer loop
 are the KKT conditions for problem :eq:`nnls`, it is clear that the termination
 of the algorithm implies its convergence. In order to prove the termination of
 the algorithm, we necessitate the following result whose proof is established
-in Lemma 23.17 of [LaHa74]_.
+in Lemma 23.17 of :cite:`nnls-Lawson_Hanson_1974`.
 
     **Lemma 1.** Assume that a matrix :math:`A \in \R^{m \times n}` is a full
     column rank matrix (with :math:`n \le m`) and that a vector
@@ -159,7 +159,6 @@ at the end of each inner loop, we have
 since :math:`\alpha_k \in (0, 1)`. The termination of the outer loop is then
 proven, as well as the convergence of the method.
 
-.. rubric:: References
-
-.. [LaHa74] C. L. Lawson and R. J. Hanson. Solving Least Squares Problems.
-   Classics Appl. Math. Philadelphia, PA, US: SIAM, 1974.
+.. bibliography::
+    :labelprefix: N
+    :keyprefix: nnls-

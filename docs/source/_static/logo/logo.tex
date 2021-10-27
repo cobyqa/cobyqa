@@ -1,0 +1,60 @@
+\documentclass[
+    tikz,
+    margin=.5cm,
+    convert={
+        outext=.svg,
+        command=\unexpanded{pdf2svg \infile\space\outfile},
+    },
+    multi=false
+]{standalone}
+
+\usepackage{fontspec}
+\setmainfont[
+   Extension=.ttf,
+   Path={fonts/},
+]{Oswald-Regular}
+
+\usepackage{xcolor}
+\definecolor{BlueLagoon}{HTML}{075471}
+\definecolor{GoldenTainoi}{HTML}{FFC045}
+
+\usepackage{ifthen}
+\newboolean{favicon}
+\setboolean{favicon}{false}
+
+\begin{document}
+
+\begin{tikzpicture}
+    \fill[BlueLagoon] (-5,0) circle (1.5);
+    \ifthenelse{\boolean{favicon}}{}{
+        \fill[BlueLagoon] (-3,0) circle (1.5);
+        \fill[BlueLagoon] (-1,0) circle (1.5);
+        \fill[BlueLagoon] (1,0) circle (1.5);
+        \fill[BlueLagoon] (3,0) circle (1.5);
+        \fill[BlueLagoon] (5,0) circle (1.5);
+    }
+    \draw[dashed,GoldenTainoi,line width=0.03cm] (-5,0) circle (1.35);
+    \ifthenelse{\boolean{favicon}}{}{
+        \draw[dashed,GoldenTainoi,line width=0.03cm] (-3,0) circle (1.35);
+        \draw[dashed,GoldenTainoi,line width=0.03cm] (-1,0) circle (1.35);
+        \draw[dashed,GoldenTainoi,line width=0.03cm] (1,0) circle (1.35);
+        \draw[dashed,GoldenTainoi,line width=0.03cm] (3,0) circle (1.35);
+        \draw[dashed,GoldenTainoi,line width=0.03cm] (5,0) circle (1.35);
+        \fill[BlueLagoon] (-5,0) circle (1.335);
+        \fill[BlueLagoon] (-3,0) circle (1.335);
+        \fill[BlueLagoon] (-1,0) circle (1.335);
+        \fill[BlueLagoon] (1,0) circle (1.335);
+        \fill[BlueLagoon] (3,0) circle (1.335);
+        \fill[BlueLagoon] (5,0) circle (1.335);
+    }
+    \node at (-5,0) {\scalebox{6}{\textcolor{white}{C}}};
+    \ifthenelse{\boolean{favicon}}{}{
+        \node at (-3,0) {\scalebox{6}{\textcolor{white}{O}}};
+        \node at (-1,0) {\scalebox{6}{\textcolor{white}{B}}};
+        \node at (1,0) {\scalebox{6}{\textcolor{white}{Y}}};
+        \node at (3,-0.16) {\scalebox{6}{\textcolor{white}{Q}}};
+        \node at (5,0) {\scalebox{6}{\textcolor{white}{A}}};
+    }
+\end{tikzpicture}
+
+\end{document}

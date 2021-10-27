@@ -12,3 +12,7 @@ Optimization framework (`cobyqa`)
 
 Statement of the problem
 ========================
+
+.. bibliography::
+    :labelprefix: O
+    :keyprefix: opti-

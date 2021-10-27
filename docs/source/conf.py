@@ -39,6 +39,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.linkcode',
     'sphinx.ext.mathjax',
+    'sphinxcontrib.bibtex',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -79,7 +80,7 @@ html_theme_options = {
 
 html_title = f'{project} v{version} Manual'
 
-html_logo = '_static/logo.svg'
+html_logo = '_static/cobyqa.svg'
 
 html_favicon = '_static/favicon/favicon.ico'
 
@@ -148,13 +149,38 @@ latex_elements = {
     ''',
 }
 
-# Image to place at the top of the title page.
-# latex_logo = '_static/logo.pdf'
-
 
 # -- Numpy’s Sphinx extensions ------------------------------------------------
 
 numpydoc_use_plots = True
+
+
+# -- Bibliography files and encoding ------------------------------------------
+
+bibtex_bibfiles = [
+    '_static/cobyqa-strings.bib',
+    '_static/cobyqa-refs.bib',
+]
+
+bibtex_encoding = 'latin'
+
+bibtex_default_style = 'plain'
+
+bibtex_cite_id = 'cite-{bibliography_count}-{key}'
+
+bibtex_footcite_id = 'footcite-{key}'
+
+bibtex_bibliography_id = 'bibliography-{bibliography_count}'
+
+bibtex_footbibliography_id = 'footbibliography-{footbibliography_count}'
+
+bibtex_bibliography_header = '''
+.. only:: html or text
+
+    .. rubric:: References
+'''
+
+bibtex_footbibliography_header = bibtex_bibliography_header
 
 
 # -- Generate autodoc summaries -----------------------------------------------

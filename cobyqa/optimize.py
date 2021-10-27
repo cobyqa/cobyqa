@@ -1996,15 +1996,14 @@ class TrustRegion:
         Notes
         -----
         The thresholds at which the penalty coefficients are set are empirical
-        and based on Equation (13) of [Powe94]_.
+        and based on Equation (13) of [1]_.
 
         References
         ----------
-        .. [Powe94] M. J. D. Powell. "A direct search optimization method that
-           models the objective and constraint functions by linear
-           interpolation." In: Advances in Optimization and Numerical Analysis.
-           Ed. by S. Gomez and J. P. Hennart. Dordrecht, NL: Springer, 1994, pp.
-           51--67.
+        .. [1] M. J. D. Powell. "A direct search optimization method that models
+           the objective and constraint functions by linear interpolation." In:
+           Advances in Optimization and Numerical Analysis. Ed. by S. Gomez and
+           J. P. Hennart. Dordrecht, NL: Springer, 1994, pp. 51--67.
         """
         tiny = np.finfo(float).tiny
         fmin = np.min(self.fval)
@@ -2078,11 +2077,11 @@ class TrustRegion:
         -----
         The trust-region constraint of the tangential subproblem is not centered
         if the normal step is nonzero. To cope with this difficulty, we use the
-        result presented in Equation (15.4.3) of [CoGT09]_.
+        result presented in Equation (15.4.3) of [1]_.
 
         References
         ----------
-        .. [CoGT09] A. R. Conn, N. I. M. Gould, and Ph. L. Toint. Trust-Region
+        .. [1] A. R. Conn, N. I. M. Gould, and Ph. L. Toint. Trust-Region
            Methods. MPS-SIAM Ser. Optim. Philadelphia, PA, US: SIAM, 2009.
         """
         eps = np.finfo(float).eps
@@ -2180,13 +2179,13 @@ class TrustRegion:
             2. The second alternative is a constrained Cauchy step.
 
         Among the two alternative steps, the method selects the one that leads
-        to the greatest denominator in Equation (2.12) of [Powe04]_.
+        to the greatest denominator in Equation (2.12) of [1]_.
 
         References
         ----------
-        .. [Powe04] M. J. D. Powell. "On updating the inverse of a KKT matrix."
-           In: Numerical Linear Algebra and Optimization. Ed. by Y. Yuan.
-           Beijing, CN: Science Press, 2004, pp. 56--78.
+        .. [1] M. J. D. Powell. "On updating the inverse of a KKT matrix." In:
+           Numerical Linear Algebra and Optimization. Ed. by Y. Yuan. Beijing,
+           CN: Science Press, 2004, pp. 56--78.
         """
         return self._models.improve_geometry(self.knew, delta, **kwargs)
 
@@ -2266,14 +2265,13 @@ class Models:
     -----
     Given the interpolation set, the freedom bequeathed by the interpolation
     conditions is taken up by minimizing the updates of the Hessian matrices of
-    the objective and nonlinear constraint functions in Frobenius norm
-    [Powe04]_.
+    the objective and nonlinear constraint functions in Frobenius norm [1]_.
 
     References
     ----------
-    .. [Powe04] M. J. D. Powell. "Least Frobenius norm updating of quadratic
-       models that satisfy interpolation conditions." In: Math. Program. 100
-       (2004), pp. 183--215.
+    .. [1] M. J. D. Powell. "Least Frobenius norm updating of quadratic models
+       that satisfy interpolation conditions." In: Math. Program. 100 (2004),
+       pp. 183--215.
     """
 
     def __init__(self, fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options,
@@ -3863,14 +3861,14 @@ class Models:
         -----
         When the index `knew` of the interpolation point to be removed is not
         provided, it is chosen by the method to maximize the product absolute
-        value of the denominator in Equation (2.12) of [Powe04]_ with the
-        quartic power of the distance between the point and `xopt`.
+        value of the denominator in Equation (2.12) of [1]_ with the quartic
+        power of the distance between the point and `xopt`.
 
         References
         ----------
-        .. [Powe04] M. J. D. Powell. "On updating the inverse of a KKT matrix."
-           In: Numerical Linear Algebra and Optimization. Ed. by Y. Yuan.
-           Beijing, CN: Science Press, 2004, pp. 56--78.
+        .. [1] M. J. D. Powell. "On updating the inverse of a KKT matrix." In:
+           Numerical Linear Algebra and Optimization. Ed. by Y. Yuan. Beijing,
+           CN: Science Press, 2004, pp. 56--78.
         """
         npt, n = self.xpt.shape
         tiny = np.finfo(float).tiny
@@ -4181,14 +4179,14 @@ class Models:
         Notes
         -----
         The point to remove is chosen to maximize the product absolute value of
-        the denominator in Equation (2.12) of [Powe04]_ with the quartic power
-        of the distance between the point and `xopt`.
+        the denominator in Equation (2.12) of [1]_ with the quartic power of the
+        distance between the point and `xopt`.
 
         References
         ----------
-        .. [Powe04] M. J. D. Powell. "On updating the inverse of a KKT matrix."
-           In: Numerical Linear Algebra and Optimization. Ed. by Y. Yuan.
-           Beijing, CN: Science Press, 2004, pp. 56--78.
+        .. [1] M. J. D. Powell. "On updating the inverse of a KKT matrix." In:
+           Numerical Linear Algebra and Optimization. Ed. by Y. Yuan. Beijing,
+           CN: Science Press, 2004, pp. 56--78.
         """
         npt = self.xpt.shape[0]
         zsq = self.zmat ** 2.
@@ -4251,15 +4249,14 @@ class Quadratic:
     To improve the computational efficiency of the updates of the quadratic
     functions, the Hessian matrices of a quadratic functions are stored as
     explicit and implicit parts, which define the model relatively to the
-    coordinates of the interpolation points [Powe06]_. Initially, the explicit
-    part of an Hessian matrix is zero and so, is not explicitly stored.
+    coordinates of the interpolation points [1]_. Initially, the explicit part
+    of an Hessian matrix is zero and so, is not explicitly stored.
 
     References
     ----------
-    .. [Powe06] M. J. D. Powell. "The NEWUOA software for unconstrained
-       optimization without derivatives." In: Large-Scale Nonlinear
-       Optimization. Ed. by G. Di Pillo and M. Roma. New York, NY, US: Springer,
-       2006, pp. 255--297.
+    .. [1] M. J. D. Powell. "The NEWUOA software for unconstrained optimization
+       without derivatives." In: Large-Scale Nonlinear Optimization. Ed. by G.
+       Di Pillo and M. Roma. New York, NY, US: Springer, 2006, pp. 255--297.
     """
 
     def __init__(self, bmat, zmat, idz, fval):

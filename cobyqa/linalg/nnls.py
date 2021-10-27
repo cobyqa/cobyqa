@@ -42,11 +42,11 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
 
     Notes
     -----
-    The method is adapted from the NNLS algorithm [LaHa74]_.
+    The method is adapted from the NNLS algorithm [1]_.
 
     References
     ----------
-    .. [LaHa74] C. L. Lawson and R. J. Hanson. Solving Least Squares Problems.
+    .. [1] C. L. Lawson and R. J. Hanson. Solving Least Squares Problems.
        Classics Appl. Math. Philadelphia, PA, US: SIAM, 1974.
     """
     A = np.atleast_2d(A)

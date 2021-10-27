@@ -220,11 +220,11 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
     Notes
     -----
     The selected direction is calculated using the Goldfarb and Idnani algorithm
-    for quadratic programming [GoId83]_.
+    for quadratic programming [1]_.
 
     References
     ----------
-    .. [GoId83] D. Goldfarb and A. Idnani. "A numerically stable dual method for
+    .. [1] D. Goldfarb and A. Idnani. "A numerically stable dual method for
        solving strictly convex quadratic programs." In: Math. Program. 27
        (1983), pp. 1--33.
     """

@@ -98,7 +98,7 @@
     
 
 \title{COBYQA User Guide}
-\date{October 26, 2021}
+\date{October 27, 2021}
 \release{1.0.dev0}
 \author{Tom M. Ragonneau}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -120,7 +120,7 @@
 
 \item[{Date}] \leavevmode
 \sphinxAtStartPar
-October 26, 2021
+October 27, 2021
 
 \end{description}\end{quote}
 
@@ -3006,11 +3006,11 @@ The second alternative is a constrained Cauchy step.
 
 \sphinxAtStartPar
 Among the two alternative steps, the method selects the one that leads
-to the greatest denominator in Equation (2.12) of \sphinxcite{refs/generated/cobyqa.optimize.TrustRegion.model_step:r91f0d0960ad4-powe04}.
+to the greatest denominator in Equation (2.12) of \sphinxcite{refs/generated/cobyqa.optimize.TrustRegion.model_step:r91f0d0960ad4-1}.
 \subsubsection*{References}
 
 \sphinxAtStartPar
-\sphinxcite{refs/generated/cobyqa.optimize.TrustRegion.model_step:r91f0d0960ad4-powe04}
+\sphinxcite{refs/generated/cobyqa.optimize.TrustRegion.model_step:r91f0d0960ad4-1}
 
 \end{fulllineitems}
 
@@ -3075,11 +3075,11 @@ Reduce the penalty coefficients if possible, to prevent overflows.
 
 \sphinxAtStartPar
 The thresholds at which the penalty coefficients are set are empirical
-and based on Equation (13) of \sphinxcite{refs/generated/cobyqa.optimize.TrustRegion.reduce_penalty_coefficients:r8e0aa6026fda-powe94}.
+and based on Equation (13) of \sphinxcite{refs/generated/cobyqa.optimize.TrustRegion.reduce_penalty_coefficients:r8e0aa6026fda-1}.
 \subsubsection*{References}
 
 \sphinxAtStartPar
-\sphinxcite{refs/generated/cobyqa.optimize.TrustRegion.reduce_penalty_coefficients:r8e0aa6026fda-powe94}
+\sphinxcite{refs/generated/cobyqa.optimize.TrustRegion.reduce_penalty_coefficients:r8e0aa6026fda-1}
 
 \end{fulllineitems}
 
@@ -3206,11 +3206,11 @@ values of \sphinxcode{\sphinxupquote{bub}} evolve to include the shift of the or
 \sphinxAtStartPar
 The trust\sphinxhyphen{}region constraint of the tangential subproblem is not centered
 if the normal step is nonzero. To cope with this difficulty, we use the
-result presented in Equation (15.4.3) of \sphinxcite{refs/generated/cobyqa.optimize.TrustRegion.trust_region_step:ra296b548e366-cogt09}.
+result presented in Equation (15.4.3) of \sphinxcite{refs/generated/cobyqa.optimize.TrustRegion.trust_region_step:ra296b548e366-1}.
 \subsubsection*{References}
 
 \sphinxAtStartPar
-\sphinxcite{refs/generated/cobyqa.optimize.TrustRegion.trust_region_step:ra296b548e366-cogt09}
+\sphinxcite{refs/generated/cobyqa.optimize.TrustRegion.trust_region_step:ra296b548e366-1}
 
 \end{fulllineitems}
 
@@ -3388,12 +3388,11 @@ always satisfy the bound constraints.
 \sphinxAtStartPar
 Given the interpolation set, the freedom bequeathed by the interpolation
 conditions is taken up by minimizing the updates of the Hessian matrices of
-the objective and nonlinear constraint functions in Frobenius norm
-\sphinxcite{refs/generated/cobyqa.optimize.Models:ra9ae06802801-powe04}.
+the objective and nonlinear constraint functions in Frobenius norm \sphinxcite{refs/generated/cobyqa.optimize.Models:ra9ae06802801-1}.
 \subsubsection*{References}
 
 \sphinxAtStartPar
-\sphinxcite{refs/generated/cobyqa.optimize.Models:ra9ae06802801-powe04}
+\sphinxcite{refs/generated/cobyqa.optimize.Models:ra9ae06802801-1}
 \begin{quote}\begin{description}
 \item[{Attributes}] \leavevmode\begin{description}
 \item[{\sphinxcode{\sphinxupquote{aeq}}}] \leavevmode
@@ -5695,12 +5694,12 @@ The denominator of the updating formula is zero.
 \sphinxAtStartPar
 When the index \sphinxstyleemphasis{knew} of the interpolation point to be removed is not
 provided, it is chosen by the method to maximize the product absolute
-value of the denominator in Equation (2.12) of \sphinxcite{refs/generated/cobyqa.optimize.Models.update:rfdf445c32e0f-powe04} with the
-quartic power of the distance between the point and \sphinxcode{\sphinxupquote{xopt}}.
+value of the denominator in Equation (2.12) of \sphinxcite{refs/generated/cobyqa.optimize.Models.update:rfdf445c32e0f-1} with the quartic
+power of the distance between the point and \sphinxcode{\sphinxupquote{xopt}}.
 \subsubsection*{References}
 
 \sphinxAtStartPar
-\sphinxcite{refs/generated/cobyqa.optimize.Models.update:rfdf445c32e0f-powe04}
+\sphinxcite{refs/generated/cobyqa.optimize.Models.update:rfdf445c32e0f-1}
 
 \end{fulllineitems}
 
@@ -5722,12 +5721,12 @@ Representation of a quadratic multivariate function.
 To improve the computational efficiency of the updates of the quadratic
 functions, the Hessian matrices of a quadratic functions are stored as
 explicit and implicit parts, which define the model relatively to the
-coordinates of the interpolation points \sphinxcite{refs/generated/cobyqa.optimize.Quadratic:r121380ef860e-powe06}. Initially, the explicit
-part of an Hessian matrix is zero and so, is not explicitly stored.
+coordinates of the interpolation points \sphinxcite{refs/generated/cobyqa.optimize.Quadratic:r121380ef860e-1}. Initially, the explicit part
+of an Hessian matrix is zero and so, is not explicitly stored.
 \subsubsection*{References}
 
 \sphinxAtStartPar
-\sphinxcite{refs/generated/cobyqa.optimize.Quadratic:r121380ef860e-powe06}
+\sphinxcite{refs/generated/cobyqa.optimize.Quadratic:r121380ef860e-1}
 \begin{quote}\begin{description}
 \item[{Attributes}] \leavevmode\begin{description}
 \item[{\sphinxcode{\sphinxupquote{gq}}}] \leavevmode
@@ -6408,12 +6407,12 @@ Bounded variable absolute Lagrange polynomial maximization
 \subsubsection*{Notes}
 
 \sphinxAtStartPar
-The method is adapted from the ALTMOV algorithm \sphinxcite{refs/generated/cobyqa.linalg.bvcs:r2db323da3536-powe09}, and the vector
+The method is adapted from the ALTMOV algorithm \sphinxcite{refs/generated/cobyqa.linalg.bvcs:r2db323da3536-1}, and the vector
 \sphinxcode{\sphinxupquote{xpt{[}kopt, :{]}}} must be feasible.
 \subsubsection*{References}
 
 \sphinxAtStartPar
-\sphinxcite{refs/generated/cobyqa.linalg.bvcs:r2db323da3536-powe09}
+\sphinxcite{refs/generated/cobyqa.linalg.bvcs:r2db323da3536-1}
 
 \end{fulllineitems}
 
@@ -6506,13 +6505,12 @@ Bounded variable Cauchy step
 \subsubsection*{Notes}
 
 \sphinxAtStartPar
-The denominator of the updating formula is given in Equation (3.9) of
-\sphinxcite{refs/generated/cobyqa.linalg.bvlag:rebe7aed9360b-powe09}, and the parameter \sphinxstyleemphasis{alpha} is the referred in Equation (4.12) of
-\sphinxcite{refs/generated/cobyqa.linalg.bvlag:rebe7aed9360b-powe06}.
+The denominator of the updating formula is given in Equation (3.9) of \sphinxcite{refs/generated/cobyqa.linalg.bvlag:rebe7aed9360b-2},
+and the parameter \sphinxstyleemphasis{alpha} is the referred in Equation (4.12) of \sphinxcite{refs/generated/cobyqa.linalg.bvlag:rebe7aed9360b-1}.
 \subsubsection*{References}
 
 \sphinxAtStartPar
-\sphinxcite{refs/generated/cobyqa.linalg.bvlag:rebe7aed9360b-powe06}, \sphinxcite{refs/generated/cobyqa.linalg.bvlag:rebe7aed9360b-powe09}
+\sphinxcite{refs/generated/cobyqa.linalg.bvlag:rebe7aed9360b-1}, \sphinxcite{refs/generated/cobyqa.linalg.bvlag:rebe7aed9360b-2}
 
 \end{fulllineitems}
 
@@ -6620,11 +6618,11 @@ Nonnegative least squares
 \subsubsection*{Notes}
 
 \sphinxAtStartPar
-The method is adapted from the TRSBOX algorithm \sphinxcite{refs/generated/cobyqa.linalg.bvtcg:r6fcb056338c2-powe09}.
+The method is adapted from the TRSBOX algorithm \sphinxcite{refs/generated/cobyqa.linalg.bvtcg:r6fcb056338c2-1}.
 \subsubsection*{References}
 
 \sphinxAtStartPar
-\sphinxcite{refs/generated/cobyqa.linalg.bvtcg:r6fcb056338c2-powe09}
+\sphinxcite{refs/generated/cobyqa.linalg.bvtcg:r6fcb056338c2-1}
 
 \end{fulllineitems}
 
@@ -6732,7 +6730,7 @@ Nonnegative least squares
 \subsubsection*{Notes}
 
 \sphinxAtStartPar
-The method is adapted from the TRSTEP algorithm \sphinxcite{refs/generated/cobyqa.linalg.cpqp:r5fb36fa06800-powe15}. To cope with the
+The method is adapted from the TRSTEP algorithm \sphinxcite{refs/generated/cobyqa.linalg.cpqp:r5fb36fa06800-1}. To cope with the
 convex piecewise quadratic objective function, the method minimizes
 \begin{equation*}
 \begin{split}\frac{1}{2} ( \| \mathtt{Aeq} \times x - \mathtt{beq} \|_2^2 +
@@ -6744,7 +6742,7 @@ lower bounded by zero and \(\mathtt{Aub} \times x - \mathtt{bub}\).
 \subsubsection*{References}
 
 \sphinxAtStartPar
-\sphinxcite{refs/generated/cobyqa.linalg.cpqp:r5fb36fa06800-powe15}
+\sphinxcite{refs/generated/cobyqa.linalg.cpqp:r5fb36fa06800-1}
 
 \end{fulllineitems}
 
@@ -6933,15 +6931,15 @@ Nonnegative least squares
 \subsubsection*{Notes}
 
 \sphinxAtStartPar
-The method is adapted from the TRSTEP algorithm \sphinxcite{refs/generated/cobyqa.linalg.lctcg:rc911f6dd4c28-powe15}. It is an
-active\sphinxhyphen{}set variation of the truncated conjugate gradient method, which
-maintains the QR factorization of the matrix whose columns are the gradients
-of the active constraints. The linear equality constraints are then handled
-by considering them as always active.
+The method is adapted from the TRSTEP algorithm \sphinxcite{refs/generated/cobyqa.linalg.lctcg:rc911f6dd4c28-1}. It is an active\sphinxhyphen{}set
+variation of the truncated conjugate gradient method, which maintains the QR
+factorization of the matrix whose columns are the gradients of the active
+constraints. The linear equality constraints are then handled by considering
+them as always active.
 \subsubsection*{References}
 
 \sphinxAtStartPar
-\sphinxcite{refs/generated/cobyqa.linalg.lctcg:rc911f6dd4c28-powe15}
+\sphinxcite{refs/generated/cobyqa.linalg.lctcg:rc911f6dd4c28-1}
 
 \end{fulllineitems}
 
@@ -7021,11 +7019,11 @@ Linear constrained truncated conjugate gradient
 \subsubsection*{Notes}
 
 \sphinxAtStartPar
-The method is adapted from the NNLS algorithm \sphinxcite{refs/generated/cobyqa.linalg.nnls:r345530570369-laha74}.
+The method is adapted from the NNLS algorithm \sphinxcite{refs/generated/cobyqa.linalg.nnls:r345530570369-1}.
 \subsubsection*{References}
 
 \sphinxAtStartPar
-\sphinxcite{refs/generated/cobyqa.linalg.nnls:r345530570369-laha74}
+\sphinxcite{refs/generated/cobyqa.linalg.nnls:r345530570369-1}
 
 \end{fulllineitems}
 
@@ -7245,74 +7243,71 @@ To report a bug, request a new feature, or make contributions
 \PYG{n}{OF} \PYG{n}{THIS} \PYG{n}{SOFTWARE}\PYG{p}{,} \PYG{n}{EVEN} \PYG{n}{IF} \PYG{n}{ADVISED} \PYG{n}{OF} \PYG{n}{THE} \PYG{n}{POSSIBILITY} \PYG{n}{OF} \PYG{n}{SUCH} \PYG{n}{DAMAGE}\PYG{o}{.}
 \end{sphinxVerbatim}
 
-\begin{sphinxthebibliography}{Powe04}
-\bibitem[Powe04]{refs/generated/cobyqa.optimize.TrustRegion.model_step:r91f0d0960ad4-powe04}
+\begin{sphinxthebibliography}{1}
+\bibitem[1]{refs/generated/cobyqa.optimize.TrustRegion.model_step:r91f0d0960ad4-1}
 \sphinxAtStartPar
-M. J. D. Powell. “On updating the inverse of a KKT matrix.”
-In: Numerical Linear Algebra and Optimization. Ed. by Y. Yuan.
-Beijing, CN: Science Press, 2004, pp. 56–78.
-\bibitem[Powe94]{refs/generated/cobyqa.optimize.TrustRegion.reduce_penalty_coefficients:r8e0aa6026fda-powe94}
+M. J. D. Powell. “On updating the inverse of a KKT matrix.” In:
+Numerical Linear Algebra and Optimization. Ed. by Y. Yuan. Beijing,
+CN: Science Press, 2004, pp. 56–78.
+\bibitem[1]{refs/generated/cobyqa.optimize.TrustRegion.reduce_penalty_coefficients:r8e0aa6026fda-1}
 \sphinxAtStartPar
-M. J. D. Powell. “A direct search optimization method that
-models the objective and constraint functions by linear
-interpolation.” In: Advances in Optimization and Numerical Analysis.
-Ed. by S. Gomez and J. P. Hennart. Dordrecht, NL: Springer, 1994, pp.
-51–67.
-\bibitem[CoGT09]{refs/generated/cobyqa.optimize.TrustRegion.trust_region_step:ra296b548e366-cogt09}
+M. J. D. Powell. “A direct search optimization method that models
+the objective and constraint functions by linear interpolation.” In:
+Advances in Optimization and Numerical Analysis. Ed. by S. Gomez and
+J. P. Hennart. Dordrecht, NL: Springer, 1994, pp. 51–67.
+\bibitem[1]{refs/generated/cobyqa.optimize.TrustRegion.trust_region_step:ra296b548e366-1}
 \sphinxAtStartPar
 A. R. Conn, N. I. M. Gould, and Ph. L. Toint. Trust\sphinxhyphen{}Region
 Methods. MPS\sphinxhyphen{}SIAM Ser. Optim. Philadelphia, PA, US: SIAM, 2009.
-\bibitem[Powe04]{refs/generated/cobyqa.optimize.Models:ra9ae06802801-powe04}
+\bibitem[1]{refs/generated/cobyqa.optimize.Models:ra9ae06802801-1}
 \sphinxAtStartPar
-M. J. D. Powell. “Least Frobenius norm updating of quadratic
-models that satisfy interpolation conditions.” In: Math. Program. 100
-(2004), pp. 183–215.
-\bibitem[Powe04]{refs/generated/cobyqa.optimize.Models.update:rfdf445c32e0f-powe04}
+M. J. D. Powell. “Least Frobenius norm updating of quadratic models
+that satisfy interpolation conditions.” In: Math. Program. 100 (2004),
+pp. 183–215.
+\bibitem[1]{refs/generated/cobyqa.optimize.Models.update:rfdf445c32e0f-1}
 \sphinxAtStartPar
-M. J. D. Powell. “On updating the inverse of a KKT matrix.”
-In: Numerical Linear Algebra and Optimization. Ed. by Y. Yuan.
-Beijing, CN: Science Press, 2004, pp. 56–78.
-\bibitem[Powe06]{refs/generated/cobyqa.optimize.Quadratic:r121380ef860e-powe06}
+M. J. D. Powell. “On updating the inverse of a KKT matrix.” In:
+Numerical Linear Algebra and Optimization. Ed. by Y. Yuan. Beijing,
+CN: Science Press, 2004, pp. 56–78.
+\bibitem[1]{refs/generated/cobyqa.optimize.Quadratic:r121380ef860e-1}
 \sphinxAtStartPar
-M. J. D. Powell. “The NEWUOA software for unconstrained
-optimization without derivatives.” In: Large\sphinxhyphen{}Scale Nonlinear
-Optimization. Ed. by G. Di Pillo and M. Roma. New York, NY, US: Springer,
-2006, pp. 255–297.
-\bibitem[Powe09]{refs/generated/cobyqa.linalg.bvcs:r2db323da3536-powe09}
-\sphinxAtStartPar
-M. J. D. Powell. The BOBYQA algorithm for bound constrained
-optimization without derivatives. Tech. rep. DAMTP 2009/NA06. Cambridge,
-UK: Department of Applied Mathematics and Theoretical Physics, University
-of Cambridge, 2009.
-\bibitem[Powe06]{refs/generated/cobyqa.linalg.bvlag:rebe7aed9360b-powe06}
-\sphinxAtStartPar
-M. J. D. Powell. “The NEWUOA software for unconstrained
-optimization without derivatives.” In: Large\sphinxhyphen{}Scale Nonlinear
-Optimization. Ed. by G. Di Pillo and M. Roma. New York, NY, US: Springer,
-2006, pp. 255\sphinxhyphen{}–297.
-\bibitem[Powe09]{refs/generated/cobyqa.linalg.bvlag:rebe7aed9360b-powe09}
+M. J. D. Powell. “The NEWUOA software for unconstrained optimization
+without derivatives.” In: Large\sphinxhyphen{}Scale Nonlinear Optimization. Ed. by G.
+Di Pillo and M. Roma. New York, NY, US: Springer, 2006, pp. 255–297.
+\bibitem[1]{refs/generated/cobyqa.linalg.bvcs:r2db323da3536-1}
 \sphinxAtStartPar
 M. J. D. Powell. The BOBYQA algorithm for bound constrained
 optimization without derivatives. Tech. rep. DAMTP 2009/NA06. Cambridge,
 UK: Department of Applied Mathematics and Theoretical Physics, University
 of Cambridge, 2009.
-\bibitem[Powe09]{refs/generated/cobyqa.linalg.bvtcg:r6fcb056338c2-powe09}
+\bibitem[1]{refs/generated/cobyqa.linalg.bvlag:rebe7aed9360b-1}
+\sphinxAtStartPar
+M. J. D. Powell. “The NEWUOA software for unconstrained optimization
+without derivatives.” In: Large\sphinxhyphen{}Scale Nonlinear Optimization. Ed. by G.
+Di Pillo and M. Roma. New York, NY, US: Springer, 2006, pp. 255\sphinxhyphen{}–297.
+\bibitem[2]{refs/generated/cobyqa.linalg.bvlag:rebe7aed9360b-2}
 \sphinxAtStartPar
 M. J. D. Powell. The BOBYQA algorithm for bound constrained
 optimization without derivatives. Tech. rep. DAMTP 2009/NA06. Cambridge,
 UK: Department of Applied Mathematics and Theoretical Physics, University
 of Cambridge, 2009.
-\bibitem[Powe15]{refs/generated/cobyqa.linalg.cpqp:r5fb36fa06800-powe15}
+\bibitem[1]{refs/generated/cobyqa.linalg.bvtcg:r6fcb056338c2-1}
 \sphinxAtStartPar
-M. J. D. Powell. “On fast trust region methods for quadratic
-models with linear constraints.” In: Math. Program. Comput. 7 (2015), pp.
+M. J. D. Powell. The BOBYQA algorithm for bound constrained
+optimization without derivatives. Tech. rep. DAMTP 2009/NA06. Cambridge,
+UK: Department of Applied Mathematics and Theoretical Physics, University
+of Cambridge, 2009.
+\bibitem[1]{refs/generated/cobyqa.linalg.cpqp:r5fb36fa06800-1}
+\sphinxAtStartPar
+M. J. D. Powell. “On fast trust region methods for quadratic models
+with linear constraints.” In: Math. Program. Comput. 7 (2015), pp.
 237–\sphinxhyphen{}267.
-\bibitem[Powe15]{refs/generated/cobyqa.linalg.lctcg:rc911f6dd4c28-powe15}
+\bibitem[1]{refs/generated/cobyqa.linalg.lctcg:rc911f6dd4c28-1}
 \sphinxAtStartPar
-M. J. D. Powell. “On fast trust region methods for quadratic
-models with linear constraints.” In: Math. Program. Comput. 7 (2015), pp.
+M. J. D. Powell. “On fast trust region methods for quadratic models
+with linear constraints.” In: Math. Program. Comput. 7 (2015), pp.
 237–267.
-\bibitem[LaHa74]{refs/generated/cobyqa.linalg.nnls:r345530570369-laha74}
+\bibitem[1]{refs/generated/cobyqa.linalg.nnls:r345530570369-1}
 \sphinxAtStartPar
 C. L. Lawson and R. J. Hanson. Solving Least Squares Problems.
 Classics Appl. Math. Philadelphia, PA, US: SIAM, 1974.

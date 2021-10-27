@@ -98,7 +98,7 @@
     
 
 \title{COBYQA Reference}
-\date{October 26, 2021}
+\date{October 27, 2021}
 \release{1.0.dev0}
 \author{Tom M. Ragonneau}
 \newcommand{\sphinxlogo}{\vbox{}}
@@ -116,7 +116,7 @@
 \begin{quote}\begin{description}
 \item[{Date}] \leavevmode
 \sphinxAtStartPar
-October 26, 2021
+October 27, 2021
 
 \end{description}\end{quote}
 
@@ -140,7 +140,7 @@ COBYQA to tackle nonlinear constrained problems.
 
 
 \section{Statement of the problem}
-\label{\detokenize{algo/optimize:statement-of-the-problem}}
+\label{\detokenize{algo/optimize:statement-of-the-problem}}\phantomsection\label{\detokenize{algo/optimize:bibliography-1}}
 
 \chapter{Linear algebra (\sphinxstyleliteralintitle{\sphinxupquote{cobyqa.linalg}})}
 \label{\detokenize{algo/linalg:linear-algebra-cobyqa-linalg}}\label{\detokenize{algo/linalg:linalg}}\label{\detokenize{algo/linalg::doc}}
@@ -197,8 +197,8 @@ trust\sphinxhyphen{}region radius, and \(\norm{\cdot}\) is the Euclidean norm.
 \sphinxAtStartPar
 We assume in this section that the lower and upper bounds in \eqref{equation:algo/linalg.bvtcg:bvtcg} are
 respectively set to \(-\infty\) and \(+\infty\). Powell showed in
-\sphinxcite{algo/linalg.bvtcg:powe75} that a trust\sphinxhyphen{}region method is convergent if the trust\sphinxhyphen{}region step
-\(x^{\ast} \in \R^n\) satisfies
+{[}\hyperlink{cite.algo/linalg.bvtcg:cite-1-bvtcg-powell-1975}{B1}{]} that a trust\sphinxhyphen{}region method is convergent if the
+trust\sphinxhyphen{}region step \(x^{\ast} \in \R^n\) satisfies
 \begin{equation*}
 \begin{split}f(x^0) - f(x^{\ast}) \ge \gamma \norm{g} \min \set{\Delta, \norm{g} / \norm{H}},\end{split}
 \end{equation*}
@@ -207,9 +207,10 @@ for some \(\gamma > 0\), where \(\norm{\cdot}\) is the Euclidean norm.
 It is easy to see that a Cauchy step satisfies such a condition
 (with \(\gamma = 1/2\)). Therefore, to preserve the computational
 efficiency of a trust\sphinxhyphen{}region method, it is usual to solve inexactly problem
-\eqref{equation:algo/linalg.bvtcg:bvtcg} using the truncated conjugate gradient method of Steihaug \sphinxcite{algo/linalg.lctcg:stei83}
-and Toint \sphinxcite{algo/linalg.lctcg:toin81}. Given the initial values \(x^0 = 0\) and
-\(d^0 = -g\), it generates the sequence of iterates
+\eqref{equation:algo/linalg.bvtcg:bvtcg} using the truncated conjugate gradient method of Steihaug
+{[}\hyperlink{cite.algo/linalg.bvtcg:cite-1-bvtcg-steihaug-1983}{B3}{]} and Toint {[}\hyperlink{cite.algo/linalg.bvtcg:cite-1-bvtcg-toint-1981}{B4}{]}. Given the
+initial values \(x^0 = 0\) and \(d^0 = -g\), it generates the sequence
+of iterates
 \begin{equation*}
 \begin{split}\left\{
 \begin{array}{l}
@@ -252,7 +253,7 @@ reduction obtained by the global minimizer.
 We assume in this section that at least some values of the lower and upper
 bounds in \eqref{equation:algo/linalg.bvtcg:bvtcg} are finite. When no linear nor nonlinear constraints are
 provided, COBYQA solves the trust\sphinxhyphen{}region subproblem using the TRSBOX algorithm
-\sphinxcite{algo/linalg.bvtcg:powe09}, which is presented below.
+{[}\hyperlink{cite.algo/linalg.bvtcg:cite-1-bvtcg-powell-2009}{B2}{]}, which is presented below.
 
 
 \subsubsection{The bound constrained truncated conjugate gradient procedure}
@@ -367,7 +368,6 @@ restarted. Since the active set is very reduced, this procedure terminates in
 at most \(n - \abs{\mathcal{I}}\), where \(\abs{\mathcal{I}}\) denotes
 the number of active bounds at the end of the constrained truncated conjugate
 gradient procedure.
-\subsubsection*{References}
 
 
 \section{Convex piecewise quadratic programming}
@@ -391,6 +391,7 @@ where \(A \in \R^{m_1 \times n}\), \(b \in \R^{m_1}\),
 (with \(l < u\)), \(\Delta > 0\) is the current trust\sphinxhyphen{}region radius,
 and \(\norm{\cdot}\) is the Euclidean norm.
 
+\phantomsection\label{\detokenize{algo/linalg.cpqp:bibliography-1}}
 
 \section{Linear constrained truncated conjugate gradient}
 \label{\detokenize{algo/linalg.lctcg:linear-constrained-truncated-conjugate-gradient}}\label{\detokenize{algo/linalg.lctcg:linalg-lctcg}}\label{\detokenize{algo/linalg.lctcg::doc}}
@@ -423,9 +424,9 @@ right\sphinxhyphen{}hand sides, \(\Delta > 0\) is the current trust\sphinxhyphen
 \sphinxAtStartPar
 As mentioned in the section {\hyperref[\detokenize{algo/linalg.bvtcg:tcg-base}]{\sphinxcrossref{\DUrole{std,std-ref}{The unconstrained case}}}} of the description of the \sphinxcode{\sphinxupquote{bvtcg}}
 method, it is usual to solve inexactly problem \eqref{equation:algo/linalg.lctcg:lctcg} using a truncated
-conjugate gradient method of Steihaug \sphinxcite{algo/linalg.lctcg:stei83} and Toint \sphinxcite{algo/linalg.lctcg:toin81} in the
-unconstrained case. Given the initial values \(x^0 = 0\) and
-\(d^0 = -g\), it generates the sequence of iterates
+conjugate gradient method of Steihaug {[}\hyperlink{cite.algo/linalg.lctcg:cite-1-lctcg-steihaug-1983}{L3}{]} and Toint
+{[}\hyperlink{cite.algo/linalg.lctcg:cite-1-lctcg-toint-1981}{L4}{]} in the unconstrained case. Given the initial values
+\(x^0 = 0\) and \(d^0 = -g\), it generates the sequence of iterates
 \begin{equation*}
 \begin{split}\left\{
 \begin{array}{l}
@@ -461,11 +462,12 @@ which case \(x^k + \alpha_{\Delta} d^k\) is returned, where
 \sphinxAtStartPar
 When linear and/or nonlinear constraints are provided, COBYQA solves its
 trust\sphinxhyphen{}region tangential subproblems using a modified TRSTEP algorithm
-\sphinxcite{algo/linalg.lctcg:powe15}. It is an active\sphinxhyphen{}set variation of the truncated conjugate gradient
-algorithm, which maintains the QR factorization of the matrix whose columns are
-the gradients of the active constraints. As for \sphinxcode{\sphinxupquote{bvtcg}}, if a new constraint is
-added to the active set, the procedure is restarted. However, we allow
-constraints to be removed from the active set in this method.
+{[}\hyperlink{cite.algo/linalg.lctcg:cite-1-lctcg-powell-2015}{L2}{]}. It is an active\sphinxhyphen{}set variation of the truncated
+conjugate gradient algorithm, which maintains the QR factorization of the
+matrix whose columns are the gradients of the active constraints. As for
+\sphinxcode{\sphinxupquote{bvtcg}}, if a new constraint is added to the active set, the procedure is
+restarted. However, we allow constraints to be removed from the active set in
+this method.
 
 
 \subsubsection{Management of the active set}
@@ -507,11 +509,9 @@ active set \(\mathcal{I}\) is chosen to be
 \(\set{j \in \mathcal{J}(x^0) : \inner{a_j, d^0} = 0}\) (or a subset of it,
 chosen so that \(\set{a_j : j \in \mathcal{I}}\) is a basis of
 \(\vspan \set{a_j : j \in \mathcal{J}(x^0), ~ \inner{a_j, d^0} = 0}\).
-
-\sphinxAtStartPar
+bibtex spohinx
 The solution of such a problem is calculated using the Goldfarb and Idnani
-method for quadratic programming \sphinxcite{algo/linalg.lctcg:goid83}.
-\subsubsection*{References}
+method for quadratic programming {[}\hyperlink{cite.algo/linalg.lctcg:cite-1-lctcg-goldfarb-idnani-1983}{L1}{]}.
 
 
 \section{Nonnegative least squares}
@@ -540,8 +540,8 @@ traditional methods (see, e.g., \sphinxhref{https://numpy.org/doc/stable/referen
 \label{\detokenize{algo/linalg.nnls:description-of-the-method}}
 \sphinxAtStartPar
 In order to solve problem \eqref{equation:algo/linalg.nnls:nnls} when \(n_0 \ge 1\), we construct an
-active\sphinxhyphen{}set method based on Algorithm 23.10 of \sphinxcite{algo/linalg.nnls:laha74}, referred to as \sphinxcode{\sphinxupquote{nnls}}.
-The framework of the method is described below.
+active\sphinxhyphen{}set method based on Algorithm 23.10 of {[}\hyperlink{cite.algo/linalg.nnls:cite-1-nnls-lawson-hanson-1974}{N1}{]},
+referred to as \sphinxcode{\sphinxupquote{nnls}}. The framework of the method is described below.
 \begin{enumerate}
 \sphinxsetlistlabels{\arabic}{enumi}{enumii}{}{.}%
 \item {} 
@@ -636,7 +636,7 @@ only narrows the active set. Since the termination criteria of the outer loop
 are the KKT conditions for problem \eqref{equation:algo/linalg.nnls:nnls}, it is clear that the termination
 of the algorithm implies its convergence. In order to prove the termination of
 the algorithm, we necessitate the following result whose proof is established
-in Lemma 23.17 of \sphinxcite{algo/linalg.nnls:laha74}.
+in Lemma 23.17 of {[}\hyperlink{cite.algo/linalg.nnls:cite-1-nnls-lawson-hanson-1974}{N1}{]}.
 \begin{quote}
 
 \sphinxAtStartPar
@@ -716,53 +716,6 @@ at the end of each inner loop, we have
 \sphinxAtStartPar
 since \(\alpha_k \in (0, 1)\). The termination of the outer loop is then
 proven, as well as the convergence of the method.
-\subsubsection*{References}
-
-\begin{sphinxthebibliography}{Powe75}
-\bibitem[Powe75]{algo/linalg.bvtcg:powe75}
-\sphinxAtStartPar
-M. J. D. Powell. “Convergence properties of a class of minimization
-algorithms.” In: Nonlinear Programming. Ed. by O. L. Mangasarian, R. R.
-Meyer, and S. M. Robinson. Vol. 2. London, UK: Academic Press, 1975, pp.
-1–27.
-\bibitem[Powe09]{algo/linalg.bvtcg:powe09}
-\sphinxAtStartPar
-M. J. D. Powell. The BOBYQA algorithm for bound constrained
-optimization without derivatives. Tech. rep. DAMTP 2009/NA06. Cambridge, UK:
-Department of Applied Mathematics and Theoretical Physics, University of
-Cambridge, 2009.
-\bibitem[Stei83]{algo/linalg.bvtcg:stei83}
-\sphinxAtStartPar
-T. Steihaug. “The conjugate gradient method and trust regions in
-large scale optimization.” In: IMA J. Numer. Anal. 20 (1983), pp. 626–637.
-\bibitem[Toin81]{algo/linalg.bvtcg:toin81}
-\sphinxAtStartPar
-Ph. L. Toint. “Towards an efficient sparsity exploiting Newton
-method for minimization.” In: Sparse Matrices and Their Uses. Ed. by I. S.
-Duff. London, UK: Academic Press, 1981, pp. 57–88.
-\bibitem[GoId83]{algo/linalg.lctcg:goid83}
-\sphinxAtStartPar
-D. Goldfarb and A. Idnani. “A numerically stable dual method for
-solving strictly convex quadratic programs.” In: Math. Program. 27 (1983),
-pp. 1–33.
-\bibitem[Powe15]{algo/linalg.lctcg:powe15}
-\sphinxAtStartPar
-M. J. D. Powell. “On fast trust region methods for quadratic models
-with linear constraints.” In: Math. Program. Comput. 7 (2015), pp. 237–267.
-\bibitem[Stei83]{algo/linalg.lctcg:stei83}
-\sphinxAtStartPar
-T. Steihaug. “The conjugate gradient method and trust regions in
-large scale optimization.” In: IMA J. Numer. Anal. 20 (1983), pp. 626–637.
-\bibitem[Toin81]{algo/linalg.lctcg:toin81}
-\sphinxAtStartPar
-Ph. L. Toint. “Towards an efficient sparsity exploiting Newton
-method for minimization.” In: Sparse Matrices and Their Uses. Ed. by I. S.
-Duff. London, UK: Academic Press, 1981, pp. 57–88.
-\bibitem[LaHa74]{algo/linalg.nnls:laha74}
-\sphinxAtStartPar
-C. L. Lawson and R. J. Hanson. Solving Least Squares Problems.
-Classics Appl. Math. Philadelphia, PA, US: SIAM, 1974.
-\end{sphinxthebibliography}
 
 
 

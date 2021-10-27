@@ -24,3 +24,7 @@ where :math:`A \in \R^{m_1 \times n}`, :math:`b \in \R^{m_1}`,
 :math:`u \in \R^n` are the lower and upper bounds of the problems
 (with :math:`l < u`), :math:`\Delta > 0` is the current trust-region radius,
 and :math:`\norm{\cdot}` is the Euclidean norm.
+
+.. bibliography::
+    :labelprefix: C
+    :keyprefix: cpqp-
