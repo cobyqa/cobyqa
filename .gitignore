@@ -58,9 +58,7 @@ cover/
 *.pot
 
 # Sphinx documentation
-docs/build/**/.doctrees/
-docs/build/**/doctrees/
-docs/build/**/make.bat
+docs/build/
 docs/source/**/generated/
 
 # PyBuilder
@@ -164,7 +162,6 @@ Temporary Items
 *.xdv
 *-converted-to.*
 *.pdf
-!docs/build/*.pdf
 
 ## Generated if empty string is given at "Please type another file name for output:"
 .pdf
