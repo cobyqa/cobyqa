@@ -2,7 +2,7 @@
 #
 
 # You can set these variables from the command line.
-SPHINXOPTS    ?=
+SPHINXOPTS    ?= -j auto
 SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = source
 BUILDDIR      = build
@@ -13,7 +13,7 @@ help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 clean:
-	-rm -rf build/*
+	find $(BUILDDIR) -mindepth 1 -name . -o -prune -exec rm -rf "{}" ";"
 	find . -name generated -type d -prune -exec rm -rf "{}" ";"
 
 # Catch-all target: route all unknown targets to Sphinx using the new
