@@ -108,9 +108,6 @@ htmlhelp_basename = 'cobyqa'
 # Paper size ('letter' or 'a4').
 latex_paper_size = 'a4'
 
-# Font size ('10pt', '11pt' or '12pt').
-# latex_font_size = '10pt'
-
 # Use XeLaTeX engine for better support of unicode characters
 latex_engine = 'xelatex'
 
@@ -118,7 +115,9 @@ latex_engine = 'xelatex'
 _authors = 'Tom M. Ragonneau'
 latex_documents = [
     ('algo/index', 'cobyqa-user.tex', 'COBYQA Reference', _authors, 'manual'),
-    ('refs/index', 'cobyqa-ref.tex', 'COBYQA User Guide', _authors, 'manual'),
+    # Read the Docs do not handle multiple PDF files.
+    # See https://github.com/readthedocs/readthedocs.org/issues/2045
+    # ('refs/index', 'cobyqa-ref.tex', 'COBYQA User Guide', _authors, 'manual'),
 ]
 
 latex_elements = {
