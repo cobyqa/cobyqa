@@ -54,6 +54,9 @@ default_role = 'autolink'
 # Whether parentheses are appended to function and method role text.
 add_function_parentheses = False
 
+# Suppress "WARNING: unknown mimetype for ..., ignoring"
+suppress_warnings = ['epub.unknown_project_files']
+
 
 # -- Options for HTML output --------------------------------------------------
 
