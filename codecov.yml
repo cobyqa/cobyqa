@@ -3,5 +3,8 @@ codecov:
   notify:
     wait_for_ci: false
 
+ignore:
+  - '**/setup.py'
+
 github_checks:
     annotations: false
