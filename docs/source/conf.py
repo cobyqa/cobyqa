@@ -114,9 +114,9 @@ latex_engine = 'xelatex'
 # Grouping the document tree into LaTeX files.
 _authors = 'Tom M. Ragonneau'
 latex_documents = [
-    ('algo/index', 'cobyqa-user.tex', 'COBYQA Reference', _authors, 'manual'),
-    # Read the Docs do not handle multiple PDF files.
+    # Read the Docs do not handle multiple PDF files yet.
     # See https://github.com/readthedocs/readthedocs.org/issues/2045
+    ('algo/index', 'cobyqa-user.tex', 'COBYQA Reference', _authors, 'manual'),
     # ('refs/index', 'cobyqa-ref.tex', 'COBYQA User Guide', _authors, 'manual'),
 ]
 
