@@ -1,7 +1,6 @@
 version: 2.1
 
 jobs:
-  # Build and test the solver using the supported versions of Python
   build-and-test:
     parameters:
       python:
