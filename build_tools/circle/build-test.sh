@@ -8,7 +8,7 @@ python -m venv venv
 source venv/bin/activate
 
 # Install the dependencies and build the solver
-python -m pip install --progress-bar=off numpy cython
+python -m pip install --progress-bar=off numpy
 python setup.py install
 
 # Install the dependencies and test the solver
