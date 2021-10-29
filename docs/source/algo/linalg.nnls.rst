@@ -20,8 +20,8 @@ solve is of the form
     \end{array}
 
 where :math:`A \in \R^{m \times n}`, :math:`b \in \R^m`, :math:`n_0` is a
-nonnegative integer with :math:`n_0 \le n`, and :math:`\norm{\cdot}` is the
-Euclidean norm. We observe that if :math:`n_0 = 0`, problem :eq:`nnls` is a
+nonnegative integer with :math:`n_0 \le n`, and :math:`\norm{\cdot}` denotes
+the Euclidean norm. We observe that if :math:`n_0 = 0`, problem :eq:`nnls` is a
 simple unconstrained least-squares problem, which can be solved using
 traditional methods (see, e.g., `numpy.linalg.lstsq`).
 

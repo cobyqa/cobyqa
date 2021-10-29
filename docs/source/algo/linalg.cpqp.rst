@@ -23,7 +23,7 @@ where :math:`A \in \R^{m_1 \times n}`, :math:`b \in \R^{m_1}`,
 :math:`C \in \R^{m_2 \times n}`, :math:`d \in \R^{m_2}`, :math:`l \in \R^n` and
 :math:`u \in \R^n` are the lower and upper bounds of the problems
 (with :math:`l < u`), :math:`\Delta > 0` is the current trust-region radius,
-and :math:`\norm{\cdot}` is the Euclidean norm.
+and :math:`\norm{\cdot}` denotes the Euclidean norm.
 
 .. bibliography::
     :labelprefix: C

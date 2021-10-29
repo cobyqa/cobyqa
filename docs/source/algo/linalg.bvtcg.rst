@@ -24,7 +24,7 @@ function at the origin, :math:`H \in \R^{n \times n}` is a symmetric matrix
 that approximates the Hessian matrix of the nonlinear objective function at the
 origin, :math:`l \in \R^n` and :math:`u \in \R^n` are the lower and upper
 bounds of the problems (with :math:`l < u`), :math:`\Delta > 0` is the current
-trust-region radius, and :math:`\norm{\cdot}` is the Euclidean norm.
+trust-region radius, and :math:`\norm{\cdot}` denotes the Euclidean norm.
 
 .. _tcg_base:
 
@@ -105,7 +105,7 @@ if :math:`i \notin \mathcal{I}`, and zero otherwise.
 #. Set :math:`x^0 = 0` and the active set :math:`\mathcal{I}` to the indices
    for which either :math:`l_i = 0` and :math:`g_i \ge 0` or :math:`u_i = 0`
    and :math:`g_i \le 0`.
-#. Set :math:`d^0 = -\Pi(g)`, :math:`g^0 = g`, and :math:`k = 0`.
+#. Set :math:`g^0 = \nabla f(x^0)`, :math:`d^0 = -\Pi(g^0)`, and :math:`k = 0`.
 #. Let :math:`\alpha_{\Delta, k}` be the largest number such that
    :math:`\norm{x^k + \alpha_{\Delta, k} d^k} = \Delta`.
 #. Let :math:`\alpha_{Q, k}` be :math:`-\inner{d^k, g^k} / \inner{d^k, Hd^k}`
@@ -113,15 +113,15 @@ if :math:`i \notin \mathcal{I}`, and zero otherwise.
 #. Let :math:`\alpha_{B, k}` be the largest number such that
    :math:`l \le x^k + \alpha_{B, k} d^k \le u` and
    :math:`\alpha_k = \min \set{\alpha_{\Delta, k}, \alpha_{Q, k}, \alpha_{B, k}}`.
-#. Update :math:`x^{k + 1} = x^k + \alpha_k d^k`,
-   :math:`g^{k + 1} = g^k + \alpha_k H d^k`, and
-   :math:`\beta_k = \norm{g^{k + 1}}^2 / \norm{g^k}^2`.
+#. Update :math:`x^{k + 1} = x^k + \alpha_k d^k` and
+   :math:`g^{k + 1} = g^k + \alpha_k H d^k`.
 #. If :math:`\alpha_k = \alpha_{\Delta, k}` or :math:`g^{k + 1} = 0`, stop the
    computations.
 #. If :math:`\alpha_k = \alpha_{B, k}`, add a new active coordinate to
    :math:`\mathcal{I}`, set :math:`x^0 = x^{k + 1}`, and go to step 2.
-#. Update :math:`d^{k + 1} = -\Pi(g^k) + \beta_k d^k`, increment :math:`k`, and
-   go to step 3.
+#. Set :math:`\beta_k = \norm{\Pi(g^{k + 1})}^2 / \norm{\Pi(g^k)}^2`, update
+   :math:`d^{k + 1} = -\Pi(g^k) + \beta_k d^k`, increment :math:`k`, and go to
+   step 3.
 
 Further refinement of the trial step
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
