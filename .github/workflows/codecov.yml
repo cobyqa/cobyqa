@@ -8,18 +8,19 @@ on:
 
 jobs:
   run:
-    name: Upload coverage report for ${{ matrix.os }}
+    name: Coverage report for ${{ matrix.os }} using Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
+        python-version: ['3.6', '3.7', '3.8', '3.9']
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.9'
+          python-version: ${{ matrix.python-version }}
       - name: Generate coverage report
         run: bash build_tools/github/coverage.sh
       - name: Upload coverage to Codecov
