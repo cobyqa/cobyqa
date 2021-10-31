@@ -7,7 +7,7 @@ requires = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-v -ra -l --color=yes --code-highlight=yes --strict-markers"
+addopts = "-ra -l --color=yes --code-highlight=yes --strict-markers"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
 ]

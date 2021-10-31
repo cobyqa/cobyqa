@@ -1,3 +1,7 @@
+# .circleci/config.yml
+# CircleCI configuration file
+# See https://circleci.com/docs/2.0/configuration-reference/ for details
+
 version: 2.1
 
 jobs:

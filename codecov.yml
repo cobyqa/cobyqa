@@ -1,3 +1,7 @@
+# codecov.yml
+# Codecov configuration file
+# See https://docs.codecov.com/docs/codecov-yaml for details
+
 codecov:
   require_ci_to_pass: false
   notify:
@@ -7,6 +11,8 @@ ignore:
   - 'setup.py'
   - 'cobyqa/**/setup.py'
   - 'cobyqa/_min_dependencies.py'
+
+comment: false
 
 github_checks:
     annotations: false

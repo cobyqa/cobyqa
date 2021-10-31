@@ -1,3 +1,7 @@
+# .github/workflows/coverage.yml
+# GitHub Actions configuration file for Codecov
+# See https://github.com/codecov/codecov-action for details
+
 name: Upload coverage reports to Codecov
 
 on:
@@ -8,15 +12,16 @@ on:
 
 jobs:
   run:
-    name: Coverage report for ${{ matrix.os }} using Python ${{ matrix.python-version }}
+    name: Coverage report for Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ['3.6', '3.7', '3.8', '3.9']
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout cobyqa
+        uses: actions/checkout@v2
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
