@@ -5,16 +5,22 @@ labels: ['enhancement']
 body:
   - type: textarea
     attributes:
-      label: Describe the feature you want to enable.
+      label: Feature description
+      value: |
+        Describe the feature you want to enable.
     validations:
       required: false
   - type: textarea
     attributes:
-      label: Describe your proposed solution.
+      label: Proposed solution
+      value: |
+        Describe your proposed solution.
     validations:
       required: false
   - type: textarea
     attributes:
-      label: Describe alternatives you have considered.
+      label: Considered alternatives
+      value: |
+        Describe the alternatives you have considered.
     validations:
       required: false
