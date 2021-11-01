@@ -1,0 +1,34 @@
+# .github/workflows/codeql.yml
+# GitHub Actions configuration file for Codecov
+# See https://github.com/codecov/codecov-action for details
+
+name: CodeQL Analysis
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  run:
+    name: Analyze ${{ matrix.language }} vulnerabilities
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['python']
+    steps:
+      - name: Checkout cobyqa
+        uses: actions/checkout@v2
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: ${{ matrix.language }}
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v1
