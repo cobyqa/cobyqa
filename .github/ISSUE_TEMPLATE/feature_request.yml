@@ -6,21 +6,21 @@ body:
   - type: textarea
     attributes:
       label: Feature description
-      value: |
+      description: |
         Describe the feature you want to enable.
     validations:
       required: false
   - type: textarea
     attributes:
       label: Proposed solution
-      value: |
+      description: |
         Describe your proposed solution.
     validations:
       required: false
   - type: textarea
     attributes:
       label: Considered alternatives
-      value: |
+      description: |
         Describe the alternatives you have considered.
     validations:
       required: false
