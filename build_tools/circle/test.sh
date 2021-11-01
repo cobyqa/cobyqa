@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-set -x
 set -e
+set -x
 
 # Create and activate a virtual environment
 python -m venv venv
