@@ -7,9 +7,7 @@ body:
     attributes:
       value: |
         Thank you for submitting a bug report.
-        Before creating a new issue, please make sure to check the
-        [issue tracker](https://github.com/ragonneau/cobyqa/issues)
-        for existing issues about the bug.
+        Before creating a new issue, please make sure to check the [issue tracker](https://github.com/ragonneau/cobyqa/issues) for existing issues about the bug.
   - type: textarea
     attributes:
       label: Bug description
@@ -24,8 +22,7 @@ body:
         Please add a minimal example that to reproduce the error.
       placeholder: |
         ```
-        import cobyqa
-        << your code here >>
+        << Sample code to reproduce the problem >>
         ```
     validations:
       required: true
