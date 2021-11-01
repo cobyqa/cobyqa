@@ -3,10 +3,6 @@
 set -e
 set -x
 
-# Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate
-
 # Install the dependencies and build the solver
 python -m pip install --progress-bar=off numpy
 python setup.py install

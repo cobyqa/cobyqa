@@ -1,14 +1,16 @@
 # .github/workflows/codeql.yml
-# GitHub Actions configuration file for Codecov
-# See https://github.com/codecov/codecov-action for details
+# GitHub Actions configuration file for CodeQL
+# See https://github.com/github/codeql-action for details
 
 name: CodeQL Analysis
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -22,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ['python']
+        language: [python]
     steps:
       - name: Checkout cobyqa
         uses: actions/checkout@v2

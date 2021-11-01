@@ -9,7 +9,7 @@ codecov:
 
 ignore:
   - 'setup.py'
-  - 'cobyqa/**/setup.py'
+  - '**/setup.py'
   - 'cobyqa/_min_dependencies.py'
 
 comment: false
