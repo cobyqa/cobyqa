@@ -137,9 +137,9 @@ solution to
 .. math::
 
     \begin{array}{ll}
-        \min        & \quad f(x) = \inner{x - x^0, g} + \frac{1}{2} \inner{x - x^0, H (x - x^0)}\\
+        \min        & \quad f(x) = \inner{x, g} + \frac{1}{2} \inner{x, H x}\\
         \text{s.t.} & \quad l \le x \le u,\\
-                    & \quad \norm{x - x^0} = \Delta,\\
+                    & \quad \norm{x} = \Delta,\\
                     & \quad x \in \vspan \set{\Pi(x^k), \Pi(g^k)} \subseteq \R^n.
     \end{array}
 

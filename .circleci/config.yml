@@ -13,7 +13,7 @@ jobs:
       - image: cimg/python:<< parameters.python >>
     steps:
       - checkout
-      - run: bash build_tools/circle/build-test.sh
+      - run: bash build_tools/circle/test.sh
 
 workflows:
   version: 2

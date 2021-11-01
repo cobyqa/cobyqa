@@ -58,21 +58,26 @@ class CleanCommand(clean):
     def run(self):
         super().run()
 
-        # Remove the 'build', 'dist', '*.egg-info', '.pytest_cache', and '.tox'
-        # directories from the current working directory.
+        # Remove setuptools artifact directories and files.
         cwd = Path(__file__).resolve(strict=True).parent
         shutil.rmtree(cwd / 'build', ignore_errors=True)
         shutil.rmtree(cwd / 'dist', ignore_errors=True)
         for dirname in cwd.glob('*.egg-info'):
             shutil.rmtree(dirname)
+
+        # Remove test and coverage cache directories and files.
         shutil.rmtree(cwd / '.pytest_cache', ignore_errors=True)
         shutil.rmtree(cwd / '.tox', ignore_errors=True)
+        if Path(cwd, '.coverage').is_file():
+            os.unlink(cwd / '.coverage')
+        if Path(cwd, 'coverage.xml').is_file():
+            os.unlink(cwd / 'coverage.xml')
 
         # Remove the 'MANIFEST' file.
         if Path(cwd, 'MANIFEST').is_file():
             os.unlink(cwd / 'MANIFEST')
 
-        # Remove the generated C/C++ files outside of a source distribution.
+        # Remove C/C++ files generated outside of a source distribution.
         # rm_c_files = not Path(cwd, 'PKG-INFO').is_file()
         for dirpath, dirnames, filenames in os.walk(cwd / 'cobyqa'):
             dirpath = Path(dirpath).resolve(strict=True)
@@ -134,11 +139,11 @@ def setup_package():
         long_description_content_type='text/x-rst',
         keywords='',
         license='BSD-3-Clause',
-        url='https://ragonneau.github.io/cobyqa',
+        url='https://cobyqa.readthedocs.io',
         download_url='https://pypi.org/project/cobyqa/#files',
         project_urls={
             'Bug Tracker': 'https://github.com/ragonneau/cobyqa/issues',
-            'Documentation': 'https://ragonneau.github.io/cobyqa',
+            'Documentation': 'https://cobyqa.readthedocs.io',
             'Source Code': 'https://github.com/ragonneau/cobyqa',
         },
         classifiers=[

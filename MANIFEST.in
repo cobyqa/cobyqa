@@ -4,7 +4,6 @@ include MANIFEST.in
 include pyproject.toml
 
 # Add documentation to sdist-generated tarballs
-include docs/index.html
 include docs/Makefile
 recursive-include docs/source *.bib *.css *.html *.ico *.png *.svg *.py *.rst
 prune docs/source/**/generated
