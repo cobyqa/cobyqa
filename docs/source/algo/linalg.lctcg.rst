@@ -76,7 +76,7 @@ The active set
 ^^^^^^^^^^^^^^
 
 For convenience, we denote
-:math:`a_j`, for :math:`j \in \set{1, 2, \dots, m_1}` the rows of the matrix
+:math:`a_j`, for :math:`j \in \set{1, 2, \dots, m_1}`, the rows of the matrix
 :math:`A`. We assume that the initial guess :math:`x^0` is feasible and that an
 inequality constraint :math:`b_j - \inner{a_j, x}` is positive and tiny for
 some :math:`j \le m_1`. If :math:`j` do not belong to the active set and if
@@ -138,8 +138,9 @@ The general framework employed by `lctcg` is presented below.
    computations.
 #. If :math:`\alpha_k = \alpha_{L, k}`, set :math:`x^0 = x^{k + 1}` and go to
    step 2.
-#. Set :math:`\beta_k = \inner{\Pi(g^k), Hd^k} / \inner{d^k, Hd^k}`, update :math:`d^{k + 1} = -\Pi(g^k) + \beta_k d^k`, increment :math:`k`, and
-   go to step 3.
+#. Set :math:`\beta_k = \inner{\Pi(g^{k + 1}), Hd^k} / \inner{d^k, Hd^k}`,
+   update :math:`d^{k + 1} = -\Pi(g^{k + 1}) + \beta_k d^k`, increment
+   :math:`k`, and go to step 3.
 
 As mentioned earlier, the operator :math:`\Pi` is evaluated using the Goldfarb
 and Idnani method for quadratic programming :cite:`lctcg-Goldfarb_Idnani_1983`.
@@ -171,7 +172,7 @@ Additional stopping criteria
 
 Any iteration stops immediately if the search direction :math:`d^{k + 1}` is
 not a descent one, that is if :math:`\inner{d^{k + 1}, g^{k + 1}} \ge 0`. By
-the conjugacy condition on the search direction, it is in exact arithmetic
+the conjugacy condition on the search directions, it is in exact arithmetic
 equivalent to :math:`g^{k + 1} = 0`, but is clearly more robust in practice.
 Moreover, if :math:`\nabla f(x^k)` is small along the current search direction,
 namely if
@@ -188,7 +189,12 @@ reduction so far, that is if
 
 .. math::
 
-    \big(f(x^k) - f(x^{k + 1})\big) \le \nu \big(f(x^0) - f(x^{k + 1})\big).
+    f(x^k) - f(x^{k + 1}) \le \nu \big(f(x^0) - f(x^{k + 1})\big).
+
+Termination analysis
+^^^^^^^^^^^^^^^^^^^^
+
+To do.
 
 .. bibliography::
     :labelprefix: L
