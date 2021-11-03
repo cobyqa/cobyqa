@@ -18,7 +18,6 @@ function `cobyqa.minimize`.
     bvlag
     bvtcg
     cpqp
-    givens
     lctcg
     nnls
     qr

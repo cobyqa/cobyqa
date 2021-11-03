@@ -1,12 +1,12 @@
 import argparse
 
 # Cython and NumPy versions should be in sync with pyproject.toml.
-# CYTHON_MIN_VERSION = '0.29.23'
+CYTHON_MIN_VERSION = '0.29.23'
 NUMPY_MIN_VERSION = '1.14.6'
 PYTEST_MIN_VERSION = '5.0.1'
 
 dependent_pkgs = dict(
-    # cython=(CYTHON_MIN_VERSION, 'build'),
+    cython=(CYTHON_MIN_VERSION, 'build'),
     numpy=(NUMPY_MIN_VERSION, 'build, install'),
     pytest=(PYTEST_MIN_VERSION, 'tests'),
 )

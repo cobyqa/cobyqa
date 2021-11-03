@@ -45,7 +45,7 @@ body:
       label: Versions
       description: |
         Please run the following and paste the output below.
-        ```
+        ```python
         import sys, cobyqa; print(cobyqa.__version__, sys.version)
         ```
     validations:
