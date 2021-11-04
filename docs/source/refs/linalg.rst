@@ -20,4 +20,3 @@ function `cobyqa.minimize`.
     cpqp
     lctcg
     nnls
-    qr

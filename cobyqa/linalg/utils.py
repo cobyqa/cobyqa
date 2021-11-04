@@ -1,66 +1,21 @@
 import numpy as np
-from numpy.testing import assert_
-
-from .base import drotg, drot, dgeqp3, dgeqrf, dorgqr
+from scipy.linalg import blas
 
 
-def qr(a, overwrite_a=False, pivoting=False, check_finite=True):
-    """
-    Compute the QR factorization ``a = Q @ R`` where ``Q`` is an orthogonal
-    matrix and ``R`` is an upper triangular matrix.
-
-    Parameters
-    ----------
-    a : array_like, shape (m, n)
-        Matrix to be factorized.
-    overwrite_a : bool, optional
-        Whether to overwrite the data in `a` with the matrix ``R`` (may improve
-        the performance by limiting the memory cost).
-    pivoting : bool, optional
-        Whether the factorization should include column pivoting, in which case
-        a permutation vector ``P`` is returned such that ``A[:, P] = Q @ R``.
-    check_finite : bool, optional
-        Whether to check that the input matrix contains only finite numbers.
-
-    Returns
-    -------
-    numpy.ndarray, shape (m, m)
-        Above-mentioned orthogonal matrix ``Q``.
-    numpy.ndarray, shape (m, n)
-        Above-mentioned upper triangular matrix ``R``.
-    numpy.ndarray, shape (n,)
-        Indices of the permutations. Not returned if ``pivoting=False``.
-
-    Raises
-    ------
-    AssertionError
-        The matrix `a` is not two-dimensional.
-    """
-    a = np.asarray_chkfinite(a) if check_finite else np.asarray(a)
-    assert_(a.ndim == 2)
-
-    m, n = a.shape
-    hr = a if overwrite_a else np.copy(a)
-    p = np.zeros(n, dtype=np.int32)
-    tau = np.empty(min(m, n), dtype=float)
-    if pivoting:
-        dgeqp3(hr, p, tau)
-        p -= 1
+def rotg(a, b):
+    if abs(a) > abs(b):
+        sigma = np.sign(a)
     else:
-        dgeqrf(hr, tau)
-    r = np.triu(hr)
+        sigma = np.sign(b)
+    r = sigma * np.hypot(a, b)
+    c, s = blas.drotg(a, b)
+    return r, c, s
 
-    if m < n:
-        q = hr[:, :m]
-    else:
-        q = np.empty((m, m), dtype=float)
-        q[:, :n] = hr
-    dorgqr(q, tau)
 
-    if pivoting:
-        return q, r, p
-    else:
-        return q, r
+def rot(x, y, c, s):
+    xr, yr = blas.drot(x, y, c, s)
+    np.copyto(x, xr)
+    np.copyto(y, yr)
 
 
 def get_bdtol(xl, xu, **kwargs):
@@ -278,8 +233,8 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
             elif abs(sval) <= tol * abs(cval):
                 sval = cval
             else:
-                sval, _, cosv, sinv = drotg(cval, sval)
-                drot(qfac[:, k], qfac[:, k + 1], cosv, sinv)
+                sval, cosv, sinv = rotg(cval, sval)
+                rot(qfac[:, k], qfac[:, k + 1], cosv, sinv)
         if sval < 0.:
             qfac[:, mleq + nact] = -qfac[:, mleq + nact]
         rfac[mleq + nact, mleq + nact] = abs(sval)
@@ -360,16 +315,16 @@ def rmact(k, mleq, nact, qfac, rfac, *args):
         # only on the first mleq + nact columns of rfac since the remaining
         # columns are meaningless, to increase the computational efficiency.
         cval, sval = rfac[j + 1, j + 1], rfac[j, j + 1]
-        hval, _, cosv, sinv = drotg(cval, sval)
+        hval, cosv, sinv = rotg(cval, sval)
         slicing = np.s_[j:mleq + nact]
-        drot(rfac[j + 1, slicing], rfac[j, slicing], cosv, sinv)
+        rot(rfac[j + 1, slicing], rfac[j, slicing], cosv, sinv)
         rfac[[j, j + 1], j:mleq + nact] = rfac[[j + 1, j], j:mleq + nact]
         rfac[:j + 2, [j, j + 1]] = rfac[:j + 2, [j + 1, j]]
         rfac[j, j] = hval
         rfac[j + 1, j] = 0.
 
         # Perform the corresponding Givens rotations on the matrix qfac.
-        drot(qfac[:, j + 1], qfac[:, j], cosv, sinv)
+        rot(qfac[:, j + 1], qfac[:, j], cosv, sinv)
         qfac[:, [j, j + 1]] = qfac[:, [j + 1, j]]
 
     # Rearrange the array's order and decrement nact.
