@@ -5,7 +5,7 @@ from contextlib import suppress
 import numpy as np
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls
-from .linalg.clinalg import drot
+from .linalg.base import drot
 from .linalg.utils import get_bdtol
 from .utils import RestartRequiredException, normalize_constraint, omega_product
 

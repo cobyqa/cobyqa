@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_
 
-from .clinalg import drot, dgeqrf, dgeqp3
+from .base import drot, dgeqp3, dgeqrf, dorgqr
 
 
 def qr(a, overwrite_a=False, pivoting=False, check_finite=True):
@@ -24,11 +24,11 @@ def qr(a, overwrite_a=False, pivoting=False, check_finite=True):
 
     Returns
     -------
-    Q : numpy.ndarray, shape (m, m)
+    numpy.ndarray, shape (m, m)
         Above-mentioned orthogonal matrix ``Q``.
-    R : numpy.ndarray, shape (m, n)
+    numpy.ndarray, shape (m, n)
         Above-mentioned upper triangular matrix ``R``.
-    P : numpy.ndarray, shape (n,)
+    numpy.ndarray, shape (n,)
         Indices of the permutations. Not returned if ``pivoting=False``.
 
     Raises
@@ -40,15 +40,27 @@ def qr(a, overwrite_a=False, pivoting=False, check_finite=True):
     assert_(a.ndim == 2)
 
     m, n = a.shape
-    Q = np.empty((m, m), dtype=a.dtype)
-    R = a if overwrite_a else np.copy(a)
-    P = np.empty(n, dtype=int)
+    hr = a if overwrite_a else np.copy(a)
+    p = np.zeros(n, dtype=np.int32)
+    tau = np.empty(min(m, n), dtype=float)
     if pivoting:
-        dgeqp3(R, Q, P)
-        return Q, R, P
+        dgeqp3(hr, p, tau)
+        p -= 1
     else:
-        dgeqrf(R, Q)
-        return Q, R
+        dgeqrf(hr, tau)
+    r = np.triu(hr)
+
+    if m < n:
+        q = np.copy(hr[:, :m])
+    else:
+        q = np.empty((m, m), dtype=float)
+        q[:, :n] = hr
+    dorgqr(q, tau)
+
+    if pivoting:
+        return q, r, p
+    else:
+        return q, r
 
 
 def get_bdtol(xl, xu, **kwargs):

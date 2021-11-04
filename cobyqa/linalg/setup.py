@@ -6,10 +6,10 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('linalg', parent_package, top_path)
 
     config.add_extension(
-        'clinalg',
-        sources=['clinalg.pyx'],
+        'base',
+        sources=['base.pyx'],
         include_dirs=[get_numpy_include_dirs()],
-        libraries=['blas'],
+        libraries=['lapacke', 'lapack', 'blas'],
         # **numpy_nodepr_api,
     )
 
