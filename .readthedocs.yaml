@@ -9,8 +9,6 @@ formats: all
 python:
   install:
     - requirements: docs/requirements.txt
-    - method: setuptools
-      path: .
 
 build:
   os: ubuntu-20.04
