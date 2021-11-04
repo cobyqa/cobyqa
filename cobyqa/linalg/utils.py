@@ -1,49 +1,7 @@
 import numpy as np
 from numpy.testing import assert_
 
-
-def givens(M, cval, sval, i, j, axis, slicing=None):
-    r"""
-    Perform a Givens rotation.
-
-    Parameters
-    ----------
-    M : numpy.ndarray
-        Matrix on which the Givens rotation is performed in-place.
-    cval : float
-        Multiple of the cosine value of the angle of rotation.
-    sval : float
-        Multiple of the sine value of the angle of rotation.
-    i : int
-        First index of the Givens rotation procedure.
-    j : int
-        Second index of the Givens rotation procedure.
-    axis : int
-        Axis over which to select values. If `M` is a matrix with two
-        dimensions, the calculations will be applied to the rows by setting
-        ``axis = 0`` and to the columns by setting ``axis = 1``.
-    slicing : slice, optional
-        Part of the data at which the Givens rotation should be applied.
-        Default applies it to to all the components.
-
-    Returns
-    -------
-    hval : float
-        Length of the two-dimensional vector of components `cval` and
-        `sval`, given by :math:`\sqrt{ \mathtt{cval}^2 + \mathtt{sval}^2 }`.
-    """
-    if slicing is None:
-        slicing = slice(None)
-    hval = np.hypot(cval, sval)
-    cosv = cval / hval
-    sinv = sval / hval
-
-    # The function numpy.swapaxes returns only a view of M.
-    Mc = np.swapaxes(M, 0, axis)
-    Gr = np.array([[cosv, -sinv], [sinv, cosv]], dtype=float)
-    Mc[[i, j], slicing] = np.matmul(Gr, Mc[[i, j], slicing])
-
-    return hval
+from .base import drot, dgeqp3, dgeqrf, dorgqr
 
 
 def qr(a, overwrite_a=False, pivoting=False, check_finite=True):
@@ -66,11 +24,11 @@ def qr(a, overwrite_a=False, pivoting=False, check_finite=True):
 
     Returns
     -------
-    Q : numpy.ndarray, shape (m, m)
+    numpy.ndarray, shape (m, m)
         Above-mentioned orthogonal matrix ``Q``.
-    R : numpy.ndarray, shape (m, n)
+    numpy.ndarray, shape (m, n)
         Above-mentioned upper triangular matrix ``R``.
-    P : numpy.ndarray, shape (n,)
+    numpy.ndarray, shape (n,)
         Indices of the permutations. Not returned if ``pivoting=False``.
 
     Raises
@@ -82,24 +40,27 @@ def qr(a, overwrite_a=False, pivoting=False, check_finite=True):
     assert_(a.ndim == 2)
 
     m, n = a.shape
-    tiny = np.finfo(float).tiny
-    Q = np.eye(m, dtype=a.dtype)
-    R = a if overwrite_a else np.copy(a)
-    P = np.arange(n, dtype=int)
-    for j in range(n):
-        if pivoting:
-            k = j + np.argmax(np.linalg.norm(R[j:, j:], axis=0))
-            P[[j, k]] = P[[k, j]]
-            R[:, [j, k]] = R[:, [k, j]]
-        for i in range(j + 1, m):
-            cval, sval = R[j, j], R[i, j]
-            if abs(sval) > tiny * abs(cval):
-                givens(Q, cval, sval, i, j, 1)
-                givens(R, cval, sval, i, j, 0)
-            R[i, j] = 0.
+    hr = a if overwrite_a else np.copy(a)
+    p = np.zeros(n, dtype=np.int32)
+    tau = np.empty(min(m, n), dtype=float)
     if pivoting:
-        return Q, R, P
-    return Q, R
+        dgeqp3(hr, p, tau)
+        p -= 1
+    else:
+        dgeqrf(hr, tau)
+    r = np.triu(hr)
+
+    if m < n:
+        q = np.copy(hr[:, :m])
+    else:
+        q = np.empty((m, m), dtype=float)
+        q[:, :n] = hr
+    dorgqr(q, tau)
+
+    if pivoting:
+        return q, r, p
+    else:
+        return q, r
 
 
 def get_bdtol(xl, xu, **kwargs):
@@ -317,7 +278,7 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
             elif abs(sval) <= tol * abs(cval):
                 sval = cval
             else:
-                sval = givens(qfac, cval, sval, k + 1, k, 1)
+                sval = drot(qfac[:, k], qfac[:, k + 1], cval, sval)
         if sval < 0.:
             qfac[:, mleq + nact] = -qfac[:, mleq + nact]
         rfac[mleq + nact, mleq + nact] = abs(sval)
@@ -398,14 +359,15 @@ def rmact(k, mleq, nact, qfac, rfac, *args):
         # only on the first mleq + nact columns of rfac since the remaining
         # columns are meaningless, to increase the computational efficiency.
         cval, sval = rfac[j + 1, j + 1], rfac[j, j + 1]
-        hval = givens(rfac, cval, sval, j, j + 1, 0, slice(j, mleq + nact))
+        slicing = np.s_[j:mleq + nact]
+        hval = drot(rfac[j + 1, slicing], rfac[j, slicing], cval, sval)
         rfac[[j, j + 1], j:mleq + nact] = rfac[[j + 1, j], j:mleq + nact]
         rfac[:j + 2, [j, j + 1]] = rfac[:j + 2, [j + 1, j]]
         rfac[j, j] = hval
         rfac[j + 1, j] = 0.
 
         # Perform the corresponding Givens rotations on the matrix qfac.
-        givens(qfac, cval, sval, j, j + 1, 1)
+        drot(qfac[:, j + 1], qfac[:, j], cval, sval)
         qfac[:, [j, j + 1]] = qfac[:, [j + 1, j]]
 
     # Rearrange the array's order and decrement nact.

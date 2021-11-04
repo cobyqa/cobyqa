@@ -1,18 +1,17 @@
-# import numpy as np
-
-# from cobyqa._build_utils import numpy_nodepr_api  # noqa
+from cobyqa._build_utils import numpy_nodepr_api  # noqa
 
 
 def configuration(parent_package='', top_path=None):
-    from numpy.distutils.misc_util import Configuration
+    from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     config = Configuration('linalg', parent_package, top_path)
 
-    # config.add_extension(
-    #     'nnls',
-    #     sources=['nnls.pyx'],
-    #     include_dirs=[np.get_include()],
-    #     **numpy_nodepr_api,
-    # )
+    config.add_extension(
+        'base',
+        sources=['base.pyx'],
+        include_dirs=[get_numpy_include_dirs()],
+        libraries=['lapacke', 'lapack', 'blas'],
+        # **numpy_nodepr_api,
+    )
 
     config.add_data_dir('tests')
 
