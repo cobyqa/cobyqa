@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.linalg import blas
+from scipy.linalg import get_blas_funcs
 
 
 def rotg(a, b):
@@ -8,12 +8,14 @@ def rotg(a, b):
     else:
         sigma = np.sign(b)
     r = sigma * np.hypot(a, b)
-    c, s = blas.drotg(a, b)
+    blas_rotg, = get_blas_funcs(('rotg',), (a, b))
+    c, s = blas_rotg(a, b)
     return r, c, s
 
 
 def rot(x, y, c, s):
-    xr, yr = blas.drot(x, y, c, s)
+    blas_rot, = get_blas_funcs(('rot',), (x, y))
+    xr, yr = blas_rot(x, y, c, s)
     np.copyto(x, xr)
     np.copyto(y, yr)
 
