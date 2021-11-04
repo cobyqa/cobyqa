@@ -4,8 +4,8 @@ from contextlib import suppress
 
 import numpy as np
 
-from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls
-from .linalg.utils import get_bdtol, rot, rotg
+from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls, rot, rotg
+from .linalg.utils import get_bdtol
 from .utils import RestartRequiredException, normalize_constraint, omega_product
 
 
