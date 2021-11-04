@@ -1,7 +1,8 @@
 import numpy as np
 from numpy.testing import assert_
+from scipy.linalg import qr
 
-from .utils import getact, get_bdtol, get_lctol, qr
+from .utils import getact, get_bdtol, get_lctol
 
 
 def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):

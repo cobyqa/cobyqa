@@ -5,8 +5,7 @@ from contextlib import suppress
 import numpy as np
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls
-from .linalg.base import drotg, drot
-from .linalg.utils import get_bdtol
+from .linalg.utils import get_bdtol, rot, rotg
 from .utils import RestartRequiredException, normalize_constraint, omega_product
 
 
@@ -3891,8 +3890,8 @@ class Models:
             elif abs(self.zmat[knew, j]) > 0.:
                 cval = self.zmat[knew, jdz]
                 sval = self.zmat[knew, j]
-                _, _, cosv, sinv = drotg(cval, sval)
-                drot(self.zmat[:, jdz], self.zmat[:, j], cosv, sinv)
+                _, cosv, sinv = rotg(cval, sval)
+                rot(self.zmat[:, jdz], self.zmat[:, j], cosv, sinv)
                 self._zmat[knew, j] = 0.
 
         # Evaluate the denominator in Equation (2.12) of Powell (2004).

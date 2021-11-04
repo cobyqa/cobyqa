@@ -2,8 +2,9 @@
 requires = [
     "setuptools",
     "wheel",
-    "Cython>=0.29.23",
     "oldest-supported-numpy",
+    "scipy>=1.1.0",
+    "Cython>=0.29.23",
 ]
 
 [tool.pytest.ini_options]

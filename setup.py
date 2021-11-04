@@ -194,6 +194,7 @@ def setup_package():
         from setuptools import setup
     else:
         check_pkg_status('numpy', min_deps.NUMPY_MIN_VERSION)
+        check_pkg_status('scipy', min_deps.SCIPY_MIN_VERSION)
 
         from numpy.distutils.core import setup
 
