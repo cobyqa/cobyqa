@@ -3,6 +3,25 @@ from scipy.linalg import get_blas_funcs
 
 
 def rotg(a, b):
+    """
+    Construct a Givens plane rotation.
+
+    Parameters
+    ----------
+    a : float
+        First component of the vector to be rotated.
+    b : float
+        Second component of the vector to be rotated.
+
+    Returns
+    -------
+    float
+        First component of the vector in the rotated coordinate system.
+    float
+        Cosine of the angle of rotation.
+    float
+        Sine of the angle of rotation.
+    """
     if abs(a) > abs(b):
         sigma = np.sign(a)
     else:
@@ -14,6 +33,20 @@ def rotg(a, b):
 
 
 def rot(x, y, c, s):
+    """
+    Apply a Givens plane rotation.
+
+    Parameters
+    ----------
+    x : array_like, shape (m,)
+        The x-coordinates of each planar point to be rotated.
+    y : array_like, shape (m,)
+        The y-coordinates of each planar point to be rotated.
+    c : float
+        Cosine of the angle of rotation.
+    s : float
+        Sine of the angle of rotation.
+    """
     blas_rot, = get_blas_funcs(('rot',), (x, y))
     xr, yr = blas_rot(x, y, c, s)
     np.copyto(x, xr)

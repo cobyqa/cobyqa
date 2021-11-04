@@ -20,3 +20,5 @@ function `cobyqa.minimize`.
     cpqp
     lctcg
     nnls
+    rot
+    rotg
