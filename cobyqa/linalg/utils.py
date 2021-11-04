@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_
 
-from .base import drot, dgeqp3, dgeqrf, dorgqr
+from .base import drotg, drot, dgeqp3, dgeqrf, dorgqr
 
 
 def qr(a, overwrite_a=False, pivoting=False, check_finite=True):
@@ -51,7 +51,7 @@ def qr(a, overwrite_a=False, pivoting=False, check_finite=True):
     r = np.triu(hr)
 
     if m < n:
-        q = np.copy(hr[:, :m])
+        q = hr[:, :m]
     else:
         q = np.empty((m, m), dtype=float)
         q[:, :n] = hr
@@ -278,7 +278,8 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
             elif abs(sval) <= tol * abs(cval):
                 sval = cval
             else:
-                sval = drot(qfac[:, k], qfac[:, k + 1], cval, sval)
+                sval, _, cosv, sinv = drotg(cval, sval)
+                drot(qfac[:, k], qfac[:, k + 1], cosv, sinv)
         if sval < 0.:
             qfac[:, mleq + nact] = -qfac[:, mleq + nact]
         rfac[mleq + nact, mleq + nact] = abs(sval)
@@ -359,15 +360,16 @@ def rmact(k, mleq, nact, qfac, rfac, *args):
         # only on the first mleq + nact columns of rfac since the remaining
         # columns are meaningless, to increase the computational efficiency.
         cval, sval = rfac[j + 1, j + 1], rfac[j, j + 1]
+        hval, _, cosv, sinv = drotg(cval, sval)
         slicing = np.s_[j:mleq + nact]
-        hval = drot(rfac[j + 1, slicing], rfac[j, slicing], cval, sval)
+        drot(rfac[j + 1, slicing], rfac[j, slicing], cosv, sinv)
         rfac[[j, j + 1], j:mleq + nact] = rfac[[j + 1, j], j:mleq + nact]
         rfac[:j + 2, [j, j + 1]] = rfac[:j + 2, [j + 1, j]]
         rfac[j, j] = hval
         rfac[j + 1, j] = 0.
 
         # Perform the corresponding Givens rotations on the matrix qfac.
-        drot(qfac[:, j + 1], qfac[:, j], cval, sval)
+        drot(qfac[:, j + 1], qfac[:, j], cosv, sinv)
         qfac[:, [j, j + 1]] = qfac[:, [j + 1, j]]
 
     # Rearrange the array's order and decrement nact.
