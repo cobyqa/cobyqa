@@ -2,7 +2,7 @@
 # GitHub Actions configuration file for CodeQL
 # See https://github.com/github/codeql-action for details
 
-name: CodeQL Analysis
+name: CodeQL
 
 on:
   push:
@@ -15,7 +15,6 @@ on:
 
 jobs:
   run:
-    name: Check for ${{ matrix.language }} vulnerabilities
     runs-on: ubuntu-latest
     permissions:
       actions: read
