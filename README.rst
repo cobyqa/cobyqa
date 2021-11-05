@@ -5,10 +5,10 @@ COBYQA algorithm
 .. image:: https://readthedocs.org/projects/cobyqa/badge/?version=latest
     :target: https://cobyqa.readthedocs.io/en/latest/?badge=latest
 
-.. image:: https://github.com/ragonneau/cobyqa/actions/workflows/codeql.yml/badge.svg?branch=main
+.. image:: https://img.shields.io/github/workflow/status/ragonneau/cobyqa/CodeQL?label=codeql&logo=github
     :target: https://github.com/ragonneau/cobyqa/actions/workflows/codeql.yml
 
-.. image:: https://github.com/ragonneau/cobyqa/actions/workflows/codecov.yml/badge.svg?branch=main
+.. image:: https://img.shields.io/github/workflow/status/ragonneau/cobyqa/Coverage?label=coverage&logo=github
     :target: https://github.com/ragonneau/cobyqa/actions/workflows/codecov.yml
 
 .. image:: https://codecov.io/gh/ragonneau/cobyqa/branch/main/graph/badge.svg
