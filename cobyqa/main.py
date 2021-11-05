@@ -129,13 +129,12 @@ class OptimizeResult(dict):
         if self.keys():
             m = max(map(len, self.keys())) + 1
             return '\n'.join(f'{k:>{m}}: {v}' for k, v in sorted(self.items()))
-        else:
-            return f'{self.__class__.__name__}()'
+        return f'{self.__class__.__name__}()'
 
 
 def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
              beq=None, cub=None, ceq=None, options=None, **kwargs):
-    """
+    r"""
     Minimize a real-valued function.
 
     The minimization can be subject to bound, linear inequality, linear
@@ -239,6 +238,75 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         least-squares Lagrange multipliers (the default is
         ``10 * eps * max(n, m) * max(1, max(abs(g)))``, where ``g`` is the
         gradient of the current model of the objective function).
+
+    References
+    ----------
+    .. [1] J. Nocedal and S. J. Wright. Numerical Optimization. Second. Springer
+       Ser. Oper. Res. Financ. Eng. New York, NY, US: Springer, 2006.
+
+    Examples
+    --------
+    We consider the problem of minimizing the Rosenbrock function as implemented
+    in the `scipy.optimize` module.
+
+    .. testsetup::
+
+        import numpy as np
+        np.set_printoptions(precision=1)
+
+    >>> from scipy.optimize import rosen
+    >>> from cobyqa import minimize
+
+    An application of the `minimize` function in the unconstrained case may be:
+
+    >>> x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
+    >>> res = minimize(rosen, x0)
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
+
+    We now consider Example 16.4 of [1]_, defined as
+
+    .. math::
+
+        \begin{array}{ll}
+            \min        & \quad q(x) = (x_1 - 1)^2 + (x_2 - 2.5)^2\\
+            \text{s.t.} & \quad -x_1 + 2x_2 \le 2,\\
+                        & \quad x_1 + 2x_2 \le 6,\\
+                        & \quad x_1 - 2x_2 \le 2,\\
+                        & \quad x_1 \ge 0,\\
+                        & \quad x_2 \ge 0,\\
+                        & \quad x \in \R^2.
+        \end{array}
+
+    Its objective function can be implemented as:
+
+    >>> def q(x):
+    ...     return (x[0] - 1.0) ** 2.0 + (x[1] - 2.5) ** 2.0
+
+    This problem can be solved using `minimize` as:
+
+    >>> x0 = [2.0, 0.0]
+    >>> xl = [0.0, 0.0]
+    >>> Aub = [[-1.0, 2.0], [1.0, 2.0], [1.0, -2.0]]
+    >>> bub = [2.0, 6.0, 2.0]
+    >>> res = minimize(q, x0, xl=xl, Aub=Aub, bub=bub)
+    >>> res.x
+    array([1.4, 1.7])
+
+    Thus, although clearly unreasonable in this case, the constraints can also
+    be provided as:
+
+    >>> def cub(x):
+    ...     c1 = -x[0] + 2.0 * x[1] - 2.0
+    ...     c2 = x[0] + 2.0 * x[1] - 6.0
+    ...     c3 = x[0] - 2.0 * x[1] - 2.0
+    ...     return [c1, c2, c3]
+
+    This problem can be solved using `minimize` as:
+
+    >>> res = minimize(q, x0, xl=xl, cub=cub)
+    >>> res.x
+    array([1.4, 1.7])
     """
     # Build the initial models of the optimization problem. The computations
     # must be stopped immediately if all indices are fixed by the bound

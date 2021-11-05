@@ -36,6 +36,7 @@ release = cobyqa.__version__
 extensions = [
     'numpydoc',
     'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.linkcode',
     'sphinx.ext.mathjax',
@@ -165,6 +166,7 @@ autosummary_generate = True
 intersphinx_mapping = {
     'python': ('https://docs.python.org/dev', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
+    'scipy': ('https://scipy.github.io/devdocs/', None),
 }
 
 

@@ -4,7 +4,7 @@ requires = [
     "wheel",
     "oldest-supported-numpy",
     "scipy>=1.1.0",
-    "Cython>=0.29.23",
+    # "Cython>=0.29.23",
 ]
 
 [tool.pytest.ini_options]

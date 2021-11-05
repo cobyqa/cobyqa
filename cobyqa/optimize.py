@@ -2009,12 +2009,11 @@ class TrustRegion:
         fmin = np.min(self.fval)
         fmax = np.max(self.fval)
         if self.penub > 0.:
-            resid = np.dot(self.xpt, self.aub.T) - self.bub[np.newaxis, :]
+            resid = np.matmul(self.xpt, self.aub.T) - self.bub[np.newaxis, :]
             resid = np.c_[resid, self.cvalub]
-            cmin = np.min(resid, axis=1)
-            cmax = np.max(resid, axis=1)
-            iub = (cmin <= -self.rhoend) | (cmax >= self.rhoend)
-            iub = iub & (cmin < 2. * cmax)
+            cmin = np.min(resid, axis=0)
+            cmax = np.max(resid, axis=0)
+            iub = cmin < 2. * cmax
             if np.any(iub):
                 cmin_neg = np.minimum(0., cmin[iub])
                 denom = np.min(cmax[iub] - cmin_neg)
@@ -2023,29 +2022,19 @@ class TrustRegion:
             else:
                 self._penub = 0.
         if self.peneq > 0.:
-            resid = np.dot(self.xpt, self.aeq.T) - self.beq[np.newaxis, :]
+            resid = np.matmul(self.xpt, self.aeq.T) - self.beq[np.newaxis, :]
             resid = np.c_[resid, self.cvaleq]
-            cmin = np.min(resid, axis=1)
-            cmax = np.max(resid, axis=1)
-            ieq = (cmin <= -self.rhoend) | (cmax >= self.rhoend)
-            ieq_pos = ieq & (cmin < 2. * cmax)
-            if np.any(ieq_pos):
-                cmin_neg = np.minimum(0., cmin[ieq_pos])
-                denom = np.min(cmax[ieq_pos] - cmin_neg)
+            cmin = np.min(resid, axis=0)
+            cmax = np.max(resid, axis=0)
+            cmin, cmax = np.r_[cmin, -cmax], np.r_[cmax, -cmin]
+            ieq = cmin < 2. * cmax
+            if np.any(ieq):
+                cmin_neg = np.minimum(0., cmin[ieq])
+                denom = np.min(cmax[ieq] - cmin_neg)
                 if denom > tiny * (fmax - fmin):
                     self._peneq = min(self.peneq, (fmax - fmin) / denom)
-            ieq_neg = ieq & (cmin < .5 * cmax)
-            if np.any(ieq_neg):
-                cmax_pos = np.maximum(0., cmax[ieq_neg])
-                denom = np.min(cmax_pos - cmin[ieq_neg])
-                if denom > tiny * (fmax - fmin):
-                    self._peneq = min(self.peneq, (fmax - fmin) / denom)
-            if np.all(np.logical_not(np.r_[ieq_pos, ieq_neg])):
+            else:
                 self._peneq = 0.
-        # FIXME: Bound the ratio of the penalty coefficients.
-        if self.penub > 0. and self.peneq > 0.:
-            self._penub = max(self.penub, self.peneq)
-            self._peneq = self.penub
 
     def trust_region_step(self, delta, **kwargs):
         """
@@ -2103,6 +2092,9 @@ class TrustRegion:
             rhs = np.inner(self.xopt, lhs) - self.coptub[i]
             aub = np.vstack([aub, lhs])
             bub = np.r_[bub, rhs]
+        if self.penub > 0.:
+            aub *= self.penub
+            bub *= self.penub
         aeq = np.copy(self.aeq)
         beq = np.copy(self.beq)
         for i in range(self.mnleq):
@@ -2110,14 +2102,17 @@ class TrustRegion:
             rhs = np.inner(self.xopt, lhs) - self.copteq[i]
             aeq = np.vstack([aeq, lhs])
             beq = np.r_[beq, rhs]
-        if self.penub > 0. and self.peneq > tiny * self.penub:
-            scale = self.penub / self.peneq
-            if scale <= 1.:
-                aub *= scale
-                bub *= scale
-            else:
-                aeq /= scale
-                beq /= scale
+        if self.peneq > 0.:
+            aeq *= self.peneq
+            beq *= self.peneq
+        # if self.penub > 0. and self.peneq > tiny * self.penub:
+        #     scale = self.penub / self.peneq
+        #     if scale <= 1.:
+        #         aub *= scale
+        #         bub *= scale
+        #     else:
+        #         aeq /= scale
+        #         beq /= scale
         if mc == 0:
             nstep = np.zeros_like(self.xopt)
             ssq = 0.

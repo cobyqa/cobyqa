@@ -120,7 +120,7 @@ def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
 
         # Update the lower and upper bounds to take into account the simple
         # bounds along the current line.
-        ipos = xpt[k, :] > tiny * np.maximum(np.abs(xl), np.abs(xu))
+        ipos = xpt[k, :] > bdtol
         pxl = np.full_like(xopt, -np.inf)
         pxl[ipos] = xl[ipos] / xpt[k, ipos]
         pxl[pxl <= xlbd] = -np.inf
@@ -135,7 +135,7 @@ def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
             ipxl = np.argmin(pxl)
             xubd = max(xumin, pxl[ipxl])
             iubd = ipxl + 1
-        ineg = xpt[k, :] < -tiny * np.maximum(np.abs(xl), np.abs(xu))
+        ineg = xpt[k, :] < -bdtol
         nxl = np.full_like(xopt, -np.inf)
         nxl[ineg] = xu[ineg] / xpt[k, ineg]
         nxl[nxl <= xlbd] = -np.inf

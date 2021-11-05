@@ -99,7 +99,7 @@ cmdclass = {'clean': CleanCommand, 'sdist': sdist}
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from cobyqa._build_utils import _check_cython_version  # noqa
+    # from cobyqa._build_utils import _check_cython_version  # noqa
     config = Configuration(None, parent_package, top_path)
     config.set_options(
         ignore_setup_xxx_py=True,
@@ -108,7 +108,7 @@ def configuration(parent_package='', top_path=None):
         quiet=True,
     )
 
-    _check_cython_version()
+    # _check_cython_version()
     config.add_subpackage('cobyqa')
 
     return config
@@ -157,7 +157,7 @@ def setup_package():
             'Operating System :: POSIX',
             'Operating System :: POSIX :: Linux',
             'Operating System :: Unix',
-            'Programming Language :: Cython',
+            # 'Programming Language :: Cython',
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3 :: Only',
