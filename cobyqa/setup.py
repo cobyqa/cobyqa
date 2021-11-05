@@ -1,6 +1,6 @@
 import sys
 
-from cobyqa._build_utils import cythonize_extensions  # noqa
+# from cobyqa._build_utils import cythonize_extensions  # noqa
 
 
 def configuration(parent_package='', top_path=None):
@@ -12,8 +12,8 @@ def configuration(parent_package='', top_path=None):
     config.add_data_dir('tests')
 
     # Skip cythonization when creating a source distribution.
-    if 'sdist' not in sys.argv:
-        cythonize_extensions(config)
+    # if 'sdist' not in sys.argv:
+    #     cythonize_extensions(config)
 
     return config
 

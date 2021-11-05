@@ -36,6 +36,7 @@ class TestBVCS:
         bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
         assert_array_less_equal(xl - xpt[kopt, :] - step, bdtol)
         assert_array_less_equal(xpt[kopt, :] + step - xu, bdtol)
+        assert_(np.linalg.norm(step) - delta <= bdtol)
         assert_(cauchy >= 0.)
 
     def test_exceptions(self):
@@ -80,6 +81,7 @@ class TestBVLAG:
         bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
         assert_array_less_equal(xl - xpt[kopt, :] - step, bdtol)
         assert_array_less_equal(xpt[kopt, :] + step - xu, bdtol)
+        assert_(np.linalg.norm(step) - delta <= bdtol)
 
     def test_exceptions(self):
         xpt = np.ones((11, 5), dtype=float)
