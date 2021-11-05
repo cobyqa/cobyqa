@@ -4,25 +4,33 @@
 
 version: 2.1
 
+orbs:
+  codecov: codecov/codecov@3.2.0
+
 jobs:
-  build-and-test:
+  generate-report:
     parameters:
       python:
         type: string
     docker:
       - image: cimg/python:<< parameters.python >>
     steps:
-      - checkout
-      - run: bash build_tools/circle/test.sh
+      - run: bash build_tools/circle/build_coverage.sh
 
 workflows:
   version: 2
-  build-and-test:
+  upload-to-codecov:
     jobs:
-      - build-and-test:
+      - checkout
+      - generate-report:
           matrix:
             parameters:
               python: ['3.6', '3.7', '3.8', '3.9']
+          filters:
+            branches:
+              only:
+                - main
+      - codecov/upload:
           filters:
             branches:
               only:
