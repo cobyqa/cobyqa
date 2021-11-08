@@ -26,7 +26,7 @@ from distutils.command.sdist import sdist  # noqa
 builtins.__COBYQA_SETUP__ = True
 
 import cobyqa  # noqa
-import cobyqa.utils._min_dependencies as min_deps  # noqa
+import cobyqa._min_dependencies as min_deps  # noqa
 
 SETUPTOOLS_COMMANDS = {
     'bdist_dumb',
