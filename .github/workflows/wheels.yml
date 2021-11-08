@@ -36,3 +36,26 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           path: dist/*.tar.gz
+
+  upload_anaconda:
+    name: Upload to Anaconda
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
+    needs: [build_sdist]
+
+    steps:
+      - name: Checkout cobyqa
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: dist
+
+      - name: Upload artifacts to Anaconda
+        run: bash build_tools/github/upload_anaconda.sh
+        env:
+          ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}

@@ -104,13 +104,13 @@ class TestBase(ABC):
 
     @staticmethod
     def assert_optimize(res, n, x_sol, f_sol, maxcv=False):
-        assert_allclose(res.x, x_sol, atol=1e-4)
-        assert_allclose(res.fun, f_sol, atol=1e-4)
+        assert_allclose(res.x, x_sol, atol=1e-3)
+        assert_allclose(res.fun, f_sol, atol=1e-3)
         assert_(res.nfev <= 500 * n)
         assert_(res.status in [0, 1])
         assert_(res.success, res.message)
         if maxcv:
-            assert_allclose(res.maxcv, 0., atol=1e-4)
+            assert_allclose(res.maxcv, 0., atol=1e-3)
 
     @pytest.fixture
     def x0(self, fun, n):

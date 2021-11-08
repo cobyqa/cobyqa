@@ -13,20 +13,18 @@ problem of the form
     :label: lctcg
 
     \begin{array}{ll}
-        \min        & \quad f(x) = \inner{x, g} + \frac{1}{2} \inner{x, H x}\\
+        \min        & \quad q(x) = \inner{x, g} + \frac{1}{2} \inner{x, H x}\\
         \text{s.t.} & \quad Ax \le b,\\
                     & \quad Cx = d,\\
                     & \quad \norm{x} \le \Delta,\\
                     & \quad x \in \R^n,
     \end{array}
 
-where :math:`g \in \R^n` approximates the gradient of the nonlinear objective
-function at the origin, :math:`H \in \R^{n \times n}` is a symmetric matrix
-that approximates the Hessian matrix of the nonlinear objective function at the
-origin, :math:`A \in \R^{m_1 \times n}` and :math:`C \in \R^{m_2 \times n}` are
+where :math:`g \in \R^n`, :math:`H \in \R^{n \times n}` is a symmetric matrix,
+:math:`A \in \R^{m_1 \times n}` and :math:`C \in \R^{m_2 \times n}` are
 the Jacobian matrices of the linear inequality and equality constraints,
 :math:`b \in \R^{m_1}` and :math:`d \in \R^{m_2}` are the corresponding
-right-hand sides, :math:`\Delta > 0` is the current trust-region radius, and
+right-hand sides, :math:`\Delta > 0` is the given trust-region radius, and
 :math:`\norm{\cdot}` denotes the Euclidean norm. For simplicity, we assume
 throughout this section that the matrix :math:`C` is full row rank.
 
@@ -50,7 +48,7 @@ conjugate gradient method of Steihaug :cite:`lctcg-Steihaug_1983` and Toint
     \end{array}
     \right.
 
-where :math:`g^k = \nabla f(x^k) = g + Hx^k`. The computations are stopped if
+where :math:`g^k = \nabla q(x^k) = g + Hx^k`. The computations are stopped if
 either
 
 #. :math:`g^k = 0` and :math:`\inner{d^k, Hd^k} \ge 0`, in which case the
@@ -68,18 +66,18 @@ trust-region tangential subproblems using a modified TRSTEP algorithm
 :cite:`lctcg-Powell_2015`. It is an active-set variation of the truncated
 conjugate gradient algorithm, which maintains the QR factorization of the
 matrix whose columns are the gradients of the active constraints. As for
-`bvtcg`, if a new constraint is added to the active set, the procedure is
-restarted. However, we allow constraints to be removed from the active set in
+`bvtcg`, if a new constraint is added to the working set, the procedure is
+restarted. However, we allow constraints to be removed from the working set in
 this method.
 
-The active set
-^^^^^^^^^^^^^^
+The working set
+^^^^^^^^^^^^^^^
 
-For convenience, we denote
-:math:`a_j`, for :math:`j \in \set{1, 2, \dots, m_1}`, the rows of the matrix
-:math:`A`. We assume that the initial guess :math:`x^0` is feasible and that an
-inequality constraint :math:`b_j - \inner{a_j, x}` is positive and tiny for
-some :math:`j \le m_1`. If :math:`j` do not belong to the active set and if
+For convenience, we denote :math:`a_j`, for
+:math:`j \in \set{1, 2, \dots, m_1}`, the rows of the matrix :math:`A`. We
+assume that the initial guess :math:`x^0` is feasible and that an inequality
+constraint :math:`b_j - \inner{a_j, x}` is positive and tiny for some
+:math:`j \le m_1`. If :math:`j` do not belong to the working set and if
 :math:`\inner{a_j, g} < 0`, then it is likely that :math:`\norm{x^1 - x^0}` is
 small, as a step along the search direction :math:`d^0 = -g` quickly exits the
 feasible set. Therefore, we must consider a constraint as active whenever its
@@ -91,11 +89,10 @@ we let
     \mathcal{J}(x) = \set[\big]{j \le m_1 : b_j - \inner{a_j, x} \le \eta \Delta \norm{a_j}},
 
 where :math:`\eta` is some positive constant
-(set to :math:`\eta = 0.2` in `lctcg`), and the active set is a subset of
+(set to :math:`\eta = 0.2` in `lctcg`), and the working set is a subset of
 :math:`\mathcal{J}(x^0)`. Moreover, the initial search direction :math:`d^0`
-should be close to :math:`-\nabla f(x^0)` and prevent the point :math:`x^1` to
-be close from :math:`x^0`. For sake of clarity, we denote :math:`\Pi(v)` the
-unique solution of
+should be close to :math:`-\nabla q(x^0)` and prevent the point :math:`x^1` to
+be close from :math:`x^0`. We denote :math:`\Pi(v)` the unique solution of
 
 .. math::
     :label: init-search
@@ -108,11 +105,11 @@ unique solution of
     \end{array}
 
 where :math:`v \in \R^n`. Then, the initial search direction :math:`d^0` is set
-to :math:`\Pi\big(\nabla f(x^0)\big)`. If :math:`\inner{a_j, d^0} < 0` for some
+to :math:`\Pi\big(\nabla q(x^0)\big)`. If :math:`\inner{a_j, d^0} < 0` for some
 :math:`j`, then the point :math:`x^1` will be further from this constraint than
-the initial guess. Therefore, the active set :math:`\mathcal{I}` is chosen to
+the initial guess. Therefore, the working set :math:`\mathcal{I}` is chosen to
 be :math:`\set{j \in \mathcal{J}(x^0) : \inner{a_j, d^0} = 0}` (or a subset of
-it, chosen so that :math:`\set{a_j : j \in \mathcal{I}}` is a basis of
+it, so that :math:`\set{a_j : j \in \mathcal{I}}` is a basis of
 :math:`\vspan \set{a_j : j \in \mathcal{J}(x^0), ~ \inner{a_j, d^0} = 0}`).
 The solution of such a problem is calculated using the Goldfarb and Idnani
 method for quadratic programming :cite:`lctcg-Goldfarb_Idnani_1983`.
@@ -123,10 +120,10 @@ The linearly constrained truncated conjugate gradient procedure
 The general framework employed by `lctcg` is presented below.
 
 #. Set :math:`x^0 = 0`.
-#. Set :math:`g^0 = \nabla f(x^0)`, :math:`d^0 = \Pi(g^0)`, the active set
+#. Set :math:`g^0 = \nabla q(x^0)`, :math:`d^0 = \Pi(g^0)`, the active set
    :math:`\mathcal{I} \subseteq \mathcal{J}(x^0)`, and :math:`k = 0`.
 #. Let :math:`\alpha_{\Delta, k}` be the largest number such that
-   :math:`\norm{x^k + \alpha_{\Delta, k} d^k} = \Delta`.
+   :math:`\norm{x^k + \alpha_{\Delta, k} d^k} \le \Delta`.
 #. Let :math:`\alpha_{Q, k}` be :math:`-\inner{d^k, g^k} / \inner{d^k, Hd^k}`
    if :math:`\inner{d^k, Hd^k} > 0` and :math:`+\infty` otherwise.
 #. Let :math:`\alpha_{L, k}` be the largest number such that
@@ -150,7 +147,7 @@ inequality constraints indexed by :math:`\mathcal{I}`). We denote
 :math:`\hat{Q} R` such a factorization, with
 :math:`\hat{Q} \in \R^{n \times (m_2 + \abs{\mathcal{I}})}` and
 :math:`R \in \R^{(m_2 + \abs{\mathcal{I}}) \times (m_2 + \abs{\mathcal{I}})}`,
-where :math:`\abs{\mathcal{I}}` denotes the cardinal number of the active set.
+where :math:`\abs{\mathcal{I}}` denotes the cardinal number of the working set.
 We clearly have :math:`\abs{\mathcal{I}} \le n - m_2`. Let
 :math:`\check{Q} \in \R^{n \times (n - m_2 - \abs{\mathcal{I}})}` be any matrix
 such that :math:`\begin{bmatrix} \hat{Q}& \check{Q} \end{bmatrix}` is
@@ -163,9 +160,9 @@ problem :eq:`init-search` is given by
 
 Therefore, the term :math:`\Pi(g^k)` in step 9 can be easily computed at each
 iteration. Moreover, after calculating the initial search direction :math:`d^0`
-at step 2, it may occur that :math:`b_j - \inner{a_j, x^0 + d^0}` is
-substantial. In such a case, the method will make a first step towards the
-boundaries of the active constraints.
+at step 2, the term :math:`b_j - \inner{a_j, x^0 + d^0}` may be substantial. In
+such a case, the method will make a first step towards the boundaries of the
+active constraints.
 
 Additional stopping criteria
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -174,12 +171,12 @@ Any iteration stops immediately if the search direction :math:`d^{k + 1}` is
 not a descent one, that is if :math:`\inner{d^{k + 1}, g^{k + 1}} \ge 0`. By
 the conjugacy condition on the search directions, it is in exact arithmetic
 equivalent to :math:`g^{k + 1} = 0`, but is clearly more robust in practice.
-Moreover, if :math:`\nabla f(x^k)` is small along the current search direction,
+Moreover, if :math:`\nabla q(x^k)` is small along the current search direction,
 namely if
 
 .. math::
 
-    \alpha_{\Delta, k} \abs{\inner{d^k, \nabla f(x^k)}} \le \nu \big(f(x^0) - f(x^k)\big),
+    \alpha_{\Delta, k} \abs{\inner{d^k, \nabla q(x^k)}} \le \nu \big(q(x^0) - q(x^k)\big),
 
 where :math:`\nu` is some positive constant
 (set to :math:`\nu = 0.01` in `lctcg`), then the method considers that the
@@ -189,7 +186,7 @@ reduction so far, that is if
 
 .. math::
 
-    f(x^k) - f(x^{k + 1}) \le \nu \big(f(x^0) - f(x^{k + 1})\big).
+    q(x^k) - q(x^{k + 1}) \le \nu \big(q(x^0) - q(x^{k + 1})\big).
 
 Termination analysis
 ^^^^^^^^^^^^^^^^^^^^

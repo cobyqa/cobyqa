@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.linalg import lstsq
 
 from .utils import get_lctol
 
@@ -88,8 +89,7 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
         ipos = np.flatnonzero(inact[:k])
 
         # Solve the least-squares problem on the inactive columns.
-        Ainact = np.delete(A, iact, 1)
-        xlstsq, _, _, _ = np.linalg.lstsq(Ainact, b, None)
+        xlstsq, _, _, _ = lstsq(np.delete(A, iact, 1), b)
         xact = np.zeros_like(x)
         xact[inact] = xlstsq
 
@@ -117,8 +117,7 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
             ipos = np.flatnonzero(inact[:k])
 
             # Solve the least-squares problem on the updated inactive columns.
-            Ainact = np.delete(A, iact, 1)
-            xlstsq, _, _, _ = np.linalg.lstsq(Ainact, b, None)
+            xlstsq, _, _, _ = lstsq(np.delete(A, iact, 1), b)
             xact = np.zeros_like(x)
             xact[inact] = xlstsq
         else:
