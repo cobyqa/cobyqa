@@ -1,0 +1,47 @@
+# .github/workflows/pypi.yml
+# GitHub Actions configuration file for uploading wheels to PyPI
+# See https://github.com/pypa/gh-action-pypi-publish for details
+
+name: Publish to PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version upload to PyPI'
+        required: true
+      pypi_repo:
+        description: 'Repo to upload to (testpypi or pypi)'
+        default: 'testpypi'
+        required: true
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout cobyqa
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+
+      - name: Download distributions from staging
+        run: bash build_tools/github/upload_anaconda.sh
+        env:
+          COBYQA_VERSION: ${{ github.event.inputs.version }}
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@v1.4.2
+        if: ${{ github.event.inputs.pypi_repo == 'testpypi' }}
+        with:
+          user: __token__
+          password: ${{ secrets.TEST_PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.4.2
+        if: ${{ github.event.inputs.pypi_repo == 'pypi' }}
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_TOKEN }}

@@ -23,7 +23,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          # TODO: Update when build dependencies are available.
+          # TODO: Update when build dependencies are available
           python-version: '3.9'
 
       - name: Build source distribution
@@ -41,6 +41,7 @@ jobs:
     name: Upload to Anaconda
     runs-on: ubuntu-latest
     if: ${{ github.event_name != 'pull_request' }}
+    # TODO: Add build_wheels step when it will be created
     needs: [build_sdist]
 
     steps:
