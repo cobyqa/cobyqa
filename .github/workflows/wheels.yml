@@ -1,0 +1,38 @@
+# .github/workflows/wheels.yml
+# GitHub Actions configuration file for building wheels
+# See https://github.com/pypa/cibuildwheel for details
+
+name: Wheels
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout cobyqa
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          # TODO: Update when build dependencies are available.
+          python-version: '3.9'
+
+      - name: Build source distribution
+        run: bash build_tools/github/build_source.sh
+
+      - name: Test source distribution
+        run: bash build_tools/github/test_source.sh
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          path: dist/*.tar.gz

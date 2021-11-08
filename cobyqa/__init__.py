@@ -24,5 +24,6 @@ except NameError:
 
 if not __COBYQA_SETUP__:
     from .main import OptimizeResult, minimize
+    from .utils import show_versions
 
-    __all__ = ['OptimizeResult', 'minimize']
+    __all__ = ['OptimizeResult', 'minimize', 'show_versions']

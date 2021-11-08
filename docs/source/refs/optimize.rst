@@ -15,6 +15,7 @@ point of the COBYQA method.
 
     minimize
     OptimizeResult
+    show_versions
     optimize.TrustRegion
     optimize.Models
     optimize.Quadratic
