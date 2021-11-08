@@ -10,7 +10,9 @@ codecov:
 ignore:
   - 'setup.py'
   - '**/setup.py'
-  - 'cobyqa/_min_dependencies.py'
+  - 'cobyqa/utils/_min_dependencies.py'
+  - 'cobyqa/utils/_show_versions.py'
+  - '**/tests/*.py'
 
 comment: false
 

@@ -2,7 +2,7 @@
 # GitHub Actions configuration file for Codecov
 # See https://github.com/codecov/codecov-action for details
 
-name: Upload coverage reports to Codecov
+name: Upload coverage reports
 
 on:
   push:

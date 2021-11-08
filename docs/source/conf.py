@@ -9,7 +9,7 @@ from pathlib import Path
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute.
-BASE_DIR = Path('.').resolve(strict=True).parent.parent
+BASE_DIR = Path(__file__).resolve(strict=True).parents[2]
 sys.path.insert(0, str(BASE_DIR))
 
 

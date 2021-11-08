@@ -13,17 +13,15 @@ solve at each iteration is of the form
     :label: bvtcg
 
     \begin{array}{ll}
-        \min        & \quad f(x) = \inner{x, g} + \frac{1}{2} \inner{x, H x}\\
+        \min        & \quad q(x) = \inner{x, g} + \frac{1}{2} \inner{x, H x}\\
         \text{s.t.} & \quad l \le x \le u,\\
                     & \quad \norm{x} \le \Delta,\\
                     & \quad x \in \R^n,
     \end{array}
 
-where :math:`g \in \R^n` approximates the gradient of the nonlinear objective
-function at the origin, :math:`H \in \R^{n \times n}` is a symmetric matrix
-that approximates the Hessian matrix of the nonlinear objective function at the
-origin, :math:`l \in \R^n` and :math:`u \in \R^n` are the lower and upper
-bounds of the problems (with :math:`l < u`), :math:`\Delta > 0` is the current
+where :math:`g \in \R^n`, :math:`H \in \R^{n \times n}` is a symmetric matrix,
+:math:`l \in \R^n` and :math:`u \in \R^n` are the lower and upper bounds of the
+problem (with :math:`l < u`), :math:`\Delta > 0` is the given
 trust-region radius, and :math:`\norm{\cdot}` denotes the Euclidean norm.
 
 .. _tcg_base:
@@ -38,16 +36,15 @@ trust-region step :math:`x^{\ast} \in \R^n` satisfies
 
 .. math::
 
-    f(x^0) - f(x^{\ast}) \ge \gamma \norm{g} \min \set{\Delta, \norm{g} / \norm{H}},
+    q(x^0) - q(x^{\ast}) \ge \gamma \norm{g} \min \set{\Delta, \norm{g} / \norm{H}},
 
-for some :math:`\gamma > 0`, where :math:`\norm{\cdot}` is the Euclidean norm.
-It is easy to see that a Cauchy step satisfies such a condition
-(with :math:`\gamma = 1/2`). Therefore, to preserve the computational
-efficiency of a trust-region method, it is usual to solve inexactly problem
-:eq:`bvtcg` using the truncated conjugate gradient method of Steihaug
-:cite:`bvtcg-Steihaug_1983` and Toint :cite:`bvtcg-Toint_1981`. Given the
-initial values :math:`x^0 = 0` and :math:`d^0 = -g`, it generates the sequence
-of iterates
+for some :math:`\gamma > 0`. It is easy to see that a Cauchy step satisfies
+such a condition (with :math:`\gamma = 1/2`). Therefore, to preserve the
+computational efficiency of a trust-region method, it is usual to solve
+inexactly problem :eq:`bvtcg` using the truncated conjugate gradient method of
+Steihaug :cite:`bvtcg-Steihaug_1983` and Toint :cite:`bvtcg-Toint_1981`. Given
+the initial values :math:`x^0 = 0` and :math:`d^0 = -g`, it generates the
+sequence of iterates
 
 .. math::
 
@@ -60,7 +57,7 @@ of iterates
     \end{array}
     \right.
 
-where :math:`g^k = \nabla f(x^k) = g + Hx^k`. The computations are stopped if
+where :math:`g^k = \nabla q(x^k) = g + Hx^k`. The computations are stopped if
 either
 
 #. :math:`g^k = 0` and :math:`\inner{d^k, Hd^k} \ge 0`, in which case the
@@ -86,28 +83,28 @@ provided, COBYQA solves the trust-region subproblem using the TRSBOX algorithm
 The bound constrained truncated conjugate gradient procedure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The strategy employed by `bvtcg` to tackle the bound constraints in the
-truncated conjugate gradient procedure is the use of an active set. At each
+The strategy employed by `bvtcg` to solve inexactly problem :eq:`bvtcg` is an
+active-set variation of the truncated conjugate gradient procedure. At each
 iteration of the method, a truncate conjugate gradient step is performed on the
-coordinates that are not fixed by the active set. If a new bound is hit during
-such iteration, the bound is added to the active set, and the procedure is
-restarted. The active set is only enlarged through the iterations, which then
+coordinates that are not fixed by the working set. If a new bound is hit during
+such iteration, the bound is added to the working set, and the procedure is
+restarted. The working set is only enlarged through the iterations, which then
 ensures the termination of the method.
 
-The initial active set is a subset of the active bounds at the origin. Clearly,
-a active bound should not be included in the active set if a Cauchy step (a
-positive step along :math:`-g`) would depart from the bound, as the bound is
-never removed from the active set. The complete framework of `bvtcg` is
-described below. For sake of clarity, we denote :math:`\mathcal{I}` the active
-set and :math:`\Pi(v)` the vector whose :math:`i`-th coordinate is :math:`v_i`
-if :math:`i \notin \mathcal{I}`, and zero otherwise.
+The initial working set is a subset of the active bounds at the origin.
+Clearly, an active bound should not be included in the working set if a Cauchy
+step (a positive step along :math:`-g`) would depart from the bound, as the
+bound is never removed from the working set. The complete framework of `bvtcg`
+is described below. For sake of clarity, we denote :math:`\mathcal{I}` the
+working set and :math:`\Pi(v)` the vector whose :math:`i`-th coordinate is
+:math:`v_i` if :math:`i \notin \mathcal{I}`, and zero otherwise.
 
-#. Set :math:`x^0 = 0` and the active set :math:`\mathcal{I}` to the indices
+#. Set :math:`x^0 = 0` and the working set :math:`\mathcal{I}` to the indices
    for which either :math:`l_i = 0` and :math:`g_i \ge 0` or :math:`u_i = 0`
    and :math:`g_i \le 0`.
 #. Set :math:`g^0 = \nabla f(x^0)`, :math:`d^0 = -\Pi(g^0)`, and :math:`k = 0`.
 #. Let :math:`\alpha_{\Delta, k}` be the largest number such that
-   :math:`\norm{x^k + \alpha_{\Delta, k} d^k} = \Delta`.
+   :math:`\norm{x^k + \alpha_{\Delta, k} d^k} \le \Delta`.
 #. Let :math:`\alpha_{Q, k}` be :math:`-\inner{d^k, g^k} / \inner{d^k, Hd^k}`
    if :math:`\inner{d^k, Hd^k} > 0` and :math:`+\infty` otherwise.
 #. Let :math:`\alpha_{B, k}` be the largest number such that
@@ -137,7 +134,7 @@ solution to
 .. math::
 
     \begin{array}{ll}
-        \min        & \quad f(x) = \inner{x, g} + \frac{1}{2} \inner{x, H x}\\
+        \min        & \quad q(x) = \inner{x, g} + \frac{1}{2} \inner{x, H x}\\
         \text{s.t.} & \quad l \le x \le u,\\
                     & \quad \norm{x} = \Delta,\\
                     & \quad x \in \vspan \set{\Pi(x^k), \Pi(g^k)} \subseteq \R^n.
@@ -154,17 +151,20 @@ Further, the method considers the function
 .. math::
 
     \begin{array}{ll}
-        \min        & \quad f(x(\theta))\\
+        \min        & \quad q(x(\theta))\\
         \text{s.t.} & \quad l \le x(\theta) \le u,\\
                     & \quad 0 \le \theta \le \pi / 4,
     \end{array}
 
 the trust-region condition being automatically ensured by the choice of
-:math:`s`. If the value of :math:`\theta` is restricted by a bound, it is added
-to the active set :math:`\mathcal{I}`, and the refinement procedure is
-restarted. Since the active set is very reduced, this procedure terminates in
-at most :math:`n - \abs{\mathcal{I}}`, where :math:`\abs{\mathcal{I}}` denotes
-the number of active bounds at the end of the constrained truncated conjugate
+:math:`s`. To solve approximately such a problem, `bvtcg` seeks for the
+greatest reduction in the objective function for a range of equally spaced
+values of :math:`\theta`, chosen to ensure the feasibility of the iterates. If
+the value of the approximate solution is restricted by a bound, it is added to
+the working set :math:`\mathcal{I}`, and the refinement procedure is restarted.
+Since the working set is only increased, this procedure terminates in at most
+:math:`n - \abs{\mathcal{I}}`, where :math:`\abs{\mathcal{I}}` denotes the
+number of active bounds at the end of the constrained truncated conjugate
 gradient procedure.
 
 .. bibliography::
