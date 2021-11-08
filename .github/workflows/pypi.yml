@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-python@v2
 
       - name: Download distributions from staging
-        run: bash build_tools/github/upload_anaconda.sh
+        run: bash build_tools/github/download_anaconda.sh
         env:
           COBYQA_VERSION: ${{ github.event.inputs.version }}
 

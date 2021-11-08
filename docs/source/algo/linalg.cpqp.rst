@@ -13,28 +13,26 @@ of the form
     :label: cpqp
 
     \begin{array}{ll}
-        \min        & \quad f(x) = \frac{1}{2} \big(\norm{[Ax - b]_+}^2 + \norm{Cx - d}^2\big)\\
+        \min        & \quad q(x) = \frac{1}{2} \big(\norm{[Ax - b]_+}^2 + \norm{Cx - d}^2\big)\\
         \text{s.t.} & \quad l \le x \le u,\\
                     & \quad \norm{x} \le \Delta,\\
                     & \quad x \in \R^n,
     \end{array}
 
-where :math:`A \in \R^{m_1 \times n}` and :math:`C \in \R^{m_2 \times n}` are
-the Jacobian matrices of the inequality and equality constraints (or some
-approximations) of the original nonlinear optimization problem,
-:math:`b \in \R^{m_1}` and :math:`d \in \R^{m_2}` are the corresponding
-right-hand sides, :math:`l \in \R^n` and :math:`u \in \R^n` are the lower an
-upper bounds of the problems (with :math:`l < u`), :math:`\Delta > 0` is the
-current trust-region radius, :math:`[\cdot]_+` denotes the componentwise
-positive part operator, and :math:`\norm{\cdot}` denotes the Euclidean norm.
+where :math:`A \in \R^{m_1 \times n}`, :math:`C \in \R^{m_2 \times n}`,
+:math:`b \in \R^{m_1}`, :math:`d \in \R^{m_2}`, :math:`l \in \R^n` and
+:math:`u \in \R^n` are the lower an upper bounds of the problem
+(with :math:`l < u`), :math:`\Delta > 0` is the given trust-region radius,
+:math:`[\cdot]_+` denotes the componentwise positive part operator, and
+:math:`\norm{\cdot}` denotes the Euclidean norm.
 
 Reformulation of the problem
 ----------------------------
 
 The main difficulty in solving (approximately) problem :eq:`cpqp` is the
-piecewise quadratic term :math:`x \mapsto \norm{[Ax - b]_+}^2` in the objective
-function. However, such a problem can clearly be reformulated by introducing a
-slack variable :math:`y \in \R^{m_1}` as
+piecewise quadratic term :math:`\norm{[Ax - b]_+}^2` in the objective function.
+However, such a problem can clearly be reformulated by introducing a slack
+variable :math:`y \in \R^{m_1}` as
 
 .. math::
     :label: cpqp-slack
@@ -49,12 +47,12 @@ slack variable :math:`y \in \R^{m_1}` as
 
 In doing so, we observe that problem :eq:`cpqp-slack` is almost of the right
 form to be solved approximately by the algorithm `lctcg`, as detailed in the
-:ref:`corresponding section <linalg.lctcg>`. The only difference is in the
+:ref:`presentation of the method <linalg.lctcg>`. The only difference is in the
 trust-region constraint, which does not apply to all the variables of the
 reformulated problem. From a geometrical point of view, the feasible set
 engendered by the only nonlinear constraint is a ball for the problems tackled
 by `lctcg`, while being a cylinder in problem :eq:`cpqp-slack`. Thus, method
-described below is a variable of the `lctcg` algorithm.
+described below is a variation of the `lctcg` algorithm.
 
 Description of the method
 -------------------------
