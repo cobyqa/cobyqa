@@ -128,6 +128,8 @@ latex_elements = {
 \def\eu{\ensuremath{\mathrm{e}}}
 \def\iu{\ensuremath{\mathrm{i}}}
 \def\du{\ensuremath{\mathrm{d}}}
+\DeclareMathOperator{\argmax}{arg\,max}
+\DeclareMathOperator{\argmin}{arg\,min}
 \DeclareMathOperator{\vspan}{span}
 
 % Extra mathematical functions
@@ -233,6 +235,8 @@ mathjax3_config = {
             'eu': r'{\mathrm{e}}',
             'iu': r'{\mathrm{i}}',
             'du': r'{\mathrm{d}}',
+            'argmax': r'\operatorname{arg\,max}',
+            'argmin': r'\operatorname{arg\,min}',
             'vspan': r'\operatorname{span}',
 
             # Extra mathematical functions
