@@ -1,4 +1,4 @@
-import sys
+# import sys
 
 # from cobyqa._build_utils import cythonize_extensions  # noqa
 
@@ -9,6 +9,7 @@ def configuration(parent_package='', top_path=None):
 
     config.add_subpackage('_build_utils')
     config.add_subpackage('linalg')
+    config.add_subpackage('utils')
     config.add_data_dir('tests')
 
     # Skip cythonization when creating a source distribution.

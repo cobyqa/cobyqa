@@ -3,7 +3,7 @@ import os
 import platform
 import sys
 
-from .._min_dependencies import dependent_pkgs
+from cobyqa.utils._min_dependencies import dependent_pkgs
 
 
 def _get_sys_info():
