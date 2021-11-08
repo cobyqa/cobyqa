@@ -6,7 +6,7 @@ import numpy as np
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls, rot, rotg
 from .linalg.utils import get_bdtol
-from .utils import RestartRequiredException, normalize_constraint, omega_product
+from .utils import RestartRequiredException, normalize, implicit_hessian
 
 
 class TrustRegion:
@@ -3757,8 +3757,8 @@ class Models:
         Each linear inequality and equality constraint is normalized, so that
         the Euclidean norm of its gradient is one (if not zero).
         """
-        normalize_constraint(self._Aub, self._bub)
-        normalize_constraint(self._Aeq, self._beq)
+        normalize(self._Aub, self._bub)
+        normalize(self._Aeq, self._beq)
 
     def shift_constraints(self, x):
         """
@@ -4075,7 +4075,7 @@ class Models:
         # points, chosen to maximize the absolute value of the klag-th Lagrange
         # polynomial, which is a lower bound on the denominator of the updating
         # formula.
-        omega = omega_product(self.zmat, self.idz, klag)
+        omega = implicit_hessian(self.zmat, self.idz, klag)
         alpha = omega[klag]
         glag = lag.grad(self.xopt, self.xpt, self.kopt)
         step = bvlag(self.xpt, self.kopt, klag, glag, self.xl, self.xu, delta,
@@ -4287,7 +4287,7 @@ class Quadratic:
             self._gq = np.copy(bmat[fval, :])
         else:
             self._gq = np.dot(bmat[:npt, :].T, fval)
-        self._pq = omega_product(zmat, idz, fval)
+        self._pq = implicit_hessian(zmat, idz, fval)
 
         # Initially, the explicit part of the Hessian matrix of the model is the
         # zero matrix. To improve the computational efficiency of the code, it
@@ -4549,7 +4549,7 @@ class Quadratic:
         # quadratic function. The knew-th component of the implicit part of the
         # Hessian matrix is added to the explicit Hessian matrix. Then, the
         # implicit part of the Hessian matrix is modified.
-        omega = omega_product(zmat, idz, knew)
+        omega = implicit_hessian(zmat, idz, knew)
         self._hq = self.hq + self.pq[knew] * np.outer(xold, xold)
         self._pq[knew] = 0.
         self._pq += diff * omega

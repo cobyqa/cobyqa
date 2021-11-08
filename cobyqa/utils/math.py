@@ -8,7 +8,7 @@ class RestartRequiredException(Exception):
     pass
 
 
-def omega_product(zmat, idz, x):
+def implicit_hessian(zmat, idz, x):
     """
     Compute the products ``zmat @ np.c_[-zmat[:, :idz], zmat[:, idz:]].T @ x``,
     corresponding to the product of the leading submatrix of the inverse KKT
@@ -37,7 +37,7 @@ def omega_product(zmat, idz, x):
     return np.dot(zmat, temp)
 
 
-def normalize_constraint(A, b):
+def normalize(A, b):
     """
     Normalize linear constraints.
 

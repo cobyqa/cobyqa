@@ -46,7 +46,7 @@ body:
       description: |
         Please run the following and paste the output below.
         ```python
-        import sys, cobyqa; print(cobyqa.__version__, sys.version)
+        import cobyqa; cobyqa.show_versions()
         ```
     validations:
       required: true
