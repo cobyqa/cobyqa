@@ -12,23 +12,24 @@ class TestBase(ABC):
     @staticmethod
     def arwhead(x):
         x = np.asarray(x)
-        return np.sum((x[:-1] ** 2. + x[-1] ** 2.) ** 2. - 4. * x[:-1] + 3.)
+        fvx = (x[:-1] ** 2.0 + x[-1] ** 2.0) ** 2.0 - 4.0 * x[:-1] + 3.0
+        return np.sum(fvx)
 
     @staticmethod
     def dixonpr(x):
         x = np.asarray(x)
         n = x.size
-        ssq = np.sum(np.arange(2, n + 1) * (2. * x[1:] ** 2. - x[:-1]) ** 2.)
-        return (x[0] - 1.) ** 2. + ssq
+        ssq = np.sum(np.arange(2, n + 1) * (2. * x[1:] ** 2.0 - x[:-1]) ** 2.0)
+        return (x[0] - 1.0) ** 2.0 + ssq
 
     @staticmethod
     def perm0d(x):
         x = np.asarray(x)
         n = x.size
         nrg = np.arange(1, n + 1)
-        fx = 0.
+        fx = 0.0
         for i in range(n):
-            fx += np.sum((nrg + 10.) * (x ** i - 1. / nrg ** i)) ** 2.
+            fx += np.sum((nrg + 10.0) * (x ** i - 1.0 / nrg ** i)) ** 2.0
         return fx
 
     @staticmethod
@@ -36,43 +37,44 @@ class TestBase(ABC):
         x = np.asarray(x)
         n = x.size
         nrg = np.arange(1, n + 1)
-        fx = 0.
+        fx = 0.0
         for i in range(n):
-            fx += np.sum((nrg ** i + .5) * ((x / nrg) ** i - 1.)) ** 2.
+            fx += np.sum((nrg ** i + 0.5) * ((x / nrg) ** i - 1.0)) ** 2.0
         return fx
 
     @staticmethod
     def powell(x):
         x = np.asarray(x)
         n = x.size
-        fx = 1e1 * (x[-4] - x[-1]) ** 4. if n % 4 == 0 else 0.
+        fx = 10.0 * (x[-4] - x[-1]) ** 4.0 if n % 4 == 0 else 0.0
         for i in range(n - 1):
             if i % 4 == 0:
-                fx += (x[i] + 10. * x[i + 1]) ** 2.
+                fx += (x[i] + 10.0 * x[i + 1]) ** 2.0
             elif i % 4 == 1:
-                fx += (x[i] - 2. * x[i + 1]) ** 4.
+                fx += (x[i] - 2.0 * x[i + 1]) ** 4.0
             elif i % 4 == 2:
-                fx += 5. * (x[i] - x[i + 1]) ** 2.
+                fx += 5.0 * (x[i] - x[i + 1]) ** 2.0
             else:
-                fx += 10. * (x[i - 3] - x[i]) ** 4.
+                fx += 10.0 * (x[i - 3] - x[i]) ** 4.0
         return fx
 
     @staticmethod
     def power(x):
         x = np.asarray(x)
         n = x.size
-        return np.sum(np.arange(1, n + 1) * x ** 2.)
+        return np.sum(np.arange(1, n + 1) * x ** 2.0)
 
     @staticmethod
     def rosen(x):
         x = np.asarray(x)
-        return np.sum(100. * (x[1:] - x[:-1] ** 2.) ** 2. + (1. - x[:-1]) ** 2.)
+        fvx = 100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1.0 - x[:-1]) ** 2.0
+        return np.sum(fvx)
 
     @staticmethod
     def rothyp(x):
         x = np.asarray(x)
         n = x.size
-        return np.sum(np.arange(n, 0, -1) * x ** 2.)
+        return np.sum(np.arange(n, 0, -1) * x ** 2.0)
 
     @staticmethod
     def sphere(x):
@@ -82,7 +84,7 @@ class TestBase(ABC):
     @staticmethod
     def stybtang(x):
         x = np.asarray(x)
-        return .5 * np.sum(x ** 4. - 16. * x ** 2. + 5. * x)
+        return 0.5 * np.sum(x ** 4.0 - 16.0 * x ** 2.0 + 5.0 * x)
 
     @staticmethod
     def sumpow(x):
@@ -93,14 +95,14 @@ class TestBase(ABC):
     @staticmethod
     def trid(x):
         x = np.asarray(x)
-        return np.sum((x - 1.) ** 2.) - np.sum(x[1:] * x[:-1])
+        return np.sum((x - 1.0) ** 2.0) - np.sum(x[1:] * x[:-1])
 
     @staticmethod
     def zakharov(x):
         x = np.asarray(x)
         n = x.size
-        swi = .5 * np.sum(np.arange(1, n + 1) * x)
-        return np.inner(x, x) + swi ** 2. + swi ** 4.
+        swi = 0.5 * np.sum(np.arange(1, n + 1) * x)
+        return np.inner(x, x) + swi ** 2.0 + swi ** 4.0
 
     @staticmethod
     def assert_optimize(res, n, x_sol, f_sol, maxcv=False):
@@ -110,7 +112,7 @@ class TestBase(ABC):
         assert_(res.status in [0, 1])
         assert_(res.success, res.message)
         if maxcv:
-            assert_allclose(res.maxcv, 0., atol=1e-3)
+            assert_allclose(res.maxcv, 0.0, atol=1e-3)
 
     @pytest.fixture
     def x0(self, fun, n):
@@ -134,44 +136,44 @@ class TestBase(ABC):
     def xl(self, fun, n):
         return {
             'arwhead': -5.12 * np.ones(n),
-            'dixonpr': -10. * np.ones(n),
+            'dixonpr': -10.0 * np.ones(n),
             'perm0d': -n * np.ones(n),
             'permd': -n * np.ones(n),
-            'powell': -4. * np.ones(n),
+            'powell': -4.0 * np.ones(n),
             'power': -5.12 * np.ones(n),
             'rosen': -2.048 * np.ones(n),
             'rothyp': -65.536 * np.ones(n),
             'sphere': -5.12 * np.ones(n),
-            'stybtang': -5. * np.ones(n),
+            'stybtang': -5.0 * np.ones(n),
             'sumpow': -np.ones(n),
-            'trid': -n ** 2. * np.ones(n),
-            'zakharov': -5. * np.ones(n),
+            'trid': -n ** 2.0 * np.ones(n),
+            'zakharov': -5.0 * np.ones(n),
         }.get(fun)
 
     @pytest.fixture
     def xu(self, fun, n):
         return {
             'arwhead': 5.12 * np.ones(n),
-            'dixonpr': 10. * np.ones(n),
+            'dixonpr': 10.0 * np.ones(n),
             'perm0d': n * np.ones(n),
             'permd': n * np.ones(n),
-            'powell': 3. * np.ones(n),
+            'powell': 3.0 * np.ones(n),
             'power': 5.12 * np.ones(n),
             'rosen': 2.048 * np.ones(n),
             'rothyp': 65.536 * np.ones(n),
             'sphere': 5.12 * np.ones(n),
-            'stybtang': 5. * np.ones(n),
+            'stybtang': 5.0 * np.ones(n),
             'sumpow': np.ones(n),
-            'trid': n ** 2. * np.ones(n),
-            'zakharov': 10. * np.ones(n),
+            'trid': n ** 2.0 * np.ones(n),
+            'zakharov': 10.0 * np.ones(n),
         }.get(fun)
 
     @pytest.fixture
     def x_sol(self, fun, n):
         return {
-            'arwhead': np.r_[np.ones(n - 1), 0.],
-            'dixonpr': 2. ** (2. ** (1. - np.arange(1, n + 1)) - 1.),
-            'perm0d': 1. / np.arange(1, n + 1),
+            'arwhead': np.r_[np.ones(n - 1), 0.0],
+            'dixonpr': 2.0 ** (2.0 ** (1.0 - np.arange(1, n + 1)) - 1.0),
+            'perm0d': 1.0 / np.arange(1, n + 1),
             'permd': np.arange(1, n + 1),
             'powell': np.zeros(n),
             'power': np.zeros(n),
@@ -187,19 +189,19 @@ class TestBase(ABC):
     @pytest.fixture
     def f_sol(self, fun, n):
         return {
-            'arwhead': 0.,
-            'dixonpr': 0.,
-            'perm0d': 0.,
-            'permd': 0.,
-            'powell': 0.,
-            'power': 0.,
-            'rosen': 0.,
-            'rothyp': 0.,
-            'sphere': 0.,
-            'sumpow': 0.,
+            'arwhead': 0.0,
+            'dixonpr': 0.0,
+            'perm0d': 0.0,
+            'permd': 0.0,
+            'powell': 0.0,
+            'power': 0.0,
+            'rosen': 0.0,
+            'rothyp': 0.0,
+            'sphere': 0.0,
+            'sumpow': 0.0,
             'stybtang': -39.1661657037714 * n,
-            'trid': -n * (n + 4.) * (n - 1.) / 6.,
-            'zakharov': 0.,
+            'trid': -n * (n + 4.0) * (n - 1.0) / 6.0,
+            'zakharov': 0.0,
         }.get(fun)
 
 
@@ -222,24 +224,24 @@ class TestBoundConstrained(TestBase):
     @pytest.fixture
     def xl2(self, fun, n):
         return {
-            'arwhead': -.5 * np.ones(n),
-            'power': .5 * np.ones(n),
+            'arwhead': -0.5 * np.ones(n),
+            'power': 0.5 * np.ones(n),
             'sphere': np.arange(n),
         }.get(fun)
 
     @pytest.fixture
     def xu2(self, fun, n):
         return {
-            'arwhead': .5 * np.ones(n),
+            'arwhead': 0.5 * np.ones(n),
             'power': np.ones(n),
-            'sphere': 2. * n * np.ones(n),
+            'sphere': 2.0 * n * np.ones(n),
         }.get(fun)
 
     @pytest.fixture
     def x_sol2(self, fun, n):
         return {
-            'arwhead': np.r_[.5 * np.ones(n - 1), 0.],
-            'power': .5 * np.ones(n),
+            'arwhead': np.r_[0.5 * np.ones(n - 1), 0.0],
+            'power': 0.5 * np.ones(n),
             'sphere': np.arange(n),
         }.get(fun)
 
@@ -247,7 +249,7 @@ class TestBoundConstrained(TestBase):
     def f_sol2(self, fun, n):
         return {
             'arwhead': 1.0625 * (n - 1),
-            'power': .25 * (n * (n + 1) // 2),
+            'power': 0.25 * (n * (n + 1) // 2),
             'sphere': n * (n - 1) * (2 * n - 1) // 6,
         }.get(fun)
 
@@ -282,7 +284,7 @@ class TestLinearEqualityConstrained(TestBase):
     @pytest.fixture
     def aeq(self, fun, n):
         return {
-            'arwhead': np.c_[np.ones((1, n - 1)), 0.],
+            'arwhead': np.c_[np.ones((1, n - 1)), 0.0],
             'power': np.ones((1, n)),
             'sphere': np.ones((1, n)),
         }.get(fun)
@@ -299,17 +301,17 @@ class TestLinearEqualityConstrained(TestBase):
     def x_sol(self, fun, n):
         nrg = np.arange(1, n + 1)
         return {
-            'arwhead': np.r_[(1. / (n - 1.)) * np.ones(n - 1), 0.],
-            'power': (1. / np.sum(1. / nrg)) / nrg,
-            'sphere': (1. / n) * np.ones(n),
+            'arwhead': np.r_[(1.0 / (n - 1.0)) * np.ones(n - 1), 0.0],
+            'power': (1.0 / np.sum(1.0 / nrg)) / nrg,
+            'sphere': (1.0 / n) * np.ones(n),
         }.get(fun)
 
     @pytest.fixture
     def f_sol(self, fun, n):
         return {
-            'arwhead': 1. / (n - 1.) ** 3. + 3. * (n - 1.) - 4.,
-            'power': 1. / np.sum(1. / np.arange(1, n + 1)),
-            'sphere': 1. / n
+            'arwhead': 1.0 / (n - 1.0) ** 3.0 + 3.0 * (n - 1.0) - 4.0,
+            'power': 1.0 / np.sum(1.0 / np.arange(1, n + 1)),
+            'sphere': 1.0 / n
         }.get(fun)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
@@ -341,7 +343,7 @@ class TestLinearInequalityConstrained(TestBase):
     @pytest.fixture
     def aub(self, fun, n):
         return {
-            'arwhead': np.c_[np.ones((1, n - 1)), 0.],
+            'arwhead': np.c_[np.ones((1, n - 1)), 0.0],
             'power': -np.ones((1, n)),
             'sphere': -np.ones((1, n)),
         }.get(fun)
@@ -358,17 +360,17 @@ class TestLinearInequalityConstrained(TestBase):
     def x_sol(self, fun, n):
         nrg = np.arange(1, n + 1)
         return {
-            'arwhead': np.r_[(1. / (n - 1.)) * np.ones(n - 1), 0.],
-            'power': (1. / np.sum(1. / nrg)) / nrg,
-            'sphere': (1. / n) * np.ones(n),
+            'arwhead': np.r_[(1.0 / (n - 1.0)) * np.ones(n - 1), 0.0],
+            'power': (1.0 / np.sum(1.0 / nrg)) / nrg,
+            'sphere': (1.0 / n) * np.ones(n),
         }.get(fun)
 
     @pytest.fixture
     def f_sol(self, fun, n):
         return {
-            'arwhead': 1. / (n - 1.) ** 3. + 3. * (n - 1.) - 4.,
-            'power': 1. / np.sum(1. / np.arange(1, n + 1)),
-            'sphere': 1. / n
+            'arwhead': 1.0 / (n - 1.0) ** 3.0 + 3.0 * (n - 1.0) - 4.0,
+            'power': 1.0 / np.sum(1.0 / np.arange(1, n + 1)),
+            'sphere': 1.0 / n
         }.get(fun)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
@@ -400,26 +402,26 @@ class TestNonlinearEqualityConstrained(TestBase):
     @pytest.fixture
     def ceq(self, fun):
         return lambda x: {
-            'arwhead': np.sum(x[:-1]) - 1.,
-            'power': np.sum(x) - 1.,
-            'sphere': np.sum(x) - 1.,
+            'arwhead': np.sum(x[:-1]) - 1.0,
+            'power': np.sum(x) - 1.0,
+            'sphere': np.sum(x) - 1.0,
         }.get(fun)
 
     @pytest.fixture
     def x_sol(self, fun, n):
         nrg = np.arange(1, n + 1)
         return {
-            'arwhead': np.r_[(1. / (n - 1.)) * np.ones(n - 1), 0.],
-            'power': (1. / np.sum(1. / nrg)) / nrg,
-            'sphere': (1. / n) * np.ones(n),
+            'arwhead': np.r_[(1.0 / (n - 1.0)) * np.ones(n - 1), 0.0],
+            'power': (1.0 / np.sum(1.0 / nrg)) / nrg,
+            'sphere': (1.0 / n) * np.ones(n),
         }.get(fun)
 
     @pytest.fixture
     def f_sol(self, fun, n):
         return {
-            'arwhead': 1. / (n - 1.) ** 3. + 3. * (n - 1.) - 4.,
-            'power': 1. / np.sum(1. / np.arange(1, n + 1)),
-            'sphere': 1. / n
+            'arwhead': 1.0 / (n - 1.0) ** 3.0 + 3.0 * (n - 1.0) - 4.0,
+            'power': 1.0 / np.sum(1.0 / np.arange(1, n + 1)),
+            'sphere': 1.0 / n
         }.get(fun)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
@@ -449,26 +451,26 @@ class TestNonlinearInequalityConstrained(TestBase):
     @pytest.fixture
     def cub(self, fun):
         return lambda x: {
-            'arwhead': np.sum(x[:-1]) - 1.,
-            'power': 1. - np.sum(x),
-            'sphere': 1. - np.sum(x),
+            'arwhead': np.sum(x[:-1]) - 1.0,
+            'power': 1.0 - np.sum(x),
+            'sphere': 1.0 - np.sum(x),
         }.get(fun)
 
     @pytest.fixture
     def x_sol(self, fun, n):
         nrg = np.arange(1, n + 1)
         return {
-            'arwhead': np.r_[(1. / (n - 1.)) * np.ones(n - 1), 0.],
-            'power': (1. / np.sum(1. / nrg)) / nrg,
-            'sphere': (1. / n) * np.ones(n),
+            'arwhead': np.r_[(1.0 / (n - 1.0)) * np.ones(n - 1), 0.0],
+            'power': (1.0 / np.sum(1.0 / nrg)) / nrg,
+            'sphere': (1.0 / n) * np.ones(n),
         }.get(fun)
 
     @pytest.fixture
     def f_sol(self, fun, n):
         return {
-            'arwhead': 1. / (n - 1.) ** 3. + 3. * (n - 1.) - 4.,
-            'power': 1. / np.sum(1. / np.arange(1, n + 1)),
-            'sphere': 1. / n
+            'arwhead': 1.0 / (n - 1.0) ** 3.0 + 3.0 * (n - 1.0) - 4.0,
+            'power': 1.0 / np.sum(1.0 / np.arange(1, n + 1)),
+            'sphere': 1.0 / n
         }.get(fun)
 
     @pytest.mark.parametrize('n', [2, 5, 10])

@@ -108,7 +108,7 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     eps = np.finfo(float).eps
     tiny = np.finfo(float).tiny
     mlub, n = Aub.shape
-    tol = 10. * eps * n
+    tol = 10.0 * eps * n
     lctol = get_lctol(Aub, bub, **kwargs)
     bdtol = get_bdtol(xl, xu, **kwargs)
 
@@ -126,12 +126,12 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     assert_(np.max(xl) < bdtol)
     assert_(np.min(xu) > -bdtol)
     assert_(np.isfinite(delta))
-    assert_(delta > 0.)
+    assert_(delta > 0.0)
 
     # Remove the linear constraints whose gradients are zero, and normalize the
     # remaining constraints. The bound constraints are already normalized.
     temp = np.linalg.norm(Aub, axis=1)
-    izero = np.abs(temp) <= tol * np.maximum(1., np.abs(bub))
+    izero = np.abs(temp) <= tol * np.maximum(1.0, np.abs(bub))
     if np.any(izero):
         ikeep = np.logical_not(izero)
         Aub = Aub[ikeep, :]
@@ -149,10 +149,10 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     iact = np.empty(n, dtype=int)
     rfac = np.zeros((n, n), dtype=float)
     qfac, req, _ = qr(Aeq.T, pivoting=True)
-    temp = np.maximum(1., np.linalg.norm(req[:, :np.min(req.shape)], axis=0))
+    temp = np.maximum(1.0, np.linalg.norm(req[:, :np.min(req.shape)], axis=0))
     mleq = np.count_nonzero(np.abs(np.diag(req)) >= tol * temp)
     rfac[:, :mleq] = req[:, :mleq]
-    resid = np.maximum(0., np.r_[bub, -xl, xu])
+    resid = np.maximum(0.0, np.r_[bub, -xl, xu])
 
     # Start the iterative calculations. The truncated conjugate gradient method
     # should be stopped after n - mleq - nact iterations, except if a new
@@ -160,12 +160,12 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     # restarted and the iteration counter reinitialized.
     step = np.zeros_like(gq)
     sd = np.zeros_like(step)
-    reduct = 0.
-    stepsq = 0.
-    alpbd = 1.
+    reduct = 0.0
+    stepsq = 0.0
+    alpbd = 1.0
     inext = 0
     iterc = 0
-    gamma = 0.
+    gamma = 0.0
     while iterc < n - mleq - nact or inext >= 0:
         # A new constraints has been hit in the last iteration, or it is the
         # initial iteration. The method must be restarted.
@@ -176,15 +176,15 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             sdd = getact(gq, evalc, (Aub,), resid, iact, mleq, nact, qfac, rfac,
                          delta)
             snorm = np.linalg.norm(sdd)
-            if snorm <= .2 * tiny * delta:
+            if snorm <= 0.2 * tiny * delta:
                 break
-            sdd *= .2 * delta / snorm
+            sdd *= 0.2 * delta / snorm
 
             # If the modulus of the residual of an active constraint is
             # substantial, the search direction is the move towards the
             # boundaries of the active constraints.
-            gamma = 0.
-            if np.max(resid[iact[:nact]], initial=0.) > 1e-4 * delta:
+            gamma = 0.0
+            if np.max(resid[iact[:nact]], initial=0.0) > 1e-4 * delta:
                 # Calculate the projection towards the boundaries of the active
                 # constraints. The length of this step is computed hereinafter.
                 temp = resid[iact[:nact]]
@@ -196,56 +196,56 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
 
                 # Determine the greatest steplength along the previously
                 # calculated direction allowed by the trust-region constraint.
-                rhs = delta ** 2. - np.inner(step + sdd, step + sdd)
+                rhs = delta ** 2.0 - np.inner(step + sdd, step + sdd)
                 temp = np.inner(sd, step + sdd)
                 sdsq = np.inner(sd, sd)
-                if rhs > 0.:
-                    sqrd = np.sqrt(sdsq * rhs + temp ** 2.)
-                    if temp <= 0. and sdsq > tiny * abs(sqrd - temp):
-                        gamma = max((sqrd - temp) / sdsq, 0.)
+                if rhs > 0.0:
+                    sqrd = np.sqrt(sdsq * rhs + temp ** 2.0)
+                    if temp <= 0.0 and sdsq > tiny * abs(sqrd - temp):
+                        gamma = max((sqrd - temp) / sdsq, 0.0)
                     elif abs(sqrd + temp) > tiny * rhs:
-                        gamma = max(rhs / (sqrd + temp), 0.)
+                        gamma = max(rhs / (sqrd + temp), 0.0)
                     else:
-                        gamma = 1.
+                        gamma = 1.0
 
                 # Reduce the steplength so that the move satisfies the nonactive
                 # constraints. The active constraints are already satisfied.
-                if gamma > 0.:
+                if gamma > 0.0:
                     for i in range(mlub + 2 * n):
                         if i not in iact[:nact]:
                             asd = evalc(i, sd, Aub)
                             asdd = evalc(i, sdd, Aub)
                             if asd > tiny * abs(resid[i] - asdd):
-                                temp = max((resid[i] - asdd) / asd, 0.)
+                                temp = max((resid[i] - asdd) / asd, 0.0)
                                 gamma = min(gamma, temp)
-                    gamma = min(gamma, 1.)
+                    gamma = min(gamma, 1.0)
 
             # Set the new search direction. If the modulus of the residual of an
             # active constraint was substantial, an additional iteration must be
             # entertained as this direction is not determined by the quadratic
             # objective function to be minimized.
             sd = sdd + gamma * sd
-            iterc = 0 if gamma <= 0. else -1
-            alpbd = 1.
+            iterc = 0 if gamma <= 0.0 else -1
+            alpbd = 1.0
 
         # Set the steplength of the current search direction allowed by the
         # trust-region constraint. The calculations are stopped if no further
         # progress is possible in the current search direction, or if the
         # derivative term of the step is sufficiently small.
         iterc += 1
-        rhs = delta ** 2. - stepsq
-        if rhs <= 0.:
+        rhs = delta ** 2.0 - stepsq
+        if rhs <= 0.0:
             break
         sdgq = np.inner(sd, gq)
-        if sdgq >= 0.:
+        if sdgq >= 0.0:
             break
         sdstep = np.inner(sd, step)
         sdsq = np.inner(sd, sd)
-        sqrd = np.sqrt(sdsq * rhs + sdstep ** 2.)
-        if sdstep <= 0. and sdsq > tiny * abs(sqrd - sdstep):
-            alpht = max((sqrd - sdstep) / sdsq, 0.)
+        sqrd = np.sqrt(sdsq * rhs + sdstep ** 2.0)
+        if sdstep <= 0.0 and sdsq > tiny * abs(sqrd - sdstep):
+            alpht = max((sqrd - sdstep) / sdsq, 0.0)
         elif abs(sqrd + sdstep) > tiny * rhs:
-            alpht = max(rhs / (sqrd + sdstep), 0.)
+            alpht = max(rhs / (sqrd + sdstep), 0.0)
         else:
             break
         alpha = alpht
@@ -262,7 +262,7 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             hsd = np.asarray(hsd, dtype=float)
         curv = np.inner(sd, hsd)
         if curv > tiny * abs(sdgq):
-            alphm = max(-sdgq / curv, 0.)
+            alphm = max(-sdgq / curv, 0.0)
         else:
             alphm = np.inf
         alpha = min(alpha, alphm)
@@ -276,13 +276,13 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
                 asd[i] = evalc(i, sd, Aub)
                 if abs(asd[i]) > tiny * abs(resid[i]):
                     if alphf * asd[i] > resid[i]:
-                        alphf = max(resid[i] / asd[i], 0.)
+                        alphf = max(resid[i] / asd[i], 0.0)
                         inext = i
         alpha = min(alpha, alphf)
         alpha = max(alpha, alpbd)
         alpha = min((alpha, alphm, alpht))
         if iterc == 0:
-            alpha = min(alpha, 1.)
+            alpha = min(alpha, 1.0)
 
         # Make the actual conjugate gradient iteration. The max operators below
         # are crucial as they prevent numerical difficulties engendered by
@@ -292,10 +292,10 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
         gq += alpha * hsd
         for i in range(mlub + 2 * n):
             if i not in iact[:nact]:
-                resid[i] = max(0., resid[i] - alpha * asd[i])
+                resid[i] = max(0.0, resid[i] - alpha * asd[i])
         if iterc == 0:
-            resid[iact[:nact]] *= max(0., 1. - gamma)
-        reduct -= alpha * (sdgq + .5 * alpha * curv)
+            resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
+        reduct -= alpha * (sdgq + 0.5 * alpha * curv)
 
         # If the step reached the boundary of the trust region or if the step
         # that would be obtained in the unconstrained case is insubstantial.,
@@ -303,12 +303,12 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
         if alpha >= alpht:
             break
         alphs = min(alphm, alpht)
-        if -alphs * (sdgq + .5 * alphs * curv) <= 1e-2 * reduct:
+        if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
             break
 
         # Restart the calculations if a new constraint has been hit.
         if inext >= 0:
-            if stepsq <= .64 * delta ** 2.:
+            if stepsq <= 0.64 * delta ** 2.0:
                 continue
             break
 
@@ -321,12 +321,12 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             temp = np.dot(qfac[:, mleq + nact:].T, gq)
             sdu = np.dot(qfac[:, mleq + nact:], temp)
         if iterc == 0:
-            beta = 0.
+            beta = 0.0
         else:
             beta = np.inner(sdu, hsd) / curv
         sd = beta * sd - sdu
-        alpbd = 0.
-    if reduct <= 0.:
+        alpbd = 0.0
+    if reduct <= 0.0:
         return np.zeros_like(step)
     return step
 

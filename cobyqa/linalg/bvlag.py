@@ -89,16 +89,16 @@ def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
     assert_(np.max(xl) < bdtol)
     assert_(np.min(xu) > -bdtol)
     assert_(np.isfinite(delta))
-    assert_(delta > 0.)
+    assert_(delta > 0.0)
 
     # Start the iterative procedure. The method sets the largest admissible
     # value of the real parameter sigma so far in sigsav, the length of the best
     # step so far in stpsav, the index of the simple bound restraining the
     # computations in ibdsav, and index of the interpolation point defining the
     # above line in ksav.
-    sigsav = 0.
-    stpsav = 0.
-    ibdsav = 0.
+    sigsav = 0.0
+    stpsav = 0.0
+    ibdsav = 0.0
     ksav = -1
     for k in range(npt):
         # Search for a point on the line between xopt and xpt[k, :], by
@@ -112,11 +112,11 @@ def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
         if dist > tiny * delta:
             xubd = delta / dist
         else:
-            xubd = 0.
+            xubd = 0.0
         xlbd = -xubd
         ilbd = 0
         iubd = 0
-        xumin = min(1., xubd)
+        xumin = min(1.0, xubd)
 
         # Update the lower and upper bounds to take into account the simple
         # bounds along the current line.
@@ -154,7 +154,7 @@ def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
         # Compute the best point along the line joining xopt and xpt[k, :] that
         # respects the trust-region constraint and the simple bounds.
         if k == klag:
-            diff = xgq - 1.
+            diff = xgq - 1.0
             stplen = xlbd
             vlag = xlbd * (xgq - diff * xlbd)
             isbd = ilbd
@@ -163,34 +163,34 @@ def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
                 stplen = xubd
                 vlag = temp
                 isbd = iubd
-            txl = .5 * xgq - diff * xlbd
-            txu = .5 * xgq - diff * xubd
-            if txl * txu < 0. and abs(diff) > .5 * tiny * abs(xgq):
-                temp = .25 * xgq ** 2. / diff
+            txl = 0.5 * xgq - diff * xlbd
+            txu = 0.5 * xgq - diff * xubd
+            if txl * txu < 0.0 and abs(diff) > 0.5 * tiny * abs(xgq):
+                temp = 0.25 * xgq ** 2.0 / diff
                 if abs(temp) > abs(vlag):
-                    stplen = .5 * xgq / diff
+                    stplen = 0.5 * xgq / diff
                     vlag = temp
                     isbd = 0
         else:
             stplen = xlbd
-            vlag = xlbd * (1. - xlbd)
+            vlag = xlbd * (1.0 - xlbd)
             isbd = ilbd
-            temp = xubd * (1. - xubd)
+            temp = xubd * (1.0 - xubd)
             if abs(temp) > abs(vlag):
                 stplen = xubd
                 vlag = temp
                 isbd = iubd
             if xubd > .5:
-                if abs(vlag) < .25:
-                    stplen = .5
-                    vlag = .25
+                if abs(vlag) < 0.25:
+                    stplen = 0.5
+                    vlag = 0.25
                     isbd = 0
             vlag *= xgq
 
         # Calculate the parameter given in Equation (3.9) of Powell (2009) for
         # the current line-search and maintain the optimal values so far.
-        temp = stplen * (1. - stplen) * distsq
-        sigsq = vlag ** 2. * (vlag ** 2. + .5 * alpha * temp ** 2.)
+        temp = stplen * (1.0 - stplen) * distsq
+        sigsq = vlag ** 2.0 * (vlag ** 2.0 + 0.5 * alpha * temp ** 2.0)
         if sigsq > sigsav:
             sigsav = sigsq
             stpsav = stplen

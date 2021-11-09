@@ -94,7 +94,7 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
         xact[inact] = xlstsq
 
         # Increase the active set if necessary.
-        while np.any(xact[ipos] <= 0.):
+        while np.any(xact[ipos] <= 0.0):
             # Stop the computation if the maximum number of iterations has been
             # reached. The break statement of the outer loop is then reached
             # since the else statement below fails, which ends the computations.
@@ -105,7 +105,7 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
 
             # Update the trial point, keeping the first components nonnegative.
             idiv = np.abs(x[:k] - xact[:k]) > tiny * np.abs(x[:k])
-            upd = inact[:k] & (xact[:k] <= 0.) & idiv
+            upd = inact[:k] & (xact[:k] <= 0.0) & idiv
             iupd = np.flatnonzero(upd)
             rxupd = x[iupd] / (x[iupd] - xact[iupd])
             x += np.min(rxupd) * (xact - x)
@@ -129,7 +129,7 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
             x = xact
             resid = b - np.dot(A, x)
             lsxnew = np.inner(resid, resid)
-            if lsxnew > (1. - tol) * lsx:
+            if lsxnew > (1.0 - tol) * lsx:
                 lsx = lsxnew
                 break
             lsx = lsxnew
