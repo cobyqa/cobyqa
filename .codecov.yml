@@ -3,9 +3,9 @@
 # See https://docs.codecov.com/docs/codecov-yaml for details
 
 codecov:
-  require_ci_to_pass: false
+  require_ci_to_pass: no
   notify:
-    wait_for_ci: false
+    wait_for_ci: no
 
 ignore:
   - 'setup.py'
