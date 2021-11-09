@@ -2,7 +2,7 @@ import argparse
 
 # Cython and NumPy versions should be in sync with pyproject.toml.
 # CYTHON_MIN_VERSION = '0.29.23'
-NUMPY_MIN_VERSION = '1.14.6'
+NUMPY_MIN_VERSION = '1.13.3'
 PYTEST_MIN_VERSION = '5.0.1'
 SCIPY_MIN_VERSION = '1.1.0'
 
