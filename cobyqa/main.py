@@ -344,16 +344,16 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         if is_trust_region_step:
             step = framework.trust_region_step(delta, **kwargs)
             snorm = np.linalg.norm(step)
-            if snorm <= .5 * delta:
-                delta = rho if delta <= 1.4 * rho else .5 * delta
+            if snorm <= 0.5 * delta:
+                delta = rho if delta <= 1.4 * rho else 0.5 * delta
                 if delsav > rho:
                     framework.prepare_model_step(delta)
                     continue
         else:
-            step = framework.model_step(max(.1 * delta, rho), **kwargs)
+            step = framework.model_step(max(0.1 * delta, rho), **kwargs)
             snorm = np.linalg.norm(step)
 
-        if not is_trust_region_step or snorm > .5 * delta:
+        if not is_trust_region_step or snorm > 0.5 * delta:
             # Evaluate the objective function, include the trial point in the
             # interpolation set, and update accordingly the models.
             if nf >= framework.maxfev:
@@ -373,13 +373,13 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
             # Update the trust-region radius.
             if is_trust_region_step:
-                if ratio <= .1:
-                    delta *= .5
-                elif ratio <= .7:
-                    delta = max(.5 * delta, snorm)
+                if ratio <= 0.1:
+                    delta *= 0.5
+                elif ratio <= 0.7:
+                    delta = max(0.5 * delta, snorm)
                 else:
-                    delbd = np.sqrt(2.) * delta
-                    delta = min(delbd, max(.2 * delta, 2. * snorm))
+                    delbd = np.sqrt(2.0) * delta
+                    delta = min(delbd, max(0.2 * delta, 2.0 * snorm))
                 if delta <= 1.5 * rho:
                     delta = rho
 
@@ -391,7 +391,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                     itest += 1
                     gd = framework.model_obj_grad(framework.xopt)
                     gd_alt = framework.model_obj_alt_grad(framework.xopt)
-                    if np.linalg.norm(gd) < 10. * np.linalg.norm(gd_alt):
+                    if np.linalg.norm(gd) < 10.0 * np.linalg.norm(gd_alt):
                         itest = 0
                     if itest >= 3:
                         framework.reset_models()
@@ -400,13 +400,13 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             # If a trust-region step has provided a sufficient decrease or if a
             # model-improvement step has just been computed, then the next
             # iteration is a trust-region step.
-            if not is_trust_region_step or ratio >= .1:
+            if not is_trust_region_step or ratio >= 0.1:
                 framework.prepare_trust_region_step()
                 continue
 
             # If an interpolation point is substantially far from the
             # trust-region center, a model-improvement step is entertained.
-            framework.prepare_model_step(max(delta, 2. * rho))
+            framework.prepare_model_step(max(delta, 2.0 * rho))
             if framework.is_model_step or delsav > rho:
                 continue
             ropt = framework.rval[framework.kopt]
@@ -417,10 +417,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
         # Update the lower bound on the trust-region radius.
         if rho > framework.rhoend:
-            delta = .5 * rho
-            if rho > 2.5e2 * framework.rhoend:
-                rho *= .1
-            elif rho <= 1.6e1:
+            delta = 0.5 * rho
+            if rho > 250.0 * framework.rhoend:
+                rho *= 0.1
+            elif rho <= 16.0:
                 rho = framework.rhoend
             else:
                 rho = np.sqrt(rho * framework.rhoend)

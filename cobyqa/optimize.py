@@ -132,7 +132,7 @@ class TrustRegion:
         bdtol = get_bdtol(xl, xu, **kwargs)
         self._ifix = np.abs(xl - xu) <= bdtol
         ifree = np.logical_not(self.ifix)
-        self._xfix = .5 * (xl[self.ifix] + xu[self.ifix])
+        self._xfix = 0.5 * (xl[self.ifix] + xu[self.ifix])
         x0 = x0[ifree]
         xl = xl[ifree]
         xu = xu[ifree]
@@ -183,8 +183,8 @@ class TrustRegion:
                 self.check_models()
 
             # Determine the initial least-squares multipliers.
-            self._penub = 0.
-            self._peneq = 0.
+            self._penub = 0.0
+            self._peneq = 0.0
             self._lmlub = np.zeros_like(bub)
             self._lmleq = np.zeros_like(beq)
             self._lmnlub = np.zeros(self.mnlub, dtype=float)
@@ -231,41 +231,41 @@ class TrustRegion:
         """
         tiny = np.finfo(float).tiny
         ax = fx
-        mx = 0.
+        mx = 0.0
 
         # Calculate the penalty term associated with the linear inequality
         # constraints and add it to both merit values.
-        if abs(self.penub) > tiny * np.max(np.abs(self.lmlub), initial=1.):
+        if abs(self.penub) > tiny * np.max(np.abs(self.lmlub), initial=1.0):
             tub = np.dot(self.aub, x) - self.bub + self.lmlub / self.penub
-            tub = np.maximum(0., tub)
-            alub = .5 * self.penub * np.inner(tub, tub)
+            tub = np.maximum(0.0, tub)
+            alub = 0.5 * self.penub * np.inner(tub, tub)
             ax += alub
             mx += alub
 
         # Calculate the penalty term associated with the nonlinear inequality
         # constraints and add it to the merit value evaluated on the nonlinear
         # optimization problem.
-        lmnlub_max = np.max(np.abs(self.lmnlub), initial=1.)
+        lmnlub_max = np.max(np.abs(self.lmnlub), initial=1.0)
         if abs(self.penub) > tiny * lmnlub_max:
             tub = cubx + self.lmnlub / self.penub
-            tub = np.maximum(0., tub)
-            ax += .5 * self.penub * np.inner(tub, tub)
+            tub = np.maximum(0.0, tub)
+            ax += 0.5 * self.penub * np.inner(tub, tub)
 
         # Calculate the penalty term associated with the linear equality
         # constraints and add it to both merit values.
-        if abs(self.peneq) > tiny * np.max(np.abs(self.lmleq), initial=1.):
+        if abs(self.peneq) > tiny * np.max(np.abs(self.lmleq), initial=1.0):
             teq = np.dot(self.aeq, x) - self.beq + self.lmleq / self.peneq
-            aleq = .5 * self.peneq * np.inner(teq, teq)
+            aleq = 0.5 * self.peneq * np.inner(teq, teq)
             ax += aleq
             mx += aleq
 
         # Calculate the penalty term associated with the nonlinear equality
         # constraints and add it to the merit value evaluated on the nonlinear
         # optimization problem.
-        lmnleq_max = np.max(np.abs(self._lmnleq), initial=1.)
+        lmnleq_max = np.max(np.abs(self._lmnleq), initial=1.0)
         if abs(self.peneq) > tiny * lmnleq_max:
             teq = ceqx + self.lmnleq / self.peneq
-            ax += .5 * self.peneq * np.inner(teq, teq)
+            ax += 0.5 * self.peneq * np.inner(teq, teq)
 
         # The remaining terms of the merit value evaluated on the different
         # models are expensive, and calculated only if required.
@@ -280,8 +280,8 @@ class TrustRegion:
                 for i in range(self.mnlub):
                     gopt = self.model_cub_grad(self.xopt, i)
                     tub[i] += np.inner(x - self.xopt, gopt)
-                tub = np.maximum(0., tub)
-                mx += .5 * self.penub * np.inner(tub, tub)
+                tub = np.maximum(0.0, tub)
+                mx += 0.5 * self.penub * np.inner(tub, tub)
 
             # Calculate the penalty term associated with the linearizations of
             # the nonlinear equality constraints and add it to the merit value
@@ -291,7 +291,7 @@ class TrustRegion:
                 for i in range(self.mnleq):
                     gopt = self.model_ceq_grad(self.xopt, i)
                     teq[i] += np.inner(x - self.xopt, gopt)
-                mx += .5 * self.peneq * np.inner(teq, teq)
+                mx += 0.5 * self.peneq * np.inner(teq, teq)
             return ax, mx
         return ax
 
@@ -1623,7 +1623,7 @@ class TrustRegion:
             Number of decision variables.
         """
         rhoend = getattr(self, 'rhoend', 1e-6)
-        self._options.setdefault('rhobeg', max(1., rhoend))
+        self._options.setdefault('rhobeg', max(1.0, rhoend))
         self._options.setdefault('rhoend', min(rhoend, self.rhobeg))
         self._options.setdefault('npt', 2 * n + 1)
         self._options.setdefault('maxfev', max(500 * n, self.npt + 1))
@@ -1713,8 +1713,8 @@ class TrustRegion:
         delta : float
             Trust-region radius.
         """
-        dsq = np.sum((self.xpt - self.xopt[np.newaxis, :]) ** 2., axis=1)
-        dsq[dsq <= delta ** 2.] = -np.inf
+        dsq = np.sum((self.xpt - self.xopt[np.newaxis, :]) ** 2.0, axis=1)
+        dsq[dsq <= delta ** 2.0] = -np.inf
         if np.any(np.isfinite(dsq)):
             self._knew = np.argmax(dsq)
         else:
@@ -1741,7 +1741,7 @@ class TrustRegion:
             A flag indicating whether the first point is better than the other.
         """
         eps = np.finfo(float).eps
-        tol = 10. * eps * self.npt * max(1., abs(mval2))
+        tol = 10.0 * eps * self.npt * max(1.0, abs(mval2))
         if mval1 < mval2:
             return True
         elif max(self.penub, self.peneq) < tol:
@@ -1770,7 +1770,7 @@ class TrustRegion:
 
         # Update the shift from the origin only if the displacement from the
         # shift of the best point is substantial in the trust region.
-        if xoptsq >= 10. * delta ** 2.:
+        if xoptsq >= 10.0 * delta ** 2.0:
             # Update the models of the problem to include the new shift.
             self._xbase += self.xopt
             self._models.shift_origin()
@@ -1845,11 +1845,11 @@ class TrustRegion:
             if is_trust_region_step and abs(mopt - mmx) > tiny * abs(mopt - mx):
                 ratio = (mopt - mx) / (mopt - mmx)
             else:
-                ratio = -1.
+                ratio = -1.0
         else:
             mx = self(xnew, fx, cubx, ceqx)
             mopt = mx
-            ratio = -1.
+            ratio = -1.0
 
         # Update the models of the problem.
         self._knew = self._models.update(step, fx, cubx, ceqx, self.knew)
@@ -1878,12 +1878,12 @@ class TrustRegion:
             # multipliers corresponding to nonzero inequality constraint values
             # are zeroed to satisfy the complementary slackness conditions.
             eps = np.finfo(float).eps
-            tol = 10. * eps * self.mlub * np.max(np.abs(self.bub), initial=1.)
+            tol = 10.0 * eps * self.mlub * np.max(np.abs(self.bub), initial=1.0)
             rub = np.dot(self.aub, self.xopt) - self.bub
             ilub = np.abs(rub) <= tol
             mlub = np.count_nonzero(ilub)
             abs_rub = np.abs(self.coptub)
-            tol = 10. * eps * self.mlub * np.max(abs_rub, initial=1.)
+            tol = 10.0 * eps * self.mlub * np.max(abs_rub, initial=1.0)
             cub_jac = np.empty((self.mnlub, n), dtype=float)
             for i in range(self.mnlub):
                 cub_jac[i, :] = self.model_cub_grad(self.xopt, i)
@@ -1898,8 +1898,8 @@ class TrustRegion:
             # been fixed by the complementary slackness conditions.
             gopt = self.model_obj_grad(self.xopt)
             lm, _ = nnls(A, -gopt, mlub + mnlub, **kwargs)
-            self._lmlub.fill(0.)
-            self._lmnlub.fill(0.)
+            self._lmlub.fill(0.0)
+            self._lmnlub.fill(0.0)
             self._lmlub[ilub] = lm[:mlub]
             self._lmnlub[inlub] = lm[mlub:mlub + mnlub]
             self._lmleq = lm[mlub + mnlub:mlub + mnlub + self.mleq]
@@ -1951,14 +1951,14 @@ class TrustRegion:
             # when the penalty coefficients are increased, the iterations of the
             # method must be restarted.
             while ksav == self.kopt and mmx > mopt:
-                if self.penub > 0.:
+                if self.penub > 0.0:
                     self._penub *= 1.5
                 elif self.mlub + self.mnlub > 0:
-                    self._penub = 1.
-                if self.peneq > 0.:
+                    self._penub = 1.0
+                if self.peneq > 0.0:
                     self._peneq *= 1.5
                 elif self.mleq + self.mnleq > 0:
-                    self._peneq = 1.
+                    self._peneq = 1.0
 
                 # When the penalty coefficients are modified, the index of the
                 # best interpolation point so far may change.
@@ -1966,23 +1966,23 @@ class TrustRegion:
                 self.kopt = self.get_best_point()
                 mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
             if ksav == self.kopt:
-                self._penub *= 2.
-                self._peneq *= 2.
+                self._penub *= 2.0
+                self._peneq *= 2.0
                 mx, mmx = self(xnew, fx, cubx, ceqx, True)
                 self.kopt = self.get_best_point()
                 mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
         elif not self.is_model_step:
             # If the current penalty coefficients are too close from failing
             # mmx <= mopt, they are doubled.
-            self._penub = 2. * self.penub / 3.
-            self._peneq = 2. * self.peneq / 3.
+            self._penub = 2.0 * self.penub / 3.0
+            self._peneq = 2.0 * self.peneq / 3.0
             _, mmx_test = self(xnew, fx, cubx, ceqx, True)
             mopt_test = self(self.xopt, self.fopt, self.coptub, self.copteq)
-            self._penub = 3. * self.penub
-            self._peneq = 3. * self.peneq
+            self._penub = 3.0 * self.penub
+            self._peneq = 3.0 * self.peneq
             if mmx_test <= mopt_test:
-                self._penub = .5 * self.penub
-                self._peneq = .5 * self.peneq
+                self._penub = 0.5 * self.penub
+                self._peneq = 0.5 * self.peneq
             else:
                 mx, mmx = self(xnew, fx, cubx, ceqx, True)
                 self.kopt = self.get_best_point()
@@ -2008,33 +2008,33 @@ class TrustRegion:
         tiny = np.finfo(float).tiny
         fmin = np.min(self.fval)
         fmax = np.max(self.fval)
-        if self.penub > 0.:
+        if self.penub > 0.0:
             resid = np.matmul(self.xpt, self.aub.T) - self.bub[np.newaxis, :]
             resid = np.c_[resid, self.cvalub]
             cmin = np.min(resid, axis=0)
             cmax = np.max(resid, axis=0)
-            iub = cmin < 2. * cmax
+            iub = cmin < 2.0 * cmax
             if np.any(iub):
-                cmin_neg = np.minimum(0., cmin[iub])
+                cmin_neg = np.minimum(0.0, cmin[iub])
                 denom = np.min(cmax[iub] - cmin_neg)
                 if denom > tiny * (fmax - fmin):
                     self._penub = min(self.penub, (fmax - fmin) / denom)
             else:
-                self._penub = 0.
-        if self.peneq > 0.:
+                self._penub = 0.0
+        if self.peneq > 0.0:
             resid = np.matmul(self.xpt, self.aeq.T) - self.beq[np.newaxis, :]
             resid = np.c_[resid, self.cvaleq]
             cmin = np.min(resid, axis=0)
             cmax = np.max(resid, axis=0)
             cmin, cmax = np.r_[cmin, -cmax], np.r_[cmax, -cmin]
-            ieq = cmin < 2. * cmax
+            ieq = cmin < 2.0 * cmax
             if np.any(ieq):
-                cmin_neg = np.minimum(0., cmin[ieq])
+                cmin_neg = np.minimum(0.0, cmin[ieq])
                 denom = np.min(cmax[ieq] - cmin_neg)
                 if denom > tiny * (fmax - fmin):
                     self._peneq = min(self.peneq, (fmax - fmin) / denom)
             else:
-                self._peneq = 0.
+                self._peneq = 0.0
 
     def trust_region_step(self, delta, **kwargs):
         """
@@ -2074,8 +2074,7 @@ class TrustRegion:
            Methods. MPS-SIAM Ser. Optim. Philadelphia, PA, US: SIAM, 2009.
         """
         eps = np.finfo(float).eps
-        tiny = np.finfo(float).tiny
-        tol = 10. * eps * self.xopt.size
+        tol = 10.0 * eps * self.xopt.size
 
         # Evaluate the normal step of the Byrd-Omojokun approach. The normal
         # step attempts to reduce the violations of the linear constraints
@@ -2083,7 +2082,7 @@ class TrustRegion:
         # trust-region radius is shrunk to leave some elbow room to the
         # tangential subproblem for the computations whenever the trust-region
         # subproblem is infeasible.
-        delta *= np.sqrt(.5)
+        delta *= np.sqrt(0.5)
         mc = self.mlub + self.mnlub + self.mleq + self.mnleq
         aub = np.copy(self.aub)
         bub = np.copy(self.bub)
@@ -2092,7 +2091,7 @@ class TrustRegion:
             rhs = np.inner(self.xopt, lhs) - self.coptub[i]
             aub = np.vstack([aub, lhs])
             bub = np.r_[bub, rhs]
-        if self.penub > 0.:
+        if self.penub > 0.0:
             aub *= self.penub
             bub *= self.penub
         aeq = np.copy(self.aeq)
@@ -2102,34 +2101,26 @@ class TrustRegion:
             rhs = np.inner(self.xopt, lhs) - self.copteq[i]
             aeq = np.vstack([aeq, lhs])
             beq = np.r_[beq, rhs]
-        if self.peneq > 0.:
+        if self.peneq > 0.0:
             aeq *= self.peneq
             beq *= self.peneq
-        # if self.penub > 0. and self.peneq > tiny * self.penub:
-        #     scale = self.penub / self.peneq
-        #     if scale <= 1.:
-        #         aub *= scale
-        #         bub *= scale
-        #     else:
-        #         aeq /= scale
-        #         beq /= scale
         if mc == 0:
             nstep = np.zeros_like(self.xopt)
-            ssq = 0.
+            ssq = 0.0
         else:
             nstep = cpqp(self.xopt, aub, bub, aeq, beq, self.xl, self.xu,
-                         .8 * delta, **kwargs)
+                         0.8 * delta, **kwargs)
             ssq = np.inner(nstep, nstep)
 
         # Evaluate the tangential step of the trust-region subproblem, and set
         # the global trust-region step. Th tangential step attempts to reduce
         # the objective function of the model without worsening the constraint
         # violation provided by the normal step.
-        if np.sqrt(ssq) <= tol * max(delta, 1.):
+        if np.sqrt(ssq) <= tol * max(delta, 1.0):
             nstep = np.zeros_like(self.xopt)
-            delta *= np.sqrt(2.)
+            delta *= np.sqrt(2.0)
         else:
-            delta = np.sqrt(delta ** 2. - ssq)
+            delta = np.sqrt(delta ** 2.0 - ssq)
         xopt = self.xopt + nstep
         gopt = self.model_obj_grad(xopt)
         bub = np.maximum(bub, np.dot(aub, xopt))
@@ -2379,8 +2370,8 @@ class Models:
         self._zmat = np.zeros((npt, npt - n - 1), dtype=float)
         self._idz = 0
         self._kopt = 0
-        stepa = 0.
-        stepb = 0.
+        stepa = 0.0
+        stepb = 0.0
         bdtol = get_bdtol(xl, xu, **kwargs)
         for k in range(npt):
             km = k - 1
@@ -2393,17 +2384,17 @@ class Models:
             # components or allow the projection of the initial trust region
             # onto the components to lie entirely inside the bounds.
             if 1 <= k <= n:
-                if abs(self.xu[km]) <= .5 * rhobeg:
+                if abs(self.xu[km]) <= 0.5 * rhobeg:
                     stepa = -rhobeg
                 else:
                     stepa = rhobeg
                 self.xpt[k, km] = stepa
             elif n < k <= 2 * n:
                 stepa = self.xpt[kx + 1, kx]
-                if abs(self.xl[kx]) <= .5 * rhobeg:
-                    stepb = min(2. * rhobeg, self.xu[kx])
-                elif abs(self.xu[kx]) <= .5 * rhobeg:
-                    stepb = max(-2. * rhobeg, self.xl[kx])
+                if abs(self.xl[kx]) <= 0.5 * rhobeg:
+                    stepb = min(2.0 * rhobeg, self.xu[kx])
+                elif abs(self.xu[kx]) <= 0.5 * rhobeg:
+                    stepb = max(-2.0 * rhobeg, self.xl[kx])
                 else:
                     stepb = -rhobeg
                 self.xpt[k, kx] = stepb
@@ -2440,24 +2431,24 @@ class Models:
                 if 1 <= k <= n and npt <= k + n:
                     self._bmat[0, km] = -1 / stepa
                     self._bmat[k, km] = 1 / stepa
-                    self._bmat[npt + km, km] = -.5 * rhobeg ** 2.
+                    self._bmat[npt + km, km] = -0.5 * rhobeg ** 2.0
                 elif k > n:
                     self._bmat[0, kx] = -(stepa + stepb) / (stepa * stepb)
-                    self._bmat[k, kx] = -.5 / self.xpt[kx + 1, kx]
+                    self._bmat[k, kx] = -0.5 / self.xpt[kx + 1, kx]
                     self._bmat[kx + 1, kx] = -self.bmat[0, kx]
                     self._bmat[kx + 1, kx] -= self.bmat[k, kx]
-                    self._zmat[0, kx] = np.sqrt(2.) / (stepa * stepb)
-                    self._zmat[k, kx] = np.sqrt(.5) / rhobeg ** 2.
+                    self._zmat[0, kx] = np.sqrt(2.0) / (stepa * stepb)
+                    self._zmat[k, kx] = np.sqrt(0.5) / rhobeg ** 2.0
                     self._zmat[kx + 1, kx] = -self.zmat[0, kx]
                     self._zmat[kx + 1, kx] -= self.zmat[k, kx]
             else:
                 shift = kx // n
                 ipt = kx - shift * n
                 jpt = (ipt + shift) % n
-                self._zmat[0, kx] = 1. / rhobeg ** 2.
-                self._zmat[k, kx] = 1. / rhobeg ** 2.
-                self._zmat[ipt + 1, kx] = -1. / rhobeg ** 2.
-                self._zmat[jpt + 1, kx] = -1. / rhobeg ** 2.
+                self._zmat[0, kx] = 1.0 / rhobeg ** 2.0
+                self._zmat[k, kx] = 1.0 / rhobeg ** 2.0
+                self._zmat[ipt + 1, kx] = -1.0 / rhobeg ** 2.0
+                self._zmat[jpt + 1, kx] = -1.0 / rhobeg ** 2.0
         else:
             # Set the initial models of the objective and nonlinear constraint
             # functions. The standard models minimize the updates of their
@@ -2853,16 +2844,15 @@ class Models:
         """
         n = self.xpt.shape[1]
         eps = np.finfo(float).eps
-        if self.mnlub + self.mnleq > 0:
+        if np.all(self.xu - self.xl <= 10.0 * eps * n * np.abs(self.xu)):
+            return 'X'
+        elif self.mnlub + self.mnleq > 0:
             return 'O'
         elif self.mlub + self.mleq > 0:
             return 'L'
         elif np.all(self.xl == -np.inf) and np.all(self.xu == np.inf):
             return 'U'
-        elif np.all(self.xu - self.xl <= 10. * eps * n * np.abs(self.xu)):
-            return 'X'
-        else:
-            return 'B'
+        return 'B'
 
     @property
     def target_reached(self):
@@ -3788,9 +3778,9 @@ class Models:
         xoptsq = np.inner(xopt, xopt)
 
         # Make the changes to bmat that do not depend on zmat.
-        qoptsq = .25 * xoptsq
-        updt = np.dot(self.xpt, xopt) - .5 * xoptsq
-        hxpt = self.xpt - .5 * xopt[np.newaxis, :]
+        qoptsq = 0.25 * xoptsq
+        updt = np.dot(self.xpt, xopt) - 0.5 * xoptsq
+        hxpt = self.xpt - 0.5 * xopt[np.newaxis, :]
         for k in range(npt):
             step = updt[k] * hxpt[k, :] + qoptsq * xopt
             temp = np.outer(self.bmat[k, :], step)
@@ -3882,23 +3872,23 @@ class Models:
         for j in range(1, npt - n - 1):
             if j == self.idz:
                 jdz = self.idz
-            elif abs(self.zmat[knew, j]) > 0.:
+            elif abs(self.zmat[knew, j]) > 0.0:
                 cval = self.zmat[knew, jdz]
                 sval = self.zmat[knew, j]
                 _, cosv, sinv = rotg(cval, sval)
                 rot(self.zmat[:, jdz], self.zmat[:, j], cosv, sinv)
-                self._zmat[knew, j] = 0.
+                self._zmat[knew, j] = 0.0
 
         # Evaluate the denominator in Equation (2.12) of Powell (2004).
         scala = self.zmat[knew, 0] if self.idz == 0 else -self.zmat[knew, 0]
-        scalb = 0. if jdz == 0 else self.zmat[knew, jdz]
+        scalb = 0.0 if jdz == 0 else self.zmat[knew, jdz]
         omega = scala * self.zmat[:, 0] + scalb * self.zmat[:, jdz]
         alpha = omega[knew]
         tau = vlag[knew]
-        sigma = alpha * beta + tau ** 2.
-        vlag[knew] -= 1.
-        bmax = np.max(np.abs(self.bmat), initial=1.)
-        zmax = np.max(np.abs(self.zmat), initial=1.)
+        sigma = alpha * beta + tau ** 2.0
+        vlag[knew] -= 1.0
+        bmax = np.max(np.abs(self.bmat), initial=1.0)
+        zmax = np.max(np.abs(self.zmat), initial=1.0)
         if abs(sigma) < tiny * max(bmax, zmax):
             # The denominator of the updating formula is too small to safely
             # divide the coefficients of the KKT matrix of interpolation.
@@ -3916,25 +3906,25 @@ class Models:
             scala = tau / hval
             scalb = self.zmat[knew, 0] / hval
             self._zmat[:, 0] = scala * self.zmat[:, 0] - scalb * vlag[:npt]
-            if sigma < 0.:
+            if sigma < 0.0:
                 if self.idz == 0:
                     self._idz = 1
                 else:
                     reduce = True
         else:
-            kdz = jdz if beta >= 0. else 0
+            kdz = jdz if beta >= 0.0 else 0
             jdz -= kdz
             tempa = self.zmat[knew, jdz] * beta / sigma
             tempb = self.zmat[knew, jdz] * tau / sigma
             temp = self.zmat[knew, kdz]
-            scala = 1. / np.sqrt(abs(beta) * temp ** 2. + tau ** 2.)
+            scala = 1. / np.sqrt(abs(beta) * temp ** 2.0 + tau ** 2.0)
             scalb = scala * hval
             self._zmat[:, kdz] = tau * self.zmat[:, kdz] - temp * vlag[:npt]
             self._zmat[:, kdz] *= scala
             self._zmat[:, jdz] -= tempa * omega + tempb * vlag[:npt]
             self._zmat[:, jdz] *= scalb
-            if sigma <= 0.:
-                if beta < 0.:
+            if sigma <= 0.0:
+                if beta < 0.0:
                     self._idz += 1
                 else:
                     reduce = True
@@ -4062,7 +4052,7 @@ class Models:
         # Define the tolerances to compare floating-point numbers with zero.
         npt = self.xpt.shape[0]
         eps = np.finfo(float).eps
-        tol = 10. * eps * npt
+        tol = 10.0 * eps * npt
 
         # Determine the klag-th Lagrange polynomial. It is the quadratic
         # function whose value is zero at each interpolation point, except at
@@ -4089,8 +4079,8 @@ class Models:
         # Among the two computed alternative points, we select the one that
         # leads to the greatest denominator of the updating formula.
         beta, vlag = self._beta(step)
-        sigma = vlag[klag] ** 2. + alpha * beta
-        if sigma < cauchy and cauchy > tol * max(1, abs(sigma)):
+        sigma = vlag[klag] ** 2.0 + alpha * beta
+        if sigma < cauchy and cauchy > tol * max(1.0, abs(sigma)):
             step = salt
         return step
 
@@ -4126,7 +4116,7 @@ class Models:
         cub = np.r_[np.dot(self.aub, x) - self.bub, cubx]
         ceq = np.r_[np.dot(self.aeq, x) - self.beq, ceqx]
         cbd = np.r_[x - self.xu, self.xl - x]
-        return np.max(np.r_[cub, np.abs(ceq), cbd], initial=0.)
+        return np.max(np.r_[cub, np.abs(ceq), cbd], initial=0.0)
 
     def check_models(self, stack_level=2):
         """
@@ -4185,11 +4175,11 @@ class Models:
            CN: Science Press, 2004, pp. 56--78.
         """
         npt = self.xpt.shape[0]
-        zsq = self.zmat ** 2.
+        zsq = self.zmat ** 2.0
         zsq = np.c_[-zsq[:, :self.idz], zsq[:, self.idz:]]
         alpha = np.sum(zsq, axis=1)
-        sigma = vlag[:npt] ** 2. + beta * alpha
-        dsq = np.sum((self.xpt - self.xopt[np.newaxis, :]) ** 2., axis=1)
+        sigma = vlag[:npt] ** 2.0 + beta * alpha
+        dsq = np.sum((self.xpt - self.xopt[np.newaxis, :]) ** 2.0, axis=1)
         return np.argmax(np.abs(sigma) * np.square(dsq))
 
     def _beta(self, step):
@@ -4220,19 +4210,19 @@ class Models:
         stx = np.inner(step, self.xopt)
         xstep = np.dot(self.xpt, step)
         xxopt = np.dot(self.xpt, self.xopt)
-        check = xstep * (.5 * xstep + xxopt)
+        check = xstep * (0.5 * xstep + xxopt)
         zalt = np.c_[-self.zmat[:, :self.idz], self.zmat[:, self.idz:]]
         temp = np.dot(zalt.T, check)
         beta = np.inner(temp[:self.idz], temp[:self.idz])
         beta -= np.inner(temp[self.idz:], temp[self.idz:])
         vlag[:npt] = np.dot(self.bmat[:npt, :], step)
         vlag[:npt] += np.dot(self.zmat, temp)
-        vlag[self.kopt] += 1.
+        vlag[self.kopt] += 1.0
         vlag[npt:] = np.dot(self.bmat[:npt, :].T, check)
         bsp = np.inner(vlag[npt:], step)
         vlag[npt:] += np.dot(self.bmat[npt:, :], step)
         bsp += np.inner(vlag[npt:], step)
-        beta += stx ** 2. + stepsq * (xoptsq + 2. * stx + .5 * stepsq) - bsp
+        beta += stx ** 2.0 + stepsq * (xoptsq + 2.0 * stx + 0.5 * stepsq) - bsp
         return beta, vlag
 
 
@@ -4318,13 +4308,13 @@ class Quadratic:
         """
         x = x - xpt[kopt, :]
         qx = np.inner(self.gq, x)
-        qx += .5 * np.inner(self.pq, np.dot(xpt, x) ** 2.)
+        qx += 0.5 * np.inner(self.pq, np.dot(xpt, x) ** 2.0)
         if self._hq is not None:
             # If the explicit part of the Hessian matrix is not defined, it is
             # understood as the zero matrix. Therefore, if self.hq is None, the
             # second-order term is entirely defined by the implicit part of the
             # Hessian matrix of the quadratic function.
-            qx += .5 * np.inner(x, np.dot(self.hq, x))
+            qx += 0.5 * np.inner(x, np.dot(self.hq, x))
         return qx
 
     @property
@@ -4464,7 +4454,7 @@ class Quadratic:
         Although the value can be recovered using `hessp`, the evaluation of
         this method improves the computational efficiency.
         """
-        cx = np.inner(self.pq, np.dot(xpt, x) ** 2.)
+        cx = np.inner(self.pq, np.dot(xpt, x) ** 2.0)
         if self._hq is not None:
             cx += np.inner(x, np.dot(self.hq, x))
         return cx
@@ -4510,7 +4500,7 @@ class Quadratic:
         Given ``xbase`` the previous origin of the calculations, it is assumed
         that the origin is shifted to ``xbase + xpt[kopt, :]``.
         """
-        hxpt = xpt - .5 * xpt[np.newaxis, kopt, :]
+        hxpt = xpt - 0.5 * xpt[np.newaxis, kopt, :]
         temp = np.outer(np.dot(hxpt.T, self.pq), xpt[kopt, :])
         self._hq = self.hq + temp + temp.T
 
@@ -4551,7 +4541,7 @@ class Quadratic:
         # implicit part of the Hessian matrix is modified.
         omega = implicit_hessian(zmat, idz, knew)
         self._hq = self.hq + self.pq[knew] * np.outer(xold, xold)
-        self._pq[knew] = 0.
+        self._pq[knew] = 0.0
         self._pq += diff * omega
 
         # Update the gradient of the model.
@@ -4588,8 +4578,8 @@ class Quadratic:
         """
         npt = fval.size
         eps = np.finfo(float).eps
-        tol = 10. * np.sqrt(eps) * npt * np.max(np.abs(fval), initial=1.)
-        diff = 0.
+        tol = 10.0 * np.sqrt(eps) * npt * np.max(np.abs(fval), initial=1.0)
+        diff = 0.0
         for k in range(npt):
             qx = self(xpt[k, :], xpt, kopt)
             diff = max(diff, abs(qx + fval[kopt] - fval[k]))

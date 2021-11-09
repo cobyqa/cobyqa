@@ -81,7 +81,7 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
     eps = np.finfo(float).eps
     tiny = np.finfo(float).tiny
     n = gq.size
-    tol = 10. * eps * n
+    tol = 10.0 * eps * n
     bdtol = get_bdtol(xl, xu, **kwargs)
 
     # Shift the bounds to carry out all calculations at the origin.
@@ -92,7 +92,7 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
     assert_(np.max(xl) < bdtol)
     assert_(np.min(xu) > -bdtol)
     assert_(np.isfinite(delta))
-    assert_(delta > 0.)
+    assert_(delta > 0.0)
 
     # Initialize the working sets and the trial step. The vector xbdi stores the
     # working sets related to the bounds, where the value 0 indicates that the
@@ -101,8 +101,8 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
     # component is fixed by the upper bound.
     step = np.zeros_like(gq)
     xbdi = np.zeros(step.size, dtype=int)
-    xbdi[(step <= xl) & (gq >= 0.)] = -1
-    xbdi[(step >= xu) & (gq <= 0.)] = 1
+    xbdi[(step <= xl) & (gq >= 0.0)] = -1
+    xbdi[(step >= xu) & (gq <= 0.0)] = 1
     ifree = np.equal(xbdi, 0)
     ifixed = np.not_equal(xbdi, 0)
     nact = np.count_nonzero(np.abs(xbdi))
@@ -113,13 +113,13 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
     # trial step reaches the boundary of the trust region, and to -1 if all the
     # search directions are constrained.
     sd = np.empty_like(step)
-    delsq = delta ** 2.
+    delsq = delta ** 2.0
     tolsd = tol
-    beta = 0.
-    gqsq = 0.
-    gqsqsav = 0.
-    qred = 0.
-    crvmin = -1.
+    beta = 0.0
+    gqsq = 0.0
+    gqsqsav = 0.0
+    qred = 0.0
+    crvmin = -1.0
     iterc = 0
     maxiter = n
     while abs(crvmin) > tolsd:
@@ -130,7 +130,7 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
         # the iteration number initially and at a restart. The computations are
         # stopped if no further progress is possible.
         sd[ifree] = beta * sd[ifree] - gq[ifree]
-        sd[ifixed] = 0.
+        sd[ifixed] = 0.0
         sdsq = np.inner(sd, sd)
         tolsd = tol * np.max(np.abs(sd), initial=1.)
         if np.sqrt(sdsq) < tolsd:
@@ -143,12 +143,12 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
         # trust-region constraint. The calculations are stopped if no further
         # progress is possible in the current search direction.
         rhs = delsq - np.inner(step[ifree], step[ifree])
-        if rhs <= 0.:
-            crvmin = 0.
+        if rhs <= 0.0:
+            crvmin = 0.0
             continue
         sdstep = np.inner(sd[ifree], step[ifree])
-        sqrd = np.sqrt(sdsq * rhs + sdstep ** 2.)
-        if sdstep < 0. and sdsq > tiny * abs(sqrd - sdstep):
+        sqrd = np.sqrt(sdsq * rhs + sdstep ** 2.0)
+        if sdstep < 0.0 and sdsq > tiny * abs(sqrd - sdstep):
             alpht = (sqrd - sdstep) / sdsq
         elif abs(sqrd + sdstep) > tiny * rhs:
             alpht = rhs / (sqrd + sdstep)
@@ -190,16 +190,16 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
         # Make the actual conjugate gradient iteration. The max operator below
         # is crucial as it prevents numerical difficulties engendered by
         # computer rounding errors.
-        if alpha > 0.:
+        if alpha > 0.0:
             iterc += 1
             crv = curv / sdsq
-            if inew == -1 and crv > 0.:
-                crvmin = min(crvmin, crv) if abs(crvmin + 1.) > tolsd else crv
+            if inew == -1 and crv > 0.0:
+                crvmin = min(crvmin, crv) if abs(crvmin + 1.0) > tolsd else crv
             gqsqsav = gqsq
             gq += alpha * hsd
             gqsq = np.inner(gq[ifree], gq[ifree])
             step += alpha * sd
-            sdred = max(0., alpha * (gqsqsav - .5 * alpha * curv))
+            sdred = max(0.0, alpha * (gqsqsav - 0.5 * alpha * curv))
             qred += sdred
 
         # Restart the conjugate gradient method if it has hit a new bound. If
@@ -207,17 +207,17 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
         # attempts round the trust-region boundary are done below.
         if inew >= 0:
             nact += 1
-            if sd[inew] < 0.:
+            if sd[inew] < 0.0:
                 xbdi[inew] = -1
             else:
                 xbdi[inew] = 1
             ifree[inew] = False
             ifixed[inew] = True
             delsq -= step[inew] * step[inew]
-            if delsq <= 0.:
-                crvmin = 0.
+            if delsq <= 0.0:
+                crvmin = 0.0
                 continue
-            beta = 0.
+            beta = 0.0
             continue
 
         # If the step did not reach the trust-region boundary, apply another
@@ -232,7 +232,7 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
         # The trust-region boundary has been reached by the step. End the
         # truncated conjugate gradient procedure and attempt to improve the
         # current step round the trust-region boundary.
-        crvmin = 0.
+        crvmin = 0.0
         continue
     else:
         # Whenever the truncated conjugate gradient computations stopped because
@@ -244,7 +244,7 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
         gqsq = np.inner(gq[ifree], gq[ifree])
         gdstep = np.inner(gq[ifree], step[ifree])
         sd[ifree] = step[ifree]
-        sd[ifixed] = 0.
+        sd[ifixed] = 0.0
         hsd = np.atleast_1d(hessp(sd, *args))
         if hsd.dtype.kind in np.typecodes['AllInteger']:
             hsd = np.asarray(hsd, dtype=float)
@@ -255,58 +255,58 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
             # round the trust-region boundary are restarted.
             if inew >= 0:
                 sd[ifree] = step[ifree]
-                sd[ifixed] = 0.
+                sd[ifixed] = 0.0
                 hsd = np.atleast_1d(hessp(sd, *args))
                 if hsd.dtype.kind in np.typecodes['AllInteger']:
                     hsd = np.asarray(hsd, dtype=float)
                 hred = np.copy(hsd)
-            tolsd = tol * np.max(np.abs(sd), initial=1.)
+            tolsd = tol * np.max(np.abs(sd), initial=1.0)
 
             # Let the search direction be a linear combination of the reduced
             # step and the reduced gradient that is orthogonal to the step.
             iterc += 1
-            disc = gqsq * stepsq - gdstep ** 2.
-            sqrd = np.sqrt(max(disc, 0.))
+            disc = gqsq * stepsq - gdstep ** 2.0
+            sqrd = np.sqrt(max(disc, 0.0))
             if sqrd < tolsd:
                 break
             sd[ifree] = (gdstep * step[ifree] - stepsq * gq[ifree]) / sqrd
-            sd[ifixed] = 0.
+            sd[ifixed] = 0.0
             gdsd = -sqrd
 
             # By considering the simple bounds on the variables, calculate an
             # upper bound on the tangent of half the angle of the alternative
             # iteration and restart the alternative iterations if a free
             # variable has reached a new bound.
-            angbd = 1.
+            angbd = 1.0
             inew = -1
             sl = np.full_like(step, np.inf)
             su = np.full_like(step, np.inf)
             sl[ifree] = step[ifree] - xl[ifree]
             su[ifree] = xu[ifree] - step[ifree]
-            if np.any(sl <= 0.):
+            if np.any(sl <= 0.0):
                 nact += 1
-                inew = np.argmax(sl <= 0.)
+                inew = np.argmax(sl <= 0.0)
                 xbdi[inew] = -1
                 ifree[inew] = False
                 ifixed[inew] = True
-                stepsq -= step[inew] ** 2.
-                gqsq -= gq[inew] ** 2.
+                stepsq -= step[inew] ** 2.0
+                gqsq -= gq[inew] ** 2.0
                 gdstep -= gq[inew] * step[inew]
                 continue
-            elif np.any(su <= 0.):
+            elif np.any(su <= 0.0):
                 nact += 1
-                inew = np.argmax(su <= 0.)
+                inew = np.argmax(su <= 0.0)
                 xbdi[inew] = 1
                 ifree[inew] = False
                 ifixed[inew] = True
-                stepsq -= step[inew] ** 2.
-                gqsq -= gq[inew] ** 2.
+                stepsq -= step[inew] ** 2.0
+                gqsq -= gq[inew] ** 2.0
                 gdstep -= gq[inew] * step[inew]
                 continue
             ssq = np.square(step[ifree]) + np.square(sd[ifree])
             temp = np.full_like(step, -np.inf)
             temp[ifree] = ssq - np.square(xl[ifree])
-            itemp = temp > 0.
+            itemp = temp > 0.0
             temp[itemp] = np.sqrt(temp[itemp]) - sd[itemp]
             temp[np.logical_not(itemp)] = -np.inf
             isl = angbd * temp - sl > tiny * temp
@@ -318,7 +318,7 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
                 angbd = ratio[inew]
                 xbdisav = -1
             temp[ifree] = ssq - np.square(xu[ifree])
-            itemp = temp > 0.
+            itemp = temp > 0.0
             temp[itemp] = np.sqrt(temp[itemp]) + sd[itemp]
             temp[np.logical_not(itemp)] = -np.inf
             isu = angbd * temp - su > tiny * temp
@@ -344,20 +344,20 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
             # three parts, and nalt represents the number of intervals in the
             # unconstrained case.
             nalt = 20
-            iu = int(float(nalt - 3) * angbd + 3.1)
+            iu = int((nalt - 3) * angbd + 3.1)
             angt = angbd * np.arange(1, iu + 1, dtype=float) / float(iu)
-            sth = 2. * angt / (1. + np.square(angt))
-            temp = sdhsd + angt * (stephred * angt - 2. * stephsd)
+            sth = 2.0 * angt / (1.0 + np.square(angt))
+            temp = sdhsd + angt * (stephred * angt - 2.0 * stephsd)
             rednew = sth * (gdstep * angt - gdsd)
-            rednew -= sth * (.5 * sth * temp)
+            rednew -= sth * (0.5 * sth * temp)
             isav = np.argmax(rednew)
             redmax = rednew[isav]
             rednew[isav] = -np.inf
-            redprev = rednew[isav - 1] if isav > 0 else 0.
-            rednext = rednew[isav + 1] if isav < iu - 1 else 0.
-            if redmax <= 0.:
+            redprev = rednew[isav - 1] if isav > 0 else 0.0
+            rednext = rednew[isav + 1] if isav < iu - 1 else 0.0
+            if redmax <= 0.0:
                 isav = -1
-                redmax = 0.
+                redmax = 0.0
 
             # Set the sine and cosine of the angle of the alternative iteration,
             # and return if no reduction is possible. The computations are
@@ -368,13 +368,13 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
                 break
             angc = angbd
             if isav < iu - 1:
-                temp = (rednext - redprev) / (2. * redmax - redprev - rednext)
-                angc *= (float(isav + 1) + .5 * temp) / float(iu)
-            cth = (1. - angc * angc) / (1. + angc ** 2.)
-            sth = 2. * angc / (1. + angc ** 2.)
-            temp = sdhsd + angc * (angc * stephred - 2. * stephsd)
-            sdred = sth * (angc * gdstep - gdsd - .5 * sth * temp)
-            if sdred <= 0.:
+                temp = (rednext - redprev) / (2.0 * redmax - redprev - rednext)
+                angc *= (isav + 1.0 + 0.5 * temp) / float(iu)
+            cth = (1.0 - angc * angc) / (1.0 + angc ** 2.0)
+            sth = 2.0 * angc / (1.0 + angc ** 2.0)
+            temp = sdhsd + angc * (angc * stephred - 2.0 * stephsd)
+            sdred = sth * (angc * gdstep - gdsd - 0.5 * sth * temp)
+            if sdred <= 0.0:
                 break
 
             # Update the step with the current search direction. If the angle of
@@ -382,7 +382,7 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
             # variable, that variable is fixed at the bound and the computations
             # of the alternative iterations are restarted.
             step[ifree] = cth * step[ifree] + sth * sd[ifree]
-            gq += (cth - 1.) * hred + sth * hsd
+            gq += (cth - 1.0) * hred + sth * hsd
             stepsq = np.inner(step[ifree], step[ifree])
             gdstep = np.inner(gq[ifree], step[ifree])
             gqsq = np.inner(gq[ifree], gq[ifree])
@@ -393,11 +393,11 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
                 xbdi[inew] = xbdisav
                 ifree[inew] = False
                 ifixed[inew] = True
-                stepsq -= step[inew] ** 2.
-                gqsq -= gq[inew] ** 2.
+                stepsq -= step[inew] ** 2.0
+                gqsq -= gq[inew] ** 2.0
                 gdstep -= gq[inew] * step[inew]
                 continue
-            if sdred > 0.:
+            if sdred > 0.0:
                 inew = -1
                 continue
 

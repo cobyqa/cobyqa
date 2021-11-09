@@ -81,7 +81,7 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
     eps = np.finfo(float).eps
     tiny = np.finfo(float).tiny
     npt, n = xpt.shape
-    tol = 10. * eps * npt
+    tol = 10.0 * eps * npt
     bdtol = get_bdtol(xl, xu, **kwargs)
 
     # Shift the bounds to carry out all calculations at the origin.
@@ -92,32 +92,32 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
     assert_(np.max(xl) < bdtol)
     assert_(np.min(xu) > -bdtol)
     assert_(np.isfinite(delta))
-    assert_(delta > 0.)
+    assert_(delta > 0.0)
 
     # Start the procedure.
     step = np.zeros_like(gq)
     stpsav = np.empty_like(step)
-    bigstp = 2. * delta
-    csav = 0.
-    cauchy = 0.
+    bigstp = 2.0 * delta
+    csav = 0.0
+    cauchy = 0.0
     for isign in range(2):
         # Initialize the computations of the Cauchy step. The free components of
         # the Cauchy step are set to bigstp and the computations stop
         # immediately if every free component of the gradient is zero.
-        ifree = np.minimum(-xl, gq) > 0.
-        ifree = ifree | (np.maximum(-xu, gq) < 0.)
+        ifree = np.minimum(-xl, gq) > 0.0
+        ifree = ifree | (np.maximum(-xu, gq) < 0.0)
         cc = np.zeros_like(step)
         cc[ifree] = bigstp
         gqsq = np.inner(gq[ifree], gq[ifree])
-        if np.sqrt(gqsq) < tol * max(1., bigstp):
+        if np.sqrt(gqsq) < tol * max(1.0, bigstp):
             break
 
         # Fix the remaining components of the Cauchy step to the lower and
         # upper bounds as the trust-region constraint allows.
-        ccsq = 0.
-        ccsqsav = -1.
-        stplen = 0.
-        delsq = delta ** 2.
+        ccsq = 0.0
+        ccsqsav = -1.0
+        stplen = 0.0
+        delsq = delta ** 2.0
         while ccsq > ccsqsav and np.sqrt(gqsq) >= tol * bigstp:
             ccsqsav = ccsq
             stplen = np.sqrt(delsq / gqsq)
@@ -133,7 +133,7 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
             ccsq += np.inner(cc[ixu], cc[ixu])
             ifree[ixl | ixu] = False
             gqsq = np.inner(gq[ifree], gq[ifree])
-            delsq = delta ** 2. - ccsq
+            delsq = delta ** 2.0 - ccsq
 
         # Set the free components of the Cauchy step and all components of the
         # trial step. The Cauchy step may be scaled hereinafter.
@@ -141,9 +141,9 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
         cc[ifree] = -stplen * gq[ifree]
         step[ifree] = np.maximum(xl[ifree], np.minimum(xu[ifree], cc[ifree]))
         iopt = np.logical_not(ifree) & (np.abs(cc) < tol * bigstp)
-        step[iopt] = 0.
+        step[iopt] = 0.0
         ifixed = np.logical_not(ifree | iopt)
-        ixl = ifixed & (gq > 0.)
+        ixl = ifixed & (gq > 0.0)
         step[ixl] = xl[ixl]
         ixu = ifixed & np.logical_not(ixl)
         step[ixu] = xu[ixu]
@@ -153,21 +153,21 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
         # step. Scale the Cauchy step by a factor less than one if that can
         # reduce the modulus of the Lagrange function.
         crv = curv(cc, *args)
-        ubf = 1. + np.sqrt(2.)
+        ubf = 1.0 + np.sqrt(2.0)
         if isign == 1:
-            crv *= -1.
+            crv *= -1.0
         if -gqcc < crv < -ubf * gqcc and abs(crv) > tiny * abs(gqcc):
             scale = -gqcc / crv
             step = np.maximum(xl, np.minimum(xu, scale * cc))
-            cauchy = (.5 * gqcc * scale) ** 2.
+            cauchy = (0.5 * gqcc * scale) ** 2.0
         else:
-            cauchy = (gqcc + .5 * crv) ** 2.
+            cauchy = (gqcc + 0.5 * crv) ** 2.0
 
         # If isign is zero, then the step is calculated as before after
         # reversing the sign of the gradient. Thus two step vectors become
         # available. The chosen one gives the largest value of cauchy.
         if isign == 0:
-            gq *= -1.
+            gq *= -1.0
             np.copyto(stpsav, step)
             csav = cauchy
             continue

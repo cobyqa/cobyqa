@@ -18,12 +18,12 @@ class TestBVCS:
         kopt = rng.integers(2 * n + 1)
         gq = rng.standard_normal(n)
         Hq = rng.standard_normal((n, n))
-        Hq = .5 * (Hq + Hq.T)
+        Hq = 0.5 * (Hq + Hq.T)
         xl = rng.standard_normal(n)
         xu = rng.standard_normal(n)
         xl, xu = np.minimum(xl, xu), np.maximum(xl, xu)
         xpt = rng.uniform(xl, xu, (2 * n + 1, n))
-        delta = rng.uniform(1e-1, 1.)
+        delta = rng.uniform(0.1, 1.0)
         step, cauchy = bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, delta)
         assert_dtype_equal(step, float)
         assert_(step.ndim == 1)
@@ -32,12 +32,12 @@ class TestBVCS:
 
         # Ensure the feasibility of the output.
         eps = np.finfo(float).eps
-        tol = 10. * eps * n
-        bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
+        tol = 10.0 * eps * n
+        bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.0)
         assert_array_less_equal(xl - xpt[kopt, :] - step, bdtol)
         assert_array_less_equal(xpt[kopt, :] + step - xu, bdtol)
         assert_(np.linalg.norm(step) - delta <= bdtol)
-        assert_(cauchy >= 0.)
+        assert_(cauchy >= 0.0)
 
     def test_exceptions(self):
         xpt = np.ones((11, 5), dtype=float)
@@ -45,14 +45,14 @@ class TestBVCS:
         gq = np.ones(5, dtype=float)
         Hq = np.ones((5, 5), dtype=float)
         xl = np.zeros(5, dtype=float)
-        xu = 2. * np.ones(5, dtype=float)
-        delta = 1.
+        xu = 2.0 * np.ones(5, dtype=float)
+        delta = 1.0
         with assert_raises(AssertionError):
-            bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, -1.)
+            bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, -1.0)
         xpt[kopt, 2] = 2.1
         with assert_raises(AssertionError):
             bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, delta)
-        xpt[kopt, 2], xl[2], xu[2] = 1., 1.1, 0.9
+        xpt[kopt, 2], xl[2], xu[2] = 1.0, 1.1, 0.9
         with assert_raises(AssertionError):
             bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, delta)
 
@@ -68,8 +68,8 @@ class TestBVLAG:
         xu = rng.standard_normal(n)
         xl, xu = np.minimum(xl, xu), np.maximum(xl, xu)
         xpt = rng.uniform(xl, xu, (2 * n + 1, n))
-        delta = rng.uniform(1e-1, 1.)
-        alpha = rng.uniform(1e-1, 1.)
+        delta = rng.uniform(0.1, 1.0)
+        alpha = rng.uniform(0.1, 1.0)
         step = bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha)
         assert_dtype_equal(step, float)
         assert_(step.ndim == 1)
@@ -77,8 +77,8 @@ class TestBVLAG:
 
         # Ensure the feasibility of the output.
         eps = np.finfo(float).eps
-        tol = 10. * eps * n
-        bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
+        tol = 10.0 * eps * n
+        bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.0)
         assert_array_less_equal(xl - xpt[kopt, :] - step, bdtol)
         assert_array_less_equal(xpt[kopt, :] + step - xu, bdtol)
         assert_(np.linalg.norm(step) - delta <= bdtol)
@@ -89,13 +89,13 @@ class TestBVLAG:
         gq = np.ones(5, dtype=float)
         xl = np.zeros(5, dtype=float)
         xu = 2. * np.ones(5, dtype=float)
-        delta = 1.
-        alpha = 1.
+        delta = 1.0
+        alpha = 1.0
         with assert_raises(AssertionError):
-            bvlag(xpt, kopt, klag, gq, xl, xu, -1., alpha)
+            bvlag(xpt, kopt, klag, gq, xl, xu, -1.0, alpha)
         xpt[kopt, 2] = 2.1
         with assert_raises(AssertionError):
             bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha)
-        xpt[kopt, 2], xl[2], xu[2] = 1., 1.1, 0.9
+        xpt[kopt, 2], xl[2], xu[2] = 1.0, 1.1, 0.9
         with assert_raises(AssertionError):
-            bvlag(xpt, kopt, klag, gq, xl, xu, -1., alpha)
+            bvlag(xpt, kopt, klag, gq, xl, xu, -1.0, alpha)

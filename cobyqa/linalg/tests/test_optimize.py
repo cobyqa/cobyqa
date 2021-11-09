@@ -18,7 +18,7 @@ class TestBVTCG:
         xu = rng.standard_normal(n)
         xl, xu = np.minimum(xl, xu), np.maximum(xl, xu)
         x0 = rng.uniform(xl, xu)
-        delta = rng.uniform(1e-1, 1.)
+        delta = rng.uniform(0.1, 1.0)
         step = bvtcg(x0, gq, np.dot, (Hq,), xl, xu, delta)
         assert_dtype_equal(step, float)
         assert_(step.ndim == 1)
@@ -26,14 +26,14 @@ class TestBVTCG:
 
         # Ensure the feasibility of the output.
         eps = np.finfo(float).eps
-        tol = 10. * eps * n
-        bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
+        tol = 1e1 * eps * n
+        bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.0)
         assert_array_less_equal(xl - x0 - step, bdtol)
         assert_array_less_equal(x0 + step - xu, bdtol)
         assert_(np.linalg.norm(step) - delta <= bdtol)
 
         # Ensure that no increase occurred in the objective function.
-        reduct = -np.inner(gq, step) - .5 * np.inner(step, np.dot(Hq, step))
+        reduct = -np.inner(gq, step) - 0.5 * np.inner(step, np.dot(Hq, step))
         assert_(reduct >= -bdtol)
 
     def test_exceptions(self):
@@ -41,14 +41,14 @@ class TestBVTCG:
         gq = np.ones(5, dtype=float)
         Hq = np.ones((5, 5), dtype=float)
         xl = np.zeros(5, dtype=float)
-        xu = 2. * np.ones(5, dtype=float)
-        delta = 1.
+        xu = 2.0 * np.ones(5, dtype=float)
+        delta = 1.0
         with assert_raises(AssertionError):
-            bvtcg(x0, gq, np.dot, (Hq,), xl, xu, -1.)
+            bvtcg(x0, gq, np.dot, (Hq,), xl, xu, -1.0)
         x0[2] = 2.1
         with assert_raises(AssertionError):
             bvtcg(x0, gq, np.dot, (Hq,), xl, xu, delta)
-        x0[2], xl[2], xu[2] = 1., 1.1, 0.9
+        x0[2], xl[2], xu[2] = 1.0, 1.1, 0.9
         with assert_raises(AssertionError):
             bvtcg(x0, gq, np.dot, (Hq,), xl, xu, delta)
 
@@ -68,7 +68,7 @@ class TestCPQP:
         xu = rng.standard_normal(n)
         xl, xu = np.minimum(xl, xu), np.maximum(xl, xu)
         x0 = rng.uniform(xl, xu)
-        delta = rng.uniform(1e-1, 1.)
+        delta = rng.uniform(0.1, 1.0)
         step = cpqp(x0, Aub, bub, Aeq, beq, xl, xu, delta)
         assert_dtype_equal(step, float)
         assert_(step.ndim == 1)
@@ -76,18 +76,18 @@ class TestCPQP:
 
         # Ensure the feasibility of the output.
         eps = np.finfo(float).eps
-        tol = 10. * eps * n
+        tol = 10.0 * eps * n
         bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
         assert_array_less_equal(xl - x0 - step, bdtol)
         assert_array_less_equal(x0 + step - xu, bdtol)
         assert_(np.linalg.norm(step) - delta <= bdtol)
 
         # Assert that no increase occurs in the objective function.
-        rub = np.maximum(0., np.dot(Aub, x0) - bub)
+        rub = np.maximum(0.0, np.dot(Aub, x0) - bub)
         reduct = np.inner(rub, rub)
         leq = np.dot(Aeq, x0) - beq
         reduct += np.inner(leq, leq)
-        rub = np.maximum(0., np.dot(Aub, x0 + step) - bub)
+        rub = np.maximum(0.0, np.dot(Aub, x0 + step) - bub)
         reduct -= np.inner(rub, rub)
         leq = np.dot(Aeq, x0 + step) - beq
         reduct -= np.inner(leq, leq)
@@ -100,14 +100,14 @@ class TestCPQP:
         Aeq = np.ones((2, 5), dtype=float)
         beq = np.zeros(2, dtype=float)
         xl = np.zeros(5, dtype=float)
-        xu = 2. * np.ones(5, dtype=float)
-        delta = 1.
+        xu = 2.0 * np.ones(5, dtype=float)
+        delta = 1.0
         with assert_raises(AssertionError):
-            cpqp(x0, Aub, bub, Aeq, beq, xl, xu, -1.)
+            cpqp(x0, Aub, bub, Aeq, beq, xl, xu, -1.0)
         x0[2] = 2.1
         with assert_raises(AssertionError):
             cpqp(x0, Aub, bub, Aeq, beq, xl, xu, delta)
-        x0[2], xl[2], xu[2] = 1., 1.1, 0.9
+        x0[2], xl[2], xu[2] = 1.0, 1.1, 0.9
         with assert_raises(AssertionError):
             cpqp(x0, Aub, bub, Aeq, beq, xl, xu, delta)
 
@@ -128,9 +128,9 @@ class TestLCTCG:
         xu = rng.standard_normal(n)
         xl, xu = np.minimum(xl, xu), np.maximum(xl, xu)
         x0 = rng.uniform(xl, xu)
-        bub = np.dot(Aub, x0) + rng.uniform(0., 1., mlub)
+        bub = np.dot(Aub, x0) + rng.uniform(0.0, 1.0, mlub)
         beq = np.dot(Aeq, x0)
-        delta = rng.uniform(1e-1, 1.)
+        delta = rng.uniform(0.1, 1.0)
         step = lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta)
         assert_dtype_equal(step, float)
         assert_(step.ndim == 1)
@@ -138,9 +138,9 @@ class TestLCTCG:
 
         # Ensure the feasibility of the output.
         eps = np.finfo(float).eps
-        tol = 10. * eps * n
-        bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
-        lctol = tol * np.max(np.abs(bub), initial=1.)
+        tol = 10.0 * eps * n
+        bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.0)
+        lctol = tol * np.max(np.abs(bub), initial=1.0)
         assert_array_less_equal(xl - x0 - step, bdtol)
         assert_array_less_equal(x0 + step - xu, bdtol)
         if mlub > 0:
@@ -150,7 +150,7 @@ class TestLCTCG:
         assert_(np.linalg.norm(step) - delta <= max(bdtol, lctol))
 
         # Ensure that no increase occurred in the objective function.
-        reduct = -np.inner(gq, step) - .5 * np.inner(step, np.dot(Hq, step))
+        reduct = -np.inner(gq, step) - 0.5 * np.inner(step, np.dot(Hq, step))
         assert_(reduct >= -max(bdtol, lctol))
 
     def test_exceptions(self):
@@ -165,17 +165,17 @@ class TestLCTCG:
         xu = np.ones(5, dtype=float)
         delta = 1.
         with assert_raises(AssertionError):
-            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, -1.)
+            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, -1.0)
         x0[2] = 1.1
         with assert_raises(AssertionError):
             lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta)
         x0[2] = -1.1
         with assert_raises(AssertionError):
             lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta)
-        x0[2], xl[2], xu[2] = 0., 1.1, 0.9
+        x0[2], xl[2], xu[2] = 0.0, 1.1, 0.9
         with assert_raises(AssertionError):
             lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta)
-        xl[2], xu[2] = -1., 1.
+        xl[2], xu[2] = -1.0, 1.0
         bub = -np.ones(3)
         with assert_raises(AssertionError):
             lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta)
@@ -201,7 +201,7 @@ class TestNNLS:
 
         # Ensure that the KKT conditions approximately hold at the solution.
         eps = np.finfo(float).eps
-        lctol = 1e2 * eps * max(n, m) * np.max(np.abs(b), initial=1.)
+        lctol = 100.0 * eps * max(n, m) * np.max(np.abs(b), initial=1.0)
         grad = np.dot(A.T, np.dot(A, x) - b)
         assert_array_less_equal(np.abs(grad[k:]), lctol)
         assert_array_less_equal(np.abs(grad[:k] * x[:k]), lctol)

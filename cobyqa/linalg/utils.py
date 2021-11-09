@@ -78,9 +78,9 @@ def get_bdtol(xl, xu, **kwargs):
     xu = np.asarray(xu)
 
     eps = np.finfo(float).eps
-    tol = 10. * eps * xl.size
-    temp = np.nan_to_num(np.abs(np.r_[xl, xu]), nan=1., posinf=1.)
-    bdtol = tol * np.max(temp, initial=1.)
+    tol = 10.0 * eps * xl.size
+    temp = np.nan_to_num(np.abs(np.r_[xl, xu]), nan=1.0, posinf=1.0)
+    bdtol = tol * np.max(temp, initial=1.0)
     return kwargs.get('bdtol', bdtol)
 
 
@@ -109,8 +109,8 @@ def get_lctol(A, b, **kwargs):
     b = np.asarray(b)
 
     eps = np.finfo(float).eps
-    tol = 10. * eps * max(A.shape)
-    lctol = tol * np.max(np.abs(b), initial=1.)
+    tol = 10.0 * eps * max(A.shape)
+    lctol = tol * np.max(np.abs(b), initial=1.0)
     return kwargs.get('lctol', lctol)
 
 
@@ -182,10 +182,10 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
     eps = np.finfo(float).eps
     tiny = np.finfo(float).tiny
     n = gq.size
-    tol = 10. * eps * n
+    tol = 10.0 * eps * n
     gqtol = tol * np.max(np.abs(gq), initial=1.)
     deltx = delta if isinstance(delta, (float, np.floating)) else delta[0][1]
-    tdel = .2 * deltx
+    tdel = 0.2 * deltx
 
     # Remove from the current active set the constraints that are not considered
     # active anymore, that is those whose residuals exceed tdel.
@@ -234,12 +234,12 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
             test = np.sqrt(ssq) / delta
         else:
             isav = 0
-            test = 0.
+            test = 0.0
             for i, radius in delta:
                 test = max(test, np.linalg.norm(step[isav:i]) / radius)
                 isav = i
         inext = -1
-        violmx = 0.
+        violmx = 0.0
         for i in range(resid.size):
             if i not in iact[:nact] and resid[i] <= tdel:
                 lhs = evalc(i, step, *argc)
@@ -250,17 +250,17 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
         # Return if no constraint is violated, or if the constraint violation
         # previously calculated is too small, as a positive value of violmx
         # might then be caused by computer rounding errors.
-        ctol = 0.
-        if 0. < violmx < 1e-2 * deltx:
+        ctol = 0.0
+        if 0.0 < violmx < 1e-2 * deltx:
             for k in range(nact):
                 ctol = max(ctol, abs(evalc(iact[k], step, *argc)))
-        ctol *= 10.
+        ctol *= 10.0
         if inext == -1 or violmx <= ctol:
             return step
 
         # Add the inext-th constraint to the active set, by applying Givens
         # rotations to the matrix qfac, and add the appropriate column to rfac.
-        sval = 0.
+        sval = 0.0
         for k in range(n - 1, -1, -1):
             cval = evalc(inext, qfac[:, k], *argc)
             if k < mleq + nact:
@@ -270,11 +270,11 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
             else:
                 sval, cosv, sinv = rotg(cval, sval)
                 rot(qfac[:, k], qfac[:, k + 1], cosv, sinv)
-        if sval < 0.:
+        if sval < 0.0:
             qfac[:, mleq + nact] = -qfac[:, mleq + nact]
         rfac[mleq + nact, mleq + nact] = abs(sval)
         iact[nact] = inext
-        vlam[nact] = 0.
+        vlam[nact] = 0.0
         nact += 1
 
         while violmx > ctol:
@@ -282,7 +282,7 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
             # to include the new constraint. When a constraint is added or
             # removed, all the Lagrange multipliers must be updated.
             vmu = np.empty(nact)
-            vmu[-1] = 1. / rfac[mleq + nact - 1, mleq + nact - 1] ** 2.
+            vmu[-1] = 1.0 / rfac[mleq + nact - 1, mleq + nact - 1] ** 2.0
             for k in range(nact - 2, -1, -1):
                 kleq = mleq + k
                 temp = -np.inner(rfac[kleq, kleq + 1:mleq + nact], vmu[k + 1:])
@@ -300,16 +300,16 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
                 vmult = mult[k]
             vlam[:nact] -= vmult * vmu
             if k >= 0:
-                vlam[k] = 0.
-                violmx = max(violmx - vmult, 0.)
+                vlam[k] = 0.0
+                violmx = max(violmx - vmult, 0.0)
             else:
-                violmx = 0.
+                violmx = 0.0
 
             # Remove from the active set the constraints whose Lagrange
             # multipliers are nonnegative. This mechanism ensures the active
             # constraints are linearly independent.
             for k in range(nact - 1, -1, -1):
-                if vlam[k] >= 0.:
+                if vlam[k] >= 0.0:
                     rmact(k, mleq, nact, qfac, rfac, iact, vlam)
 
     return np.zeros_like(gq)
@@ -356,7 +356,7 @@ def rmact(k, mleq, nact, qfac, rfac, *args):
         rfac[[j, j + 1], j:mleq + nact] = rfac[[j + 1, j], j:mleq + nact]
         rfac[:j + 2, [j, j + 1]] = rfac[:j + 2, [j + 1, j]]
         rfac[j, j] = hval
-        rfac[j + 1, j] = 0.
+        rfac[j + 1, j] = 0.0
 
         # Perform the corresponding Givens rotations on the matrix qfac.
         rot(qfac[:, j + 1], qfac[:, j], cosv, sinv)
