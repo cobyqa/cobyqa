@@ -1,6 +1,6 @@
-from distutils.version import LooseVersion
+from pkg_resources import parse_version
 
-# from .._min_dependencies import CYTHON_MIN_VERSION
+# from ..utils._min_dependencies import CYTHON_MIN_VERSION  # noqa
 
 # Don't use the deprecated NumPy C API.
 numpy_nodepr_api = dict(
@@ -25,11 +25,11 @@ numpy_nodepr_api = dict(
 #     except ModuleNotFoundError as e:
 #         raise ModuleNotFoundError(message) from e
 #
-#     if LooseVersion(Cython.__version__) < LooseVersion(CYTHON_MIN_VERSION):
+#     if parse_version(Cython.__version__) < parse_version(CYTHON_MIN_VERSION):
 #         message += f' The current version is {Cython.__version__}.'
 #         raise ValueError(message)
-#
-#
+
+
 # def cythonize_extensions(config):
 #     """
 #     Cythonize extensions of a configuration.

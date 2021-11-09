@@ -6,8 +6,7 @@
 Linear algebra (`cobyqa.linalg`)
 ********************************
 
-This section presents the mathematical frameworks underneath the subproblem
-solvers of COBYQA.
+This section presents the mathematical frameworks underneath the subproblem solvers of COBYQA.
 
 .. seealso::
     `bvcs`,

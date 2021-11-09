@@ -98,18 +98,18 @@ be close from :math:`x^0`. We denote :math:`\Pi(v)` the unique solution of
     :label: init-search
 
     \begin{array}{ll}
-        \min        & \quad \frac{1}{2} \norm{v + d}^2\\
+        \min        & \quad \frac{1}{2} \norm{d - v}^2\\
         \text{s.t.} & \quad \inner{a_j, d} \le 0, ~ j \in \mathcal{J}(x^0),\\
                     & \quad \inner{c_j, d} = 0, ~ j \in \set{1, 2, \dots, m_2}\\
                     & \quad d \in \R^n.
     \end{array}
 
 where :math:`v \in \R^n`. Then, the initial search direction :math:`d^0` is set
-to :math:`\Pi\big(\nabla q(x^0)\big)`. If :math:`\inner{a_j, d^0} < 0` for some
-:math:`j`, then the point :math:`x^1` will be further from this constraint than
-the initial guess. Therefore, the working set :math:`\mathcal{I}` is chosen to
-be :math:`\set{j \in \mathcal{J}(x^0) : \inner{a_j, d^0} = 0}` (or a subset of
-it, so that :math:`\set{a_j : j \in \mathcal{I}}` is a basis of
+to :math:`-\Pi\big(\nabla q(x^0)\big)`. If :math:`\inner{a_j, d^0} < 0` for
+some :math:`j`, then the point :math:`x^1` will be further from this constraint
+than the initial guess. Therefore, the working set :math:`\mathcal{I}` is
+chosen to  be :math:`\set{j \in \mathcal{J}(x^0) : \inner{a_j, d^0} = 0}`
+(or a subset of it, so that :math:`\set{a_j : j \in \mathcal{I}}` is a basis of
 :math:`\vspan \set{a_j : j \in \mathcal{J}(x^0), ~ \inner{a_j, d^0} = 0}`).
 The solution of such a problem is calculated using the Goldfarb and Idnani
 method for quadratic programming :cite:`lctcg-Goldfarb_Idnani_1983`.
@@ -120,15 +120,13 @@ The linearly constrained truncated conjugate gradient procedure
 The general framework employed by `lctcg` is presented below.
 
 #. Set :math:`x^0 = 0`.
-#. Set :math:`g^0 = \nabla q(x^0)`, :math:`d^0 = \Pi(g^0)`, the active set
+#. Set :math:`g^0 = g + H x^0`, :math:`d^0 = -\Pi(g^0)`, the working set
    :math:`\mathcal{I} \subseteq \mathcal{J}(x^0)`, and :math:`k = 0`.
-#. Let :math:`\alpha_{\Delta, k}` be the largest number such that
-   :math:`\norm{x^k + \alpha_{\Delta, k} d^k} \le \Delta`.
+#. Let :math:`\alpha_{\Delta, k} = \argmax \set{\alpha \ge 0 : \norm{x^k + \alpha d^k} \le \Delta}`.
 #. Let :math:`\alpha_{Q, k}` be :math:`-\inner{d^k, g^k} / \inner{d^k, Hd^k}`
    if :math:`\inner{d^k, Hd^k} > 0` and :math:`+\infty` otherwise.
-#. Let :math:`\alpha_{L, k}` be the largest number such that
-   :math:`A (x^k + \alpha_{B, k} d^k) \le b` and
-   :math:`\alpha_k = \min \set{\alpha_{\Delta, k}, \alpha_{Q, k}, \alpha_{L, k}}`.
+#. Let :math:`\alpha_{L, k} = \argmax \set{\alpha \ge 0 : A (x^k + \alpha d^k) \le b}`
+   and :math:`\alpha_k = \min \set{\alpha_{\Delta, k}, \alpha_{Q, k}, \alpha_{L, k}}`.
 #. Update :math:`x^{k + 1} = x^k + \alpha_k d^k` and
    :math:`g^{k + 1} = g^k + \alpha_k H d^k`.
 #. If :math:`\alpha_k = \alpha_{\Delta, k}` or :math:`g^{k + 1} = 0`, stop the
@@ -156,13 +154,13 @@ problem :eq:`init-search` is given by
 
 .. math::
 
-    \Pi(v) = -\check{Q} \check{Q}^{\T} v, \quad v \in \R^n.
+    \Pi(v) = \check{Q} \check{Q}^{\T} v, \quad v \in \R^n.
 
-Therefore, the term :math:`\Pi(g^k)` in step 9 can be easily computed at each
-iteration. Moreover, after calculating the initial search direction :math:`d^0`
-at step 2, the term :math:`b_j - \inner{a_j, x^0 + d^0}` may be substantial. In
-such a case, the method will make a first step towards the boundaries of the
-active constraints.
+Therefore, the term :math:`\Pi(g^{k + 1})` in step 9 can be easily computed at
+each iteration. Moreover, after calculating the initial search direction
+:math:`d^0` at step 2, the term :math:`b_j - \inner{a_j, x^0 + d^0}` may be
+substantial. In such a case, the method will make a first step towards the
+boundaries of the active constraints.
 
 Additional stopping criteria
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
