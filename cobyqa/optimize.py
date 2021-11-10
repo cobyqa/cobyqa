@@ -2074,14 +2074,11 @@ class TrustRegion:
            Methods. MPS-SIAM Ser. Optim. Philadelphia, PA, US: SIAM, 2009.
         """
         eps = np.finfo(float).eps
+        tiny = np.finfo(float).tiny
         tol = 10.0 * eps * self.xopt.size
 
-        # Evaluate the normal step of the Byrd-Omojokun approach. The normal
-        # step attempts to reduce the violations of the linear constraints
-        # subject to the bound constraints and a trust-region constraint. The
-        # trust-region radius is shrunk to leave some elbow room to the
-        # tangential subproblem for the computations whenever the trust-region
-        # subproblem is infeasible.
+        # Evaluate the linear approximations of the inequality and equality
+        # constraints around the best point so far.
         delta *= np.sqrt(0.5)
         mc = self.mlub + self.mnlub + self.mleq + self.mnleq
         aub = np.copy(self.aub)
@@ -2091,9 +2088,6 @@ class TrustRegion:
             rhs = np.inner(self.xopt, lhs) - self.coptub[i]
             aub = np.vstack([aub, lhs])
             bub = np.r_[bub, rhs]
-        if self.penub > 0.0:
-            aub *= self.penub
-            bub *= self.penub
         aeq = np.copy(self.aeq)
         beq = np.copy(self.beq)
         for i in range(self.mnleq):
@@ -2101,9 +2095,25 @@ class TrustRegion:
             rhs = np.inner(self.xopt, lhs) - self.copteq[i]
             aeq = np.vstack([aeq, lhs])
             beq = np.r_[beq, rhs]
-        if self.peneq > 0.0:
-            aeq *= self.peneq
-            beq *= self.peneq
+
+        # Scale the constraints in accordance with the penalty coefficients.
+        if self.penub > 0.0 and self.peneq > tiny * self.penub:
+            ratio = np.sqrt(self.penub / self.peneq)
+        else:
+            ratio = 1.0
+        if ratio <= 1.0:
+            aub *= ratio
+            bub *= ratio
+        else:
+            aeq /= ratio
+            beq /= ratio
+
+        # Evaluate the normal step of the Byrd-Omojokun approach. The normal
+        # step attempts to reduce the violations of the linear constraints
+        # subject to the bound constraints and a trust-region constraint. The
+        # trust-region radius is shrunk to leave some elbow room to the
+        # tangential subproblem for the computations whenever the trust-region
+        # subproblem is infeasible.
         if mc == 0:
             nstep = np.zeros_like(self.xopt)
             ssq = 0.0
