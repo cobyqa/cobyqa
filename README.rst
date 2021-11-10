@@ -22,7 +22,7 @@ Python package for solving derivative-free optimization problems under general
 nonlinear inequality and equality constraints and is distributed under the
 BSD-3-Clause license.
 
-:Doocumentation: https://cobyqa.readthedocs.io/
+**Doocumentation:** https://cobyqa.readthedocs.io/
 
 Installation
 ============
