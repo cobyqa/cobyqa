@@ -472,5 +472,7 @@ def _print(problem, fun, nf, message):
     print(message)
     print(f'Number of function evaluations: {nf}.')
     print(f'Least value of {fun}: {problem.fopt}.')
+    if problem.type not in 'UB':
+        print(f'Maximum constraint violation: {problem.maxcv}.')
     print(f'Corresponding point: {x_full}.')
     print()
