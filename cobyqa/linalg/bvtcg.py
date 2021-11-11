@@ -47,11 +47,14 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
     bdtol : float, optional
         Tolerance for comparisons on the bound constraints (the default is
         ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
+    debug : bool, optional
+        Whether to make debugging tests during the execution, which is
+        not recommended in production (the default is False).
 
     Raises
     ------
     AssertionError
-        The vector `xopt` is not feasible.
+        The vector `xopt` is not feasible (only in debug mode).
 
     See Also
     --------
@@ -89,10 +92,11 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
     xu -= xopt
 
     # Ensure the feasibility of the initial guess.
-    assert_(np.max(xl) < bdtol)
-    assert_(np.min(xu) > -bdtol)
-    assert_(np.isfinite(delta))
-    assert_(delta > 0.0)
+    if kwargs.get('debug', False):
+        assert_(np.max(xl) < bdtol)
+        assert_(np.min(xu) > -bdtol)
+        assert_(np.isfinite(delta))
+        assert_(delta > 0.0)
 
     # Initialize the working sets and the trial step. The vector xbdi stores the
     # working sets related to the bounds, where the value 0 indicates that the

@@ -3,6 +3,7 @@ import warnings
 from contextlib import suppress
 
 import numpy as np
+from numpy.testing import assert_
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls, rot, rotg
 from .linalg.utils import get_bdtol
@@ -826,6 +827,7 @@ class TrustRegion:
         """
         x_full = self.get_x(x)
         fx = float(self._fun(x_full, *self._args))
+        fx = np.nan_to_num(fx, nan=np.finfo(x_full.dtype).max)
         if self.disp:
             print(f'{self._fun.__name__}({x_full}) = {fx}.')
         return fx
@@ -2073,12 +2075,14 @@ class TrustRegion:
         .. [1] A. R. Conn, N. I. M. Gould, and Ph. L. Toint. Trust-Region
            Methods. MPS-SIAM Ser. Optim. Philadelphia, PA, US: SIAM, 2009.
         """
-        eps = np.finfo(float).eps
         tiny = np.finfo(float).tiny
-        tol = 10.0 * eps * self.xopt.size
+        bdtol = get_bdtol(self.xl, self.xu, **kwargs)
+        kwargs = dict(kwargs)
+        kwargs['debug'] = self.debug
 
         # Evaluate the linear approximations of the inequality and equality
         # constraints around the best point so far.
+        delsav = delta
         delta *= np.sqrt(0.5)
         mc = self.mlub + self.mnlub + self.mleq + self.mnleq
         aub = np.copy(self.aub)
@@ -2098,15 +2102,15 @@ class TrustRegion:
 
         # Scale the constraints in accordance with the penalty coefficients.
         if self.penub > 0.0 and self.peneq > tiny * self.penub:
-            ratio = np.sqrt(self.penub / self.peneq)
+            scale = np.sqrt(self.penub / self.peneq)
         else:
-            ratio = 1.0
-        if ratio <= 1.0:
-            aub *= ratio
-            bub *= ratio
+            scale = 1.0
+        if scale <= 1.0:
+            aub *= scale
+            bub *= scale
         else:
-            aeq /= ratio
-            beq /= ratio
+            aeq /= scale
+            beq /= scale
 
         # Evaluate the normal step of the Byrd-Omojokun approach. The normal
         # step attempts to reduce the violations of the linear constraints
@@ -2121,14 +2125,18 @@ class TrustRegion:
             nstep = cpqp(self.xopt, aub, bub, aeq, beq, self.xl, self.xu,
                          0.8 * delta, **kwargs)
             ssq = np.inner(nstep, nstep)
+            if self.debug:
+                assert_(np.max(self.xl - self.xopt - nstep) < bdtol)
+                assert_(np.min(self.xu - self.xopt - nstep) > -bdtol)
+                assert_(ssq - 0.64 * delta ** 2.0 <= bdtol)
 
         # Evaluate the tangential step of the trust-region subproblem, and set
         # the global trust-region step. Th tangential step attempts to reduce
         # the objective function of the model without worsening the constraint
         # violation provided by the normal step.
-        if np.sqrt(ssq) <= tol * max(delta, 1.0):
+        if np.sqrt(ssq) <= bdtol:
             nstep = np.zeros_like(self.xopt)
-            delta *= np.sqrt(2.0)
+            delta = delsav
         else:
             delta = np.sqrt(delta ** 2.0 - ssq)
         xopt = self.xopt + nstep
@@ -2141,6 +2149,10 @@ class TrustRegion:
         else:
             tstep = lctcg(xopt, gopt, self.model_lag_hessp, (), aub, bub, aeq,
                           beq, self.xl, self.xu, delta, **kwargs)
+        if self.debug:
+            assert_(np.max(self.xl - xopt - tstep) < bdtol)
+            assert_(np.min(self.xu - xopt - tstep) > -bdtol)
+            assert_(np.linalg.norm(nstep + tstep) - delsav <= bdtol)
         return nstep + tstep
 
     def model_step(self, delta, **kwargs):
@@ -2183,7 +2195,15 @@ class TrustRegion:
            Numerical Linear Algebra and Optimization. Ed. by Y. Yuan. Beijing,
            CN: Science Press, 2004, pp. 56--78.
         """
-        return self._models.improve_geometry(self.knew, delta, **kwargs)
+        kwargs = dict(kwargs)
+        kwargs['debug'] = self.debug
+        step = self._models.improve_geometry(self.knew, delta, **kwargs)
+        if self.debug:
+            bdtol = get_bdtol(self.xl, self.xu, **kwargs)
+            assert_(np.max(self.xl - self.xopt - step) < bdtol)
+            assert_(np.min(self.xu - self.xopt - step) > -bdtol)
+            assert_(np.linalg.norm(step) - delta <= bdtol)
+        return step
 
     def reset_models(self):
         """
@@ -4058,6 +4078,9 @@ class Models:
             ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``, where the
             values of ``xl`` and ``xu`` evolve to include the shift of the
             origin).
+        debug : bool, optional
+            Whether to make debugging tests during the execution, which is
+            not recommended in production (the default is False).
         """
         # Define the tolerances to compare floating-point numbers with zero.
         npt = self.xpt.shape[0]
