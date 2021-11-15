@@ -63,61 +63,61 @@ More precisely, for some feasible :math:`x \in \R^n`, we let
 
     \mathcal{J}(x) = \set[\big]{j \le m_1 : b_j - \inner{a_j, x} \le \eta \Delta \norm{a_j}},
 
-where :math:`\eta` is some positive constant (set to :math:`\eta = 0.2` in `lctcg`), and the working set is a subset of :math:`\mathcal{J}(x^0)`.
+where :math:`\eta` is some positive constant (set to :math:`\eta = 0.2` in `lctcg`), and the initial working set is a subset of :math:`\mathcal{J}(x^0)`.
 Moreover, the initial search direction :math:`d^0` should be close to :math:`-\nabla q(x^0)` and prevent the point :math:`x^1` to be close from :math:`x^0`.
-We denote :math:`\Pi(v)` the unique solution of
+We denote :math:`\Pi_k(v)` the unique solution of
 
 .. math::
     :label: init-search
 
     \begin{array}{ll}
         \min        & \quad \frac{1}{2} \norm{d - v}^2\\
-        \text{s.t.} & \quad \inner{a_j, d} \le 0, ~ j \in \mathcal{J}(x^0),\\
+        \text{s.t.} & \quad \inner{a_j, d} \le 0, ~ j \in \mathcal{J}(x^k),\\
                     & \quad \inner{c_j, d} = 0, ~ j \in \set{1, 2, \dots, m_2}\\
                     & \quad d \in \R^n.
     \end{array}
 
-where :math:`v \in \R^n`. Then, the initial search direction :math:`d^0` is set to :math:`-\Pi\big(\nabla q(x^0)\big)`.
+where :math:`v \in \R^n`. Then, the initial search direction :math:`d^0` is set to :math:`-\Pi_0\big(\nabla q(x^0)\big)`.
 If :math:`\inner{a_j, d^0} < 0` for some :math:`j`, then the point :math:`x^1` will be further from this constraint than the initial guess.
-Therefore, the working set :math:`\mathcal{I}` is chosen to be :math:`\set{j \in \mathcal{J}(x^0) : \inner{a_j, d^0} = 0}` (or a subset of it, so that :math:`\set{a_j : j \in \mathcal{I}}` is a basis of :math:`\vspan \set{a_j : j \in \mathcal{J}(x^0), ~ \inner{a_j, d^0} = 0}`).
+Therefore, the working set :math:`\mathcal{I}^0` is chosen to be :math:`\set{j \in \mathcal{J}(x^0) : \inner{a_j, d^0} = 0}` (or a subset of it, so that :math:`\set{a_j : j \in \mathcal{I}}` is a basis of :math:`\vspan \set{a_j : j \in \mathcal{J}(x^0), ~ \inner{a_j, d^0} = 0}`).
 The solution of such a problem is calculated using the Goldfarb and Idnani method for quadratic programming :cite:`lctcg-Goldfarb_Idnani_1983`.
 
 The linearly constrained truncated conjugate gradient procedure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The general framework employed by `lctcg` is presented below.
+The restarting mechanism is initiated whenever the current step reaches the boundary of a constraint that is not yet included in the working set if the distance between this step and the trust-region boundary is larger than :math:`\eta \Delta`.
 
-#. Set :math:`x^0 = 0`.
-#. Set :math:`g^0 = g + H x^0`, :math:`d^0 = -\Pi(g^0)`, and :math:`k = 0`.
-#. Let :math:`\alpha_{\Delta, k} = \argmax \set{\alpha \ge 0 : \norm{x^k + \alpha d^k} \le \Delta}`.
-#. Let :math:`\alpha_{Q, k}` be :math:`-\inner{d^k, g^k} / \inner{d^k, Hd^k}` if :math:`\inner{d^k, Hd^k} > 0` and :math:`+\infty` otherwise.
-#. Let :math:`\alpha_{L, k} = \argmax \set{\alpha \ge 0 : A (x^k + \alpha d^k) \le b}` and :math:`\alpha_k = \min \set{\alpha_{\Delta, k}, \alpha_{Q, k}, \alpha_{L, k}}`.
+#. Set :math:`x^0 = 0`, :math:`g^0 = g`, the working set :math:`\mathcal{I}^0`, and :math:`k = 0`.
+#. Set :math:`\hat{k} = k`, :math:`d^k = -\Pi_{\hat{k}}(g^k)`, and stop the computations if :math:`\norm{d^k} = 0`.
+#. Set :math:`\alpha_{\Delta, k} = \argmax \set{\alpha \ge 0 : \norm{x^k + \alpha d^k} \le \Delta}`.
+#. Set :math:`\alpha_{Q, k}` to :math:`-\inner{d^k, g^k} / \inner{d^k, Hd^k}` if :math:`\inner{d^k, Hd^k} > 0` and :math:`+\infty` otherwise.
+#. Set :math:`\alpha_{L, k} = \argmax \set{\alpha \ge 0 : A (x^k + \alpha d^k) \le b}` and :math:`\alpha_k = \min \set{\alpha_{\Delta, k}, \alpha_{Q, k}, \alpha_{L, k}}`.
 #. Update :math:`x^{k + 1} = x^k + \alpha_k d^k` and :math:`g^{k + 1} = g^k + \alpha_k H d^k`.
-#. If :math:`\alpha_k = \alpha_{\Delta, k}` or :math:`g^{k + 1} = 0`, stop the computations.
-#. If :math:`\alpha_k = \alpha_{L, k}`, set :math:`x^0 = x^{k + 1}` and go to step 2.
-#. Set :math:`\beta_k = \inner{\Pi(g^{k + 1}), Hd^k} / \inner{d^k, Hd^k}`, update :math:`d^{k + 1} = -\Pi(g^{k + 1}) + \beta_k d^k`, increment :math:`k`, and go to step 3.
+#. If :math:`\alpha_k = \alpha_{\Delta, k}`, stop the computations.
+#. If :math:`\alpha_k = \alpha_{L, k}` and :math:`\norm{x^{k + 1}} \le (1 - \eta) \Delta`, set the working set :math:`\mathcal{I}^{k + 1}`, increment :math:`k`, and go to step 2.
+#. Set :math:`\beta_k = \inner{\Pi_{\hat{k}}(g^{k + 1}), Hd^k} / \inner{d^k, Hd^k}`.
+#. Update :math:`\mathcal{I}^{k + 1} = \mathcal{I}^k`, :math:`d^{k + 1} = -\Pi_{\hat{k}}(g^{k + 1}) + \beta_k d^k`, increment :math:`k`, and go to step 3.
 
-As mentioned earlier, the operator :math:`\Pi` is evaluated using the Goldfarb and Idnani method for quadratic programming :cite:`lctcg-Goldfarb_Idnani_1983`.
-It builds the QR factorization of the matrix whose columns are the gradients of the active constraints (namely the linear equality constraints and the linear inequality constraints indexed by :math:`\mathcal{I}`).
-We denote :math:`\hat{Q} R` such a factorization, with :math:`\hat{Q} \in \R^{n \times (m_2 + \abs{\mathcal{I}})}` and :math:`R \in \R^{(m_2 + \abs{\mathcal{I}}) \times (m_2 + \abs{\mathcal{I}})}`, where :math:`\abs{\mathcal{I}}` denotes the cardinal number of the working set.
-We clearly have :math:`\abs{\mathcal{I}} \le n - m_2`.
-Let :math:`\check{Q} \in \R^{n \times (n - m_2 - \abs{\mathcal{I}})}` be any matrix such that :math:`\begin{bmatrix} \hat{Q}& \check{Q} \end{bmatrix}` is orthogonal.
+As mentioned earlier, the operator :math:`\Pi_{\hat{k}}` is evaluated using the Goldfarb and Idnani method for quadratic programming :cite:`lctcg-Goldfarb_Idnani_1983`.
+It builds the QR factorization of the matrix whose columns are the gradients of the active constraints (namely the linear equality constraints and the linear inequality constraints indexed by :math:`\mathcal{I}^{\hat{k}}`).
+We denote :math:`\hat{Q} R` such a factorization, with :math:`\hat{Q} \in \R^{n \times (m_2 + \abs{\mathcal{I}^{\hat{k}}})}` and :math:`R \in \R^{(m_2 + \abs{\mathcal{I}^{\hat{k}}}) \times (m_2 + \abs{\mathcal{I}^{\hat{k}}})}`, where :math:`\abs{\mathcal{I}^{\hat{k}}}` denotes the cardinal number of the working set.
+We clearly have :math:`\abs{\mathcal{I}^{\hat{k}}} \le n - m_2`.
+Let :math:`\check{Q} \in \R^{n \times (n - m_2 - \abs{\mathcal{I}^{\hat{k}}})}` be any matrix such that :math:`\begin{bmatrix} \hat{Q}& \check{Q} \end{bmatrix}` is orthogonal.
 Powell showed in :cite:`lctcg-Powell_2015` that the solution of problem :eq:`init-search` is given by
 
 .. math::
 
-    \Pi(v) = \check{Q} \check{Q}^{\T} v, \quad v \in \R^n.
+    \Pi_{\hat{k}}(v) = \check{Q} \check{Q}^{\T} v, \quad v \in \R^n.
 
-Therefore, the term :math:`\Pi(g^{k + 1})` in step 9 can be easily computed at each iteration.
-Moreover, after calculating the initial search direction :math:`d^0` at step 2, the term :math:`b_j - \inner{a_j, x^0 + d^0}` may be substantial.
+Therefore, the term :math:`\Pi_{\hat{k}}(g^{k + 1})` in steps 9 and 10 can be easily computed at each iteration.
+Moreover, after calculating the search direction :math:`d^k` at step 2, the term :math:`b_j - \inner{a_j, x^0 + d^0}` may be substantial.
 In such a case, the method will make a first step towards the boundaries of the active constraints.
 
 Additional stopping criteria
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Any iteration stops immediately if the search direction :math:`d^{k + 1}` is not a descent one, that is if :math:`\inner{d^{k + 1}, g^{k + 1}} \ge 0`.
-By the conjugacy condition on the search directions, it is in exact arithmetic equivalent to :math:`g^{k + 1} = 0`, but is clearly more robust in practice.
-Moreover, if :math:`\nabla q(x^k)` is small along the current search direction, namely if
+If :math:`\nabla q(x^k)` is small along the current search direction, namely if
 
 .. math::
 

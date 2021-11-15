@@ -71,18 +71,20 @@ The working set is only enlarged through the iterations, which then ensures the 
 
 The initial working set is a subset of the active bounds at the origin.
 Clearly, an active bound should not be included in the working set if a Cauchy step (a positive step along :math:`-g`) would depart from the bound, as the bound is never removed from the working set.
+Therefore, the :math:`i`-th bound should be included in the working set if either :math:`l_i = x_i^k` and :math:`\nabla q (x^k) \ge 0` or :math:`u_i = x_i^k` and :math:`\nabla q (x^k) \le 0`.
 The complete framework of `bvtcg` is described below.
-For sake of clarity, we denote :math:`\mathcal{I}` the working set and :math:`\Pi(v)` the vector whose :math:`i`-th coordinate is :math:`v_i` if :math:`i \notin \mathcal{I}`, and zero otherwise.
+For sake of clarity, we denote :math:`\mathcal{I}^k` the :math:`k`-th working set and :math:`\Pi_k(v)` the vector whose :math:`i`-th coordinate is :math:`v_i` if :math:`i \notin \mathcal{I}^k`, and zero otherwise.
 
-#. Set :math:`x^0 = 0` and the working set :math:`\mathcal{I}` to the indices for which either :math:`l_i = 0` and :math:`g_i \ge 0` or :math:`u_i = 0` and :math:`g_i \le 0`.
-#. Set :math:`g^0 = g + H x^0`, :math:`d^0 = -\Pi(g^0)`, and :math:`k = 0`.
-#. Let :math:`\alpha_{\Delta, k} = \argmax \set{\alpha \ge 0 : \norm{x^k + \alpha d^k} \le \Delta}`.
-#. Let :math:`\alpha_{Q, k}` be :math:`-\inner{d^k, g^k} / \inner{d^k, Hd^k}` if :math:`\inner{d^k, Hd^k} > 0` and :math:`+\infty` otherwise.
-#. Let :math:`\alpha_{B, k} = \argmax \set{\alpha \ge 0 : l \le x^k + \alpha d^k \le u}` and :math:`\alpha_k = \min \set{\alpha_{\Delta, k}, \alpha_{Q, k}, \alpha_{B, k}}`.
+#. Set :math:`x^0 = 0`, :math:`g^0 = g`, the working set :math:`\mathcal{I}^0`, and :math:`k = 0`.
+#. Set :math:`d^k = -\Pi_k(g^k)` and stop the computations if :math:`\norm{d^k} = 0`.
+#. Set :math:`\alpha_{\Delta, k} = \argmax \set{\alpha \ge 0 : \norm{x^k + \alpha d^k} \le \Delta}`.
+#. Set :math:`\alpha_{Q, k}` to :math:`-\inner{d^k, g^k} / \inner{d^k, Hd^k}` if :math:`\inner{d^k, Hd^k} > 0` and :math:`+\infty` otherwise.
+#. Set :math:`\alpha_{B, k} = \argmax \set{\alpha \ge 0 : l \le x^k + \alpha d^k \le u}` and :math:`\alpha_k = \min \set{\alpha_{\Delta, k}, \alpha_{Q, k}, \alpha_{B, k}}`.
 #. Update :math:`x^{k + 1} = x^k + \alpha_k d^k` and :math:`g^{k + 1} = g^k + \alpha_k H d^k`.
-#. If :math:`\alpha_k = \alpha_{\Delta, k}` or :math:`g^{k + 1} = 0`, stop the computations.
-#. If :math:`\alpha_k = \alpha_{B, k}`, add a new active coordinate to :math:`\mathcal{I}`, set :math:`x^0 = x^{k + 1}`, and go to step 2.
-#. Set :math:`\beta_k = \norm{\Pi(g^{k + 1})}^2 / \norm{\Pi(g^k)}^2`, update :math:`d^{k + 1} = -\Pi(g^k) + \beta_k d^k`, increment :math:`k`, and go to step 3.
+#. If :math:`\alpha_k = \alpha_{B, k}`, add a new active coordinate to :math:`\mathcal{I}^k` to obtain :math:`\mathcal{I}^{k + 1}`, increment :math:`k`, and go to step 2.
+#. If :math:`\alpha_k = \alpha_{\Delta, k}`, stop the computations.
+#. Set :math:`\beta_k = \norm{\Pi_k(g^{k + 1})}^2 / \norm{\Pi_k(g^k)}^2`
+#. Update :math:`\mathcal{I}^{k + 1} = \mathcal{I}^k`, :math:`d^{k + 1} = -\Pi_k(g^{k + 1}) + \beta_k d^k`, increment :math:`k`, and go to step 3.
 
 Further refinement of the trial step
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -113,8 +115,8 @@ Further, the method considers the function :math:`x(\theta) = x^k + (\cos \theta
 
 the trust-region condition being automatically ensured by the choice of :math:`s`.
 To solve approximately such a problem, `bvtcg` seeks for the greatest reduction in the objective function for a range of equally spaced values of :math:`\theta`, chosen to ensure the feasibility of the iterates.
-If the value of the approximate solution is restricted by a bound, it is added to the working set :math:`\mathcal{I}`, and the refinement procedure is restarted.
-Since the working set is only increased, this procedure terminates in at most :math:`n - \abs{\mathcal{I}}`, where :math:`\abs{\mathcal{I}}` denotes the number of active bounds at the end of the constrained truncated conjugate gradient procedure.
+If the value of the approximate solution is restricted by a bound, it is added to the working set :math:`\mathcal{I}^k`, and the refinement procedure is restarted.
+Since the working set is only increased, this procedure terminates in at most :math:`n - \abs{\mathcal{I}^k}`, where :math:`\abs{\mathcal{I}^k}` denotes the number of active bounds at the end of the constrained truncated conjugate gradient procedure.
 
 .. bibliography::
     :labelprefix: B

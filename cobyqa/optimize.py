@@ -129,6 +129,18 @@ class TrustRegion:
             options = {}
         self._options = dict(options)
 
+        # Remove NaN and infinite values in the constraints.
+        xl[np.isnan(xl)] = -np.inf
+        xu[np.isnan(xu)] = np.inf
+        np.nan_to_num(Aub, False)
+        np.nan_to_num(Aeq, False)
+        iub = np.isfinite(bub)
+        Aub = Aub[iub, :]
+        bub = bub[iub]
+        ieq = np.isfinite(beq)
+        Aeq = Aeq[ieq, :]
+        beq = beq[ieq]
+
         # Remove the variables that are fixed by the bounds.
         bdtol = get_bdtol(xl, xu, **kwargs)
         self._ifix = np.abs(xl - xu) <= bdtol
@@ -1655,7 +1667,7 @@ class TrustRegion:
         npt = self.npt
         if not (npt_min <= npt <= npt_max):
             self._options['npt'] = min(npt_max, max(npt_min, npt))
-            message = "Option 'npt' is not in the required interval and is "
+            message = "option 'npt' is not in the required interval and is "
             message += 'increased.' if npt_min > npt else 'decreased.'
             warnings.warn(message, RuntimeWarning, stacklevel=stack_level)
 
@@ -1664,15 +1676,15 @@ class TrustRegion:
         if maxfev <= self.npt:
             self._options['maxfev'] = self.npt + 1
             if maxfev <= npt:
-                message = "Option 'maxfev' is too low and is increased."
+                message = "option 'maxfev' is too low and is increased."
             else:
-                message = "Option 'maxfev' is correspondingly increased."
+                message = "option 'maxfev' is correspondingly increased."
             warnings.warn(message, RuntimeWarning, stacklevel=stack_level)
 
         # Ensure that the options 'rhobeg' and 'rhoend' are consistent.
         if self.rhoend > self.rhobeg:
             self._options['rhoend'] = self.rhobeg
-            message = "Option 'rhoend' is too large and is decreased."
+            message = "option 'rhoend' is too large and is decreased."
             warnings.warn(message, RuntimeWarning, stacklevel=stack_level)
 
     def get_best_point(self):
@@ -1946,6 +1958,7 @@ class TrustRegion:
 
         # During trust-region step, the trust-region ratio has to be meaningful.
         # Therefore, its denominator has to be positive.
+        pen_max = 1e-2 * np.finfo(float).max
         if not self.is_model_step and mmx > mopt:
             ksav = self.kopt
 
@@ -1961,6 +1974,9 @@ class TrustRegion:
                     self._peneq *= 1.5
                 elif self.mleq + self.mnleq > 0:
                     self._peneq = 1.0
+                if max(self.penub, self.peneq) >= pen_max:
+                    self.reduce_penalty_coefficients()
+                    raise RestartRequiredException
 
                 # When the penalty coefficients are modified, the index of the
                 # best interpolation point so far may change.
@@ -1985,6 +2001,9 @@ class TrustRegion:
             if mmx_test <= mopt_test:
                 self._penub = 0.5 * self.penub
                 self._peneq = 0.5 * self.peneq
+            elif max(self.penub, self.peneq) >= pen_max:
+                self.reduce_penalty_coefficients()
+                raise RestartRequiredException
             else:
                 mx, mmx = self(xnew, fx, cubx, ceqx, True)
                 self.kopt = self.get_best_point()
@@ -2259,6 +2278,7 @@ class TrustRegion:
         if con is not None:
             x_full = self.get_x(x)
             cx = np.atleast_1d(con(x_full, *self._args))
+            np.nan_to_num(cx, False, np.finfo(x_full.dtype).max)
             if cx.dtype.kind in np.typecodes['AllInteger']:
                 cx = np.asarray(cx, dtype=float)
             if self.disp and cx.size > 0:

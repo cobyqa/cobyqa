@@ -116,7 +116,7 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
     # that are not restricted by any constraints. It is set to 0 if the current
     # trial step reaches the boundary of the trust region, and to -1 if all the
     # search directions are constrained.
-    sd = np.empty_like(step)
+    sd = np.zeros_like(step)
     delsq = delta ** 2.0
     tolsd = tol
     beta = 0.0

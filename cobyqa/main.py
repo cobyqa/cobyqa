@@ -490,6 +490,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         3: 'Maximum number of function evaluations has been exceeded.',
         9: 'Denominator of the updating formula is zero.',
         13: 'All variables are fixed by the constraints.',
+        -4: 'Bound constraints are infeasible',
     }.get(exit_status, 'Unknown exit status.')
     if framework.disp:
         _print(framework, fun.__name__, nf, result.message)
