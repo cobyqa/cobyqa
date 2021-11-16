@@ -123,9 +123,9 @@ The general framework employed by `cpqp` to solve problem :eq:`cpqp-slack`, and 
 #. Set :math:`\beta_k = (\inner{\Pi_{x, \hat{k}}(g_x^{k + 1}), C^{\T} C s_x^k} + \inner{\Pi_{y, \hat{k}}(y^{k + 1}), s_y^k}) / (\norm{Cs_x^k}^2 + \norm{s_y^k}^2)`.
 #. Update :math:`s_x^{k + 1} = -\Pi_{x, \hat{k}}(g_x^{k + 1}) + \beta_k s_x^k`, :math:`s_y^{k + 1} = -\Pi_{y, \hat{k}}(y^{k + 1}) + \beta_k s_y^k`, increment :math:`k`, and go to step 3.
 
-The operators :math:`\Pi_x` and :math:`\Pi_y` are evaluated using the Goldfarb and Idnani method for quadratic programming :cite:`lctcg-Goldfarb_Idnani_1983` (and hence, `lctcg` and `cpqp` share a Python function that determines the active set).
+The operators :math:`\Pi_{x, \hat{k}}` and :math:`\Pi_{y, \hat{k}}` are evaluated using the Goldfarb and Idnani method for quadratic programming :cite:`lctcg-Goldfarb_Idnani_1983` (and hence, `lctcg` and `cpqp` share a Python function that determines the active set).
 
-Similarly to `lctcg`, after calculating the search directions :math:`d_x^k` and :math:`d_y^k` at step 2, the term :math:`g_j - \inner{e_j, x^k + s_x^k} - \inner{f_j, y^k + s_y^k}` may be substantial.
+Similarly to `lctcg`, after calculating the search directions :math:`s_x^k` and :math:`s_y^k` at step 2, the term :math:`g_j - \inner{e_j, x^k + s_x^k} - \inner{f_j, y^k + s_y^k}` may be substantial.
 In such a case, the method will make a first step towards the boundaries of the active constraints.
 
 .. TODO: Termination analysis

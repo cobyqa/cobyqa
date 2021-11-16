@@ -310,7 +310,9 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
         if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
             break
 
-        # Restart the calculations if a new constraint has been hit.
+        # Restart the calculations if a new constraint has been hit and the
+        # distance from the current step to the boundary of the trust region is
+        # larger than 0.2 * delta.
         if inext >= 0:
             if stepsq <= 0.64 * delta ** 2.0:
                 continue
