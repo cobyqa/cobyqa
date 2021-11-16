@@ -67,7 +67,10 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     Raises
     ------
     AssertionError
-        The vector `xopt` is not feasible.
+        The vector `xopt` is not feasible (only in debug mode).
+    debug : bool, optional
+        Whether to make debugging tests during the execution, which is
+        not recommended in production (the default is False).
 
     See Also
     --------
@@ -119,14 +122,15 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     xu -= xopt
 
     # Ensure the feasibility of the initial guess.
-    if mlub > 0:
-        assert_(np.min(bub) > -lctol)
-    if beq.size > 0:
-        assert_(np.max(np.abs(beq)) < lctol)
-    assert_(np.max(xl) < bdtol)
-    assert_(np.min(xu) > -bdtol)
-    assert_(np.isfinite(delta))
-    assert_(delta > 0.0)
+    if kwargs.get('debug', False):
+        if mlub > 0:
+            assert_(np.min(bub) > -lctol)
+        if beq.size > 0:
+            assert_(np.max(np.abs(beq)) < lctol)
+        assert_(np.max(xl) < bdtol)
+        assert_(np.min(xu) > -bdtol)
+        assert_(np.isfinite(delta))
+        assert_(delta > 0.0)
 
     # Remove the linear constraints whose gradients are zero, and normalize the
     # remaining constraints. The bound constraints are already normalized.

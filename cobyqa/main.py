@@ -243,6 +243,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     ----------
     .. [1] J. Nocedal and S. J. Wright. Numerical Optimization. Second. Springer
        Ser. Oper. Res. Financ. Eng. New York, NY, US: Springer, 2006.
+    .. [2] M. J. D. Powell. "A direct search optimization method that models the
+       objective and constraint functions by linear interpolation." In: Advances
+       in Optimization and Numerical Analysis. Ed. by S. Gomez and J. P.
+       Hennart. Dordrecht, NL: Springer, 1994, pp. 51--67.
 
     Examples
     --------
@@ -252,7 +256,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     .. testsetup::
 
         import numpy as np
-        np.set_printoptions(precision=1)
+        np.set_printoptions(precision=1, suppress=True)
 
     >>> from scipy.optimize import rosen
     >>> from cobyqa import minimize
@@ -293,8 +297,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     >>> res.x
     array([1.4, 1.7])
 
-    Thus, although clearly unreasonable in this case, the constraints can also
-    be provided as:
+    Moreover, although clearly unreasonable in this case, the constraints can
+    also be provided as:
 
     >>> def cub(x):
     ...     c1 = -x[0] + 2.0 * x[1] - 2.0
@@ -307,6 +311,32 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     >>> res = minimize(q, x0, xl=xl, cub=cub)
     >>> res.x
     array([1.4, 1.7])
+
+    To conclude, let us consider Problem G of [2]_, defined as
+
+    .. math::
+
+        \begin{array}{ll}
+            \min        & \quad f(x) = x_3\\
+            \text{s.t.} & \quad -5x_1 + x_2 - x_3 \le 0,\\
+                        & \quad 5x_1 + x_2 - x_3 \le 0,\\
+                        & \quad x_1^2 + x_2^2 + 4x_2 - x_3 \le 0,\\
+                        & \quad x \in \R^3.
+        \end{array}
+
+    Its only nonlinear constraints can be implemented in Python as:
+
+    >>> def cub(x):
+    ...     return x[0] ** 2.0 + x[1] ** 2.0 + 4.0 * x[1] - x[2]
+
+    This problem can be solved using `minimize` as:
+
+    >>> x0 = [1.0, 1.0, 1.0]
+    >>> Aub = [[-5.0, 1.0, -1.0], [5.0, 1.0, -1.0]]
+    >>> bub = [0.0, 0.0]
+    >>> res = minimize(lambda x: x[2], x0, Aub=Aub, bub=bub, cub=cub)
+    >>> res.x
+    array([ 0., -3., -3.])
     """
     # Build the initial models of the optimization problem. The computations
     # must be stopped immediately if all indices are fixed by the bound
@@ -460,6 +490,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         3: 'Maximum number of function evaluations has been exceeded.',
         9: 'Denominator of the updating formula is zero.',
         13: 'All variables are fixed by the constraints.',
+        -4: 'Bound constraints are infeasible',
     }.get(exit_status, 'Unknown exit status.')
     if framework.disp:
         _print(framework, fun.__name__, nf, result.message)
@@ -472,5 +503,7 @@ def _print(problem, fun, nf, message):
     print(message)
     print(f'Number of function evaluations: {nf}.')
     print(f'Least value of {fun}: {problem.fopt}.')
+    if problem.type not in 'UB':
+        print(f'Maximum constraint violation: {problem.maxcv}.')
     print(f'Corresponding point: {x_full}.')
     print()

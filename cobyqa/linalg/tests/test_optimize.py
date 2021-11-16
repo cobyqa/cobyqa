@@ -44,13 +44,13 @@ class TestBVTCG:
         xu = 2.0 * np.ones(5, dtype=float)
         delta = 1.0
         with assert_raises(AssertionError):
-            bvtcg(x0, gq, np.dot, (Hq,), xl, xu, -1.0)
+            bvtcg(x0, gq, np.dot, (Hq,), xl, xu, -1.0, debug=True)
         x0[2] = 2.1
         with assert_raises(AssertionError):
-            bvtcg(x0, gq, np.dot, (Hq,), xl, xu, delta)
+            bvtcg(x0, gq, np.dot, (Hq,), xl, xu, delta, debug=True)
         x0[2], xl[2], xu[2] = 1.0, 1.1, 0.9
         with assert_raises(AssertionError):
-            bvtcg(x0, gq, np.dot, (Hq,), xl, xu, delta)
+            bvtcg(x0, gq, np.dot, (Hq,), xl, xu, delta, debug=True)
 
 
 class TestCPQP:
@@ -103,13 +103,13 @@ class TestCPQP:
         xu = 2.0 * np.ones(5, dtype=float)
         delta = 1.0
         with assert_raises(AssertionError):
-            cpqp(x0, Aub, bub, Aeq, beq, xl, xu, -1.0)
+            cpqp(x0, Aub, bub, Aeq, beq, xl, xu, -1.0, debug=True)
         x0[2] = 2.1
         with assert_raises(AssertionError):
-            cpqp(x0, Aub, bub, Aeq, beq, xl, xu, delta)
+            cpqp(x0, Aub, bub, Aeq, beq, xl, xu, delta, debug=True)
         x0[2], xl[2], xu[2] = 1.0, 1.1, 0.9
         with assert_raises(AssertionError):
-            cpqp(x0, Aub, bub, Aeq, beq, xl, xu, delta)
+            cpqp(x0, Aub, bub, Aeq, beq, xl, xu, delta, debug=True)
 
 
 class TestLCTCG:
@@ -165,24 +165,30 @@ class TestLCTCG:
         xu = np.ones(5, dtype=float)
         delta = 1.
         with assert_raises(AssertionError):
-            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, -1.0)
+            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, -1.,
+                  debug=True)
         x0[2] = 1.1
         with assert_raises(AssertionError):
-            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta)
+            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta,
+                  debug=True)
         x0[2] = -1.1
         with assert_raises(AssertionError):
-            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta)
+            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta,
+                  debug=True)
         x0[2], xl[2], xu[2] = 0.0, 1.1, 0.9
         with assert_raises(AssertionError):
-            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta)
+            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta,
+                  debug=True)
         xl[2], xu[2] = -1.0, 1.0
         bub = -np.ones(3)
         with assert_raises(AssertionError):
-            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta)
+            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta,
+                  debug=True)
         bub = np.ones(3)
         beq = np.ones(2)
         with assert_raises(AssertionError):
-            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta)
+            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta,
+                  debug=True)
 
 
 class TestNNLS:

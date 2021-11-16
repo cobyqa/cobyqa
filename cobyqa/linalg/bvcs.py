@@ -48,11 +48,14 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
     bdtol : float, optional
         Tolerance for comparisons on the bound constraints (the default is
         ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
+    debug : bool, optional
+        Whether to make debugging tests during the execution, which is
+        not recommended in production (the default is False).
 
     Raises
     ------
     AssertionError
-        The vector ``xpt[kopt, :]`` is not feasible.
+        The vector ``xpt[kopt, :]`` is not feasible (only in debug mode).
 
     See Also
     --------
@@ -89,10 +92,11 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
     xu -= xpt[kopt, :]
 
     # Ensure the feasibility of the initial guess.
-    assert_(np.max(xl) < bdtol)
-    assert_(np.min(xu) > -bdtol)
-    assert_(np.isfinite(delta))
-    assert_(delta > 0.0)
+    if kwargs.get('debug', False):
+        assert_(np.max(xl) < bdtol)
+        assert_(np.min(xu) > -bdtol)
+        assert_(np.isfinite(delta))
+        assert_(delta > 0.0)
 
     # Start the procedure.
     step = np.zeros_like(gq)

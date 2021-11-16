@@ -4,13 +4,7 @@ from scipy.optimize import rosen
 
 from cobyqa import minimize
 
-np.set_printoptions(
-    precision=4,
-    threshold=10,
-    linewidth=np.inf,
-    suppress=True,
-    sign=' ',
-)
+np.set_printoptions(precision=4, linewidth=np.inf, suppress=True)
 
 
 def ball(x, radius=1.0, order=None):

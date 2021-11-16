@@ -86,7 +86,7 @@ The general framework employed by `cpqp` to solve problem :eq:`cpqp-slack`, and 
 
 #. Set :math:`x^0 = 0` and :math:`y^0 = [-b]_+`.
 #. Set :math:`g_x^0 = C^{\T} (C x^0 - d)`, :math:`d_x^0 = -\Pi_x(g_x^0, y^0)`, :math:`d_y^0 = -\Pi_y(g_x^0, y^0)`, and :math:`k = 0`.
-#. Let :math:`\alpha_{\Delta, k} = \argmax \set{\alpha \ge 0 : \norm{x^k + \alpha d_x^k} = \Delta}`.
+#. Let :math:`\alpha_{\Delta, k} = \argmax \set{\alpha \ge 0 : \norm{x^k + \alpha d_x^k} \le \Delta}`.
 #. Let :math:`\alpha_{Q, k}` be :math:`-(\inner{d_x^k, g_x^k} + \inner{d_y^k, y^k}) / (\norm{Cd_x^k}^2 + \norm{d_y^k}^2)` if :math:`\norm{Cd_x^k}^2 + \norm{d_y^k}^2 > 0` and :math:`+\infty` otherwise.
 #. Let :math:`\alpha_{L, k} = \argmax \set{\alpha \ge 0 : A (x^k + \alpha d_x^k) - y^k - \alpha d_y^k \le b}` and :math:`\alpha_k = \min \set{\alpha_{\Delta, k}, \alpha_{Q, k}, \alpha_{L, k}}`.
 #. Update :math:`x^{k + 1} = x^k + \alpha_k d_x^k`, :math:`y^{k + 1} = y^k + \alpha_k d_y^k`, and :math:`g_x^{k + 1} = g_x^k + \alpha_k C^{\T} C d_x^k`.

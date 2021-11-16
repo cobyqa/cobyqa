@@ -48,13 +48,13 @@ class TestBVCS:
         xu = 2.0 * np.ones(5, dtype=float)
         delta = 1.0
         with assert_raises(AssertionError):
-            bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, -1.0)
+            bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, -1.0, debug=True)
         xpt[kopt, 2] = 2.1
         with assert_raises(AssertionError):
-            bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, delta)
+            bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, delta, debug=True)
         xpt[kopt, 2], xl[2], xu[2] = 1.0, 1.1, 0.9
         with assert_raises(AssertionError):
-            bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, delta)
+            bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, delta, debug=True)
 
 
 class TestBVLAG:
@@ -92,10 +92,10 @@ class TestBVLAG:
         delta = 1.0
         alpha = 1.0
         with assert_raises(AssertionError):
-            bvlag(xpt, kopt, klag, gq, xl, xu, -1.0, alpha)
+            bvlag(xpt, kopt, klag, gq, xl, xu, -1.0, alpha, debug=True)
         xpt[kopt, 2] = 2.1
         with assert_raises(AssertionError):
-            bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha)
+            bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, debug=True)
         xpt[kopt, 2], xl[2], xu[2] = 1.0, 1.1, 0.9
         with assert_raises(AssertionError):
-            bvlag(xpt, kopt, klag, gq, xl, xu, -1.0, alpha)
+            bvlag(xpt, kopt, klag, gq, xl, xu, -1.0, alpha, debug=True)
