@@ -317,7 +317,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
 
         # Restart the calculations if a new constraint has been hit.
         if inext >= 0:
-            if stepsq + slsq <= 0.64 * delta ** 2.0:
+            if stepsq <= 0.64 * delta ** 2.0:
                 continue
             break
 

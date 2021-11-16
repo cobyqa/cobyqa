@@ -55,7 +55,6 @@ def show_versions():
     sys_info = _get_sys_info()
     deps_info = _get_deps_info()
 
-    print()
     print('System settings')
     print('---------------')
     sys_width = max(map(len, sys_info.keys())) + 1
