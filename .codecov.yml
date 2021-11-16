@@ -16,6 +16,3 @@ ignore:
   - '**/tests/*.py'
 
 comment: false
-
-github_checks:
-    annotations: false
