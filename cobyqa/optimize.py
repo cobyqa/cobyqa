@@ -7,7 +7,7 @@ from numpy.testing import assert_
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls, rot, rotg
 from .linalg.utils import get_bdtol
-from .utils import RestartRequiredException, normalize, implicit_hessian
+from .utils import RestartRequiredException, huge, implicit_hessian, normalize
 
 
 class TrustRegion:
@@ -839,7 +839,9 @@ class TrustRegion:
         """
         x_full = self.get_x(x)
         fx = float(self._fun(x_full, *self._args))
-        fx = np.nan_to_num(fx, nan=np.finfo(x_full.dtype).max)
+        threshold = huge(x_full.dtype)
+        if np.isnan(fx) or fx > threshold:
+            fx = threshold
         if self.disp:
             print(f'{self._fun.__name__}({x_full}) = {fx}.')
         return fx
@@ -2278,6 +2280,8 @@ class TrustRegion:
         if con is not None:
             x_full = self.get_x(x)
             cx = np.atleast_1d(con(x_full, *self._args))
+            threshold = huge(x_full.dtype)
+            cx[np.isnan(cx) | (cx > threshold)] = threshold
             np.nan_to_num(cx, False, np.finfo(x_full.dtype).max)
             if cx.dtype.kind in np.typecodes['AllInteger']:
                 cx = np.asarray(cx, dtype=float)

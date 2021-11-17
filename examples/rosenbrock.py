@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
+"""
+Minimize the chained Rosenbrock function subject to randomly generated linear
+inequality and equality constraints and simple bounds.
+"""
 import numpy as np
 from scipy.optimize import rosen
 
 from cobyqa import minimize
 
 np.set_printoptions(precision=4, linewidth=np.inf, suppress=True)
-
-
-def ball(x, radius=1.0, order=None):
-    """
-    The ball constraint function.
-    """
-    return np.linalg.norm(x, order) - radius
 
 
 if __name__ == '__main__':

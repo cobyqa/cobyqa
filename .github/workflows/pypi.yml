@@ -30,6 +30,7 @@ jobs:
       - name: Download distributions from staging
         run: bash build_tools/github/download_anaconda.sh
         env:
+          ANACONDA_ORG: ragonneau
           COBYQA_VERSION: ${{ github.event.inputs.version }}
 
       - name: Publish to TestPyPI

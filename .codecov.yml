@@ -7,6 +7,12 @@ codecov:
   notify:
     wait_for_ci: no
 
+coverage:
+  status:
+    project:
+      default:
+        target: 1
+
 ignore:
   - 'setup.py'
   - '**/setup.py'

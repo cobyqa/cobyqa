@@ -6,7 +6,7 @@ body:
   - type: textarea
     attributes:
       label: Feature description
-      description: |
+      description: >
         Describe the feature you want to enable.
     validations:
       required: false
@@ -14,7 +14,7 @@ body:
   - type: textarea
     attributes:
       label: Proposed solution
-      description: |
+      description: >
         Describe your proposed solution.
     validations:
       required: false
@@ -22,7 +22,7 @@ body:
   - type: textarea
     attributes:
       label: Considered alternatives
-      description: |
+      description: >
         Describe the alternatives you have considered.
     validations:
       required: false

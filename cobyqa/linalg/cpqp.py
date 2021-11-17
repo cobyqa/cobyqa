@@ -169,7 +169,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             # substantial, the search direction is the move towards the
             # boundaries of the active constraints.
             gamma = 0.
-            if np.max(resid[iact[:nact]], initial=0.0) > 1e-4 * delta:
+            if np.max(resid[iact[:nact]], initial=0.0) > 0.0:
                 # Calculate the projection towards the boundaries of the active
                 # constraints. The length of this step is computed hereinafter.
                 temp = resid[iact[:nact]]
@@ -306,6 +306,10 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
         reduct -= alpha * (sdgq + 0.5 * alpha * curv)
 
+        # Restart the calculations if a new constraint has been hit.
+        if inext >= 0:
+            continue
+
         # If the step reached the boundary of a trust region or if the step that
         # would be obtained in the unconstrained case is insubstantial, the
         # truncated conjugate gradient method must be stopped.
@@ -313,12 +317,6 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             break
         alphs = min((alphm, alphta, alphtb))
         if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
-            break
-
-        # Restart the calculations if a new constraint has been hit.
-        if inext >= 0:
-            if stepsq + slsq <= 0.64 * delta ** 2.0:
-                continue
             break
 
         # Calculate next search direction, which is conjugate to the previous

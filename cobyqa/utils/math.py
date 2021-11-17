@@ -80,3 +80,20 @@ def normalize(A, b):
             A[isafe, :] = A[isafe, :] / norm[isafe, np.newaxis]
             b[isafe] = b[isafe] / norm[isafe]
     return A, b
+
+
+def huge(dtype):
+    """
+    Get the threshold value of the function evaluations.
+
+    Parameters
+    ----------
+    dtype: type
+        Type of the evaluated function.
+
+    Returns
+    -------
+    float:
+        Threshold value.
+    """
+    return 2.0 ** (0.5 * np.finfo(dtype).maxexp)

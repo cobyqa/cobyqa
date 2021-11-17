@@ -284,7 +284,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
     Its objective function can be implemented as:
 
-    >>> def q(x):
+    >>> def quadratic(x):
     ...     return (x[0] - 1.0) ** 2.0 + (x[1] - 2.5) ** 2.0
 
     This problem can be solved using `minimize` as:
@@ -293,7 +293,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     >>> xl = [0.0, 0.0]
     >>> Aub = [[-1.0, 2.0], [1.0, 2.0], [1.0, -2.0]]
     >>> bub = [2.0, 6.0, 2.0]
-    >>> res = minimize(q, x0, xl=xl, Aub=Aub, bub=bub)
+    >>> res = minimize(quadratic, x0, xl=xl, Aub=Aub, bub=bub)
     >>> res.x
     array([1.4, 1.7])
 
