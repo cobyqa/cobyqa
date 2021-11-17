@@ -169,7 +169,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             # substantial, the search direction is the move towards the
             # boundaries of the active constraints.
             gamma = 0.
-            if np.max(resid[iact[:nact]], initial=0.0) > 1e-4 * delta:
+            if np.max(resid[iact[:nact]], initial=0.0) > 0.0:
                 # Calculate the projection towards the boundaries of the active
                 # constraints. The length of this step is computed hereinafter.
                 temp = resid[iact[:nact]]
@@ -315,13 +315,9 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
         if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
             break
 
-        # Restart the calculations if a new constraint has been hit and the
-        # distance from the current step to the boundary of the trust region is
-        # larger than 0.2 * delta.
+        # Restart the calculations if a new constraint has been hit.
         if inext >= 0:
-            if inext < mlub or stepsq <= 0.64 * delta ** 2.0:
-                continue
-            break
+            continue
 
         # Calculate next search direction, which is conjugate to the previous
         # one, except if iterc is zero, which occurs if the previous search
