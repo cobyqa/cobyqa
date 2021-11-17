@@ -79,4 +79,5 @@ jobs:
       - name: Upload artifacts to Anaconda
         run: bash build_tools/github/upload_anaconda.sh
         env:
+          ANACONDA_ORG: ragonneau
           ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}

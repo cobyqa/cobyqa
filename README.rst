@@ -59,5 +59,5 @@ execute the test suite of COBYQA via ::
 Support
 =======
 
-To report a bug or request a new feature, please open a new issue using
-`GitHub Issue Tracker <https://github.com/ragonneau/cobyqa/issues>`_.
+To report a bug or request a new feature, please open a new issue using the
+`issue tracker <https://github.com/ragonneau/cobyqa/issues>`_.

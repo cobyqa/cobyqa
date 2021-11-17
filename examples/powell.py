@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+"""
+Solve Examples A-G of [1]_.
+
+References
+----------
+.. [1] M. J. D. Powell. "A direct search optimization method that models the
+   objective and constraint functions by linear interpolation." In: Advances in
+   Optimization and Numerical Analysis. Ed. by S. Gomez and J. P. Hennart.
+   Dordrecht, NL: Springer, 1994, pp. 51--67.
+"""
+
 import numpy as np
 
 from cobyqa import minimize
@@ -77,23 +88,22 @@ def solution(no):
     return (np.array(xs) for xs in s)
 
 
-def maxcv(x, no):
+def _maxcv(x, no):
     cx = cub(x, no)
     return np.max(-cx, initial=0.0)
 
 
-def distance(x, no):
+def _distance(x, no):
     return min(np.linalg.norm(x - xs) for xs in solution(no))
 
 
 if __name__ == '__main__':
-    options = {'rhobeg': 0.5}
     for problem in 'ABCDEFG':
-        print(f'Problem no. {problem}.')
-        print('--------------')
-        res = minimize(fun, x0(problem), problem, cub=cub, options=options)
+        print(f'Problem {problem}')
+        print('---------')
+        res = minimize(fun, x0(problem), problem, cub=cub)
         print(f'Function values      : {res.nfev}')
         print(f'Objective function   : {res.fun:.4e}')
-        print(f'Constraint violation : {maxcv(res.x, problem):.4e}')
-        print(f'Distance to solution : {distance(res.x, problem):.4e}')
+        print(f'Constraint violation : {_maxcv(res.x, problem):.4e}')
+        print(f'Distance to solution : {_distance(res.x, problem):.4e}')
         print()

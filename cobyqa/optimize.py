@@ -4,7 +4,6 @@ from contextlib import suppress
 
 import numpy as np
 from numpy.testing import assert_
-from scipy import optimize
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls, rot, rotg
 from .linalg.utils import get_bdtol

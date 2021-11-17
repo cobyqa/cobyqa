@@ -65,13 +65,9 @@ class CleanCommand(clean):
         for dirname in cwd.glob('*.egg-info'):
             shutil.rmtree(dirname)
 
-        # Remove test and coverage cache directories and files.
+        # Remove test cache directories.
         shutil.rmtree(cwd / '.pytest_cache', ignore_errors=True)
         shutil.rmtree(cwd / '.tox', ignore_errors=True)
-        if Path(cwd, '.coverage').is_file():
-            os.unlink(cwd / '.coverage')
-        if Path(cwd, 'coverage.xml').is_file():
-            os.unlink(cwd / 'coverage.xml')
 
         # Remove the 'MANIFEST' file.
         if Path(cwd, 'MANIFEST').is_file():

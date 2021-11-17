@@ -118,8 +118,8 @@ The general framework employed by `cpqp` to solve problem :eq:`cpqp-slack`, and 
 #. Let :math:`\alpha_{L, k} = \argmax \set{\alpha \ge 0 : E (x^k + \alpha s_x^k) + F (y^k + \alpha s_y^k) \le g}`.
 #. Set :math:`\alpha_k = \min \set{\alpha_{\Delta, k}, \alpha_{Q, k}, \alpha_{L, k}}`.
 #. Update :math:`x^{k + 1} = x^k + \alpha_k s_x^k`, :math:`y^{k + 1} = y^k + \alpha_k s_y^k`, and :math:`g_x^{k + 1} = g_x^k + \alpha_k C^{\T} C s_x^k`.
-#. If :math:`\alpha_k = \alpha_{\Delta, k}` or :math:`\alpha_k = \alpha_{L, k}` and :math:`\norm{x^{k + 1}} > (1 - \eta) \Delta`, stop the computations.
-#. If :math:`\alpha_k = \alpha_{L, k}` and :math:`\norm{x^{k + 1}} \le (1 - \eta) \Delta`, increment :math:`k`, and go to step 2.
+#. If :math:`\alpha_k = \alpha_{L, k}`, increment :math:`k`, and go to step 2.
+#. If :math:`\alpha_k = \alpha_{\Delta, k}`, stop the computations.
 #. Set :math:`\beta_k = (\inner{\Pi_{x, \hat{k}}(g_x^{k + 1}), C^{\T} C s_x^k} + \inner{\Pi_{y, \hat{k}}(y^{k + 1}), s_y^k}) / (\norm{Cs_x^k}^2 + \norm{s_y^k}^2)`.
 #. Update :math:`s_x^{k + 1} = -\Pi_{x, \hat{k}}(g_x^{k + 1}) + \beta_k s_x^k`, :math:`s_y^{k + 1} = -\Pi_{y, \hat{k}}(y^{k + 1}) + \beta_k s_y^k`, increment :math:`k`, and go to step 3.
 

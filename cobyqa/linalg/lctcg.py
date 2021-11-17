@@ -301,6 +301,14 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
         reduct -= alpha * (sdgq + 0.5 * alpha * curv)
 
+        # Restart the calculations if a new constraint has been hit and either
+        # it is a bound constraint or the distance from the current step to the
+        # boundary of the trust region is larger than 0.2 * delta.
+        if inext >= 0:
+            if inext >= mlub or stepsq <= 0.64 * delta ** 2.0:
+                continue
+            break
+
         # If the step reached the boundary of the trust region or if the step
         # that would be obtained in the unconstrained case is insubstantial.,
         # the truncated conjugate gradient method must be stopped.
@@ -308,14 +316,6 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             break
         alphs = min(alphm, alpht)
         if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
-            break
-
-        # Restart the calculations if a new constraint has been hit and either
-        # it is a bound constraint or the distance from the current step to the
-        # boundary of the trust region is larger than 0.2 * delta.
-        if inext >= 0:
-            if inext >= mlub or stepsq <= 0.64 * delta ** 2.0:
-                continue
             break
 
         # Calculate next search direction, which is conjugate to the previous

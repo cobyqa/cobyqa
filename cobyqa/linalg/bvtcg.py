@@ -104,7 +104,7 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
     # component is fixed by the lower bound, and the value 1 indicates that the
     # component is fixed by the upper bound.
     step = np.zeros_like(gq)
-    xbdi = np.zeros(step.size, dtype=int)
+    xbdi = np.zeros(n, dtype=int)
     xbdi[(step <= xl) & (gq >= 0.0)] = -1
     xbdi[(step >= xu) & (gq <= 0.0)] = 1
     ifree = np.equal(xbdi, 0)

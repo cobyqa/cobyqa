@@ -95,8 +95,8 @@ The restarting mechanism is initiated whenever the current step reaches the boun
 #. Set :math:`\alpha_{L, k} = \argmax \set{\alpha \ge 0 : A (x^k + \alpha s^k) \le b}`.
 #. Set :math:`\alpha_k = \min \set{\alpha_{\Delta, k}, \alpha_{Q, k}, \alpha_{L, k}}`.
 #. Update :math:`x^{k + 1} = x^k + \alpha_k s^k` and :math:`g^{k + 1} = g^k + \alpha_k H s^k`.
-#. If :math:`\alpha_k = \alpha_{\Delta, k}` or :math:`\alpha_k = \alpha_{L, k}` and :math:`\norm{x^{k + 1}} > (1 - \eta) \Delta`, stop the computations.
 #. If :math:`\alpha_k = \alpha_{L, k}` and :math:`\norm{x^{k + 1}} \le (1 - \eta) \Delta`, increment :math:`k`, and go to step 2.
+#. If :math:`\alpha_k = \alpha_{\Delta, k}` or :math:`\alpha_k = \alpha_{L, k}` and :math:`\norm{x^{k + 1}} > (1 - \eta) \Delta`, stop the computations.
 #. Set :math:`\beta_k = \inner{\Pi_{\hat{k}}(g^{k + 1}), Hs^k} / \inner{s^k, Hs^k}`.
 #. Update :math:`s^{k + 1} = -\Pi_{\hat{k}}(g^{k + 1}) + \beta_k s^k`, increment :math:`k`, and go to step 3.
 

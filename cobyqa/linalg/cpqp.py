@@ -306,6 +306,10 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
         reduct -= alpha * (sdgq + 0.5 * alpha * curv)
 
+        # Restart the calculations if a new constraint has been hit.
+        if inext >= 0:
+            continue
+
         # If the step reached the boundary of a trust region or if the step that
         # would be obtained in the unconstrained case is insubstantial, the
         # truncated conjugate gradient method must be stopped.
@@ -314,10 +318,6 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
         alphs = min((alphm, alphta, alphtb))
         if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
             break
-
-        # Restart the calculations if a new constraint has been hit.
-        if inext >= 0:
-            continue
 
         # Calculate next search direction, which is conjugate to the previous
         # one, except if iterc is zero, which occurs if the previous search

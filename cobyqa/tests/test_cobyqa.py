@@ -105,14 +105,15 @@ class TestBase(ABC):
         return np.inner(x, x) + swi ** 2.0 + swi ** 4.0
 
     @staticmethod
-    def assert_optimize(res, n, x_sol, f_sol, maxcv=False):
-        assert_allclose(res.x, x_sol, atol=1e-3)
-        assert_allclose(res.fun, f_sol, atol=1e-3)
+    def assert_optimize(res, n, x_sol, f_sol, status=0, maxcv=False):
         assert_(res.nfev <= 500 * n)
-        assert_(res.status in [0, 1])
+        assert_(res.status == status)
         assert_(res.success, res.message)
-        if maxcv:
-            assert_allclose(res.maxcv, 0.0, atol=1e-3)
+        if status == 0:
+            assert_allclose(res.x, x_sol, atol=1e-3)
+            assert_allclose(res.fun, f_sol, atol=1e-3)
+            if maxcv:
+                assert_allclose(res.maxcv, 0.0, atol=1e-3)
 
     @pytest.fixture
     def x0(self, fun, n):
@@ -218,6 +219,17 @@ class TestUnconstrained(TestBase):
         )
         self.assert_optimize(res, n, x_sol, f_sol)
 
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'dixonpr', 'power', 'rosen',
+                                     'rothyp', 'sphere', 'stybtang', 'trid'])
+    def test_target(self, fun, n, x0, x_sol, f_sol):
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            options={'debug': True, 'target': f_sol + 1.0},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, 1)
+
 
 class TestBoundConstrained(TestBase):
 
@@ -267,6 +279,19 @@ class TestBoundConstrained(TestBase):
         self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'dixonpr', 'power', 'rosen',
+                                     'rothyp', 'sphere', 'stybtang', 'trid'])
+    def test_target(self, fun, n, x0, xl, xu, x_sol, f_sol):
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            options={'debug': True, 'target': f_sol + 1.0},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, 1, True)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
     def test_restricted(self, fun, n, x0, xl2, xu2, x_sol2, f_sol2):
         res = minimize(
@@ -277,6 +302,19 @@ class TestBoundConstrained(TestBase):
             options={'debug': True},
         )
         self.assert_optimize(res, n, x_sol2, f_sol2, maxcv=True)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'dixonpr', 'power', 'rosen',
+                                     'rothyp', 'sphere', 'stybtang', 'trid'])
+    def test_fixed(self, fun, n, x0, xl):
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xl,
+            options={'debug': True},
+        )
+        assert_(res.status == 13)
 
 
 class TestLinearEqualityConstrained(TestBase):
@@ -337,6 +375,29 @@ class TestLinearEqualityConstrained(TestBase):
         )
         self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
 
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    def test_target(self, fun, n, x0, xl, xu, aeq, beq, x_sol, f_sol):
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            Aeq=aeq,
+            beq=beq,
+            options={'debug': True, 'target': f_sol + 1.0},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, 1, True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            Aeq=aeq,
+            beq=beq,
+            options={'debug': True, 'target': f_sol + 1.0},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, 1, True)
+
 
 class TestLinearInequalityConstrained(TestBase):
 
@@ -396,6 +457,29 @@ class TestLinearInequalityConstrained(TestBase):
         )
         self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
 
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    def test_target(self, fun, n, x0, xl, xu, aub, bub, x_sol, f_sol):
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            Aub=aub,
+            bub=bub,
+            options={'debug': True, 'target': f_sol + 1.0},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, 1, True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            Aub=aub,
+            bub=bub,
+            options={'debug': True, 'target': f_sol + 1.0},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, 1, True)
+
 
 class TestNonlinearEqualityConstrained(TestBase):
 
@@ -445,6 +529,27 @@ class TestNonlinearEqualityConstrained(TestBase):
         )
         self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
 
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    def test_target(self, fun, n, x0, xl, xu, ceq, x_sol, f_sol):
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            ceq=ceq,
+            options={'debug': True, 'target': f_sol + 1.0},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, 1, True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            ceq=ceq,
+            options={'debug': True, 'target': f_sol + 1.0},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, 1, True)
+
 
 class TestNonlinearInequalityConstrained(TestBase):
 
@@ -493,3 +598,24 @@ class TestNonlinearInequalityConstrained(TestBase):
             options={'debug': True},
         )
         self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    def test_target(self, fun, n, x0, xl, xu, cub, x_sol, f_sol):
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            cub=cub,
+            options={'debug': True, 'target': f_sol + 1.0},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, 1, True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            cub=cub,
+            options={'debug': True, 'target': f_sol + 1.0},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, 1, True)

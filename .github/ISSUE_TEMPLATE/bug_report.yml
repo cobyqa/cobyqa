@@ -5,7 +5,7 @@ labels: ['bug']
 body:
   - type: markdown
     attributes:
-      value: |
+      value: >
         Thank you for submitting a bug report.
         Before creating a new issue, please make sure to check the
         [issue tracker](https://github.com/ragonneau/cobyqa/issues) for
@@ -14,7 +14,7 @@ body:
   - type: textarea
     attributes:
       label: Bug description
-      description: |
+      description: >
         Please provide a clear and concise description of the bug.
     validations:
       required: true
@@ -22,19 +22,15 @@ body:
   - type: textarea
     attributes:
       label: Bug reproduction
-      description: |
+      description: >
         Please add a minimal example that reproduces the error.
-      placeholder: |
-        ```
-        << Sample code to reproduce the problem >>
-        ```
     validations:
       required: true
 
   - type: textarea
     attributes:
       label: Expected Results
-      description: |
+      description: >
         Please describe the results you expect.
     validations:
       required: true
@@ -42,7 +38,7 @@ body:
   - type: textarea
     attributes:
       label: Actual Results
-      description: |
+      description: >
         Please describe the results you observe.
     validations:
       required: true
@@ -50,7 +46,7 @@ body:
   - type: textarea
     attributes:
       label: Versions
-      description: |
+      description: >
         Please run the following and paste the output below.
         ```python
         import cobyqa; cobyqa.show_versions()
@@ -60,5 +56,5 @@ body:
 
   - type: markdown
     attributes:
-      value: |
+      value: >
         Thank you for your contribution!
