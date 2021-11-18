@@ -4,7 +4,7 @@ from numpy.testing import assert_
 from .utils import get_bdtol
 
 
-def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
+def bvcs(xpt, kopt, gq, curv, xl, xu, delta, *args, **kwargs):
     """
     Evaluate Cauchy step on the absolute value of a Lagrange polynomial, subject
     to bound constraints on its coordinates and its length.
@@ -25,8 +25,6 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
 
         where ``x`` is an array with shape (n,) and ``args`` is the tuple of
         fixed parameters needed to specify the function.
-    args : tuple
-        Parameters to forward to the curvature function.
     xl : array_like, shape (n,)
         Lower-bound constraints on the decision variables. Use ``-numpy.inf`` to
         disable the bounds on some variables.
@@ -35,6 +33,8 @@ def bvcs(xpt, kopt, gq, curv, args, xl, xu, delta, **kwargs):
         disable the bounds on some variables.
     delta : float
         Upper bound on the length of the Cauchy step.
+    *args : tuple, optional
+        Parameters to forward to the curvature function.
 
     Returns
     -------

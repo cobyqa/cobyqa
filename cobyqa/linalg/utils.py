@@ -114,7 +114,7 @@ def get_lctol(A, b, **kwargs):
     return kwargs.get('lctol', lctol)
 
 
-def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
+def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
     """
     Pick the current active set.
 
@@ -134,8 +134,6 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
 
         where ``i`` is an integer, ``x`` is an array with shape (n,) and `args`
         is a tuple of parameters to forward to the constraint function.
-    argc : tuple
-        Parameters to forward to the constraint function.
     resid : numpy.ndarray, shape (m,)
         Normalized residuals of each constraint, starting with the linear
         constraints, followed by the bound constraints.
@@ -162,6 +160,8 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
         is understood that the first ``i1`` coordinates are bounded in Euclidean
         norm by ``d1``, the following ``i2`` coordinates are bounded in
         Euclidean norm by ``d2``, etc.
+    *args : tuple, optional
+        Parameters to forward to the constraint function.
 
     Returns
     -------
@@ -242,7 +242,7 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
         violmx = 0.0
         for i in range(resid.size):
             if i not in iact[:nact] and resid[i] <= tdel:
-                lhs = evalc(i, step, *argc)
+                lhs = evalc(i, step, *args)
                 if lhs > max(test * resid[i], violmx):
                     inext = i
                     violmx = lhs
@@ -253,7 +253,7 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
         ctol = 0.0
         if 0.0 < violmx < 1e-2 * deltx:
             for k in range(nact):
-                ctol = max(ctol, abs(evalc(iact[k], step, *argc)))
+                ctol = max(ctol, abs(evalc(iact[k], step, *args)))
         ctol *= 10.0
         if inext == -1 or violmx <= ctol:
             return step
@@ -262,7 +262,7 @@ def getact(gq, evalc, argc, resid, iact, mleq, nact, qfac, rfac, delta):
         # rotations to the matrix qfac, and add the appropriate column to rfac.
         sval = 0.0
         for k in range(n - 1, -1, -1):
-            cval = evalc(inext, qfac[:, k], *argc)
+            cval = evalc(inext, qfac[:, k], *args)
             if k < mleq + nact:
                 rfac[k, mleq + nact] = cval
             elif abs(sval) <= tol * abs(cval):

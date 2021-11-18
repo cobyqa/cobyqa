@@ -15,9 +15,8 @@ class TrustRegion:
     Framework atomization of the derivative-free trust-region SQP method.
     """
 
-    def __init__(self, fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None,
-                 Aeq=None, beq=None, cub=None, ceq=None, options=None,
-                 **kwargs):
+    def __init__(self, fun, x0, xl=None, xu=None, Aub=None, bub=None, Aeq=None,
+                 beq=None, cub=None, ceq=None, options=None, *args, **kwargs):
         """
         Initialize the derivative-free trust-region SQP method.
 
@@ -32,10 +31,6 @@ class TrustRegion:
             parameters to specify the objective function.
         x0 : array_like, shape (n,)
             Initial guess.
-        args : tuple, optional
-            Parameters to forward to the objective function, the nonlinear
-            inequality constraint function, and the nonlinear equality
-            constraint function.
         xl : array_like, shape (n,), optional
             Lower-bound constraints on the decision variables ``x >= xl``.
         xu : array_like, shape (n,), optional
@@ -98,6 +93,10 @@ class TrustRegion:
                 debug : bool, optional
                     Whether to make debugging tests during the execution, which
                     is not recommended in production (the default is False).
+        *args : tuple, optional
+            Parameters to forward to the objective function, the nonlinear
+            inequality constraint function, and the nonlinear equality
+            constraint function.
 
         Other Parameters
         ----------------
@@ -2179,11 +2178,11 @@ class TrustRegion:
         bub = np.maximum(bub, np.dot(aub, xopt))
         beq = np.dot(aeq, xopt)
         if mc == 0:
-            tstep = bvtcg(xopt, gopt, self.model_lag_hessp, (), self.xl,
-                          self.xu, delta, **kwargs)
+            tstep = bvtcg(xopt, gopt, self.model_lag_hessp, self.xl, self.xu,
+                          delta, **kwargs)
         else:
-            tstep = lctcg(xopt, gopt, self.model_lag_hessp, (), aub, bub, aeq,
-                          beq, self.xl, self.xu, delta, **kwargs)
+            tstep = lctcg(xopt, gopt, self.model_lag_hessp, aub, bub, aeq, beq,
+                          self.xl, self.xu, delta, **kwargs)
         if self.debug:
             assert_(np.max(self.xl - xopt - tstep) < bdtol)
             assert_(np.min(self.xu - xopt - tstep) > -bdtol)
@@ -4152,8 +4151,8 @@ class Models:
 
         # Evaluate the constrained Cauchy step from the optimal point of the
         # absolute value of the klag-th Lagrange polynomial.
-        salt, cauchy = bvcs(self.xpt, self.kopt, glag, lag.curv, (self.xpt,),
-                            self.xl, self.xu, delta, **kwargs)
+        salt, cauchy = bvcs(self.xpt, self.kopt, glag, lag.curv, self.xl,
+                            self.xu, delta, self.xpt, **kwargs)
 
         # Among the two computed alternative points, we select the one that
         # leads to the greatest denominator of the updating formula.

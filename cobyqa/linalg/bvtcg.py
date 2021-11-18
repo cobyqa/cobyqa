@@ -4,7 +4,7 @@ from numpy.testing import assert_
 from .utils import get_bdtol
 
 
-def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
+def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
     """
     Minimize approximately a quadratic function subject to bound and
     trust-region constraints using a truncated conjugate gradient.
@@ -26,8 +26,6 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
         parameters to forward to the objective function. It is assumed that the
         Hessian matrix implicitly defined by `hessp` is symmetric, but not
         necessarily positive semidefinite.
-    args : tuple
-        Parameters to forward to the Hessian product function.
     xl : array_like, shape (n,)
         Lower-bound constraints on the decision variables. Use ``-numpy.inf`` to
         disable the bounds on some variables.
@@ -36,6 +34,8 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
         disable the bounds on some variables.
     delta : float
         Upper bound on the length of the step from `xopt`.
+    *args : tuple, optional
+        Parameters to forward to the Hessian product function.
 
     Returns
     -------

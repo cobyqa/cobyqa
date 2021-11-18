@@ -5,7 +5,7 @@ from scipy.linalg import qr
 from .utils import getact, get_bdtol, get_lctol
 
 
-def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
+def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
     """
     Minimize approximately a quadratic function subject to bound, linear, and
     trust-region constraints using a truncated conjugate gradient.
@@ -27,8 +27,6 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
         parameters to forward to the objective function. It is assumed that the
         Hessian matrix implicitly defined by `hessp` is symmetric, but not
         necessarily positive semidefinite.
-    args : tuple
-        Parameters to forward to the Hessian product function.
     Aub : array_like, shape (mlub, n), optional
         Jacobian matrix of the linear inequality constraints. Each row of `Aub`
         stores the gradient of a linear inequality constraint.
@@ -49,6 +47,8 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
         disable the bounds on some variables.
     delta : float
         Upper bound on the length of the step from `xopt`.
+    *args : tuple, optional
+        Parameters to forward to the Hessian product function.
 
     Returns
     -------
@@ -177,8 +177,8 @@ def lctcg(xopt, gq, hessp, args, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             # Pick the active set for the current trial step. The step provided
             # by the Goldfarb and Idnani algorithm is scaled to have length
             # 0.2 * delta, so that it is allowed by the linear constraints.
-            sdd = getact(gq, evalc, (Aub,), resid, iact, mleq, nact, qfac, rfac,
-                         delta)
+            sdd = getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta,
+                         Aub)
             snorm = np.linalg.norm(sdd)
             if snorm <= 0.2 * tiny * delta:
                 break
