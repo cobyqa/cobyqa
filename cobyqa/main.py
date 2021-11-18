@@ -207,6 +207,14 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 ``-numpy.inf``). If the solver encounters a feasible point at
                 which the objective function evaluations is below the target
                 value, then the computations are stopped.
+            ftol_abs : float, optional
+                Absolute tolerance on the objective function.
+            ftol_rel : float, optional
+                Relative tolerance on the objective function.
+            xtol_abs : float, optional
+                Absolute tolerance on the decision variables.
+            xtol_rel : float, optional
+                Relative tolerance on the decision variables.
             disp : bool, optional
                 Whether to print pieces of information on the execution of the
                 solver (the default is False).
@@ -342,64 +350,82 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     # must be stopped immediately if all indices are fixed by the bound
     # constraints or if the target function value has been reached by an initial
     # interpolation point (in which case the initial models are not built).
-    framework = TrustRegion(fun, x0, args, xl, xu, Aub, bub, Aeq, beq, cub, ceq,
-                            options, **kwargs)
-    nf = framework.kopt + 1
-    if np.all(framework.ifix):
-        exit_status = 13
-    elif framework.target_reached:
+    struct = TrustRegion(fun, x0, args, xl, xu, Aub, bub, Aeq, beq, cub, ceq,
+                         options, **kwargs)
+    nf = struct.kopt + 1
+    if np.all(struct.ifix):
+        exit_status = 8
+    elif struct.target_reached:
         exit_status = 1
     else:
         exit_status = 0
-        nf = framework.npt
+        nf = struct.npt
 
     # Begin the iterative procedure.
-    rho = framework.rhobeg
+    rho = struct.rhobeg
     delta = rho
+    fsav = struct.fopt
+    xsav = struct.get_x(struct.xbase + struct.xopt)
     nit = 0
     itest = 0
     while exit_status == 0:
         # Update the shift of the origin to manage computer rounding errors.
-        framework.shift_origin(delta)
+        struct.shift_origin(delta)
 
         # Evaluate the trial step.
         delsav = delta
-        fopt = framework.fopt
-        kopt = framework.kopt
-        coptub = np.copy(framework.coptub)
-        copteq = np.copy(framework.copteq)
-        xopt = np.copy(framework.xopt)
-        is_trust_region_step = not framework.is_model_step
+        fopt = struct.fopt
+        kopt = struct.kopt
+        coptub = np.copy(struct.coptub)
+        copteq = np.copy(struct.copteq)
+        xopt = np.copy(struct.xopt)
+        is_trust_region_step = not struct.is_model_step
         nit += 1
         if is_trust_region_step:
-            step = framework.trust_region_step(delta, **kwargs)
+            step = struct.trust_region_step(delta, **kwargs)
             snorm = np.linalg.norm(step)
             if snorm <= 0.5 * delta:
                 delta = rho if delta <= 1.4 * rho else 0.5 * delta
                 if delsav > rho:
-                    framework.prepare_model_step(delta)
+                    struct.prepare_model_step(delta)
                     continue
         else:
-            step = framework.model_step(max(0.1 * delta, rho), **kwargs)
+            step = struct.model_step(max(0.1 * delta, rho), **kwargs)
             snorm = np.linalg.norm(step)
 
         if not is_trust_region_step or snorm > 0.5 * delta:
             # Evaluate the objective function, include the trial point in the
             # interpolation set, and update accordingly the models.
-            if nf >= framework.maxfev:
-                exit_status = 3
+            if nf >= struct.maxfev:
+                exit_status = 6
                 break
             nf += 1
             try:
-                mopt, ratio = framework.update(step, **kwargs)
+                fx, mopt, ratio = struct.update(step, **kwargs)
             except RestartRequiredException:
                 continue
             except ZeroDivisionError:
-                exit_status = 9
+                exit_status = 7
                 break
-            if framework.target_reached:
+            if struct.target_reached:
                 exit_status = 1
                 break
+            elif abs(fx - fsav) <= struct.ftol_abs:
+                exit_status = 2
+                break
+            elif abs(fx - fsav) <= struct.ftol_rel * abs(fsav):
+                exit_status = 3
+                break
+            xfull = struct.get_x(struct.xbase + xopt + step)
+            xdiff = np.linalg.norm(xfull - xsav)
+            if xdiff <= struct.xtol_abs:
+                exit_status = 4
+                break
+            elif xdiff <= struct.xtol_rel * np.linalg.norm(xsav):
+                exit_status = 5
+                break
+            fsav = fx
+            xsav = xfull
 
             # Update the trust-region radius.
             if is_trust_region_step:
@@ -419,81 +445,85 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                     itest = 0
                 else:
                     itest += 1
-                    gd = framework.model_obj_grad(framework.xopt)
-                    gd_alt = framework.model_obj_alt_grad(framework.xopt)
+                    gd = struct.model_obj_grad(struct.xopt)
+                    gd_alt = struct.model_obj_alt_grad(struct.xopt)
                     if np.linalg.norm(gd) < 10.0 * np.linalg.norm(gd_alt):
                         itest = 0
                     if itest >= 3:
-                        framework.reset_models()
+                        struct.reset_models()
                         itest = 0
 
             # If a trust-region step has provided a sufficient decrease or if a
             # model-improvement step has just been computed, then the next
             # iteration is a trust-region step.
             if not is_trust_region_step or ratio >= 0.1:
-                framework.prepare_trust_region_step()
+                struct.prepare_trust_region_step()
                 continue
 
             # If an interpolation point is substantially far from the
             # trust-region center, a model-improvement step is entertained.
-            framework.prepare_model_step(max(delta, 2.0 * rho))
-            if framework.is_model_step or delsav > rho:
+            struct.prepare_model_step(max(delta, 2.0 * rho))
+            if struct.is_model_step or delsav > rho:
                 continue
-            ropt = framework.rval[framework.kopt]
-            msav = framework(xopt, fopt, coptub, copteq)
-            rsav = framework.rval[kopt]
-            if framework.less_merit(mopt, ropt, msav, rsav):
+            ropt = struct.rval[struct.kopt]
+            msav = struct(xopt, fopt, coptub, copteq)
+            rsav = struct.rval[kopt]
+            if struct.less_merit(mopt, ropt, msav, rsav):
                 continue
 
         # Update the lower bound on the trust-region radius.
-        if rho > framework.rhoend:
+        if rho > struct.rhoend:
             delta = 0.5 * rho
-            if rho > 250.0 * framework.rhoend:
+            if rho > 250.0 * struct.rhoend:
                 rho *= 0.1
             elif rho <= 16.0:
-                rho = framework.rhoend
+                rho = struct.rhoend
             else:
-                rho = np.sqrt(rho * framework.rhoend)
+                rho = np.sqrt(rho * struct.rhoend)
             delta = max(delta, rho)
-            framework.prepare_trust_region_step()
-            framework.reduce_penalty_coefficients()
-            if framework.disp:
+            struct.prepare_trust_region_step()
+            struct.reduce_penalty_coefficients()
+            if struct.disp:
                 message = f'New trust-region radius: {rho}.'
-                _print(framework, fun.__name__, nf, message)
+                _print(struct, fun.__name__, nf, message)
             continue
         break
 
     # Get the success flag.
-    if exit_status == 13:
-        bdtol = get_bdtol(framework.xl, framework.xu, **kwargs)
-        success = framework.type == 'U' or framework.maxcv <= bdtol
+    if exit_status == 8:
+        bdtol = get_bdtol(struct.xl, struct.xu, **kwargs)
+        success = struct.type == 'U' or struct.maxcv <= bdtol
     else:
-        success = exit_status in [0, 1]
+        success = exit_status in [0, 1, 2, 3, 4, 5]
 
     # Build the result structure and return.
     result = OptimizeResult()
-    result.x = framework.get_x(framework.xbase + framework.xopt)
-    result.fun = framework.fopt
+    result.x = struct.get_x(struct.xbase + struct.xopt)
+    result.fun = struct.fopt
     result.jac = np.full_like(result.x, np.nan)
     with suppress(AttributeError):
-        free_indices = np.logical_not(framework.ifix)
-        result.jac[free_indices] = framework.model_obj_grad(framework.xopt)
+        free_indices = np.logical_not(struct.ifix)
+        result.jac[free_indices] = struct.model_obj_grad(struct.xopt)
     result.nfev = nf
     result.nit = nit
-    if framework.type != 'U':
-        result.maxcv = framework.maxcv
+    if struct.type != 'U':
+        result.maxcv = struct.maxcv
     result.status = exit_status
     result.success = success
     result.message = {
         0: 'Lower bound for the trust-region radius has been reached.',
         1: 'Target function value has been achieved.',
-        3: 'Maximum number of function evaluations has been exceeded.',
-        9: 'Denominator of the updating formula is zero.',
-        13: 'All variables are fixed by the constraints.',
-        -4: 'Bound constraints are infeasible',
+        2: 'Absolute tolerance on the objective function has been reached.',
+        3: 'Relative tolerance on the objective function has been reached.',
+        4: 'Absolute tolerance on the decision variables has been reached.',
+        5: 'Relative tolerance on the decision variables has been reached.',
+        6: 'Maximum number of function evaluations has been exceeded.',
+        7: 'Denominator of the updating formula is zero.',
+        8: 'All variables are fixed by the constraints.',
+        -1: 'Bound constraints are infeasible',
     }.get(exit_status, 'Unknown exit status.')
-    if framework.disp:
-        _print(framework, fun.__name__, nf, result.message)
+    if struct.disp:
+        _print(struct, fun.__name__, nf, result.message)
     return result
 
 
