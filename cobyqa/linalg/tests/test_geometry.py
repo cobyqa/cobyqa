@@ -24,7 +24,7 @@ class TestBVCS:
         xl, xu = np.minimum(xl, xu), np.maximum(xl, xu)
         xpt = rng.uniform(xl, xu, (2 * n + 1, n))
         delta = rng.uniform(0.1, 1.0)
-        step, cauchy = bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, delta)
+        step, cauchy = bvcs(xpt, kopt, gq, self.curv, xl, xu, delta, Hq)
         assert_dtype_equal(step, float)
         assert_(step.ndim == 1)
         assert_(step.size == n)
@@ -48,13 +48,13 @@ class TestBVCS:
         xu = 2.0 * np.ones(5, dtype=float)
         delta = 1.0
         with assert_raises(AssertionError):
-            bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, -1.0, debug=True)
+            bvcs(xpt, kopt, gq, self.curv, xl, xu, -1.0, Hq, debug=True)
         xpt[kopt, 2] = 2.1
         with assert_raises(AssertionError):
-            bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, delta, debug=True)
+            bvcs(xpt, kopt, gq, self.curv, xl, xu, delta, Hq, debug=True)
         xpt[kopt, 2], xl[2], xu[2] = 1.0, 1.1, 0.9
         with assert_raises(AssertionError):
-            bvcs(xpt, kopt, gq, self.curv, (Hq,), xl, xu, delta, debug=True)
+            bvcs(xpt, kopt, gq, self.curv, xl, xu, delta, Hq, debug=True)
 
 
 class TestBVLAG:
