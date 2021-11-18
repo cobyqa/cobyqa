@@ -158,8 +158,8 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             # Pick the active set for the current trial step. The step provided
             # by the Goldfarb and Idnani algorithm is scaled to have length
             # 0.2 * delta, so that it is allowed by the linear constraints.
-            sdd = getact(gq, evalc, (Aub, lcn), resid, iact, 0, nact, qfac,
-                         rfac, [(n, delta), (n + mlub, delbd)])
+            sdd = getact(gq, evalc, resid, iact, 0, nact, qfac, rfac,
+                         [(n, delta), (n + mlub, delbd)], Aub, lcn)
             ssq = np.linalg.norm(sdd)
             if ssq <= 0.2 * tiny * delta:
                 break

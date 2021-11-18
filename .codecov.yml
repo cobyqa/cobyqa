@@ -12,6 +12,10 @@ coverage:
     project:
       default:
         target: 1
+    patch:
+      default:
+        target: 1
+        if_ci_failed: failure
 
 ignore:
   - 'setup.py'

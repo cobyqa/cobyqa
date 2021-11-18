@@ -350,8 +350,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     # must be stopped immediately if all indices are fixed by the bound
     # constraints or if the target function value has been reached by an initial
     # interpolation point (in which case the initial models are not built).
-    struct = TrustRegion(fun, x0, args, xl, xu, Aub, bub, Aeq, beq, cub, ceq,
-                         options, **kwargs)
+    struct = TrustRegion(fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options,
+                         *args, **kwargs)
     nf = struct.kopt + 1
     if np.all(struct.ifix):
         exit_status = 8
@@ -362,6 +362,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         nf = struct.npt
 
     # Begin the iterative procedure.
+    tiny = np.finfo(float).tiny
     rho = struct.rhobeg
     delta = rho
     fsav = struct.fopt
@@ -413,7 +414,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             elif abs(fx - fsav) <= struct.ftol_abs:
                 exit_status = 2
                 break
-            elif abs(fx - fsav) <= struct.ftol_rel * abs(fsav):
+            elif abs(fx - fsav) <= struct.ftol_rel * max(abs(fsav), tiny):
                 exit_status = 3
                 break
             xfull = struct.get_x(struct.xbase + xopt + step)
@@ -421,7 +422,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             if xdiff <= struct.xtol_abs:
                 exit_status = 4
                 break
-            elif xdiff <= struct.xtol_rel * np.linalg.norm(xsav):
+            elif xdiff <= struct.xtol_rel * max(np.linalg.norm(xsav), tiny):
                 exit_status = 5
                 break
             fsav = fx
