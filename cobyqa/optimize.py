@@ -84,6 +84,14 @@ class TrustRegion:
                     ``-numpy.inf``). If the solver encounters a feasible point
                     at which the objective function evaluations is below the
                     target value, then the computations are stopped.
+                ftol_abs : float, optional
+                    Absolute tolerance on the objective function.
+                ftol_rel : float, optional
+                    Relative tolerance on the objective function.
+                xtol_abs : float, optional
+                    Absolute tolerance on the decision variables.
+                xtol_rel : float, optional
+                    Relative tolerance on the decision variables.
                 disp : bool, optional
                     Whether to print pieces of information on the execution of
                     the solver (the default is False).
@@ -1644,6 +1652,10 @@ class TrustRegion:
         self._options.setdefault('npt', 2 * n + 1)
         self._options.setdefault('maxfev', max(500 * n, self.npt + 1))
         self._options.setdefault('target', -np.inf)
+        self._options.setdefault('ftol_abs', -1.0)
+        self._options.setdefault('ftol_rel', -1.0)
+        self._options.setdefault('xtol_abs', -1.0)
+        self._options.setdefault('xtol_rel', -1.0)
         self._options.setdefault('disp', False)
         self._options.setdefault('debug', False)
 
@@ -1808,9 +1820,11 @@ class TrustRegion:
 
         Returns
         -------
-        mopt : float
+        float:
+            Objective function evaluation of the trial point.
+        float
             Merit value of the new interpolation point.
-        ratio : float
+        float
             Trust-region ratio associated with the new interpolation point.
 
         Other Parameters
@@ -1874,7 +1888,7 @@ class TrustRegion:
             mopt = mx
         if not self.target_reached and self.debug:
             self.check_models()
-        return mopt, ratio
+        return fx, mopt, ratio
 
     def update_multipliers(self, **kwargs):
         """
@@ -1944,13 +1958,13 @@ class TrustRegion:
 
         Returns
         -------
-        mx : float
+        float
             Value of the merit function at the trial point, evaluated on the
             nonlinear optimization problem.
-        mmx : float
+        float
             Value of the merit function at the trial point, evaluated on the
             different models.
-        mopt : float
+        float
             Value of the merit function at `xopt`, evaluated on the nonlinear
             optimization problem.
         """
@@ -2386,6 +2400,14 @@ class Models:
                     ``-numpy.inf``). If the solver encounters a feasible point
                     at which the objective function evaluations is below the
                     target value, then the computations are stopped.
+                ftol_abs : float, optional
+                    Absolute tolerance on the objective function.
+                ftol_rel : float, optional
+                    Relative tolerance on the objective function.
+                xtol_abs : float, optional
+                    Absolute tolerance on the decision variables.
+                xtol_rel : float, optional
+                    Relative tolerance on the decision variables.
                 disp : bool, optional
                     Whether to print pieces of information on the execution of
                     the solver (the default is False).

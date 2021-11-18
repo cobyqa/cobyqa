@@ -81,10 +81,9 @@ def bvtcg(xopt, gq, hessp, args, xl, xu, delta, **kwargs):
     xu = np.atleast_1d(xu).astype(float)
 
     # Define the tolerances to compare floating-point numbers with zero.
-    eps = np.finfo(float).eps
     tiny = np.finfo(float).tiny
     n = gq.size
-    tol = 10.0 * eps * n
+    tol = 10.0 * np.finfo(float).eps * n
     bdtol = get_bdtol(xl, xu, **kwargs)
 
     # Shift the bounds to carry out all calculations at the origin.

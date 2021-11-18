@@ -314,7 +314,8 @@ class TestBoundConstrained(TestBase):
             xu=xl,
             options={'debug': True},
         )
-        assert_(res.status == 13)
+        assert_(res.status == 8)
+        assert_(res.success, res.message)
 
 
 class TestLinearEqualityConstrained(TestBase):
