@@ -19,7 +19,7 @@ class TestBVTCG:
         xl, xu = np.minimum(xl, xu), np.maximum(xl, xu)
         x0 = rng.uniform(xl, xu)
         delta = rng.uniform(0.1, 1.0)
-        step = bvtcg(x0, gq, np.dot, (Hq,), xl, xu, delta)
+        step = bvtcg(x0, gq, np.dot, xl, xu, delta, Hq)
         assert_dtype_equal(step, float)
         assert_(step.ndim == 1)
         assert_(step.size == n)
@@ -44,13 +44,13 @@ class TestBVTCG:
         xu = 2.0 * np.ones(5, dtype=float)
         delta = 1.0
         with assert_raises(AssertionError):
-            bvtcg(x0, gq, np.dot, (Hq,), xl, xu, -1.0, debug=True)
+            bvtcg(x0, gq, np.dot, xl, xu, -1.0, Hq, debug=True)
         x0[2] = 2.1
         with assert_raises(AssertionError):
-            bvtcg(x0, gq, np.dot, (Hq,), xl, xu, delta, debug=True)
+            bvtcg(x0, gq, np.dot, xl, xu, delta, Hq, debug=True)
         x0[2], xl[2], xu[2] = 1.0, 1.1, 0.9
         with assert_raises(AssertionError):
-            bvtcg(x0, gq, np.dot, (Hq,), xl, xu, delta, debug=True)
+            bvtcg(x0, gq, np.dot, xl, xu, delta, Hq, debug=True)
 
 
 class TestCPQP:
@@ -131,7 +131,7 @@ class TestLCTCG:
         bub = np.dot(Aub, x0) + rng.uniform(0.0, 1.0, mlub)
         beq = np.dot(Aeq, x0)
         delta = rng.uniform(0.1, 1.0)
-        step = lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta)
+        step = lctcg(x0, gq, np.dot, Aub, bub, Aeq, beq, xl, xu, delta, Hq)
         assert_dtype_equal(step, float)
         assert_(step.ndim == 1)
         assert_(step.size == n)
@@ -165,29 +165,29 @@ class TestLCTCG:
         xu = np.ones(5, dtype=float)
         delta = 1.
         with assert_raises(AssertionError):
-            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, -1.,
+            lctcg(x0, gq, np.dot, Aub, bub, Aeq, beq, xl, xu, -1., Hq,
                   debug=True)
         x0[2] = 1.1
         with assert_raises(AssertionError):
-            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta,
+            lctcg(x0, gq, np.dot, Aub, bub, Aeq, beq, xl, xu, delta, Hq,
                   debug=True)
         x0[2] = -1.1
         with assert_raises(AssertionError):
-            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta,
+            lctcg(x0, gq, np.dot, Aub, bub, Aeq, beq, xl, xu, delta, Hq,
                   debug=True)
         x0[2], xl[2], xu[2] = 0.0, 1.1, 0.9
         with assert_raises(AssertionError):
-            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta,
+            lctcg(x0, gq, np.dot, Aub, bub, Aeq, beq, xl, xu, delta, Hq,
                   debug=True)
         xl[2], xu[2] = -1.0, 1.0
         bub = -np.ones(3)
         with assert_raises(AssertionError):
-            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta,
+            lctcg(x0, gq, np.dot, Aub, bub, Aeq, beq, xl, xu, delta, Hq,
                   debug=True)
         bub = np.ones(3)
         beq = np.ones(2)
         with assert_raises(AssertionError):
-            lctcg(x0, gq, np.dot, (Hq,), Aub, bub, Aeq, beq, xl, xu, delta,
+            lctcg(x0, gq, np.dot, Aub, bub, Aeq, beq, xl, xu, delta, Hq,
                   debug=True)
 
 
