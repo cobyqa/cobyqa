@@ -316,7 +316,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
     This problem can be solved using `minimize` as:
 
-    >>> res = minimize(q, x0, xl=xl, cub=cub)
+    >>> res = minimize(quadratic, x0, xl=xl, cub=cub)
     >>> res.x
     array([1.4, 1.7])
 

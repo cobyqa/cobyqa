@@ -244,7 +244,7 @@ class TrustRegion:
 
         Returns
         -------
-        float or (float, float)
+        {float, (float, float)}
             Value of the merit function at `x`, evaluated on the nonlinear
             optimization problem. If ``model = True``, the merit function
             evaluated on the different models is also returned.
@@ -4059,7 +4059,7 @@ class Models:
 
         Parameters
         ----------
-        val : int or numpy.ndarray, shape (npt,)
+        val : {int, numpy.ndarray, shape (npt,)}
             Evaluations associated with the interpolation points. An integer
             value represents the ``npt``-dimensional vector whose components are
             all zero, except the `val`-th one whose value is one. Hence,
@@ -4169,7 +4169,7 @@ class Models:
 
         Parameters
         ----------
-        x : int or numpy.ndarray, shape (n,)
+        x : {int, numpy.ndarray, shape (n,)}
             Point at which the residual is to be evaluated. An integer value
             represents the `x`-th interpolation point.
         cubx : numpy.ndarray, shape (mnlub,), optional
@@ -4339,7 +4339,7 @@ class Quadratic:
             of the inverse KKT matrix of interpolation. Although its theoretical
             value is always 0, it is designed to tackle numerical difficulties
             caused by ill-conditioned problems.
-        fval : int or numpy.ndarray, shape (npt,)
+        fval : {int, numpy.ndarray, shape (npt,)}
             Evaluations associated with the interpolation points. An integer
             value represents the ``npt``-dimensional vector whose components are
             all zero, except the `fval`-th one whose value is one. Hence,
