@@ -889,6 +889,32 @@ class TrustRegion:
         """
         return self._eval_con(self._ceq, x)
 
+    def active_set(self, x, **kwargs):
+        """
+        Determine the set of active constraints of the models.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            The point at which the constraints of the models are to be
+            evaluated.
+
+        Returns
+        -------
+        numpy.ndarray
+            Indices of the active constraints of the models.
+
+        Other Parameters
+        ----------------
+        bdtol : float, optional
+            Tolerance for comparisons on the bound constraints (the default is
+            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
+        """
+        bdtol = get_bdtol(self.xl, self.xu, **kwargs)
+        resid = np.r_[np.dot(self.aub, x) - self.bub, self.xl - x, x - self.xu]
+        iact = np.flatnonzero(np.abs(resid) <= bdtol)
+        return iact
+
     def get_x(self, x):
         """
         Build the full decision variables.
@@ -2170,7 +2196,6 @@ class TrustRegion:
         # violation provided by the normal step.
         if np.sqrt(ssq) <= bdtol:
             nstep = np.zeros_like(self.xopt)
-            delta = delsav
         else:
             delta = np.sqrt(delta ** 2.0 - ssq)
         xopt = self.xopt + nstep
