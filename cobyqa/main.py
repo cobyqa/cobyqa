@@ -366,9 +366,12 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     delta = rho
     fsav = struct.fopt
     xsav = struct.get_x(struct.xbase + struct.xopt)
-    iact = struct.active_set(struct.xopt, **kwargs)
     nit = 0
     itest = 0
+    if exit_status == 1:
+        iact = np.array([])
+    else:
+        iact = struct.active_set(struct.xopt, **kwargs)
     while exit_status == 0:
         # Update the shift of the origin to manage computer rounding errors.
         struct.shift_origin(delta)

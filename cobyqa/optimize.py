@@ -911,7 +911,14 @@ class TrustRegion:
             ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
         """
         bdtol = get_bdtol(self.xl, self.xu, **kwargs)
-        resid = np.r_[np.dot(self.aub, x) - self.bub, self.xl - x, x - self.xu]
+        aub = np.copy(self.aub)
+        bub = np.copy(self.bub)
+        for i in range(self.mnlub):
+            lhs = self.model_cub_grad(self.xopt, i)
+            rhs = np.inner(self.xopt, lhs) - self.coptub[i]
+            aub = np.vstack([aub, lhs])
+            bub = np.r_[bub, rhs]
+        resid = np.r_[np.dot(aub, x) - bub, self.xl - x, x - self.xu]
         iact = np.flatnonzero(np.abs(resid) <= bdtol)
         return iact
 
