@@ -37,7 +37,7 @@ def implicit_hessian(zmat, idz, x):
     return np.dot(zmat, temp)
 
 
-def normalize(A, b):
+def normalize(A, b=None):
     """
     Normalize linear constraints.
 
@@ -49,7 +49,7 @@ def normalize(A, b):
     A : array_like, shape (m, n)
         Jacobian matrix of the linear constraints. Each row of `A` stores the
         gradient of a linear constraint.
-    b : array_like, shape (m,)
+    b : array_like, shape (m,), optional
         Right-hand side vector of the linear constraints ``A @ x = b`` or
         ``A @ x <= b``, where ``x`` is ``n``-dimensional.
 
@@ -67,18 +67,21 @@ def normalize(A, b):
     A = np.atleast_2d(A)
     if A.dtype.kind in np.typecodes['AllInteger']:
         A = np.asarray(A, dtype=float)
-    b = np.atleast_1d(b)
-    if b.dtype.kind in np.typecodes['AllInteger']:
-        b = np.asarray(b, dtype=float)
+    if b is not None:
+        b = np.atleast_1d(b)
+        if b.dtype.kind in np.typecodes['AllInteger']:
+            b = np.asarray(b, dtype=float)
 
     tiny = np.finfo(float).tiny
     if A.shape[1] > 0:
         norm = np.linalg.norm(A, axis=1)
         isafe = norm > tiny * np.max(np.abs(A), axis=1)
-        isafe = isafe & (norm > tiny * np.abs(b))
+        if b is not None:
+            isafe = isafe & (norm > tiny * np.abs(b))
         if np.any(isafe):
             A[isafe, :] = A[isafe, :] / norm[isafe, np.newaxis]
-            b[isafe] = b[isafe] / norm[isafe]
+            if b is not None:
+                b[isafe] = b[isafe] / norm[isafe]
     return A, b
 
 

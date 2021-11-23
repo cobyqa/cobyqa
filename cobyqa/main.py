@@ -350,13 +350,16 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     # must be stopped immediately if all indices are fixed by the bound
     # constraints or if the target function value has been reached by an initial
     # interpolation point (in which case the initial models are not built).
+    if not isinstance(args, tuple):
+        args = (args,)
     struct = TrustRegion(fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options,
                          *args, **kwargs)
-    nfev = struct.kopt + 1
     if np.all(struct.ifix):
         exit_status = 8
+        nfev = 1
     elif struct.target_reached:
         exit_status = 1
+        nfev = struct.kopt + 1
     else:
         exit_status = 0
         nfev = struct.npt
@@ -365,10 +368,13 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     rho = struct.rhobeg
     delta = rho
     fsav = struct.fopt
-    xsav = struct.get_x(struct.xbase + struct.xopt)
+    xsav = struct.xbase + struct.xopt
     nit = 0
     itest = 0
     if exit_status == 1:
+        # If the target value has been reached when building the initial
+        # interpolation set, then the models of the nonlinear functions are not
+        # built and an evaluation of the active set would then fail.
         iact = np.array([])
     else:
         iact = struct.active_set(struct.xopt, **kwargs)
@@ -385,13 +391,13 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         xopt = np.copy(struct.xopt)
         is_trust_region_step = not struct.is_model_step
         nit += 1
-        test = 0.5 / np.sqrt(2.0)
+        test = 0.5 / np.sqrt(2.0) if struct.type in 'LO' else 0.5
         if is_trust_region_step:
             step = struct.trust_region_step(delta, **kwargs)
             snorm = np.linalg.norm(step)
             inew = struct.active_set(struct.xopt + step, **kwargs)
             if not np.array_equal(iact, inew):
-                test = 0.1999 / np.sqrt(2.0)
+                test = 0.1999 / np.sqrt(2.0) if struct.type in 'LO' else 0.1999
                 iact = inew
             if snorm <= test * delta:
                 delta = 0.5 * delta

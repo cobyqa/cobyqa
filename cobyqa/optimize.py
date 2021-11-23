@@ -111,8 +111,6 @@ class TrustRegion:
         self._ceq = ceq
         x0 = np.atleast_1d(x0).astype(float)
         n = x0.size
-        if not isinstance(args, tuple):
-            args = (args,)
         self._args = args
         if xl is None:
             xl = np.full_like(x0, -np.inf)
@@ -251,7 +249,6 @@ class TrustRegion:
         """
         tiny = np.finfo(float).tiny
         ax = fx
-        mx = 0.0
 
         # Calculate the penalty term associated with the linear inequality
         # constraints and add it to both merit values.
@@ -260,7 +257,6 @@ class TrustRegion:
             tub = np.maximum(0.0, tub)
             alub = 0.5 * self.penub * np.inner(tub, tub)
             ax += alub
-            mx += alub
 
         # Calculate the penalty term associated with the nonlinear inequality
         # constraints and add it to the merit value evaluated on the nonlinear
@@ -277,7 +273,6 @@ class TrustRegion:
             teq = np.dot(self.aeq, x) - self.beq + self.lmleq / self.peneq
             aleq = 0.5 * self.peneq * np.inner(teq, teq)
             ax += aleq
-            mx += aleq
 
         # Calculate the penalty term associated with the nonlinear equality
         # constraints and add it to the merit value evaluated on the nonlinear
@@ -290,16 +285,15 @@ class TrustRegion:
         # The remaining terms of the merit value evaluated on the different
         # models are expensive, and calculated only if required.
         if model:
-            mx += self.model_obj(x)
+            mx = self.model_obj(x)
 
             # Calculate the penalty term associated with the linearizations of
             # the nonlinear inequality constraints and add it to the merit value
             # evaluated on the different models.
             if abs(self.penub) > tiny * lmnlub_max:
-                tub = self.coptub + self.lmnlub / self.penub
-                for i in range(self.mnlub):
-                    gopt = self.model_cub_grad(self.xopt, i)
-                    tub[i] += np.inner(x - self.xopt, gopt)
+                aub, bub = self.get_linear_ub()
+                lmub = np.r_[self.lmlub, self.lmnlub]
+                tub = np.dot(aub, x) - bub + lmub / self.penub
                 tub = np.maximum(0.0, tub)
                 mx += 0.5 * self.penub * np.inner(tub, tub)
 
@@ -307,10 +301,9 @@ class TrustRegion:
             # the nonlinear equality constraints and add it to the merit value
             # evaluated on the different models.
             if abs(self.peneq) > tiny * lmnleq_max:
-                teq = self.copteq + self.lmnleq / self.peneq
-                for i in range(self.mnleq):
-                    gopt = self.model_ceq_grad(self.xopt, i)
-                    teq[i] += np.inner(x - self.xopt, gopt)
+                aeq, beq = self.get_linear_eq()
+                lmeq = np.r_[self.lmleq, self.lmnleq]
+                teq = np.dot(aeq, x) - beq + lmeq / self.peneq
                 mx += 0.5 * self.peneq * np.inner(teq, teq)
             return ax, mx
         return ax
@@ -911,13 +904,7 @@ class TrustRegion:
             ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
         """
         bdtol = get_bdtol(self.xl, self.xu, **kwargs)
-        aub = np.copy(self.aub)
-        bub = np.copy(self.bub)
-        for i in range(self.mnlub):
-            lhs = self.model_cub_grad(self.xopt, i)
-            rhs = np.inner(self.xopt, lhs) - self.coptub[i]
-            aub = np.vstack([aub, lhs])
-            bub = np.r_[bub, rhs]
+        aub, bub = self.get_linear_ub()
         resid = np.r_[np.dot(aub, x) - bub, self.xl - x, x - self.xu]
         iact = np.flatnonzero(np.abs(resid) <= bdtol)
         return iact
@@ -940,6 +927,54 @@ class TrustRegion:
         x_full[self.ifix] = self.xfix
         x_full[np.logical_not(self.ifix)] = x
         return x_full
+
+    def get_linear_ub(self):
+        """
+        Get the linear inequality constraints of the models.
+
+        The linear inequality constraints of the models start with the linear
+        inequality constraints of the original problem, followed by the linear
+        Taylor-like expansion of the nonlinear inequality constraints.
+
+        Returns
+        -------
+        numpy.ndarray, shape (m, n)
+            Jacobian matrix of the linear inequality constraints.
+        numpy.ndarray, shape (m,)
+            Right-hand side of the linear inequality constraints.
+        """
+        aub = np.copy(self.aub)
+        bub = np.copy(self.bub)
+        for i in range(self.mnlub):
+            lhs = self.model_cub_grad(self.xopt, i)
+            rhs = np.inner(self.xopt, lhs) - self.coptub[i]
+            aub = np.vstack([aub, lhs])
+            bub = np.r_[bub, rhs]
+        return aub, bub
+
+    def get_linear_eq(self):
+        """
+        Get the linear equality constraints of the models.
+
+        The linear equality constraints of the models start with the linear
+        equality constraints of the original problem, followed by the linear
+        Taylor-like expansion of the nonlinear equality constraints.
+
+        Returns
+        -------
+        numpy.ndarray, shape (m, n)
+            Jacobian matrix of the linear equality constraints.
+        numpy.ndarray, shape (m,)
+            Right-hand side of the linear equality constraints.
+        """
+        aeq = np.copy(self.aeq)
+        beq = np.copy(self.beq)
+        for i in range(self.mnleq):
+            lhs = self.model_ceq_grad(self.xopt, i)
+            rhs = np.inner(self.xopt, lhs) - self.copteq[i]
+            aeq = np.vstack([aeq, lhs])
+            beq = np.r_[beq, rhs]
+        return aeq, beq
 
     def model_obj(self, x):
         """
@@ -2150,22 +2185,10 @@ class TrustRegion:
         # Evaluate the linear approximations of the inequality and equality
         # constraints around the best point so far.
         delsav = delta
-        delta *= np.sqrt(0.5)
-        mc = self.mlub + self.mnlub + self.mleq + self.mnleq
-        aub = np.copy(self.aub)
-        bub = np.copy(self.bub)
-        for i in range(self.mnlub):
-            lhs = self.model_cub_grad(self.xopt, i)
-            rhs = np.inner(self.xopt, lhs) - self.coptub[i]
-            aub = np.vstack([aub, lhs])
-            bub = np.r_[bub, rhs]
-        aeq = np.copy(self.aeq)
-        beq = np.copy(self.beq)
-        for i in range(self.mnleq):
-            lhs = self.model_ceq_grad(self.xopt, i)
-            rhs = np.inner(self.xopt, lhs) - self.copteq[i]
-            aeq = np.vstack([aeq, lhs])
-            beq = np.r_[beq, rhs]
+        if self.type in 'LO':
+            delta *= np.sqrt(0.5)
+        aub, bub = self.get_linear_ub()
+        aeq, beq = self.get_linear_eq()
 
         # Scale the constraints in accordance with the penalty coefficients.
         if self.penub > 0.0 and self.peneq > tiny * self.penub:
@@ -2185,7 +2208,7 @@ class TrustRegion:
         # trust-region radius is shrunk to leave some elbow room to the
         # tangential subproblem for the computations whenever the trust-region
         # subproblem is infeasible.
-        if mc == 0:
+        if self.type in 'UXB':
             nstep = np.zeros_like(self.xopt)
             ssq = 0.0
         else:
@@ -2209,7 +2232,7 @@ class TrustRegion:
         gopt = self.model_obj_grad(xopt)
         bub = np.maximum(bub, np.dot(aub, xopt))
         beq = np.dot(aeq, xopt)
-        if mc == 0:
+        if self.type in 'UXB':
             tstep = bvtcg(xopt, gopt, self.model_lag_hessp, self.xl, self.xu,
                           delta, **kwargs)
         else:
@@ -2458,7 +2481,8 @@ class Models:
         self._bub = bub
         self._Aeq = Aeq
         self._beq = beq
-        self.normalize_constraints()
+        normalize(self._Aub, self._bub)
+        normalize(self._Aeq, self._beq)
         self.shift_constraints(x0)
         n = x0.size
         npt = options.get('npt')
@@ -2575,6 +2599,21 @@ class Models:
             for i in range(mnleq):
                 self._ceq[i] = self.new_model(self.cvaleq[:, i])
                 self._ceq_alt[i] = copy.deepcopy(self._ceq[i])
+
+        # Determine the type of the problem.
+        eps = np.finfo(float).eps
+        if self.mlub + self.mleq + self.mnlub + self.mnleq == 0:
+            if np.all(self.xl == -np.inf) and np.all(self.xu == np.inf):
+                self._type = 'U'
+            elif np.all(self.xu - self.xl <= 10.0 * eps * n * np.abs(self.xu)):
+                self._type = 'X'
+            else:
+                self._type = 'B'
+        else:
+            if self.mnlub + self.mnleq > 0:
+                self._type = 'O'
+            else:
+                self._type = 'L'
 
     @property
     def xl(self):
@@ -2949,17 +2988,7 @@ class Models:
                 - L : the problem's constraints are linear.
                 - O : the problem's constraints general.
         """
-        n = self.xpt.shape[1]
-        eps = np.finfo(float).eps
-        if np.all(self.xu - self.xl <= 10.0 * eps * n * np.abs(self.xu)):
-            return 'X'
-        elif self.mnlub + self.mnleq > 0:
-            return 'O'
-        elif self.mlub + self.mleq > 0:
-            return 'L'
-        elif np.all(self.xl == -np.inf) and np.all(self.xu == np.inf):
-            return 'U'
-        return 'B'
+        return self._type
 
     @property
     def target_reached(self):
@@ -3846,16 +3875,6 @@ class Models:
         for i in range(self.mnleq):
             cx += lmnleq[i] * self.ceq_alt_curv(x, i)
         return cx
-
-    def normalize_constraints(self):
-        """
-        Normalize the linear constraints.
-
-        Each linear inequality and equality constraint is normalized, so that
-        the Euclidean norm of its gradient is one (if not zero).
-        """
-        normalize(self._Aub, self._bub)
-        normalize(self._Aeq, self._beq)
 
     def shift_constraints(self, x):
         """
