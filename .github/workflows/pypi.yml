@@ -17,7 +17,7 @@ on:
 
 jobs:
   run:
-    name: Upload cobyqa v${{ github.event.inputs.version }} to ${{ github.event.inputs.pypi_repo }}
+    name: Upload cobyqa ${{ github.event.inputs.version }} to ${{ github.event.inputs.pypi_repo }}
     runs-on: ubuntu-latest
 
     steps:

@@ -71,8 +71,8 @@ class OptimizeResult(dict):
         """
         try:
             return self[name]
-        except KeyError as e:
-            raise AttributeError(name) from e
+        except KeyError as exc:
+            raise AttributeError(name) from exc
 
     def __setattr__(self, key, value):
         """
@@ -316,7 +316,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
     This problem can be solved using `minimize` as:
 
-    >>> res = minimize(q, x0, xl=xl, cub=cub)
+    >>> res = minimize(quadratic, x0, xl=xl, cub=cub)
     >>> res.x
     array([1.4, 1.7])
 
@@ -350,25 +350,34 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     # must be stopped immediately if all indices are fixed by the bound
     # constraints or if the target function value has been reached by an initial
     # interpolation point (in which case the initial models are not built).
+    if not isinstance(args, tuple):
+        args = (args,)
     struct = TrustRegion(fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options,
                          *args, **kwargs)
-    nf = struct.kopt + 1
     if np.all(struct.ifix):
         exit_status = 8
+        nfev = 1
     elif struct.target_reached:
         exit_status = 1
+        nfev = struct.kopt + 1
     else:
         exit_status = 0
-        nf = struct.npt
+        nfev = struct.npt
 
     # Begin the iterative procedure.
-    tiny = np.finfo(float).tiny
     rho = struct.rhobeg
     delta = rho
     fsav = struct.fopt
-    xsav = struct.get_x(struct.xbase + struct.xopt)
+    xsav = struct.xbase + struct.xopt
     nit = 0
     itest = 0
+    if exit_status == 1:
+        # If the target value has been reached when building the initial
+        # interpolation set, then the models of the nonlinear functions are not
+        # built and an evaluation of the active set would then fail.
+        iact = np.array([])
+    else:
+        iact = struct.active_set(struct.xopt, **kwargs)
     while exit_status == 0:
         # Update the shift of the origin to manage computer rounding errors.
         struct.shift_origin(delta)
@@ -382,11 +391,18 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         xopt = np.copy(struct.xopt)
         is_trust_region_step = not struct.is_model_step
         nit += 1
+        test = 0.5 / np.sqrt(2.0) if struct.type in 'LO' else 0.5
         if is_trust_region_step:
             step = struct.trust_region_step(delta, **kwargs)
             snorm = np.linalg.norm(step)
-            if snorm <= 0.5 * delta:
-                delta = rho if delta <= 1.4 * rho else 0.5 * delta
+            inew = struct.active_set(struct.xopt + step, **kwargs)
+            if not np.array_equal(iact, inew):
+                test = 0.1999 / np.sqrt(2.0) if struct.type in 'LO' else 0.1999
+                iact = inew
+            if snorm <= test * delta:
+                delta = 0.5 * delta
+                if delta <= 1.4 * rho:
+                    delta = rho
                 if delsav > rho:
                     struct.prepare_model_step(delta)
                     continue
@@ -394,13 +410,13 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             step = struct.model_step(max(0.1 * delta, rho), **kwargs)
             snorm = np.linalg.norm(step)
 
-        if not is_trust_region_step or snorm > 0.5 * delta:
+        if not is_trust_region_step or snorm > test * delta:
             # Evaluate the objective function, include the trial point in the
             # interpolation set, and update accordingly the models.
-            if nf >= struct.maxfev:
+            if nfev >= struct.maxfev:
                 exit_status = 6
                 break
-            nf += 1
+            nfev += 1
             try:
                 fx, mopt, ratio = struct.update(step, **kwargs)
             except RestartRequiredException:
@@ -411,18 +427,18 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             if struct.target_reached:
                 exit_status = 1
                 break
-            elif abs(fx - fsav) <= struct.ftol_abs:
+            if abs(fx - fsav) <= struct.ftol_abs:
                 exit_status = 2
                 break
-            elif abs(fx - fsav) <= struct.ftol_rel * max(abs(fsav), tiny):
+            if abs(fx - fsav) <= struct.ftol_rel * max(abs(fsav), 1.0):
                 exit_status = 3
                 break
-            xfull = struct.get_x(struct.xbase + xopt + step)
+            xfull = struct.xbase + xopt + step
             xdiff = np.linalg.norm(xfull - xsav)
             if xdiff <= struct.xtol_abs:
                 exit_status = 4
                 break
-            elif xdiff <= struct.xtol_rel * max(np.linalg.norm(xsav), tiny):
+            if xdiff <= struct.xtol_rel * max(np.linalg.norm(xsav), 1.0):
                 exit_status = 5
                 break
             fsav = fx
@@ -486,7 +502,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             struct.reduce_penalty_coefficients()
             if struct.disp:
                 message = f'New trust-region radius: {rho}.'
-                _print(struct, fun.__name__, nf, message)
+                _print(struct, fun.__name__, nfev, message)
             continue
         break
 
@@ -505,7 +521,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     with suppress(AttributeError):
         free_indices = np.logical_not(struct.ifix)
         result.jac[free_indices] = struct.model_obj_grad(struct.xopt)
-    result.nfev = nf
+    result.nfev = nfev
     result.nit = nit
     if struct.type != 'U':
         result.maxcv = struct.maxcv
@@ -524,7 +540,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         -1: 'Bound constraints are infeasible',
     }.get(exit_status, 'Unknown exit status.')
     if struct.disp:
-        _print(struct, fun.__name__, nf, result.message)
+        _print(struct, fun.__name__, nfev, result.message)
     return result
 
 

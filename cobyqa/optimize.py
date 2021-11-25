@@ -111,8 +111,6 @@ class TrustRegion:
         self._ceq = ceq
         x0 = np.atleast_1d(x0).astype(float)
         n = x0.size
-        if not isinstance(args, tuple):
-            args = (args,)
         self._args = args
         if xl is None:
             xl = np.full_like(x0, -np.inf)
@@ -180,9 +178,9 @@ class TrustRegion:
         if not np.all(self.ifix):
             rhobeg = self.rhobeg
             rhoend = self.rhoend
-            rhobeg = min(.5 * np.min(xu - xl), rhobeg)
+            rhobeg = min(0.5 * np.min(xu - xl), rhobeg)
             rhoend = min(rhobeg, rhoend)
-            self._options.update({'rhobeg': rhobeg, 'rhoend': rhoend})
+            self.options.update({'rhobeg': rhobeg, 'rhoend': rhoend})
             adj = (x0 - xl <= rhobeg) & (xl < x0)
             if np.any(adj):
                 x0[adj] = xl[adj] + rhobeg
@@ -244,23 +242,22 @@ class TrustRegion:
 
         Returns
         -------
-        float or (float, float)
+        {float, (float, float)}
             Value of the merit function at `x`, evaluated on the nonlinear
             optimization problem. If ``model = True``, the merit function
             evaluated on the different models is also returned.
         """
         tiny = np.finfo(float).tiny
         ax = fx
-        mx = 0.0
 
         # Calculate the penalty term associated with the linear inequality
-        # constraints and add it to both merit values.
+        # constraints and add it to the merit value evaluated on the nonlinear
+        # optimization problem.
         if abs(self.penub) > tiny * np.max(np.abs(self.lmlub), initial=1.0):
             tub = np.dot(self.aub, x) - self.bub + self.lmlub / self.penub
             tub = np.maximum(0.0, tub)
             alub = 0.5 * self.penub * np.inner(tub, tub)
             ax += alub
-            mx += alub
 
         # Calculate the penalty term associated with the nonlinear inequality
         # constraints and add it to the merit value evaluated on the nonlinear
@@ -272,45 +269,42 @@ class TrustRegion:
             ax += 0.5 * self.penub * np.inner(tub, tub)
 
         # Calculate the penalty term associated with the linear equality
-        # constraints and add it to both merit values.
+        # constraints and add it to the merit value evaluated on the nonlinear
+        # optimization problem.
         if abs(self.peneq) > tiny * np.max(np.abs(self.lmleq), initial=1.0):
             teq = np.dot(self.aeq, x) - self.beq + self.lmleq / self.peneq
             aleq = 0.5 * self.peneq * np.inner(teq, teq)
             ax += aleq
-            mx += aleq
 
         # Calculate the penalty term associated with the nonlinear equality
         # constraints and add it to the merit value evaluated on the nonlinear
         # optimization problem.
-        lmnleq_max = np.max(np.abs(self._lmnleq), initial=1.0)
+        lmnleq_max = np.max(np.abs(self.lmnleq), initial=1.0)
         if abs(self.peneq) > tiny * lmnleq_max:
             teq = ceqx + self.lmnleq / self.peneq
             ax += 0.5 * self.peneq * np.inner(teq, teq)
 
-        # The remaining terms of the merit value evaluated on the different
-        # models are expensive, and calculated only if required.
+        # Determine the merit value evaluated on the different models.
         if model:
-            mx += self.model_obj(x)
+            mx = self.model_obj(x)
 
-            # Calculate the penalty term associated with the linearizations of
-            # the nonlinear inequality constraints and add it to the merit value
-            # evaluated on the different models.
+            # Calculate the penalty term associated with the inequality
+            # constraints and add it to the merit value evaluated on the
+            # different models.
             if abs(self.penub) > tiny * lmnlub_max:
-                tub = self.coptub + self.lmnlub / self.penub
-                for i in range(self.mnlub):
-                    gopt = self.model_cub_grad(self.xopt, i)
-                    tub[i] += np.inner(x - self.xopt, gopt)
+                aub, bub = self.get_linear_ub()
+                lmub = np.r_[self.lmlub, self.lmnlub]
+                tub = np.dot(aub, x) - bub + lmub / self.penub
                 tub = np.maximum(0.0, tub)
                 mx += 0.5 * self.penub * np.inner(tub, tub)
 
-            # Calculate the penalty term associated with the linearizations of
-            # the nonlinear equality constraints and add it to the merit value
-            # evaluated on the different models.
+            # Calculate the penalty term associated with the nonlinear equality
+            # constraints and add it to the merit value evaluated on the
+            # different models.
             if abs(self.peneq) > tiny * lmnleq_max:
-                teq = self.copteq + self.lmnleq / self.peneq
-                for i in range(self.mnleq):
-                    gopt = self.model_ceq_grad(self.xopt, i)
-                    teq[i] += np.inner(x - self.xopt, gopt)
+                aeq, beq = self.get_linear_eq()
+                lmeq = np.r_[self.lmleq, self.lmnleq]
+                teq = np.dot(aeq, x) - beq + lmeq / self.peneq
                 mx += 0.5 * self.peneq * np.inner(teq, teq)
             return ax, mx
         return ax
@@ -336,8 +330,8 @@ class TrustRegion:
         """
         try:
             return self.options[item]
-        except KeyError as e:
-            raise AttributeError(item) from e
+        except KeyError as exc:
+            raise AttributeError(item) from exc
 
     @property
     def xbase(self):
@@ -469,20 +463,6 @@ class TrustRegion:
         return self._lmnleq
 
     @property
-    def target_reached(self):
-        """
-        Indicate whether the computations have been stopped because the target
-        value has been reached.
-
-        Returns
-        -------
-        bool
-            Flag indicating whether the computations have been stopped because
-            the target value has been reached.
-        """
-        return self._target_reached
-
-    @property
     def knew(self):
         """
         Index of the interpolation point to be removed from the interpolation
@@ -498,6 +478,20 @@ class TrustRegion:
             interpolation set.
         """
         return self._knew
+
+    @property
+    def target_reached(self):
+        """
+        Indicate whether the computations have been stopped because the target
+        value has been reached.
+
+        Returns
+        -------
+        bool
+            Flag indicating whether the computations have been stopped because
+            the target value has been reached.
+        """
+        return self._target_reached
 
     @property
     def xl(self):
@@ -889,6 +883,33 @@ class TrustRegion:
         """
         return self._eval_con(self._ceq, x)
 
+    def active_set(self, x, **kwargs):
+        """
+        Determine the set of active constraints of the models.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            The point at which the constraints of the models are to be
+            evaluated.
+
+        Returns
+        -------
+        numpy.ndarray
+            Indices of the active constraints of the models.
+
+        Other Parameters
+        ----------------
+        bdtol : float, optional
+            Tolerance for comparisons on the bound constraints (the default is
+            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
+        """
+        bdtol = get_bdtol(self.xl, self.xu, **kwargs)
+        aub, bub = self.get_linear_ub()
+        resid = np.r_[np.dot(aub, x) - bub, self.xl - x, x - self.xu]
+        iact = np.flatnonzero(np.abs(resid) <= bdtol)
+        return iact
+
     def get_x(self, x):
         """
         Build the full decision variables.
@@ -907,6 +928,54 @@ class TrustRegion:
         x_full[self.ifix] = self.xfix
         x_full[np.logical_not(self.ifix)] = x
         return x_full
+
+    def get_linear_ub(self):
+        """
+        Get the linear inequality constraints of the models.
+
+        The linear inequality constraints of the models start with the linear
+        inequality constraints of the original problem, followed by the linear
+        Taylor-like expansion of the nonlinear inequality constraints.
+
+        Returns
+        -------
+        numpy.ndarray, shape (m, n)
+            Jacobian matrix of the linear inequality constraints.
+        numpy.ndarray, shape (m,)
+            Right-hand side of the linear inequality constraints.
+        """
+        aub = np.copy(self.aub)
+        bub = np.copy(self.bub)
+        for i in range(self.mnlub):
+            lhs = self.model_cub_grad(self.xopt, i)
+            rhs = np.inner(self.xopt, lhs) - self.coptub[i]
+            aub = np.vstack([aub, lhs])
+            bub = np.r_[bub, rhs]
+        return aub, bub
+
+    def get_linear_eq(self):
+        """
+        Get the linear equality constraints of the models.
+
+        The linear equality constraints of the models start with the linear
+        equality constraints of the original problem, followed by the linear
+        Taylor-like expansion of the nonlinear equality constraints.
+
+        Returns
+        -------
+        numpy.ndarray, shape (m, n)
+            Jacobian matrix of the linear equality constraints.
+        numpy.ndarray, shape (m,)
+            Right-hand side of the linear equality constraints.
+        """
+        aeq = np.copy(self.aeq)
+        beq = np.copy(self.beq)
+        for i in range(self.mnleq):
+            lhs = self.model_ceq_grad(self.xopt, i)
+            rhs = np.inner(self.xopt, lhs) - self.copteq[i]
+            aeq = np.vstack([aeq, lhs])
+            beq = np.r_[beq, rhs]
+        return aeq, beq
 
     def model_obj(self, x):
         """
@@ -1646,17 +1715,17 @@ class TrustRegion:
             Number of decision variables.
         """
         rhoend = getattr(self, 'rhoend', 1e-6)
-        self._options.setdefault('rhobeg', max(1.0, rhoend))
-        self._options.setdefault('rhoend', min(rhoend, self.rhobeg))
-        self._options.setdefault('npt', 2 * n + 1)
-        self._options.setdefault('maxfev', max(500 * n, self.npt + 1))
-        self._options.setdefault('target', -np.inf)
-        self._options.setdefault('ftol_abs', -1.0)
-        self._options.setdefault('ftol_rel', -1.0)
-        self._options.setdefault('xtol_abs', -1.0)
-        self._options.setdefault('xtol_rel', -1.0)
-        self._options.setdefault('disp', False)
-        self._options.setdefault('debug', False)
+        self.options.setdefault('rhobeg', max(1.0, rhoend))
+        self.options.setdefault('rhoend', min(rhoend, self.rhobeg))
+        self.options.setdefault('npt', 2 * n + 1)
+        self.options.setdefault('maxfev', max(500 * n, self.npt + 1))
+        self.options.setdefault('target', -np.inf)
+        self.options.setdefault('ftol_abs', -1.0)
+        self.options.setdefault('ftol_rel', -1.0)
+        self.options.setdefault('xtol_abs', -1.0)
+        self.options.setdefault('xtol_rel', -1.0)
+        self.options.setdefault('disp', False)
+        self.options.setdefault('debug', False)
 
     def check_options(self, n, stack_level=2):
         """
@@ -1679,7 +1748,7 @@ class TrustRegion:
         npt_min = min(n + 2, npt_max)
         npt = self.npt
         if not (npt_min <= npt <= npt_max):
-            self._options['npt'] = min(npt_max, max(npt_min, npt))
+            self.options['npt'] = min(npt_max, max(npt_min, npt))
             message = "option 'npt' is not in the required interval and is "
             message += 'increased.' if npt_min > npt else 'decreased.'
             warnings.warn(message, RuntimeWarning, stacklevel=stack_level)
@@ -1687,7 +1756,7 @@ class TrustRegion:
         # Ensure that the option 'maxfev' is large enough.
         maxfev = self.maxfev
         if maxfev <= self.npt:
-            self._options['maxfev'] = self.npt + 1
+            self.options['maxfev'] = self.npt + 1
             if maxfev <= npt:
                 message = "option 'maxfev' is too low and is increased."
             else:
@@ -1696,7 +1765,7 @@ class TrustRegion:
 
         # Ensure that the options 'rhobeg' and 'rhoend' are consistent.
         if self.rhoend > self.rhobeg:
-            self._options['rhoend'] = self.rhobeg
+            self.options['rhoend'] = self.rhobeg
             message = "option 'rhoend' is too large and is decreased."
             warnings.warn(message, RuntimeWarning, stacklevel=stack_level)
 
@@ -1857,14 +1926,14 @@ class TrustRegion:
 
         # Update the Lagrange multipliers and the penalty parameters for the
         # trust-region ratio to be well-defined.
-        if not self._target_reached:
+        if not self.target_reached:
             self.update_multipliers(**kwargs)
             ksav = self.kopt
             mx, mmx, mopt = self.update_penalty_parameters(step, fx, cubx, ceqx)
             if ksav != self.kopt:
-                # When increasing the penalty parameters to make the ]
+                # When increasing the penalty parameters is required to make the
                 # trust-region ratio meaningful, the index of the optimal point
-                # changed. A trust-region iteration has to be entertained.
+                # changed. A new trust-region iteration has to be entertained.
                 self.prepare_trust_region_step()
                 raise RestartRequiredException
 
@@ -1927,10 +1996,10 @@ class TrustRegion:
             # been fixed by the complementary slackness conditions.
             gopt = self.model_obj_grad(self.xopt)
             lm, _ = nnls(A, -gopt, mlub + mnlub, **kwargs)
-            self._lmlub.fill(0.0)
-            self._lmnlub.fill(0.0)
-            self._lmlub[ilub] = lm[:mlub]
-            self._lmnlub[inlub] = lm[mlub:mlub + mnlub]
+            self.lmlub.fill(0.0)
+            self.lmnlub.fill(0.0)
+            self.lmlub[ilub] = lm[:mlub]
+            self.lmnlub[inlub] = lm[mlub:mlub + mnlub]
             self._lmleq = lm[mlub + mnlub:mlub + mnlub + self.mleq]
             self._lmnleq = lm[mlub + mnlub + self.mleq:]
 
@@ -2117,22 +2186,10 @@ class TrustRegion:
         # Evaluate the linear approximations of the inequality and equality
         # constraints around the best point so far.
         delsav = delta
-        delta *= np.sqrt(0.5)
-        mc = self.mlub + self.mnlub + self.mleq + self.mnleq
-        aub = np.copy(self.aub)
-        bub = np.copy(self.bub)
-        for i in range(self.mnlub):
-            lhs = self.model_cub_grad(self.xopt, i)
-            rhs = np.inner(self.xopt, lhs) - self.coptub[i]
-            aub = np.vstack([aub, lhs])
-            bub = np.r_[bub, rhs]
-        aeq = np.copy(self.aeq)
-        beq = np.copy(self.beq)
-        for i in range(self.mnleq):
-            lhs = self.model_ceq_grad(self.xopt, i)
-            rhs = np.inner(self.xopt, lhs) - self.copteq[i]
-            aeq = np.vstack([aeq, lhs])
-            beq = np.r_[beq, rhs]
+        if self.type in 'LO':
+            delta *= np.sqrt(0.5)
+        aub, bub = self.get_linear_ub()
+        aeq, beq = self.get_linear_eq()
 
         # Scale the constraints in accordance with the penalty coefficients.
         if self.penub > 0.0 and self.peneq > tiny * self.penub:
@@ -2152,7 +2209,7 @@ class TrustRegion:
         # trust-region radius is shrunk to leave some elbow room to the
         # tangential subproblem for the computations whenever the trust-region
         # subproblem is infeasible.
-        if mc == 0:
+        if self.type in 'UXB':
             nstep = np.zeros_like(self.xopt)
             ssq = 0.0
         else:
@@ -2170,14 +2227,13 @@ class TrustRegion:
         # violation provided by the normal step.
         if np.sqrt(ssq) <= bdtol:
             nstep = np.zeros_like(self.xopt)
-            delta = delsav
         else:
             delta = np.sqrt(delta ** 2.0 - ssq)
         xopt = self.xopt + nstep
         gopt = self.model_obj_grad(xopt)
         bub = np.maximum(bub, np.dot(aub, xopt))
         beq = np.dot(aeq, xopt)
-        if mc == 0:
+        if self.type in 'UXB':
             tstep = bvtcg(xopt, gopt, self.model_lag_hessp, self.xl, self.xu,
                           delta, **kwargs)
         else:
@@ -2426,7 +2482,8 @@ class Models:
         self._bub = bub
         self._Aeq = Aeq
         self._beq = beq
-        self.normalize_constraints()
+        normalize(self.aub, self.bub)
+        normalize(self.aeq, self.beq)
         self.shift_constraints(x0)
         n = x0.size
         npt = options.get('npt')
@@ -2477,24 +2534,24 @@ class Models:
                 shift = kx // n
                 ipt = kx - shift * n
                 jpt = (ipt + shift) % n
-                self._xpt[k, ipt] = self.xpt[ipt + 1, ipt]
-                self._xpt[k, jpt] = self.xpt[jpt + 1, jpt]
+                self.xpt[k, ipt] = self.xpt[ipt + 1, ipt]
+                self.xpt[k, jpt] = self.xpt[jpt + 1, jpt]
 
             # Evaluate the objective and the nonlinear constraint functions at
             # the interpolations points and set the residual of each
             # interpolation point in rval. Stop the computations if a feasible
             # point has reached the target value.
-            self._fval[k] = fun(x0 + self.xpt[k, :])
+            self.fval[k] = fun(x0 + self.xpt[k, :])
             if k == 0:
                 # The constraints functions have already been evaluated at x0
                 # to initialize the shapes of cvalub and cvaleq.
-                self._cvalub[0, :] = cub_x0
-                self._cvaleq[0, :] = ceq_x0
+                self.cvalub[0, :] = cub_x0
+                self.cvaleq[0, :] = ceq_x0
             else:
-                self._cvalub[k, :] = cub(x0 + self.xpt[k, :])
-                self._cvaleq[k, :] = ceq(x0 + self.xpt[k, :])
-            self._rval[k] = self.resid(k)
-            if self._fval[k] <= target and self._rval[k] <= bdtol:
+                self.cvalub[k, :] = cub(x0 + self.xpt[k, :])
+                self.cvaleq[k, :] = ceq(x0 + self.xpt[k, :])
+            self.rval[k] = self.resid(k)
+            if self.fval[k] <= target and self.rval[k] <= bdtol:
                 self.kopt = k
                 self._target_reached = True
                 break
@@ -2504,26 +2561,26 @@ class Models:
             # factorization matrix of its leading not submatrix.
             if k <= 2 * n:
                 if 1 <= k <= n and npt <= k + n:
-                    self._bmat[0, km] = -1 / stepa
-                    self._bmat[k, km] = 1 / stepa
-                    self._bmat[npt + km, km] = -0.5 * rhobeg ** 2.0
+                    self.bmat[0, km] = -1 / stepa
+                    self.bmat[k, km] = 1 / stepa
+                    self.bmat[npt + km, km] = -0.5 * rhobeg ** 2.0
                 elif k > n:
-                    self._bmat[0, kx] = -(stepa + stepb) / (stepa * stepb)
-                    self._bmat[k, kx] = -0.5 / self.xpt[kx + 1, kx]
-                    self._bmat[kx + 1, kx] = -self.bmat[0, kx]
-                    self._bmat[kx + 1, kx] -= self.bmat[k, kx]
-                    self._zmat[0, kx] = np.sqrt(2.0) / (stepa * stepb)
-                    self._zmat[k, kx] = np.sqrt(0.5) / rhobeg ** 2.0
-                    self._zmat[kx + 1, kx] = -self.zmat[0, kx]
-                    self._zmat[kx + 1, kx] -= self.zmat[k, kx]
+                    self.bmat[0, kx] = -(stepa + stepb) / (stepa * stepb)
+                    self.bmat[k, kx] = -0.5 / self.xpt[kx + 1, kx]
+                    self.bmat[kx + 1, kx] = -self.bmat[0, kx]
+                    self.bmat[kx + 1, kx] -= self.bmat[k, kx]
+                    self.zmat[0, kx] = np.sqrt(2.0) / (stepa * stepb)
+                    self.zmat[k, kx] = np.sqrt(0.5) / rhobeg ** 2.0
+                    self.zmat[kx + 1, kx] = -self.zmat[0, kx]
+                    self.zmat[kx + 1, kx] -= self.zmat[k, kx]
             else:
                 shift = kx // n
                 ipt = kx - shift * n
                 jpt = (ipt + shift) % n
-                self._zmat[0, kx] = 1.0 / rhobeg ** 2.0
-                self._zmat[k, kx] = 1.0 / rhobeg ** 2.0
-                self._zmat[ipt + 1, kx] = -1.0 / rhobeg ** 2.0
-                self._zmat[jpt + 1, kx] = -1.0 / rhobeg ** 2.0
+                self.zmat[0, kx] = 1.0 / rhobeg ** 2.0
+                self.zmat[k, kx] = 1.0 / rhobeg ** 2.0
+                self.zmat[ipt + 1, kx] = -1.0 / rhobeg ** 2.0
+                self.zmat[jpt + 1, kx] = -1.0 / rhobeg ** 2.0
         else:
             # Set the initial models of the objective and nonlinear constraint
             # functions. The standard models minimize the updates of their
@@ -2543,6 +2600,21 @@ class Models:
             for i in range(mnleq):
                 self._ceq[i] = self.new_model(self.cvaleq[:, i])
                 self._ceq_alt[i] = copy.deepcopy(self._ceq[i])
+
+        # Determine the type of the problem.
+        eps = np.finfo(float).eps
+        if self.mlub + self.mleq + self.mnlub + self.mnleq == 0:
+            if np.all(self.xl == -np.inf) and np.all(self.xu == np.inf):
+                self._type = 'U'
+            elif np.all(self.xu - self.xl <= 10.0 * eps * n * np.abs(self.xu)):
+                self._type = 'X'
+            else:
+                self._type = 'B'
+        else:
+            if self.mnlub + self.mnleq > 0:
+                self._type = 'O'
+            else:
+                self._type = 'L'
 
     @property
     def xl(self):
@@ -2917,17 +2989,7 @@ class Models:
                 - L : the problem's constraints are linear.
                 - O : the problem's constraints general.
         """
-        n = self.xpt.shape[1]
-        eps = np.finfo(float).eps
-        if np.all(self.xu - self.xl <= 10.0 * eps * n * np.abs(self.xu)):
-            return 'X'
-        elif self.mnlub + self.mnleq > 0:
-            return 'O'
-        elif self.mlub + self.mleq > 0:
-            return 'L'
-        elif np.all(self.xl == -np.inf) and np.all(self.xu == np.inf):
-            return 'U'
-        return 'B'
+        return self._type
 
     @property
     def target_reached(self):
@@ -3815,16 +3877,6 @@ class Models:
             cx += lmnleq[i] * self.ceq_alt_curv(x, i)
         return cx
 
-    def normalize_constraints(self):
-        """
-        Normalize the linear constraints.
-
-        Each linear inequality and equality constraint is normalized, so that
-        the Euclidean norm of its gradient is one (if not zero).
-        """
-        normalize(self._Aub, self._bub)
-        normalize(self._Aeq, self._beq)
-
     def shift_constraints(self, x):
         """
         Shift the bound and linear constraints.
@@ -3859,17 +3911,17 @@ class Models:
         for k in range(npt):
             step = updt[k] * hxpt[k, :] + qoptsq * xopt
             temp = np.outer(self.bmat[k, :], step)
-            self._bmat[npt:, :] += temp + temp.T
+            self.bmat[npt:, :] += temp + temp.T
 
         # Revise bmat to incorporate the changes that depend on zmat.
         temp = qoptsq * np.outer(xopt, np.sum(self.zmat, axis=0))
         temp += np.matmul(hxpt.T, self.zmat * updt[:, np.newaxis])
-        for k in range(self._idz):
-            self._bmat[:npt, :] -= np.outer(self.zmat[:, k], temp[:, k])
-            self._bmat[npt:, :] -= np.outer(temp[:, k], temp[:, k])
-        for k in range(self._idz, npt - n - 1):
-            self._bmat[:npt, :] += np.outer(self.zmat[:, k], temp[:, k])
-            self._bmat[npt:, :] += np.outer(temp[:, k], temp[:, k])
+        for k in range(self.idz):
+            self.bmat[:npt, :] -= np.outer(self.zmat[:, k], temp[:, k])
+            self.bmat[npt:, :] -= np.outer(temp[:, k], temp[:, k])
+        for k in range(self.idz, npt - n - 1):
+            self.bmat[:npt, :] += np.outer(self.zmat[:, k], temp[:, k])
+            self.bmat[npt:, :] += np.outer(temp[:, k], temp[:, k])
 
         # Complete the shift by updating the quadratic models, the bound
         # constraints, the right-hand side of the linear inequality and equality
@@ -3952,7 +4004,7 @@ class Models:
                 sval = self.zmat[knew, j]
                 _, cosv, sinv = rotg(cval, sval)
                 rot(self.zmat[:, jdz], self.zmat[:, j], cosv, sinv)
-                self._zmat[knew, j] = 0.0
+                self.zmat[knew, j] = 0.0
 
         # Evaluate the denominator in Equation (2.12) of Powell (2004).
         scala = self.zmat[knew, 0] if self.idz == 0 else -self.zmat[knew, 0]
@@ -3973,14 +4025,14 @@ class Models:
 
         # Complete the update of the matrix zmat. The boolean variable reduce
         # indicates whether the number of nonpositive eigenvalues of the leading
-        # npt submatrix of the inverse KKT matrix of interpolation in self._idz
+        # npt submatrix of the inverse KKT matrix of interpolation in self.idz
         # must be decreased by one.
         reduce = False
         hval = np.sqrt(abs(sigma))
         if jdz == 0:
             scala = tau / hval
             scalb = self.zmat[knew, 0] / hval
-            self._zmat[:, 0] = scala * self.zmat[:, 0] - scalb * vlag[:npt]
+            self.zmat[:, 0] = scala * self.zmat[:, 0] - scalb * vlag[:npt]
             if sigma < 0.0:
                 if self.idz == 0:
                     self._idz = 1
@@ -3994,10 +4046,10 @@ class Models:
             temp = self.zmat[knew, kdz]
             scala = 1. / np.sqrt(abs(beta) * temp ** 2.0 + tau ** 2.0)
             scalb = scala * hval
-            self._zmat[:, kdz] = tau * self.zmat[:, kdz] - temp * vlag[:npt]
-            self._zmat[:, kdz] *= scala
-            self._zmat[:, jdz] -= tempa * omega + tempb * vlag[:npt]
-            self._zmat[:, jdz] *= scalb
+            self.zmat[:, kdz] = tau * self.zmat[:, kdz] - temp * vlag[:npt]
+            self.zmat[:, kdz] *= scala
+            self.zmat[:, jdz] -= tempa * omega + tempb * vlag[:npt]
+            self.zmat[:, jdz] *= scalb
             if sigma <= 0.0:
                 if beta < 0.0:
                     self._idz += 1
@@ -4005,7 +4057,7 @@ class Models:
                     reduce = True
         if reduce:
             self._idz -= 1
-            self._zmat[:, [0, self.idz]] = self.zmat[:, [self.idz, 0]]
+            self.zmat[:, [0, self.idz]] = self.zmat[:, [self.idz, 0]]
 
         # Update accordingly bmat. The copy below is crucial, as the slicing
         # would otherwise return a view of the knew-th row of bmat only.
@@ -4013,10 +4065,10 @@ class Models:
         for j in range(n):
             cosv = (alpha * vlag[npt + j] - tau * bsav[j]) / sigma
             sinv = (tau * vlag[npt + j] + beta * bsav[j]) / sigma
-            self._bmat[:npt, j] += cosv * vlag[:npt] - sinv * omega
-            self._bmat[npt:npt + j + 1, j] += cosv * vlag[npt:npt + j + 1]
-            self._bmat[npt:npt + j + 1, j] -= sinv * bsav[:j + 1]
-            self._bmat[npt + j, :j + 1] = self.bmat[npt:npt + j + 1, j]
+            self.bmat[:npt, j] += cosv * vlag[:npt] - sinv * omega
+            self.bmat[npt:npt + j + 1, j] += cosv * vlag[npt:npt + j + 1]
+            self.bmat[npt:npt + j + 1, j] -= sinv * bsav[:j + 1]
+            self.bmat[npt + j, :j + 1] = self.bmat[npt:npt + j + 1, j]
 
         # Update finally the evaluations of the objective function, the
         # nonlinear inequality constraint function, and the nonlinear equality
@@ -4025,17 +4077,17 @@ class Models:
         xnew = self.xopt + step
         xold = np.copy(self.xpt[knew, :])
         dfx = fx - self.obj(xnew)
-        self._fval[knew] = fx
+        self.fval[knew] = fx
         dcubx = np.empty(self.mnlub, dtype=float)
         for i in range(self.mnlub):
             dcubx[i] = cubx[i] - self.cub(xnew, i)
-        self._cvalub[knew, :] = cubx
+        self.cvalub[knew, :] = cubx
         dceqx = np.empty(self.mnleq, dtype=float)
         for i in range(self.mnleq):
             dceqx[i] = ceqx[i] - self.ceq(xnew, i)
-        self._cvaleq[knew, :] = ceqx
-        self._xpt[knew, :] = xnew
-        self._rval[knew] = self.resid(knew)
+        self.cvaleq[knew, :] = ceqx
+        self.xpt[knew, :] = xnew
+        self.rval[knew] = self.resid(knew)
         self._obj.update(self.xpt, self.kopt, xold, self.bmat, self.zmat,
                          self.idz, knew, dfx)
         self._obj_alt = self.new_model(self.fval)
@@ -4059,7 +4111,7 @@ class Models:
 
         Parameters
         ----------
-        val : int or numpy.ndarray, shape (npt,)
+        val : {int, numpy.ndarray, shape (npt,)}
             Evaluations associated with the interpolation points. An integer
             value represents the ``npt``-dimensional vector whose components are
             all zero, except the `val`-th one whose value is one. Hence,
@@ -4169,7 +4221,7 @@ class Models:
 
         Parameters
         ----------
-        x : int or numpy.ndarray, shape (n,)
+        x : {int, numpy.ndarray, shape (n,)}
             Point at which the residual is to be evaluated. An integer value
             represents the `x`-th interpolation point.
         cubx : numpy.ndarray, shape (mnlub,), optional
@@ -4339,7 +4391,7 @@ class Quadratic:
             of the inverse KKT matrix of interpolation. Although its theoretical
             value is always 0, it is designed to tackle numerical difficulties
             caused by ill-conditioned problems.
-        fval : int or numpy.ndarray, shape (npt,)
+        fval : {int, numpy.ndarray, shape (npt,)}
             Evaluations associated with the interpolation points. An integer
             value represents the ``npt``-dimensional vector whose components are
             all zero, except the `fval`-th one whose value is one. Hence,
@@ -4430,7 +4482,7 @@ class Quadratic:
             Stored explicit part of the Hessian matrix of the model.
         """
         if self._hq is None:
-            return np.zeros((self._gq.size, self._gq.size), dtype=float)
+            return np.zeros((self.gq.size, self.gq.size), dtype=float)
         return self._hq
 
     def grad(self, x, xpt, kopt):
@@ -4619,7 +4671,7 @@ class Quadratic:
         # implicit part of the Hessian matrix is modified.
         omega = implicit_hessian(zmat, idz, knew)
         self._hq = self.hq + self.pq[knew] * np.outer(xold, xold)
-        self._pq[knew] = 0.0
+        self.pq[knew] = 0.0
         self._pq += diff * omega
 
         # Update the gradient of the model.
