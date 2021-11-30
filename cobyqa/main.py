@@ -453,7 +453,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 else:
                     delbd = np.sqrt(2.0) * delta
                     delta = min(delbd, max(0.2 * delta, 2.0 * snorm))
-                if delta <= 1.5 * rho:
+                if delta <= 1.4 * rho:
                     delta = rho
 
             # Attempt to replace the models by the alternative ones.
@@ -493,7 +493,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             delta = 0.5 * rho
             if rho > 250.0 * struct.rhoend:
                 rho *= 0.1
-            elif rho <= 16.0:
+            elif rho <= 16.0 * struct.rhoend:
                 rho = struct.rhoend
             else:
                 rho = np.sqrt(rho * struct.rhoend)

@@ -48,7 +48,7 @@ def _plot_points(x, title=None):
 
 if __name__ == '__main__':
     rng = np.random.default_rng(0)
-    n = 80  # must be even
+    n = 40  # must be even
 
     xl = np.zeros(n, dtype=float)
     Aub = np.zeros((n // 2, n), dtype=float)
@@ -65,6 +65,6 @@ if __name__ == '__main__':
         x0[2 * i + 1] = x0_odd
     _plot_points(x0, 'Initial points')
 
-    options = {'disp': True, 'xtol_rel': 1e-5}
+    options = {'disp': True}
     res = minimize(fun, x0, xl=xl, Aub=Aub, bub=bub, options=options)
     _plot_points(res.x, 'Final points')
