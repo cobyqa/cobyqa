@@ -23,7 +23,7 @@ Reformulation of the problem
 ----------------------------
 
 The main difficulty in solving problem :eq:`cpqp`, even approximately, is the piecewise quadratic term :math:`\norm{[Ax - b]_+}^2` in the objective function.
-However, problem :eq:`cpqp` can clearly be reformulated by introducing a slack variable :math:`y \in \R^{m_1}` as
+However, problem :eq:`cpqp` can clearly be reformulated by introducing a variable :math:`y \in \R^{m_1}` as
 
 .. math::
     :label: cpqp-slack
@@ -62,7 +62,7 @@ where
     \end{bmatrix}
     \in \R^{2n + 2m_1}
 
-The reformulated problem :eq:`cpqp-slack` is simpler to solve than problem :eq:`cpqp` because its objective function is quadratic, although
+Compared to the original problem :eq:`cpqp`, the advantage of the reformulated problem :eq:`cpqp-slack` is that its objective function is quadratic, although
 
 #. the dimension of the reformulated problem is higher, and
 #. linear inequality constraints appear in the reformulated problem.

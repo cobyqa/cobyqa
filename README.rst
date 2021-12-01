@@ -17,6 +17,9 @@ COBYQA: derivative-free solver for nonlinear constrained optimization
 .. image:: https://img.shields.io/badge/license-BSD-blue
     :target: https://github.com/ragonneau/cobyqa/blob/main/LICENSE
 
+.. image:: https://shields.io/pypi/v/cobyqa.svg
+    :target: https://pypi.org/project/cobyqa/
+
 COBYQA, named after *Constrained Optimization BY Quadratic Approximation*, is a
 Python package for solving derivative-free optimization problems under general
 nonlinear inequality and equality constraints and is distributed under the
