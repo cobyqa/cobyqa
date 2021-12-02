@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_
 
-from .utils import get_bdtol
+from cobyqa.linalg.utils import get_bdtol
 
 
 def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
@@ -84,7 +84,6 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
     tiny = np.finfo(float).tiny
     n = gq.size
     tol = 10.0 * np.finfo(float).eps * n
-    bdtol = get_bdtol(xl, xu, **kwargs)
 
     # Shift the bounds to carry out all calculations at the origin.
     xl -= xopt
@@ -92,6 +91,7 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
 
     # Ensure the feasibility of the initial guess.
     if kwargs.get('debug', False):
+        bdtol = get_bdtol(xl, xu, **kwargs)
         assert_(np.max(xl) < bdtol)
         assert_(np.min(xu) > -bdtol)
         assert_(np.isfinite(delta))
@@ -106,55 +106,49 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
     xbdi = np.zeros(n, dtype=int)
     xbdi[(step <= xl) & (gq >= 0.0)] = -1
     xbdi[(step >= xu) & (gq <= 0.0)] = 1
-    ifree = np.equal(xbdi, 0)
-    ifixed = np.not_equal(xbdi, 0)
-    nact = np.count_nonzero(np.abs(xbdi))
+    nact = np.count_nonzero(xbdi)
 
-    # Start the iterative procedure. It uses the least curvature of the Hessian
-    # of the objective function that occurs in the conjugate gradient searches
-    # that are not restricted by any constraints. It is set to 0 if the current
-    # trial step reaches the boundary of the trust region, and to -1 if all the
-    # search directions are constrained.
+    # Start the iterative procedure.
     sd = np.zeros_like(step)
-    delsq = delta ** 2.0
-    tolsd = tol
+    stepsq = 0.0
     beta = 0.0
-    gqsq = 0.0
-    gqsqsav = 0.0
-    qred = 0.0
-    crvmin = -1.0
+    reduct = 0.0
     iterc = 0
     maxiter = n
-    while abs(crvmin) > tolsd:
+    while delta ** 2.0 - stepsq > tol * np.max(np.abs(sd), initial=1.0):
         # Set the next search direction of the conjugate gradient method to the
         # steepest descent direction initially and when the iterations are
         # restarted because a variable has just been fixed by a bound. The
         # maximum number of iterations is set to the theoretical upper bound on
         # the iteration number initially and at a restart. The computations are
         # stopped if no further progress is possible.
-        sd[ifree] = beta * sd[ifree] - gq[ifree]
-        sd[ifixed] = 0.0
+        sd[xbdi == 0] = beta * sd[xbdi == 0] - gq[xbdi == 0]
+        sd[xbdi != 0] = 0.0
         sdsq = np.inner(sd, sd)
-        tolsd = tol * np.max(np.abs(sd), initial=1.)
-        if np.sqrt(sdsq) < tolsd:
+        if np.sqrt(sdsq) < tol * np.max(np.abs(sd), initial=1.0):
             break
-        if beta < tolsd:
-            gqsq = sdsq
+        if beta <= 0.0:
             maxiter = iterc + n - nact
+        gqsq = np.inner(gq[xbdi == 0], gq[xbdi == 0])
+        if gqsq * delta ** 2.0 <= 1e-4 * reduct ** 2.0:
+            break
 
         # Set the steplength of the current search direction allowed by the
         # trust-region constraint. The calculations are stopped if no further
         # progress is possible in the current search direction.
-        rhs = delsq - np.inner(step[ifree], step[ifree])
+        iterc += 1
+        rhs = delta ** 2.0 - stepsq
         if rhs <= 0.0:
-            crvmin = 0.0
             continue
-        sdstep = np.inner(sd[ifree], step[ifree])
+        sdgq = np.inner(sd, gq)
+        if sdgq >= 0.0:
+            break
+        sdstep = np.inner(sd, step)
         sqrd = np.sqrt(sdsq * rhs + sdstep ** 2.0)
-        if sdstep < 0.0 and sdsq > tiny * abs(sqrd - sdstep):
-            alpht = (sqrd - sdstep) / sdsq
+        if sdstep <= 0.0 and sdsq > tiny * abs(sqrd - sdstep):
+            alpht = max((sqrd - sdstep) / sdsq, 0.0)
         elif abs(sqrd + sdstep) > tiny * rhs:
-            alpht = rhs / (sqrd + sdstep)
+            alpht = max(rhs / (sqrd + sdstep), 0.0)
         else:
             break
         alpha = alpht
@@ -167,75 +161,62 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
         hsd = np.atleast_1d(hessp(sd, *args))
         if hsd.dtype.kind in np.typecodes['AllInteger']:
             hsd = np.asarray(hsd, dtype=float)
-        curv = np.inner(sd[ifree], hsd[ifree])
-        if curv > tiny * abs(gqsq):
-            alphm = gqsq / curv
+        curv = np.inner(sd, hsd)
+        if curv > tiny * abs(sdgq):
+            alphm = max(-sdgq / curv, 0.0)
         else:
             alphm = np.inf
         alpha = min(alpha, alphm)
 
         # Reduce the steplength if necessary in order to preserve the simple
         # bounds, setting the index of the new constrained variable if any.
-        ipos = sd > tiny * np.abs(xu - step)
-        ineg = sd < -tiny * np.abs(step - xl)
+        ixu = sd > tiny * np.abs(xu - step)
+        ixl = sd < -tiny * np.abs(step - xl)
         distbd = np.full_like(step, np.inf)
-        distbd[ipos] = (xu[ipos] - step[ipos]) / sd[ipos]
-        distbd[ineg] = (xl[ineg] - step[ineg]) / sd[ineg]
+        distbd[ixu] = (xu[ixu] - step[ixu]) / sd[ixu]
+        distbd[ixl] = (xl[ixl] - step[ixl]) / sd[ixl]
         inew = -1
         if np.any(np.isfinite(distbd)):
             inew = np.argmin(distbd)
             alphf = distbd[inew]
-            if alphf >= alpha:
-                inew = -1
-            else:
-                alpha = alphf
+        else:
+            alphf = np.inf
+        if alphf >= alpha:
+            inew = -1
+        else:
+            alpha = alphf
 
         # Make the actual conjugate gradient iteration. The max operator below
         # is crucial as it prevents numerical difficulties engendered by
         # computer rounding errors.
-        if alpha > 0.0:
-            iterc += 1
-            crv = curv / sdsq
-            if inew == -1 and crv > 0.0:
-                crvmin = min(crvmin, crv) if abs(crvmin + 1.0) > tolsd else crv
-            gqsqsav = gqsq
-            gq += alpha * hsd
-            gqsq = np.inner(gq[ifree], gq[ifree])
-            step += alpha * sd
-            sdred = max(0.0, alpha * (gqsqsav - 0.5 * alpha * curv))
-            qred += sdred
+        step += alpha * sd
+        stepsq = np.inner(step, step)
+        gq += alpha * hsd
+        reduct -= alpha * (sdgq + 0.5 * alpha * curv)
+
+        # If the step reached the boundary of the trust region, the truncated
+        # conjugate gradient method must be stopped.
+        if alpha >= alpht:
+            continue
 
         # Restart the conjugate gradient method if it has hit a new bound. If
         # the step is on or outside the trust region, further improvement
         # attempts round the trust-region boundary are done below.
         if inew >= 0:
-            nact += 1
             if sd[inew] < 0.0:
                 xbdi[inew] = -1
             else:
                 xbdi[inew] = 1
-            ifree[inew] = False
-            ifixed[inew] = True
-            delsq -= step[inew] * step[inew]
-            if delsq <= 0.0:
-                crvmin = 0.0
-                continue
+            nact += 1
             beta = 0.0
             continue
 
         # If the step did not reach the trust-region boundary, apply another
         # conjugate gradient iteration or return if the maximum number of
         # iterations is exceeded.
-        if alpha < alpht:
-            if iterc >= maxiter:
-                break
-            beta = gqsq / gqsqsav
-            continue
-
-        # The trust-region boundary has been reached by the step. End the
-        # truncated conjugate gradient procedure and attempt to improve the
-        # current step round the trust-region boundary.
-        crvmin = 0.0
+        if iterc >= maxiter:
+            break
+        beta = np.inner(gq[xbdi == 0], hsd[xbdi == 0]) / curv
         continue
     else:
         # Whenever the truncated conjugate gradient computations stopped because
@@ -243,38 +224,33 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
         # performed to attempt improving the solution round the trust-region
         # boundary on the two dimensional space spanned by the free components
         # of the step and the gradient.
-        stepsq = np.inner(step[ifree], step[ifree])
-        gqsq = np.inner(gq[ifree], gq[ifree])
-        gdstep = np.inner(gq[ifree], step[ifree])
-        sd[ifree] = step[ifree]
-        sd[ifixed] = 0.0
-        hsd = np.atleast_1d(hessp(sd, *args))
-        if hsd.dtype.kind in np.typecodes['AllInteger']:
-            hsd = np.asarray(hsd, dtype=float)
-        hred = np.copy(hsd)
+        hst = np.zeros_like(step)
+        iterc = 0
         inew = -1
         while nact < n - 1:
             # Whenever the previous iteration has hit a bound, the computation
             # round the trust-region boundary are restarted.
-            if inew >= 0:
-                sd[ifree] = step[ifree]
-                sd[ifixed] = 0.0
+            stepsq = np.inner(step[xbdi == 0], step[xbdi == 0])
+            gdstep = np.inner(gq[xbdi == 0], step[xbdi == 0])
+            gqsq = np.inner(gq[xbdi == 0], gq[xbdi == 0])
+            if iterc == 0 or inew >= 0:
+                sd[xbdi == 0] = step[xbdi == 0]
+                sd[xbdi != 0] = 0.0
                 hsd = np.atleast_1d(hessp(sd, *args))
                 if hsd.dtype.kind in np.typecodes['AllInteger']:
                     hsd = np.asarray(hsd, dtype=float)
-                hred = np.copy(hsd)
-            tolsd = tol * np.max(np.abs(sd), initial=1.0)
+                hst = np.copy(hsd)
 
             # Let the search direction be a linear combination of the reduced
             # step and the reduced gradient that is orthogonal to the step.
             iterc += 1
             disc = gqsq * stepsq - gdstep ** 2.0
-            sqrd = np.sqrt(max(disc, 0.0))
-            if sqrd < tolsd:
+            if disc <= 1e-4 * reduct ** 2.0:
                 break
-            sd[ifree] = (gdstep * step[ifree] - stepsq * gq[ifree]) / sqrd
-            sd[ifixed] = 0.0
-            gdsd = -sqrd
+            sdgq = -np.sqrt(disc)
+            sd[xbdi == 0] = stepsq * gq[xbdi == 0] - gdstep * step[xbdi == 0]
+            sd[xbdi == 0] /= sdgq
+            sd[xbdi != 0] = 0.0
 
             # By considering the simple bounds on the variables, calculate an
             # upper bound on the tangent of half the angle of the alternative
@@ -284,50 +260,36 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
             inew = -1
             sl = np.full_like(step, np.inf)
             su = np.full_like(step, np.inf)
-            sl[ifree] = step[ifree] - xl[ifree]
-            su[ifree] = xu[ifree] - step[ifree]
+            sl[xbdi == 0] = step[xbdi == 0] - xl[xbdi == 0]
+            su[xbdi == 0] = xu[xbdi == 0] - step[xbdi == 0]
             if np.any(sl <= 0.0):
                 nact += 1
                 inew = np.argmax(sl <= 0.0)
                 xbdi[inew] = -1
-                ifree[inew] = False
-                ifixed[inew] = True
-                stepsq -= step[inew] ** 2.0
-                gqsq -= gq[inew] ** 2.0
-                gdstep -= gq[inew] * step[inew]
                 continue
-            elif np.any(su <= 0.0):
+            elif np.any(su <= 0):
                 nact += 1
                 inew = np.argmax(su <= 0.0)
                 xbdi[inew] = 1
-                ifree[inew] = False
-                ifixed[inew] = True
-                stepsq -= step[inew] ** 2.0
-                gqsq -= gq[inew] ** 2.0
-                gdstep -= gq[inew] * step[inew]
                 continue
-            ssq = np.square(step[ifree]) + np.square(sd[ifree])
-            temp = np.full_like(step, -np.inf)
-            temp[ifree] = ssq - np.square(xl[ifree])
-            itemp = temp > 0.0
-            temp[itemp] = np.sqrt(temp[itemp]) - sd[itemp]
-            temp[np.logical_not(itemp)] = -np.inf
-            isl = angbd * temp - sl > tiny * temp
+            ssq = step[xbdi == 0] ** 2.0 + sd[xbdi == 0] ** 2.0
+            temp = np.zeros_like(step)
+            temp[xbdi == 0] = ssq - xl[xbdi == 0] ** 2.0
+            temp[temp > 0.0] = np.sqrt(temp[temp > 0.0]) - sd[temp > 0.0]
+            ixl = angbd * temp > sl
             xbdisav = 0
-            if np.any(isl):
+            if np.any(ixl):
                 ratio = np.full_like(step, np.inf)
-                ratio[isl] = sl[isl] / temp[isl]
+                ratio[ixl] = sl[ixl] / temp[ixl]
                 inew = np.argmin(ratio)
                 angbd = ratio[inew]
                 xbdisav = -1
-            temp[ifree] = ssq - np.square(xu[ifree])
-            itemp = temp > 0.0
-            temp[itemp] = np.sqrt(temp[itemp]) + sd[itemp]
-            temp[np.logical_not(itemp)] = -np.inf
-            isu = angbd * temp - su > tiny * temp
-            if np.any(isu):
+            temp[xbdi == 0] = ssq - xu[xbdi == 0] ** 2.0
+            temp[temp > 0.0] = np.sqrt(temp[temp > 0.0]) + sd[temp > 0.0]
+            ixu = angbd * temp > su
+            if np.any(ixu):
                 ratio = np.full_like(step, np.inf)
-                ratio[isu] = su[isu] / temp[isu]
+                ratio[ixu] = su[ixu] / temp[ixu]
                 inew = np.argmin(ratio)
                 angbd = ratio[inew]
                 xbdisav = 1
@@ -336,9 +298,9 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
             hsd = np.atleast_1d(hessp(sd, *args))
             if hsd.dtype.kind in np.typecodes['AllInteger']:
                 hsd = np.asarray(hsd, dtype=float)
-            sdhsd = np.inner(sd[ifree], hsd[ifree])
-            stephsd = np.inner(step[ifree], hsd[ifree])
-            stephred = np.inner(step[ifree], hred[ifree])
+            sdhsd = np.inner(sd[xbdi == 0], hsd[xbdi == 0])
+            sthsd = np.inner(step[xbdi == 0], hsd[xbdi == 0])
+            sthst = np.inner(step[xbdi == 0], hst[xbdi == 0])
 
             # Seek the greatest reduction in the objective function for a range
             # of equally spaced values in [0, angbd], corresponding to the
@@ -346,16 +308,14 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
             # computations to hold, the interval should be split into at least
             # three parts, and nalt represents the number of intervals in the
             # unconstrained case.
-            nalt = 20
-            iu = int((nalt - 3) * angbd + 3.1)
+            nu = 20
+            iu = int((nu - 3) * angbd + 3.1)
             angt = angbd * np.arange(1, iu + 1, dtype=float) / float(iu)
-            sth = 2.0 * angt / (1.0 + np.square(angt))
-            temp = sdhsd + angt * (stephred * angt - 2.0 * stephsd)
-            rednew = sth * (gdstep * angt - gdsd)
-            rednew -= sth * (0.5 * sth * temp)
+            sth = 2.0 * angt / (1.0 + angt ** 2.0)
+            temp = sdhsd + angt * (sthst * angt - 2.0 * sthsd)
+            rednew = sth * (gdstep * angt - sdgq - 0.5 * sth * temp)
             isav = np.argmax(rednew)
             redmax = rednew[isav]
-            rednew[isav] = -np.inf
             redprev = rednew[isav - 1] if isav > 0 else 0.0
             rednext = rednew[isav + 1] if isav < iu - 1 else 0.0
             if redmax <= 0.0:
@@ -373,10 +333,10 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
             if isav < iu - 1:
                 temp = (rednext - redprev) / (2.0 * redmax - redprev - rednext)
                 angc *= (isav + 1.0 + 0.5 * temp) / float(iu)
-            cth = (1.0 - angc * angc) / (1.0 + angc ** 2.0)
+            cth = (1.0 - angc ** 2.0) / (1.0 + angc ** 2.0)
             sth = 2.0 * angc / (1.0 + angc ** 2.0)
-            temp = sdhsd + angc * (angc * stephred - 2.0 * stephsd)
-            sdred = sth * (angc * gdstep - gdsd - 0.5 * sth * temp)
+            temp = sdhsd + angc * (angc * sthst - 2.0 * sthsd)
+            sdred = sth * (angc * gdstep - sdgq - 0.5 * sth * temp)
             if sdred <= 0.0:
                 break
 
@@ -384,23 +344,15 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
             # the alternative iteration is restricted by a bound on a free
             # variable, that variable is fixed at the bound and the computations
             # of the alternative iterations are restarted.
-            step[ifree] = cth * step[ifree] + sth * sd[ifree]
-            gq += (cth - 1.0) * hred + sth * hsd
-            stepsq = np.inner(step[ifree], step[ifree])
-            gdstep = np.inner(gq[ifree], step[ifree])
-            gqsq = np.inner(gq[ifree], gq[ifree])
-            hred = cth * hred + sth * hsd
-            qred += sdred
+            step[xbdi == 0] = cth * step[xbdi == 0] + sth * sd[xbdi == 0]
+            gq += (cth - 1.0) * hst + sth * hsd
+            hst = cth * hst + sth * hsd
+            reduct += sdred
             if inew >= 0 and isav == iu - 1:
                 nact += 1
                 xbdi[inew] = xbdisav
-                ifree[inew] = False
-                ifixed[inew] = True
-                stepsq -= step[inew] ** 2.0
-                gqsq -= gq[inew] ** 2.0
-                gdstep -= gq[inew] * step[inew]
                 continue
-            if sdred > 0.0:
+            if sdred >= 1e-2 * reduct:
                 inew = -1
                 continue
 
@@ -412,9 +364,6 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
     # Ensure that the bound constraints are respected and that the components
     # fixed by the working sets are set to their respective bounds.
     step = np.minimum(xu, np.maximum(xl, step))
-    ixl = np.equal(xbdi, -1)
-    ixu = np.equal(xbdi, 1)
-    step[ixl] = xl[ixl]
-    step[ixu] = xu[ixu]
-
+    step[xbdi == -1] = xl[xbdi == -1]
+    step[xbdi == 1] = xu[xbdi == 1]
     return step

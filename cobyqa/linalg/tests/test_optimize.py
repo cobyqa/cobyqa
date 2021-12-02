@@ -3,6 +3,7 @@ import pytest
 from numpy.testing import assert_, assert_allclose, assert_raises
 
 from cobyqa.linalg import bvtcg, cpqp, lctcg, nnls
+from cobyqa.linalg.utils import get_bdtol
 from cobyqa.tests import assert_array_less_equal, assert_dtype_equal
 
 
@@ -25,9 +26,7 @@ class TestBVTCG:
         assert_(step.size == n)
 
         # Ensure the feasibility of the output.
-        eps = np.finfo(float).eps
-        tol = 1e1 * eps * n
-        bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.0)
+        bdtol = get_bdtol(xl, xu)
         assert_array_less_equal(xl - x0 - step, bdtol)
         assert_array_less_equal(x0 + step - xu, bdtol)
         assert_(np.linalg.norm(step) - delta <= bdtol)
@@ -75,9 +74,7 @@ class TestCPQP:
         assert_(step.size == n)
 
         # Ensure the feasibility of the output.
-        eps = np.finfo(float).eps
-        tol = 10.0 * eps * n
-        bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.)
+        bdtol = get_bdtol(xl, xu)
         assert_array_less_equal(xl - x0 - step, bdtol)
         assert_array_less_equal(x0 + step - xu, bdtol)
         assert_(np.linalg.norm(step) - delta <= bdtol)
@@ -139,7 +136,7 @@ class TestLCTCG:
         # Ensure the feasibility of the output.
         eps = np.finfo(float).eps
         tol = 10.0 * eps * n
-        bdtol = tol * np.max(np.abs(np.r_[xl, xu]), initial=1.0)
+        bdtol = get_bdtol(xl, xu)
         lctol = tol * np.max(np.abs(bub), initial=1.0)
         assert_array_less_equal(xl - x0 - step, bdtol)
         assert_array_less_equal(x0 + step - xu, bdtol)

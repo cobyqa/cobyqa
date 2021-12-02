@@ -99,11 +99,11 @@ The method `bvtcg` then may further reduce the function evaluation by returning 
         \min        & \quad q(x) = \inner{x, g} + \frac{1}{2} \inner{x, H x}\\
         \text{s.t.} & \quad l \le x \le u,\\
                     & \quad \norm{x} = \Delta,\\
-                    & \quad x \in \vspan \set{\Pi(x^k), \Pi(g^k)} \subseteq \R^n.
+                    & \quad x \in \vspan \set{\Pi_k(x^k), \Pi_k(g^k)} \subseteq \R^n.
     \end{array}
 
-To do so, the method builds an orthogonal basis :math:`\set{\Pi(x^k), s}` of :math:`\vspan \set{\Pi(x^k), \Pi(g^k)}` by selecting the vector :math:`s \in \R^n` such that :math:`\inner{s, \Pi(x^k)} = 0`, :math:`\inner{s, \Pi(g^k)} < 0`, and :math:`\norm{s} = \norm{\Pi(x^k)}`.
-Further, the method considers the function :math:`x(\theta) = x^k + (\cos \theta - 1) \Pi(x^k) + \sin \theta s` with :math:`0 \le \theta \le \pi / 4` and solves approximately
+To do so, the method builds an orthogonal basis :math:`\set{\Pi_k(x^k), s}` of :math:`\vspan \set{\Pi_k(x^k), \Pi_k(g^k)}` by selecting the vector :math:`s \in \R^n` such that :math:`\inner{s, \Pi_k(x^k)} = 0`, :math:`\inner{s, \Pi_k(g^k)} < 0`, and :math:`\norm{s} = \norm{\Pi_k(x^k)}`.
+Further, the method considers the function :math:`x(\theta) = x^k + (\cos \theta - 1) \Pi_k(x^k) + \sin \theta s` with :math:`0 \le \theta \le \pi / 4` and solves approximately
 
 .. math::
 

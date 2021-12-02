@@ -13,10 +13,10 @@ This section presents the mathematical frameworks underneath the subproblem solv
     `bvlag`,
     `bvtcg`,
     `cpqp`,
-    `givens`,
     `lctcg`,
     `nnls`,
-    `qr`
+    `rot`,
+    `rotg`
 
 .. toctree::
     :maxdepth: 1

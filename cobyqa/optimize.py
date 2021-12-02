@@ -2242,7 +2242,7 @@ class TrustRegion:
         if self.debug:
             assert_(np.max(self.xl - xopt - tstep) < bdtol)
             assert_(np.min(self.xu - xopt - tstep) > -bdtol)
-            assert_(np.linalg.norm(nstep + tstep) - delsav <= bdtol)
+            assert_(np.linalg.norm(nstep + tstep) <= 1.1 * delsav)
         return nstep + tstep
 
     def model_step(self, delta, **kwargs):
