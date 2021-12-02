@@ -457,7 +457,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                     delta = rho
 
             # Attempt to replace the models by the alternative ones.
-            if is_trust_region_step and delta <= rho:
+            if is_trust_region_step:
                 if ratio > 1e-2:
                     itest = 0
                 else:

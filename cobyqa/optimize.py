@@ -2039,6 +2039,8 @@ class TrustRegion:
         xnew = self.xopt + step
         mx, mmx = self(xnew, fx, cubx, ceqx, True)
         mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
+        if self.type in 'UXB':
+            return mx, mmx, mopt
 
         # During trust-region step, the trust-region ratio has to be meaningful.
         # Therefore, its denominator has to be positive.
@@ -2243,6 +2245,9 @@ class TrustRegion:
             assert_(np.max(self.xl - xopt - tstep) < bdtol)
             assert_(np.min(self.xu - xopt - tstep) > -bdtol)
             assert_(np.linalg.norm(nstep + tstep) <= 1.1 * delsav)
+            reduct = np.inner(gopt, tstep)
+            reduct += 0.5 * np.inner(tstep, self.model_lag_hessp(tstep))
+            assert_(reduct <= 0.0)
         return nstep + tstep
 
     def model_step(self, delta, **kwargs):
@@ -2292,7 +2297,7 @@ class TrustRegion:
             bdtol = get_bdtol(self.xl, self.xu, **kwargs)
             assert_(np.max(self.xl - self.xopt - step) < bdtol)
             assert_(np.min(self.xu - self.xopt - step) > -bdtol)
-            assert_(np.linalg.norm(step) - delta <= bdtol)
+            assert_(np.linalg.norm(step) <= 1.1 * delta)
         return step
 
     def reset_models(self):

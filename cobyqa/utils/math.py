@@ -99,4 +99,4 @@ def huge(dtype):
     float:
         Threshold value.
     """
-    return 2.0 ** (0.5 * np.finfo(dtype).maxexp)
+    return 2.0 ** (min(100.0, 0.5 * np.finfo(dtype).maxexp))

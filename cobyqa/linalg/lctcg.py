@@ -265,7 +265,9 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
         if hsd.dtype.kind in np.typecodes['AllInteger']:
             hsd = np.asarray(hsd, dtype=float)
         curv = np.inner(sd, hsd)
-        if curv > tiny * abs(sdgq):
+        if curv == np.inf:
+            alphm = 0.0
+        elif curv > tiny * abs(sdgq):
             alphm = max(-sdgq / curv, 0.0)
         else:
             alphm = np.inf
@@ -291,15 +293,16 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
         # Make the actual conjugate gradient iteration. The max operators below
         # are crucial as they prevent numerical difficulties engendered by
         # computer rounding errors.
-        step += alpha * sd
-        stepsq = np.inner(step, step)
-        gq += alpha * hsd
-        for i in range(mlub + 2 * n):
-            if i not in iact[:nact]:
-                resid[i] = max(0.0, resid[i] - alpha * asd[i])
-        if iterc == 0:
-            resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
-        reduct -= alpha * (sdgq + 0.5 * alpha * curv)
+        if alpha > 0.0:
+            step += alpha * sd
+            stepsq = np.inner(step, step)
+            gq += alpha * hsd
+            for i in range(mlub + 2 * n):
+                if i not in iact[:nact]:
+                    resid[i] = max(0.0, resid[i] - alpha * asd[i])
+            if iterc == 0:
+                resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
+            reduct -= alpha * (sdgq + 0.5 * alpha * curv)
 
         # Restart the calculations if a new constraint has been hit and either
         # it is a bound constraint or the distance from the current step to the

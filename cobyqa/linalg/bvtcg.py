@@ -162,7 +162,9 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
         if hsd.dtype.kind in np.typecodes['AllInteger']:
             hsd = np.asarray(hsd, dtype=float)
         curv = np.inner(sd, hsd)
-        if curv > tiny * abs(sdgq):
+        if curv == np.inf:
+            alphm = 0.0
+        elif curv > tiny * abs(sdgq):
             alphm = max(-sdgq / curv, 0.0)
         else:
             alphm = np.inf
@@ -189,14 +191,16 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
         # Make the actual conjugate gradient iteration. The max operator below
         # is crucial as it prevents numerical difficulties engendered by
         # computer rounding errors.
-        step += alpha * sd
-        stepsq = np.inner(step, step)
-        gq += alpha * hsd
-        reduct -= alpha * (sdgq + 0.5 * alpha * curv)
+        if alpha > 0.0:
+            step += alpha * sd
+            stepsq = np.inner(step, step)
+            gq += alpha * hsd
+            reduct -= alpha * (sdgq + 0.5 * alpha * curv)
 
         # If the step reached the boundary of the trust region, the truncated
         # conjugate gradient method must be stopped.
         if alpha >= alpht:
+            stepsq = delta ** 2.0
             continue
 
         # Restart the conjugate gradient method if it has hit a new bound. If
