@@ -175,7 +175,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
                 temp = resid[iact[:nact]]
                 for k in range(nact):
                     temp[k] -= np.inner(rfac[:k, k], temp[:k])
-                    temp[k] /= rfac[k, k]
+                    temp[k] /= abs(rfac[k, k])
                 sd = np.dot(qfac[:, :nact], temp)
 
                 # Determine the greatest steplength along the previously
@@ -306,17 +306,20 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
         reduct -= alpha * (sdgq + 0.5 * alpha * curv)
 
+        # If the step that would be obtained in the unconstrained case is
+        # insubstantial, the truncated conjugate gradient method is stopped.
+        alphs = min((alphm, alphta, alphtb))
+        if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
+            break
+
         # Restart the calculations if a new constraint has been hit.
         if inext >= 0:
             continue
 
         # If the step reached the boundary of a trust region or if the step that
         # would be obtained in the unconstrained case is insubstantial, the
-        # truncated conjugate gradient method must be stopped.
+        # truncated conjugate gradient method is stopped.
         if alpha >= alphtb:
-            break
-        alphs = min((alphm, alphta, alphtb))
-        if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
             break
 
         # Calculate next search direction, which is conjugate to the previous

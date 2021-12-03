@@ -108,7 +108,7 @@ def nnls(A, b, k=None, maxiter=None, **kwargs):
             upd = inact[:k] & (xact[:k] <= 0.0) & idiv
             iupd = np.flatnonzero(upd)
             rxupd = x[iupd] / (x[iupd] - xact[iupd])
-            x += np.min(rxupd) * (xact - x)
+            x += np.min(rxupd, initial=0.0) * (xact - x)
 
             # Update the active set according to the intermediate values.
             act[inact[:k] & (np.abs(x[:k]) < tol)] = True

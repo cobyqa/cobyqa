@@ -207,7 +207,7 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
             rmact(k, mleq, nact, qfac, rfac, iact, vlam)
             k = nact - 1
         else:
-            vlam[k] = temp / rfac[kleq, kleq]
+            vlam[k] = temp / abs(rfac[kleq, kleq])
             k -= 1
 
     # Start the iterative procedure. The calculations must be stopped if
@@ -224,8 +224,7 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
         ssq = np.inner(step, step)
         if ssq >= stepsq or np.sqrt(ssq) <= gqtol:
             return np.zeros_like(step)
-        else:
-            stepsq = ssq
+        stepsq = ssq
 
         # Select the index of the most violated constraint, if any. The step
         # that is considered in these calculations is the one of length delta
@@ -286,21 +285,17 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
             for k in range(nact - 2, -1, -1):
                 kleq = mleq + k
                 temp = -np.inner(rfac[kleq, kleq + 1:mleq + nact], vmu[k + 1:])
-                vmu[k] = temp / rfac[kleq, kleq]
+                vmu[k] = temp / abs(rfac[kleq, kleq])
             vmult = violmx
-            imult = np.abs(vmu) > tiny * np.abs(vlam[:nact])
-            imult = imult & (vlam[:nact] >= vmult * vmu)
-            imult[-1] = False
-            k = -1
-            if np.any(imult):
-                mult = np.copy(vlam[:nact])
-                mult[imult] = mult[imult] / vmu[imult]
-                mult[np.logical_not(imult)] = np.inf
-                k = np.argmin(mult)
-                vmult = mult[k]
+            ic = -1
+            for k in range(nact - 1):
+                if abs(vmu[k]) >= tiny * abs(vlam[k]):
+                    if vlam[k] >= vmult * vmu[k]:
+                        ic = k
+                        vmult = vlam[k] / vmu[k]
             vlam[:nact] -= vmult * vmu
-            if k >= 0:
-                vlam[k] = 0.0
+            if ic >= 0:
+                vlam[ic] = 0.0
                 violmx = max(violmx - vmult, 0.0)
             else:
                 violmx = 0.0

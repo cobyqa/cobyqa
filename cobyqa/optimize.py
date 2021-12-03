@@ -4,6 +4,8 @@ from contextlib import suppress
 
 import numpy as np
 from numpy.testing import assert_
+from scipy.optimize import minimize as scipy_minimize, Bounds, \
+    NonlinearConstraint
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls, rot, rotg
 from .linalg.utils import get_bdtol
@@ -2221,7 +2223,7 @@ class TrustRegion:
             if self.debug:
                 assert_(np.max(self.xl - self.xopt - nstep) < bdtol)
                 assert_(np.min(self.xu - self.xopt - nstep) > -bdtol)
-                assert_(ssq - 0.64 * delta ** 2.0 <= bdtol)
+                assert_(ssq <= 0.7 * delta ** 2.0)
 
         # Evaluate the tangential step of the trust-region subproblem, and set
         # the global trust-region step. Th tangential step attempts to reduce

@@ -152,10 +152,13 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
     nact = np.array(0, dtype=int)
     iact = np.empty(n, dtype=int)
     rfac = np.zeros((n, n), dtype=float)
-    qfac, req, _ = qr(Aeq.T, pivoting=True)
+    qfac, req, peq = qr(Aeq.T, pivoting=True)
     temp = np.maximum(1.0, np.linalg.norm(req[:, :np.min(req.shape)], axis=0))
     mleq = np.count_nonzero(np.abs(np.diag(req)) >= tol * temp)
     rfac[:, :mleq] = req[:, :mleq]
+    if mleq < Aeq.shape[1]:
+        Aeq = np.matmul(qfac[:, :mleq], rfac[:mleq, :mleq]).T
+        peq = np.arange(mleq)
     resid = np.maximum(0.0, np.r_[bub, -xl, xu])
 
     # Start the iterative calculations. The truncated conjugate gradient method
@@ -179,6 +182,28 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
             # 0.2 * delta, so that it is allowed by the linear constraints.
             sdd = getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta,
                          Aub)
+            if kwargs.get('debug', False):
+                # Assert that the QR factorization of the gradient of the
+                # active constraints is consistent with iact.
+                mact = mleq + nact
+                qrtol = tol * np.max(np.abs(rfac[:mact, :mact]), initial=1.0)
+                iqr = np.matmul(qfac[:, :mact], rfac[:mact, :mact])
+                assert_(np.linalg.norm(Aeq[peq, :].T - iqr[:, :mleq]) <= qrtol)
+                iub = np.flatnonzero(iact[:nact] < mlub)
+                act_ub = Aub[iact[iub], :].T
+                iqr_ub = iqr[:, mleq + iub]
+                assert_(np.linalg.norm(act_ub - iqr_ub) <= qrtol)
+                ixl = np.flatnonzero((mlub < iact[:nact]) &
+                                     (iact[:nact] < mlub + n))
+                for i in ixl:
+                    act_xl = -np.eye(1, n, iact[i] - mlub)
+                    iqr_xl = iqr[:, mleq + i]
+                    assert_(np.linalg.norm(act_xl - iqr_xl) <= qrtol)
+                ixu = np.flatnonzero(mlub + n < iact[:nact])
+                for i in ixu:
+                    act_xu = np.eye(1, n, iact[i] - mlub - n)
+                    iqr_xu = iqr[:, mleq + i]
+                    assert_(np.linalg.norm(act_xu - iqr_xu) <= qrtol)
             snorm = np.linalg.norm(sdd)
             if snorm <= 0.2 * tiny * delta:
                 break
@@ -195,7 +220,7 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
                 for k in range(nact):
                     klec = mleq + k
                     temp[k] -= np.inner(rfac[mleq:klec, klec], temp[:k])
-                    temp[k] /= rfac[klec, klec]
+                    temp[k] /= abs(rfac[klec, klec])
                 sd = np.dot(qfac[:, mleq:mleq + nact], temp)
 
                 # Determine the greatest steplength along the previously
@@ -304,6 +329,12 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
                 resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
             reduct -= alpha * (sdgq + 0.5 * alpha * curv)
 
+        # If the step that would be obtained in the unconstrained case is
+        # insubstantial, the truncated conjugate gradient method is stopped.
+        alphs = min(alphm, alpht)
+        if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
+            break
+
         # Restart the calculations if a new constraint has been hit and either
         # it is a bound constraint or the distance from the current step to the
         # boundary of the trust region is larger than 0.2 * delta.
@@ -312,13 +343,9 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
                 continue
             break
 
-        # If the step reached the boundary of the trust region or if the step
-        # that would be obtained in the unconstrained case is insubstantial.,
-        # the truncated conjugate gradient method must be stopped.
+        # If the step reached the boundary of the trust region, the truncated
+        # conjugate gradient method is stopped.
         if alpha >= alpht:
-            break
-        alphs = min(alphm, alpht)
-        if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
             break
 
         # Calculate next search direction, which is conjugate to the previous
