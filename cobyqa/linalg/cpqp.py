@@ -175,7 +175,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
                 temp = resid[iact[:nact]]
                 for k in range(nact):
                     temp[k] -= np.inner(rfac[:k, k], temp[:k])
-                    temp[k] /= abs(rfac[k, k])
+                    temp[k] /= rfac[k, k]
                 sd = np.dot(qfac[:, :nact], temp)
 
                 # Determine the greatest steplength along the previously
@@ -286,7 +286,10 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
                     if alphf * asd[i] > resid[i]:
                         alphf = resid[i] / asd[i]
                         inext = i
-        alpha = min(alpha, alphf)
+        if alphf < alpha:
+            alpha = alphf
+        else:
+            inext = -1
         alpha = max(alpha, alpbd)
         alpha = min((alpha, alphm, alphta, alphtb))
         if iterc == 0:

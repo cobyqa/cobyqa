@@ -4,8 +4,6 @@ from contextlib import suppress
 
 import numpy as np
 from numpy.testing import assert_
-from scipy.optimize import minimize as scipy_minimize, Bounds, \
-    NonlinearConstraint
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls, rot, rotg
 from .linalg.utils import get_bdtol
@@ -1966,6 +1964,9 @@ class TrustRegion:
 
         Other Parameters
         ----------------
+        bdtol : float, optional
+            Tolerance for comparisons on the bound constraints (the default is
+            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``).
         lstol : float, optional
             Tolerance on the approximate KKT conditions for the calculations of
             the least-squares Lagrange multipliers (the default is
@@ -1973,26 +1974,22 @@ class TrustRegion:
             gradient of the current model of the objective function).
         """
         n = self.xopt.size
-        if self.mlub + self.mnlub + self.mleq + self.mnleq > 0:
+        bdtol = get_bdtol(self.xl, self.xu, **kwargs)
+        if self.maxcv > bdtol:
             # Determine the matrix of the least-squares problem. The Lagrange
             # multipliers corresponding to nonzero inequality constraint values
             # are zeroed to satisfy the complementary slackness conditions.
-            eps = np.finfo(float).eps
-            tol = 10.0 * eps * self.mlub * np.max(np.abs(self.bub), initial=1.0)
-            rub = np.dot(self.aub, self.xopt) - self.bub
-            ilub = np.abs(rub) <= tol
+            ilub = np.dot(self.aub, self.xopt) > self.bub
             mlub = np.count_nonzero(ilub)
-            abs_rub = np.abs(self.coptub)
-            tol = 10.0 * eps * self.mlub * np.max(abs_rub, initial=1.0)
-            cub_jac = np.empty((self.mnlub, n), dtype=float)
-            for i in range(self.mnlub):
-                cub_jac[i, :] = self.model_cub_grad(self.xopt, i)
-            inlub = abs_rub <= tol
+            inlub = self.coptub > 0.0
             mnlub = np.count_nonzero(inlub)
+            cub_jac = np.empty((mnlub, n), dtype=float)
+            for i, j in enumerate(np.flatnonzero(inlub)):
+                cub_jac[i, :] = self.model_cub_grad(self.xopt, j)
             ceq_jac = np.empty((self.mnleq, n), dtype=float)
             for i in range(self.mnleq):
                 ceq_jac[i, :] = self.model_ceq_grad(self.xopt, i)
-            A = np.r_[self.aub[ilub, :], cub_jac[inlub, :], self.aeq, ceq_jac].T
+            A = np.r_[self.aub[ilub, :], cub_jac, self.aeq, ceq_jac].T
 
             # Determine the least-squares Lagrange multipliers that have not
             # been fixed by the complementary slackness conditions.
@@ -2004,6 +2001,12 @@ class TrustRegion:
             self.lmnlub[inlub] = lm[mlub:mlub + mnlub]
             self._lmleq = lm[mlub + mnlub:mlub + mnlub + self.mleq]
             self._lmnleq = lm[mlub + mnlub + self.mleq:]
+        else:
+            # TODO: The Lagrange multipliers must be set to zero. Why?
+            self.lmlub.fill(0.0)
+            self.lmnlub.fill(0.0)
+            self.lmleq.fill(0.0)
+            self.lmnleq.fill(0.0)
 
     def update_penalty_parameters(self, step, fx, cubx, ceqx):
         """
@@ -2217,8 +2220,29 @@ class TrustRegion:
             nstep = np.zeros_like(self.xopt)
             ssq = 0.0
         else:
+            ####################################################################
+            # def normal(x):
+            #     rub = np.maximum(0.0, np.dot(aub, x) - bub)
+            #     req = np.dot(aeq, x) - beq
+            #     fx = 0.5 * (np.inner(rub, rub) + np.inner(req, req))
+            #     gx = np.dot(aub.T, rub) + np.dot(aeq.T, req)
+            #     return fx, gx
+            #
+            # def ball(x):
+            #     return np.linalg.norm(x - self.xopt)
+            #
+            # from scipy.optimize import Bounds, NonlinearConstraint
+            # from scipy.optimize import minimize as scipy_minimize
+            # bounds = Bounds(self.xl, self.xu)
+            # constraints = [NonlinearConstraint(ball, -np.inf, 0.8 * delta)]
+            #
+            # res = scipy_minimize(normal, self.xopt, jac=True, bounds=bounds,
+            #                      constraints=constraints)  # noqa
+            # nstep = res.x - self.xopt
+            ####################################################################
             nstep = cpqp(self.xopt, aub, bub, aeq, beq, self.xl, self.xu,
                          0.8 * delta, **kwargs)
+            ####################################################################
             ssq = np.inner(nstep, nstep)
             if self.debug:
                 assert_(np.max(self.xl - self.xopt - nstep) < bdtol)
@@ -2238,11 +2262,35 @@ class TrustRegion:
         bub = np.maximum(bub, np.dot(aub, xopt))
         beq = np.dot(aeq, xopt)
         if self.type in 'UXB':
-            tstep = bvtcg(xopt, gopt, self.model_lag_hessp, self.xl, self.xu,
+            tstep = bvtcg(xopt, gopt, self.model_obj_hessp, self.xl, self.xu,
                           delta, **kwargs)
         else:
+            ####################################################################
+            # def sqp(x):
+            #     hpx = self.model_lag_hessp(x - xopt)
+            #     fx = np.inner(gopt, x - xopt) + 0.5 * np.inner(x - xopt, hpx)
+            #     gx = gopt + hpx
+            #     return fx, gx
+            #
+            # def ball(x):
+            #     return np.linalg.norm(x - xopt)
+            #
+            # from scipy.optimize import Bounds, LinearConstraint, \
+            #     NonlinearConstraint, minimize as scipy_minimize
+            # bounds = Bounds(self.xl, self.xu)
+            # constraints = [NonlinearConstraint(ball, -np.inf, delta)]
+            # if bub.size > 0:
+            #     constraints.append(LinearConstraint(aub, -np.inf, bub))
+            # if beq.size > 0:
+            #     constraints.append(LinearConstraint(aeq, beq, beq))
+            #
+            # res = scipy_minimize(sqp, xopt, jac=True, bounds=bounds,
+            #                      constraints=constraints)  # noqa
+            # tstep = res.x - xopt
+            ####################################################################
             tstep = lctcg(xopt, gopt, self.model_lag_hessp, aub, bub, aeq, beq,
                           self.xl, self.xu, delta, **kwargs)
+            ####################################################################
         if self.debug:
             assert_(np.max(self.xl - xopt - tstep) < bdtol)
             assert_(np.min(self.xu - xopt - tstep) > -bdtol)

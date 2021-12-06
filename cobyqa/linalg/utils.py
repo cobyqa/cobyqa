@@ -22,13 +22,16 @@ def rotg(a, b):
     float
         Sine of the angle of rotation.
     """
-    if abs(a) > abs(b):
-        sigma = np.sign(a)
-    else:
-        sigma = np.sign(b)
-    r = sigma * np.hypot(a, b)
-    blas_rotg, = get_blas_funcs(('rotg',), (a, b))
-    c, s = blas_rotg(a, b)
+    # if abs(a) > abs(b):
+    #     sigma = np.sign(a)
+    # else:
+    #     sigma = np.sign(b)
+    # r = sigma * np.hypot(a, b)
+    # blas_rotg, = get_blas_funcs(('rotg',), (a, b))
+    # c, s = blas_rotg(a, b)
+    r = np.hypot(a, b)
+    c = a / r
+    s = b / r
     return r, c, s
 
 
@@ -207,7 +210,7 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
             rmact(k, mleq, nact, qfac, rfac, iact, vlam)
             k = nact - 1
         else:
-            vlam[k] = temp / abs(rfac[kleq, kleq])
+            vlam[k] = temp / rfac[kleq, kleq]
             k -= 1
 
     # Start the iterative procedure. The calculations must be stopped if
@@ -285,7 +288,7 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
             for k in range(nact - 2, -1, -1):
                 kleq = mleq + k
                 temp = -np.inner(rfac[kleq, kleq + 1:mleq + nact], vmu[k + 1:])
-                vmu[k] = temp / abs(rfac[kleq, kleq])
+                vmu[k] = temp / rfac[kleq, kleq]
             vmult = violmx
             ic = -1
             for k in range(nact - 1):

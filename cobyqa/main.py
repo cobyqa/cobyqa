@@ -397,10 +397,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             snorm = np.linalg.norm(step)
             inew = struct.active_set(struct.xopt + step, **kwargs)
             if not np.array_equal(iact, inew):
-                test = 0.1999 / np.sqrt(2.0) if struct.type in 'LO' else 0.1999
+                # test = 0.1999 / np.sqrt(2.0) if struct.type in 'LO' else 0.1999
                 iact = inew
             if snorm <= test * delta:
-                delta = 0.5 * delta
+                delta *= 0.5
                 if delta <= 1.4 * rho:
                     delta = rho
                 if delsav > rho:
@@ -457,7 +457,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                     delta = rho
 
             # Attempt to replace the models by the alternative ones.
-            if is_trust_region_step:
+            if is_trust_region_step and delta <= rho:
                 if ratio > 1e-2:
                     itest = 0
                 else:

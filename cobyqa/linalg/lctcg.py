@@ -220,7 +220,7 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
                 for k in range(nact):
                     klec = mleq + k
                     temp[k] -= np.inner(rfac[mleq:klec, klec], temp[:k])
-                    temp[k] /= abs(rfac[klec, klec])
+                    temp[k] /= rfac[klec, klec]
                 sd = np.dot(qfac[:, mleq:mleq + nact], temp)
 
                 # Determine the greatest steplength along the previously
@@ -309,7 +309,10 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
                     if alphf * asd[i] > resid[i]:
                         alphf = max(resid[i] / asd[i], 0.0)
                         inext = i
-        alpha = min(alpha, alphf)
+        if alphf < alpha:
+            alpha = alphf
+        else:
+            inext = -1
         alpha = max(alpha, alpbd)
         alpha = min((alpha, alphm, alpht))
         if iterc == 0:
