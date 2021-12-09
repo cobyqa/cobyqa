@@ -155,14 +155,8 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
         columns are the gradients of the active constraints, the first mleq
         constraints being the linear equality constraints. Only the first
         ``mleq + nact`` columns of rfac are meaningful.
-    delta : float or list of 2-tuple
-        Description of the set in which the step will be projected before
-        assessing its feasibility. If a float is provided, the step will be
-        projected into the ball centered at the origin of radius `delta`.
-        Otherwise, if `delta` is of the form ``[(i1, d1), (i2, d2), ...]``, it
-        is understood that the first ``i1`` coordinates are bounded in Euclidean
-        norm by ``d1``, the following ``i2`` coordinates are bounded in
-        Euclidean norm by ``d2``, etc.
+    delta : float
+        Current trust-region radius.
     *args : tuple, optional
         Parameters to forward to the constraint function.
 
@@ -187,8 +181,7 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
     n = gq.size
     tol = 10.0 * eps * n
     gqtol = tol * np.max(np.abs(gq), initial=1.)
-    deltx = delta if isinstance(delta, (float, np.floating)) else delta[0][1]
-    tdel = 0.2 * deltx
+    tdel = 0.2 * delta
 
     # Remove from the current active set the constraints that are not considered
     # active anymore, that is those whose residuals exceed tdel.
@@ -216,14 +209,14 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
     # Start the iterative procedure. The calculations must be stopped if
     # nact + mleq equals n, as n linearly independent constraints would have
     # been found, which would make of the origin the only feasible point.
-    stepsq = np.inf
+    stepsq = 2.0 * np.inner(gq, gq)
     while nact < n - mleq:
         # Set the new search direction. It is the vector that minimizes the
         # Euclidean norm of gq + step, subject to the active constraints. The
         # calculations are stopped if this vector is zero, of if its norm
         # exceeds the norm of the previous direction.
-        temp = np.dot(qfac[:, mleq + nact:].T, gq)
-        step = -np.dot(qfac[:, mleq + nact:], temp)
+        temp = np.dot(qfac[:, mleq + nact:].T, -gq)
+        step = np.dot(qfac[:, mleq + nact:], temp)
         ssq = np.inner(step, step)
         if ssq >= stepsq or np.sqrt(ssq) <= gqtol:
             return np.zeros_like(step)
@@ -232,14 +225,7 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
         # Select the index of the most violated constraint, if any. The step
         # that is considered in these calculations is the one of length delta
         # along the direction in the vector step.
-        if isinstance(delta, (float, np.floating)):
-            test = np.sqrt(ssq) / delta
-        else:
-            isav = 0
-            test = 0.0
-            for i, radius in delta:
-                test = max(test, np.linalg.norm(step[isav:i]) / radius)
-                isav = i
+        test = np.sqrt(ssq) / delta
         inext = -1
         violmx = 0.0
         for i in range(resid.size):
@@ -253,7 +239,7 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
         # previously calculated is too small, as a positive value of violmx
         # might then be caused by computer rounding errors.
         ctol = 0.0
-        if 0.0 < violmx < 1e-2 * deltx:
+        if 0.0 < violmx < 1e-2 * delta:
             for k in range(nact):
                 ctol = max(ctol, abs(evalc(iact[k], step, *args)))
         ctol *= 10.0
@@ -351,7 +337,7 @@ def rmact(k, mleq, nact, qfac, rfac, *args):
         hval, cosv, sinv = rotg(cval, sval)
         slicing = np.s_[j:mleq + nact]
         rot(rfac[j + 1, slicing], rfac[j, slicing], cosv, sinv)
-        rfac[[j, j + 1], j:mleq + nact] = rfac[[j + 1, j], j:mleq + nact]
+        rfac[[j, j + 1], slicing] = rfac[[j + 1, j], slicing]
         rfac[:j + 2, [j, j + 1]] = rfac[:j + 2, [j + 1, j]]
         rfac[j, j] = hval
         rfac[j + 1, j] = 0.0

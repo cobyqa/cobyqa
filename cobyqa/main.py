@@ -393,11 +393,12 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         nit += 1
         test = 0.5 / np.sqrt(2.0) if struct.type in 'LO' else 0.5
         if is_trust_region_step:
-            step = struct.trust_region_step(delta, **kwargs)
+            nstep, tstep = struct.trust_region_step(delta, **kwargs)
+            step = nstep + tstep
             snorm = np.linalg.norm(step)
             inew = struct.active_set(struct.xopt + step, **kwargs)
             if not np.array_equal(iact, inew):
-                # test = 0.1999 / np.sqrt(2.0) if struct.type in 'LO' else 0.1999
+                test = 0.1999 / np.sqrt(2.0) if struct.type in 'LO' else 0.1999
                 iact = inew
             if snorm <= test * delta:
                 delta *= 0.5
@@ -407,8 +408,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                     struct.prepare_model_step(delta)
                     continue
         else:
-            step = struct.model_step(max(0.1 * delta, rho), **kwargs)
-            snorm = np.linalg.norm(step)
+            nstep = np.zeros_like(struct.xopt)
+            tstep = struct.model_step(max(0.1 * delta, rho), **kwargs)
+            step = tstep
+            snorm = np.linalg.norm(tstep)
 
         if not is_trust_region_step or snorm > test * delta:
             # Evaluate the objective function, include the trial point in the
@@ -418,7 +421,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 break
             nfev += 1
             try:
-                fx, mopt, ratio = struct.update(step, **kwargs)
+                fx, mopt, ratio = struct.update(nstep, tstep, **kwargs)
             except RestartRequiredException:
                 continue
             except ZeroDivisionError:
@@ -452,7 +455,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                     delta = max(0.5 * delta, snorm)
                 else:
                     delbd = np.sqrt(2.0) * delta
-                    delta = min(delbd, max(0.2 * delta, 2.0 * snorm))
+                    delta = min(delbd, max(0.5 * delta, 2.0 * snorm))
                 if delta <= 1.4 * rho:
                     delta = rho
 
@@ -499,7 +502,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 rho = np.sqrt(rho * struct.rhoend)
             delta = max(delta, rho)
             struct.prepare_trust_region_step()
-            struct.reduce_penalty_coefficients()
+            struct.reduce_penalty()
             if struct.disp:
                 message = f'New trust-region radius: {rho}.'
                 _print(struct, fun.__name__, nfev, message)

@@ -96,9 +96,8 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
     if xopt.dtype.kind in np.typecodes['AllInteger']:
         xopt = np.asarray(xopt, dtype=float)
     gq = np.atleast_1d(gq).astype(float)
-    Aub = np.atleast_2d(Aub)
-    if Aub.dtype.kind in np.typecodes['AllInteger']:
-        Aub = np.asarray(Aub, dtype=float)
+    gini = np.copy(gq)
+    Aub = np.atleast_2d(Aub).astype(float)
     bub = np.atleast_1d(bub).astype(float)
     Aeq = np.atleast_2d(Aeq)
     if Aeq.dtype.kind in np.typecodes['AllInteger']:
@@ -142,8 +141,8 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
         bub = bub[ikeep]
         temp = temp[ikeep]
         mlub -= np.count_nonzero(izero)
-    Aub = Aub / temp[:, np.newaxis]
-    bub = bub / temp
+    Aub /= temp[:, np.newaxis]
+    bub /= temp
 
     # Set the initial active set to the empty set, and calculate the normalized
     # residuals of the constraints at the origin. The residuals of the linear
@@ -156,9 +155,6 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
     temp = np.maximum(1.0, np.linalg.norm(req[:, :np.min(req.shape)], axis=0))
     mleq = np.count_nonzero(np.abs(np.diag(req)) >= tol * temp)
     rfac[:, :mleq] = req[:, :mleq]
-    if mleq < Aeq.shape[1]:
-        Aeq = np.matmul(qfac[:, :mleq], rfac[:mleq, :mleq]).T
-        peq = np.arange(mleq)
     resid = np.maximum(0.0, np.r_[bub, -xl, xu])
 
     # Start the iterative calculations. The truncated conjugate gradient method
@@ -182,28 +178,6 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
             # 0.2 * delta, so that it is allowed by the linear constraints.
             sdd = getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta,
                          Aub)
-            if kwargs.get('debug', False):
-                # Assert that the QR factorization of the gradient of the
-                # active constraints is consistent with iact.
-                mact = mleq + nact
-                qrtol = tol * np.max(np.abs(rfac[:mact, :mact]), initial=1.0)
-                iqr = np.matmul(qfac[:, :mact], rfac[:mact, :mact])
-                assert_(np.linalg.norm(Aeq[peq, :].T - iqr[:, :mleq]) <= qrtol)
-                iub = np.flatnonzero(iact[:nact] < mlub)
-                act_ub = Aub[iact[iub], :].T
-                iqr_ub = iqr[:, mleq + iub]
-                assert_(np.linalg.norm(act_ub - iqr_ub) <= qrtol)
-                ixl = np.flatnonzero((mlub < iact[:nact]) &
-                                     (iact[:nact] < mlub + n))
-                for i in ixl:
-                    act_xl = -np.eye(1, n, iact[i] - mlub)
-                    iqr_xl = iqr[:, mleq + i]
-                    assert_(np.linalg.norm(act_xl - iqr_xl) <= qrtol)
-                ixu = np.flatnonzero(mlub + n < iact[:nact])
-                for i in ixu:
-                    act_xu = np.eye(1, n, iact[i] - mlub - n)
-                    iqr_xu = iqr[:, mleq + i]
-                    assert_(np.linalg.norm(act_xu - iqr_xu) <= qrtol)
             snorm = np.linalg.norm(sdd)
             if snorm <= 0.2 * tiny * delta:
                 break
@@ -365,6 +339,13 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
             beta = np.inner(sdu, hsd) / curv
         sd = beta * sd - sdu
         alpbd = 0.0
+
+    # To prevent numerical difficulties emerging from computer rounding errors
+    # on ill-conditioned problems, the reduction is computed from scratch.
+    hstep = np.asarray(hessp(sd, *args))
+    if hstep.dtype.kind in np.typecodes['AllInteger']:
+        hstep = np.asarray(hstep, dtype=float)
+    reduct = -np.inner(gini, step) - 0.5 * np.inner(step, hstep)
     if reduct <= 0.0:
         return np.zeros_like(step)
     return step

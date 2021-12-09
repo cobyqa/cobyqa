@@ -134,7 +134,6 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     # constraints and the residuals of the constraints at the initial guess.
     gq = np.r_[np.dot(Aeq.T, -beq), np.maximum(0.0, -bub)]
     bub /= lcn
-    delbd = np.sqrt(np.inner(beq, beq) + np.inner(gq[n:], gq[n:]))
     resid = np.r_[bub + gq[n:] / lcn, -xl, gq[n:], xu]
     resid = np.maximum(0.0, resid)
 
@@ -146,7 +145,6 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     sd = np.zeros_like(gq)
     reduct = 0.0
     stepsq = 0.0
-    slsq = np.inner(gq[n:], gq[n:])
     alpbd = 1.0
     inext = 0
     iterc = 0
@@ -159,11 +157,11 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             # by the Goldfarb and Idnani algorithm is scaled to have length
             # 0.2 * delta, so that it is allowed by the linear constraints.
             sdd = getact(gq, evalc, resid, iact, 0, nact, qfac, rfac,
-                         [(n, delta), (n + mlub, delbd)], Aub, lcn)
-            ssq = np.linalg.norm(sdd)
-            if ssq <= 0.2 * tiny * delta:
+                         delta, Aub, lcn)
+            snorm = np.linalg.norm(sdd)
+            if snorm <= 0.2 * tiny * delta:
                 break
-            sdd *= 0.2 * delta / ssq
+            sdd *= 0.2 * delta / snorm
 
             # If the modulus of the residual of an active constraint is
             # substantial, the search direction is the move towards the
@@ -180,27 +178,17 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
 
                 # Determine the greatest steplength along the previously
                 # calculated direction allowed by the trust-region constraints.
-                rhs = delbd ** 2.0
-                rhs -= np.inner(gq[n:] + sdd[n:], gq[n:] + sdd[n:])
-                temp = np.inner(sd[n:], gq[n:] + sdd[n:])
-                sdsq = np.inner(sd[n:], sd[n:])
-                if rhs > 0.0:
-                    sqrd = np.sqrt(sdsq * rhs + temp ** 2.0)
-                    if temp <= 0.0 and sdsq > tiny * abs(sqrd - temp):
-                        gamma = max((sqrd - temp) / sdsq, 0.0)
-                    elif abs(sqrd + temp) > tiny * rhs:
-                        gamma = max(gamma, rhs / (sqrd + temp), 0.0)
-                    else:
-                        gamma = 1.0
                 rhs = delta ** 2.0 - np.inner(step + sdd[:n], step + sdd[:n])
                 temp = np.inner(sd[:n], step + sdd[:n])
                 sdsq = np.inner(sd[:n], sd[:n])
                 if rhs > 0.0:
                     sqrd = np.sqrt(sdsq * rhs + temp ** 2.0)
                     if temp <= 0.0 and sdsq > tiny * abs(sqrd - temp):
-                        gamma = min(gamma, (sqrd - temp) / sdsq)
+                        gamma = (sqrd - temp) / sdsq
                     elif abs(sqrd + temp) > tiny * rhs:
-                        gamma = min(gamma, rhs / (sqrd + temp))
+                        gamma = rhs / (sqrd + temp)
+                    else:
+                        gamma = 1.0
 
                 # Reduce the steplength so that the move satisfies the nonactive
                 # constraints. The active constraints are already satisfied.
@@ -227,38 +215,22 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
         # progress is possible in the current search direction or if the
         # derivative term of the step is sufficiently small.
         iterc += 1
-        rhs = delbd ** 2.0 - slsq
-        sdgqa = np.inner(sd[:n], gq[:n])
-        sdgqb = np.inner(sd[n:], gq[n:])
-        sdgq = sdgqa + sdgqb
-        if sdgq >= 0.0:
-            break
-        sdstep = np.inner(sd[n:], gq[n:])
-        sdsq = np.inner(sd[n:], sd[n:])
-        sqrd = np.sqrt(sdsq * rhs + sdstep ** 2.0)
-        if sdstep <= 0.0 and sdsq > tiny * abs(sqrd - sdstep):
-            alphta = max((sqrd - sdstep) / sdsq, 0.0)
-        elif abs(sqrd + sdstep) > tiny * rhs:
-            alphta = max(rhs / (sqrd + sdstep), 0.0)
-        else:
-            alphta = np.inf
-        alpha = alphta
         rhs = delta ** 2.0 - stepsq
         if rhs <= 0.0:
+            break
+        sdgq = np.inner(sd, gq)
+        if sdgq >= 0.0:
             break
         sdstep = np.inner(sd[:n], step)
         sdsq = np.inner(sd[:n], sd[:n])
         sqrd = np.sqrt(sdsq * rhs + sdstep ** 2.0)
         if sdstep <= 0.0 and sdsq > tiny * abs(sqrd - sdstep):
-            alphtb = (sqrd - sdstep) / sdsq
-            alpha = min(alpha, alphtb)
+            alpht = (sqrd - sdstep) / sdsq
         elif abs(sqrd + sdstep) > tiny * rhs:
-            alphtb = rhs / (sqrd + sdstep)
-            alpha = min(alpha, alphtb)
-        elif np.isinf(alpha):
-            break
+            alpht = rhs / (sqrd + sdstep)
         else:
-            alphtb = np.inf
+            alpht = np.inf
+        alpha = alpht
         if -alpha * sdgq <= 1e-2 * reduct:
             break
 
@@ -269,11 +241,12 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
         # not lower bounded.
         hsd = np.r_[np.dot(Aeq.T, np.dot(Aeq, sd[:n])), sd[n:]]
         curv = np.inner(sd, hsd)
-        if curv > tiny * abs(sdgq):
+        if curv == np.inf:
+            alphm = 0.0
+        elif curv > tiny * abs(sdgq):
             alphm = max(-sdgq / curv, 0.0)
         else:
             alphm = np.inf
-        alpha = min(alpha, alphm)
 
         # Reduce the steplength if necessary to preserve feasibility.
         inext = -1
@@ -291,27 +264,29 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
         else:
             inext = -1
         alpha = max(alpha, alpbd)
-        alpha = min((alpha, alphm, alphta, alphtb))
+        alpha = min((alpha, alphm, alpht))
         if iterc == 0:
             alpha = min(alpha, 1.0)
+        if alpha == np.inf:
+            break
 
         # Make the actual conjugate gradient iteration. The max operators below
         # are crucial as they prevent numerical difficulties engendered by
         # computer rounding errors.
-        step += alpha * sd[:n]
-        stepsq = np.inner(step, step)
-        gq += alpha * hsd
-        slsq = np.inner(gq[n:], gq[n:])
-        for i in range(2 * (mlub + n)):
-            if i not in iact[:nact]:
-                resid[i] = max(0.0, resid[i] - alpha * asd[i])
-        if iterc == 0:
-            resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
-        reduct -= alpha * (sdgq + 0.5 * alpha * curv)
+        if alpha > 0.0:
+            step += alpha * sd[:n]
+            stepsq = np.inner(step, step)
+            gq += alpha * hsd
+            for i in range(2 * (mlub + n)):
+                if i not in iact[:nact]:
+                    resid[i] = max(0.0, resid[i] - alpha * asd[i])
+            if iterc == 0:
+                resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
+            reduct -= alpha * (sdgq + 0.5 * alpha * curv)
 
         # If the step that would be obtained in the unconstrained case is
         # insubstantial, the truncated conjugate gradient method is stopped.
-        alphs = min((alphm, alphta, alphtb))
+        alphs = min(alphm, alpht)
         if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
             break
 
@@ -322,7 +297,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
         # If the step reached the boundary of a trust region or if the step that
         # would be obtained in the unconstrained case is insubstantial, the
         # truncated conjugate gradient method is stopped.
-        if alpha >= alphtb:
+        if alpha >= alpht:
             break
 
         # Calculate next search direction, which is conjugate to the previous

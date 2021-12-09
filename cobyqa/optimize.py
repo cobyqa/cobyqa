@@ -201,8 +201,7 @@ class TrustRegion:
                 self.check_models()
 
             # Determine the initial least-squares multipliers.
-            self._penub = 0.0
-            self._peneq = 0.0
+            self._penalty = 0.0
             self._lmlub = np.zeros_like(bub)
             self._lmleq = np.zeros_like(beq)
             self._lmnlub = np.zeros(self.mnlub, dtype=float)
@@ -224,7 +223,7 @@ class TrustRegion:
         """
         Evaluate the merit function.
 
-        The merit function is an augmented Lagrangian.
+        The merit function is an l2 merit function.
 
         Parameters
         ----------
@@ -247,65 +246,28 @@ class TrustRegion:
             optimization problem. If ``model = True``, the merit function
             evaluated on the different models is also returned.
         """
-        tiny = np.finfo(float).tiny
         ax = fx
-
-        # Calculate the penalty term associated with the linear inequality
-        # constraints and add it to the merit value evaluated on the nonlinear
-        # optimization problem.
-        if abs(self.penub) > tiny * np.max(np.abs(self.lmlub), initial=1.0):
-            tub = np.dot(self.aub, x) - self.bub + self.lmlub / self.penub
-            tub = np.maximum(0.0, tub)
-            alub = 0.5 * self.penub * np.inner(tub, tub)
-            ax += alub
-
-        # Calculate the penalty term associated with the nonlinear inequality
-        # constraints and add it to the merit value evaluated on the nonlinear
-        # optimization problem.
-        lmnlub_max = np.max(np.abs(self.lmnlub), initial=1.0)
-        if abs(self.penub) > tiny * lmnlub_max:
-            tub = cubx + self.lmnlub / self.penub
-            tub = np.maximum(0.0, tub)
-            ax += 0.5 * self.penub * np.inner(tub, tub)
-
-        # Calculate the penalty term associated with the linear equality
-        # constraints and add it to the merit value evaluated on the nonlinear
-        # optimization problem.
-        if abs(self.peneq) > tiny * np.max(np.abs(self.lmleq), initial=1.0):
-            teq = np.dot(self.aeq, x) - self.beq + self.lmleq / self.peneq
-            aleq = 0.5 * self.peneq * np.inner(teq, teq)
-            ax += aleq
-
-        # Calculate the penalty term associated with the nonlinear equality
-        # constraints and add it to the merit value evaluated on the nonlinear
-        # optimization problem.
-        lmnleq_max = np.max(np.abs(self.lmnleq), initial=1.0)
-        if abs(self.peneq) > tiny * lmnleq_max:
-            teq = ceqx + self.lmnleq / self.peneq
-            ax += 0.5 * self.peneq * np.inner(teq, teq)
-
-        # Determine the merit value evaluated on the different models.
+        if self.penalty > 0.0:
+            cx = np.r_[
+                np.maximum(0.0, np.dot(self.aub, x) - self.bub),
+                np.maximum(0.0, cubx),
+                np.dot(self.aeq, x) - self.beq,
+                ceqx,
+            ]
+            ax += self.penalty * np.linalg.norm(cx)
         if model:
-            mx = self.model_obj(x)
-
-            # Calculate the penalty term associated with the inequality
-            # constraints and add it to the merit value evaluated on the
-            # different models.
-            if abs(self.penub) > tiny * lmnlub_max:
+            hx = self.model_lag_hessp(x - self.xopt)
+            mx = self.fopt
+            mx += np.inner(self.model_obj_grad(self.xopt), x - self.xopt)
+            mx += 0.5 * np.inner(hx, x - self.xopt)
+            if self.penalty > 0.0:
                 aub, bub = self.get_linear_ub()
-                lmub = np.r_[self.lmlub, self.lmnlub]
-                tub = np.dot(aub, x) - bub + lmub / self.penub
-                tub = np.maximum(0.0, tub)
-                mx += 0.5 * self.penub * np.inner(tub, tub)
-
-            # Calculate the penalty term associated with the nonlinear equality
-            # constraints and add it to the merit value evaluated on the
-            # different models.
-            if abs(self.peneq) > tiny * lmnleq_max:
                 aeq, beq = self.get_linear_eq()
-                lmeq = np.r_[self.lmleq, self.lmnleq]
-                teq = np.dot(aeq, x) - beq + lmeq / self.peneq
-                mx += 0.5 * self.peneq * np.inner(teq, teq)
+                cx = np.r_[
+                    np.maximum(0.0, np.dot(aub, x) - bub),
+                    np.dot(aeq, x) - beq,
+                ]
+                mx += self.penalty * np.linalg.norm(cx)
             return ax, mx
         return ax
 
@@ -385,28 +347,16 @@ class TrustRegion:
         return self._options
 
     @property
-    def penub(self):
+    def penalty(self):
         """
-        Penalty coefficient associated with the inequality constraints.
+        Penalty coefficient associated with the constraints.
 
         Returns
         -------
         float
-            Penalty coefficient associated with the inequality constraints.
+            Penalty coefficient associated with the constraints.
         """
-        return self._penub
-
-    @property
-    def peneq(self):
-        """
-        Penalty coefficient associated with the equality constraints.
-
-        Returns
-        -------
-        float
-            Penalty coefficient associated with the equality constraints.
-        """
-        return self._peneq
+        return self._penalty
 
     @property
     def lmlub(self):
@@ -1840,8 +1790,8 @@ class TrustRegion:
         tol = 10.0 * eps * self.npt * max(1.0, abs(mval2))
         if mval1 < mval2:
             return True
-        elif max(self.penub, self.peneq) < tol:
-            # If the penalty coefficients are zero and if the merit values are
+        elif self.penalty < tol:
+            # If the penalty coefficient is zero and if the merit values are
             # equal, the optimality of the points is decided based on their
             # residual values.
             if abs(mval1 - mval2) <= tol and rval1 < rval2:
@@ -1873,7 +1823,7 @@ class TrustRegion:
             if self.debug:
                 self.check_models()
 
-    def update(self, step, **kwargs):
+    def update(self, nstep, tstep, **kwargs):
         """
         Include a new point in the interpolation set.
 
@@ -1882,9 +1832,12 @@ class TrustRegion:
 
         Parameters
         ----------
-        step : numpy.ndarray, shape (n,)
-            Step from `xopt` of the new point to include in the interpolation
-            set.
+        nstep : numpy.ndarray, shape (n,)
+            Normal step from `xopt` of the new point to include in the
+            interpolation set.
+        tstep: numpy.ndarray, shape (n,)
+            Tangential step from `xopt + nstep` of the new point to include in
+            the interpolation set.
 
         Returns
         -------
@@ -1916,6 +1869,7 @@ class TrustRegion:
         # function, and the nonlinear equality constraint function at the trial
         # point. The functions are defined in the space centered at the origin.
         bdtol = get_bdtol(self.xl, self.xu, **kwargs)
+        step = nstep + tstep
         xsav = np.copy(self.xopt)
         xnew = xsav + step
         fx = self.fun(self.xbase + xnew)
@@ -1927,9 +1881,8 @@ class TrustRegion:
         # Update the Lagrange multipliers and the penalty parameters for the
         # trust-region ratio to be well-defined.
         if not self.target_reached:
-            self.update_multipliers(**kwargs)
             ksav = self.kopt
-            mx, mmx, mopt = self.update_penalty_parameters(step, fx, cubx, ceqx)
+            mx, mmx, mopt = self.increase_penalty(nstep, tstep, fx, cubx, ceqx)
             if ksav != self.kopt:
                 # When increasing the penalty parameters is required to make the
                 # trust-region ratio meaningful, the index of the optimal point
@@ -1944,6 +1897,7 @@ class TrustRegion:
                 ratio = (mopt - mx) / (mopt - mmx)
             else:
                 ratio = -1.0
+            self.update_multipliers(**kwargs)
         else:
             mx = self(xnew, fx, cubx, ceqx)
             mopt = mx
@@ -1974,14 +1928,13 @@ class TrustRegion:
             gradient of the current model of the objective function).
         """
         n = self.xopt.size
-        bdtol = get_bdtol(self.xl, self.xu, **kwargs)
-        if self.maxcv > bdtol:
+        if self.mlub + self.mleq + self.mnlub + self.mnleq > 0:
             # Determine the matrix of the least-squares problem. The Lagrange
             # multipliers corresponding to nonzero inequality constraint values
             # are zeroed to satisfy the complementary slackness conditions.
-            ilub = np.dot(self.aub, self.xopt) > self.bub
+            ilub = np.dot(self.aub, self.xopt) >= self.bub
             mlub = np.count_nonzero(ilub)
-            inlub = self.coptub > 0.0
+            inlub = self.coptub >= 0.0
             mnlub = np.count_nonzero(inlub)
             cub_jac = np.empty((mnlub, n), dtype=float)
             for i, j in enumerate(np.flatnonzero(inlub)):
@@ -2001,14 +1954,8 @@ class TrustRegion:
             self.lmnlub[inlub] = lm[mlub:mlub + mnlub]
             self._lmleq = lm[mlub + mnlub:mlub + mnlub + self.mleq]
             self._lmnleq = lm[mlub + mnlub + self.mleq:]
-        else:
-            # TODO: The Lagrange multipliers must be set to zero. Why?
-            self.lmlub.fill(0.0)
-            self.lmnlub.fill(0.0)
-            self.lmleq.fill(0.0)
-            self.lmnleq.fill(0.0)
 
-    def update_penalty_parameters(self, step, fx, cubx, ceqx):
+    def increase_penalty(self, nstep, tstep, fx, cubx, ceqx):
         """
         Increase the penalty coefficients.
 
@@ -2018,8 +1965,13 @@ class TrustRegion:
 
         Parameters
         ----------
-        step : numpy.ndarray, shape (n,)
-            Trial step from `xopt`.
+        nstep : numpy.ndarray, shape (n,)
+            Normal step from `xopt` of the new point to include in the
+            interpolation set.
+        tstep: numpy.ndarray, shape (n,)
+            Tangential step from `xopt + nstep` of the new point to include in
+            the interpolation set.
+
         fx : float
             Value of the objective function at the trial point.
         cubx : numpy.ndarray, shape (mnlub,)
@@ -2041,67 +1993,38 @@ class TrustRegion:
             Value of the merit function at `xopt`, evaluated on the nonlinear
             optimization problem.
         """
+        tiny = np.finfo(float).tiny
+        step = nstep + tstep
         xnew = self.xopt + step
         mx, mmx = self(xnew, fx, cubx, ceqx, True)
         mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
-        if self.type in 'UXB':
-            return mx, mmx, mopt
-
-        # During trust-region step, the trust-region ratio has to be meaningful.
-        # Therefore, its denominator has to be positive.
-        pen_max = 1e-2 * np.finfo(float).max
-        if not self.is_model_step and mmx > mopt:
-            ksav = self.kopt
-
-            # If the index of the best interpolation point so far changes during
-            # when the penalty coefficients are increased, the iterations of the
-            # method must be restarted.
-            while ksav == self.kopt and mmx > mopt:
-                if self.penub > 0.0:
-                    self._penub *= 1.5
-                elif self.mlub + self.mnlub > 0:
-                    self._penub = 1.0
-                if self.peneq > 0.0:
-                    self._peneq *= 1.5
-                elif self.mleq + self.mnleq > 0:
-                    self._peneq = 1.0
-                if max(self.penub, self.peneq) >= pen_max:
-                    self.reduce_penalty_coefficients()
-                    raise RestartRequiredException
-
-                # When the penalty coefficients are modified, the index of the
-                # best interpolation point so far may change.
-                mx, mmx = self(xnew, fx, cubx, ceqx, True)
-                self.kopt = self.get_best_point()
-                mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
-            if ksav == self.kopt:
-                self._penub *= 2.0
-                self._peneq *= 2.0
-                mx, mmx = self(xnew, fx, cubx, ceqx, True)
-                self.kopt = self.get_best_point()
-                mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
-        elif not self.is_model_step:
-            # If the current penalty coefficients are too close from failing
-            # mmx <= mopt, they are doubled.
-            self._penub = 2.0 * self.penub / 3.0
-            self._peneq = 2.0 * self.peneq / 3.0
-            _, mmx_test = self(xnew, fx, cubx, ceqx, True)
-            mopt_test = self(self.xopt, self.fopt, self.coptub, self.copteq)
-            self._penub = 3.0 * self.penub
-            self._peneq = 3.0 * self.peneq
-            if mmx_test <= mopt_test:
-                self._penub = 0.5 * self.penub
-                self._peneq = 0.5 * self.peneq
-            elif max(self.penub, self.peneq) >= pen_max:
-                self.reduce_penalty_coefficients()
-                raise RestartRequiredException
-            else:
+        if self.type not in 'UXB' and not self.is_model_step:
+            gopt = self.model_obj_grad(self.xopt)
+            hstep = self.model_lag_hessp(step)
+            reduct = np.inner(gopt, step) + 0.5 * np.inner(step, hstep)
+            aub, bub = self.get_linear_ub()
+            aeq, beq = self.get_linear_eq()
+            bub -= np.dot(aub, self.xopt)
+            beq -= np.dot(aeq, self.xopt)
+            resid = np.r_[np.maximum(0.0, -bub), beq]
+            violation = np.linalg.norm(resid)
+            resid = np.r_[
+                np.maximum(0.0, np.dot(aub, nstep) - bub),
+                np.dot(aeq, nstep) - beq,
+            ]
+            violation -= np.linalg.norm(resid)
+            lm = np.r_[self.lmlub, self.lmleq, self.lmnlub, self.lmnleq]
+            threshold = np.linalg.norm(lm)
+            if violation > tiny * abs(reduct):
+                threshold = max(threshold, reduct / violation)
+            if self.penalty < 1.5 * threshold:
+                self._penalty = 2.0 * threshold
                 mx, mmx = self(xnew, fx, cubx, ceqx, True)
                 self.kopt = self.get_best_point()
                 mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
         return mx, mmx, mopt
 
-    def reduce_penalty_coefficients(self):
+    def reduce_penalty(self):
         """
         Reduce the penalty coefficients if possible, to prevent overflows.
 
@@ -2120,33 +2043,22 @@ class TrustRegion:
         tiny = np.finfo(float).tiny
         fmin = np.min(self.fval)
         fmax = np.max(self.fval)
-        if self.penub > 0.0:
-            resid = np.matmul(self.xpt, self.aub.T) - self.bub[np.newaxis, :]
-            resid = np.c_[resid, self.cvalub]
+        if self.penalty > 0.0:
+            rlub = np.matmul(self.xpt, self.aub.T) - self.bub[np.newaxis, :]
+            rleq = np.matmul(self.xpt, self.aeq.T) - self.beq[np.newaxis, :]
+            rub = np.c_[rlub, self.cvalub]
+            req = np.c_[rleq, -rleq, self.cvaleq, -self.cvaleq]
+            resid = np.c_[rub, req]
             cmin = np.min(resid, axis=0)
             cmax = np.max(resid, axis=0)
-            iub = cmin < 2.0 * cmax
-            if np.any(iub):
-                cmin_neg = np.minimum(0.0, cmin[iub])
-                denom = np.min(cmax[iub] - cmin_neg)
+            indices = cmin < 2.0 * cmax
+            if np.any(indices):
+                cmin_neg = np.minimum(0.0, cmin[indices])
+                denom = np.min(cmax[indices] - cmin_neg)
                 if denom > tiny * (fmax - fmin):
-                    self._penub = min(self.penub, (fmax - fmin) / denom)
+                    self._penalty = min(self.penalty, (fmax - fmin) / denom)
             else:
-                self._penub = 0.0
-        if self.peneq > 0.0:
-            resid = np.matmul(self.xpt, self.aeq.T) - self.beq[np.newaxis, :]
-            resid = np.c_[resid, self.cvaleq]
-            cmin = np.min(resid, axis=0)
-            cmax = np.max(resid, axis=0)
-            cmin, cmax = np.r_[cmin, -cmax], np.r_[cmax, -cmin]
-            ieq = cmin < 2.0 * cmax
-            if np.any(ieq):
-                cmin_neg = np.minimum(0.0, cmin[ieq])
-                denom = np.min(cmax[ieq] - cmin_neg)
-                if denom > tiny * (fmax - fmin):
-                    self._peneq = min(self.peneq, (fmax - fmin) / denom)
-            else:
-                self._peneq = 0.0
+                self._penalty = 0.0
 
     def trust_region_step(self, delta, **kwargs):
         """
@@ -2185,7 +2097,6 @@ class TrustRegion:
         .. [1] A. R. Conn, N. I. M. Gould, and Ph. L. Toint. Trust-Region
            Methods. MPS-SIAM Ser. Optim. Philadelphia, PA, US: SIAM, 2009.
         """
-        tiny = np.finfo(float).tiny
         bdtol = get_bdtol(self.xl, self.xu, **kwargs)
         kwargs = dict(kwargs)
         kwargs['debug'] = self.debug
@@ -2197,18 +2108,6 @@ class TrustRegion:
             delta *= np.sqrt(0.5)
         aub, bub = self.get_linear_ub()
         aeq, beq = self.get_linear_eq()
-
-        # Scale the constraints in accordance with the penalty coefficients.
-        if self.penub > 0.0 and self.peneq > tiny * self.penub:
-            scale = np.sqrt(self.penub / self.peneq)
-        else:
-            scale = 1.0
-        if scale <= 1.0:
-            aub *= scale
-            bub *= scale
-        else:
-            aeq /= scale
-            beq /= scale
 
         # Evaluate the normal step of the Byrd-Omojokun approach. The normal
         # step attempts to reduce the violations of the linear constraints
@@ -2258,7 +2157,7 @@ class TrustRegion:
         else:
             delta = np.sqrt(delta ** 2.0 - ssq)
         xopt = self.xopt + nstep
-        gopt = self.model_obj_grad(xopt)
+        gopt = self.model_obj_grad(self.xopt) + self.model_lag_hessp(nstep)
         bub = np.maximum(bub, np.dot(aub, xopt))
         beq = np.dot(aeq, xopt)
         if self.type in 'UXB':
@@ -2298,7 +2197,7 @@ class TrustRegion:
             reduct = np.inner(gopt, tstep)
             reduct += 0.5 * np.inner(tstep, self.model_lag_hessp(tstep))
             assert_(reduct <= 0.0)
-        return nstep + tstep
+        return nstep, tstep
 
     def model_step(self, delta, **kwargs):
         """
@@ -2404,11 +2303,10 @@ class TrustRegion:
         if con is not None:
             x_full = self.get_x(x)
             cx = np.atleast_1d(con(x_full, *self._args))
-            threshold = huge(x_full.dtype)
-            cx[np.isnan(cx) | (cx > threshold)] = threshold
-            np.nan_to_num(cx, False, np.finfo(x_full.dtype).max)
             if cx.dtype.kind in np.typecodes['AllInteger']:
                 cx = np.asarray(cx, dtype=float)
+            threshold = huge(x_full.dtype)
+            cx[np.isnan(cx) | (cx > threshold)] = 0.0  # threshold
             if self.disp and cx.size > 0:
                 print(f'{con.__name__}({x_full}) = {cx}.')
         else:
