@@ -405,7 +405,6 @@ class TestLinearInequalityConstrained(TestBase):
     @pytest.fixture
     def aub(self, fun, n):
         return {
-            'arwhead': np.c_[np.ones((1, n - 1)), 0.0],
             'power': -np.ones((1, n)),
             'sphere': -np.ones((1, n)),
         }.get(fun)
@@ -413,7 +412,6 @@ class TestLinearInequalityConstrained(TestBase):
     @pytest.fixture
     def bub(self, fun):
         return {
-            'arwhead': np.ones(1),
             'power': -np.ones(1),
             'sphere': -np.ones(1),
         }.get(fun)
@@ -422,7 +420,6 @@ class TestLinearInequalityConstrained(TestBase):
     def x_sol(self, fun, n):
         nrg = np.arange(1, n + 1)
         return {
-            'arwhead': np.r_[(1.0 / (n - 1.0)) * np.ones(n - 1), 0.0],
             'power': (1.0 / np.sum(1.0 / nrg)) / nrg,
             'sphere': (1.0 / n) * np.ones(n),
         }.get(fun)
@@ -430,13 +427,12 @@ class TestLinearInequalityConstrained(TestBase):
     @pytest.fixture
     def f_sol(self, fun, n):
         return {
-            'arwhead': 1.0 / (n - 1.0) ** 3.0 + 3.0 * (n - 1.0) - 4.0,
             'power': 1.0 / np.sum(1.0 / np.arange(1, n + 1)),
             'sphere': 1.0 / n
         }.get(fun)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
-    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    @pytest.mark.parametrize('fun', ['power', 'sphere'])
     def test_simple(self, fun, n, x0, xl, xu, aub, bub, x_sol, f_sol):
         res = minimize(
             fun=getattr(self, fun),
@@ -459,7 +455,7 @@ class TestLinearInequalityConstrained(TestBase):
         self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
-    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    @pytest.mark.parametrize('fun', ['power', 'sphere'])
     def test_target(self, fun, n, x0, xl, xu, aub, bub, x_sol, f_sol):
         res = minimize(
             fun=getattr(self, fun),
@@ -487,7 +483,6 @@ class TestNonlinearEqualityConstrained(TestBase):
     @pytest.fixture
     def ceq(self, fun):
         return lambda x: {
-            'arwhead': np.sum(x[:-1]) - 1.0,
             'power': np.sum(x) - 1.0,
             'sphere': np.sum(x) - 1.0,
         }.get(fun)
@@ -496,7 +491,6 @@ class TestNonlinearEqualityConstrained(TestBase):
     def x_sol(self, fun, n):
         nrg = np.arange(1, n + 1)
         return {
-            'arwhead': np.r_[(1.0 / (n - 1.0)) * np.ones(n - 1), 0.0],
             'power': (1.0 / np.sum(1.0 / nrg)) / nrg,
             'sphere': (1.0 / n) * np.ones(n),
         }.get(fun)
@@ -504,13 +498,12 @@ class TestNonlinearEqualityConstrained(TestBase):
     @pytest.fixture
     def f_sol(self, fun, n):
         return {
-            'arwhead': 1.0 / (n - 1.0) ** 3.0 + 3.0 * (n - 1.0) - 4.0,
             'power': 1.0 / np.sum(1.0 / np.arange(1, n + 1)),
             'sphere': 1.0 / n
         }.get(fun)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
-    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    @pytest.mark.parametrize('fun', ['power', 'sphere'])
     def test_simple(self, fun, n, x0, xl, xu, ceq, x_sol, f_sol):
         res = minimize(
             fun=getattr(self, fun),
@@ -531,7 +524,7 @@ class TestNonlinearEqualityConstrained(TestBase):
         self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
-    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    @pytest.mark.parametrize('fun', ['power', 'sphere'])
     def test_target(self, fun, n, x0, xl, xu, ceq, x_sol, f_sol):
         res = minimize(
             fun=getattr(self, fun),
@@ -557,7 +550,6 @@ class TestNonlinearInequalityConstrained(TestBase):
     @pytest.fixture
     def cub(self, fun):
         return lambda x: {
-            'arwhead': np.sum(x[:-1]) - 1.0,
             'power': 1.0 - np.sum(x),
             'sphere': 1.0 - np.sum(x),
         }.get(fun)
@@ -566,7 +558,6 @@ class TestNonlinearInequalityConstrained(TestBase):
     def x_sol(self, fun, n):
         nrg = np.arange(1, n + 1)
         return {
-            'arwhead': np.r_[(1.0 / (n - 1.0)) * np.ones(n - 1), 0.0],
             'power': (1.0 / np.sum(1.0 / nrg)) / nrg,
             'sphere': (1.0 / n) * np.ones(n),
         }.get(fun)
@@ -574,13 +565,12 @@ class TestNonlinearInequalityConstrained(TestBase):
     @pytest.fixture
     def f_sol(self, fun, n):
         return {
-            'arwhead': 1.0 / (n - 1.0) ** 3.0 + 3.0 * (n - 1.0) - 4.0,
             'power': 1.0 / np.sum(1.0 / np.arange(1, n + 1)),
             'sphere': 1.0 / n
         }.get(fun)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
-    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    @pytest.mark.parametrize('fun', ['power', 'sphere'])
     def test_simple(self, fun, n, x0, xl, xu, cub, x_sol, f_sol):
         res = minimize(
             fun=getattr(self, fun),
@@ -601,7 +591,7 @@ class TestNonlinearInequalityConstrained(TestBase):
         self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
-    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    @pytest.mark.parametrize('fun', ['power', 'sphere'])
     def test_target(self, fun, n, x0, xl, xu, cub, x_sol, f_sol):
         res = minimize(
             fun=getattr(self, fun),
