@@ -147,6 +147,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     stepsq = 0.0
     alpbd = 1.0
     inext = 0
+    ncall = 0
     iterc = 0
     gamma = 0.0
     while iterc < mlub + n - nact or inext >= 0:
@@ -159,6 +160,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             sdd = getact(gq, evalc, resid, iact, 0, nact, qfac, rfac,
                          delta, Aub, lcn)
             snorm = np.linalg.norm(sdd)
+            ncall += 1
             if snorm <= 0.2 * tiny * delta:
                 break
             sdd *= 0.2 * delta / snorm
@@ -197,7 +199,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
                         if i not in iact[:nact]:
                             asd = evalc(i, sd, Aub, lcn)
                             asdd = evalc(i, sdd, Aub, lcn)
-                            if asd > tiny * abs(resid[i] - asdd):
+                            if asd > max(tiny * abs(resid[i] - asdd), bdtol):
                                 temp = max((resid[i] - asdd) / asd, 0.0)
                                 gamma = min(gamma, temp)
                     gamma = min(gamma, 1.0)
@@ -256,7 +258,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             if i not in iact[:nact]:
                 asd[i] = evalc(i, sd, Aub, lcn)
                 if abs(asd[i]) > tiny * abs(resid[i]):
-                    if alphf * asd[i] > resid[i]:
+                    if alphf * asd[i] > resid[i] and asd[i] > bdtol:
                         alphf = resid[i] / asd[i]
                         inext = i
         if alphf < alpha:
@@ -280,14 +282,18 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             for i in range(2 * (mlub + n)):
                 if i not in iact[:nact]:
                     resid[i] = max(0.0, resid[i] - alpha * asd[i])
-            if iterc == 0:
-                resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
             reduct -= alpha * (sdgq + 0.5 * alpha * curv)
+        if iterc == 0:
+            resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
 
         # If the step that would be obtained in the unconstrained case is
         # insubstantial, the truncated conjugate gradient method is stopped.
         alphs = min(alphm, alpht)
         if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
+            break
+
+        # Prevent infinite cycling due to computer rounding errors.
+        if ncall > min(10000, 200 * (mlub + n) ** 2):
             break
 
         # Restart the calculations if a new constraint has been hit.
@@ -314,6 +320,15 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             beta = np.inner(sdu, hsd) / curv
         sd = beta * sd - sdu
         alpbd = 0.0
+
+    # To prevent numerical difficulties emerging from computer rounding errors
+    # on ill-conditioned problems, the reduction is computed from scratch.
+    resid_ub = np.maximum(-bub, 0.0)
+    reduct = np.inner(resid_ub, resid_ub) + np.inner(beq, beq)
+    resid_ub = np.maximum(np.dot(Aub, step) - bub, 0.0)
+    resid_eq = np.dot(Aeq, step) - beq
+    reduct -= np.inner(resid_ub, resid_ub) + np.inner(resid_eq, resid_eq)
+    reduct *= 0.5
     if reduct <= 0.0:
         return np.zeros_like(step)
     return step

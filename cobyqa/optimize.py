@@ -793,6 +793,7 @@ class TrustRegion:
         threshold = huge(x_full.dtype)
         if np.isnan(fx) or fx > threshold:
             fx = threshold
+        fx = np.nan_to_num(fx)
         if self.disp:
             print(f'{self._fun.__name__}({x_full}) = {fx}.')
         return fx
@@ -2152,14 +2153,11 @@ class TrustRegion:
         # the global trust-region step. Th tangential step attempts to reduce
         # the objective function of the model without worsening the constraint
         # violation provided by the normal step.
-        if np.sqrt(ssq) <= bdtol:
-            nstep = np.zeros_like(self.xopt)
-        else:
-            delta = np.sqrt(delta ** 2.0 - ssq)
+        delta = np.sqrt(delta ** 2.0 - ssq)
         xopt = self.xopt + nstep
-        gopt = self.model_obj_grad(self.xopt) + self.model_lag_hessp(nstep)
         bub = np.maximum(bub, np.dot(aub, xopt))
         beq = np.dot(aeq, xopt)
+        gopt = self.model_obj_grad(self.xopt) + self.model_lag_hessp(nstep)
         if self.type in 'UXB':
             tstep = bvtcg(xopt, gopt, self.model_obj_hessp, self.xl, self.xu,
                           delta, **kwargs)
@@ -2306,7 +2304,8 @@ class TrustRegion:
             if cx.dtype.kind in np.typecodes['AllInteger']:
                 cx = np.asarray(cx, dtype=float)
             threshold = huge(x_full.dtype)
-            cx[np.isnan(cx) | (cx > threshold)] = 0.0  # threshold
+            cx[np.isnan(cx) | (cx > threshold)] = threshold
+            cx[cx < -threshold] = -threshold
             if self.disp and cx.size > 0:
                 print(f'{con.__name__}({x_full}) = {cx}.')
         else:

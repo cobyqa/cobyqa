@@ -167,6 +167,7 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
     stepsq = 0.0
     alpbd = 1.0
     inext = 0
+    ncall = 0
     iterc = 0
     gamma = 0.0
     while iterc < n - mleq - nact or inext >= 0:
@@ -179,6 +180,7 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
             sdd = getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta,
                          Aub)
             snorm = np.linalg.norm(sdd)
+            ncall += 1
             if snorm <= 0.2 * tiny * delta:
                 break
             sdd *= 0.2 * delta / snorm
@@ -218,7 +220,7 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
                         if i not in iact[:nact]:
                             asd = evalc(i, sd, Aub)
                             asdd = evalc(i, sdd, Aub)
-                            if asd > tiny * abs(resid[i] - asdd):
+                            if asd > max(tiny * abs(resid[i] - asdd), bdtol):
                                 temp = max((resid[i] - asdd) / asd, 0.0)
                                 gamma = min(gamma, temp)
                     gamma = min(gamma, 1.0)
@@ -280,7 +282,7 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
             if i not in iact[:nact]:
                 asd[i] = evalc(i, sd, Aub)
                 if abs(asd[i]) > tiny * abs(resid[i]):
-                    if alphf * asd[i] > resid[i]:
+                    if alphf * asd[i] > resid[i] and asd[i] > bdtol:
                         alphf = max(resid[i] / asd[i], 0.0)
                         inext = i
         if alphf < alpha:
@@ -302,14 +304,18 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
             for i in range(mlub + 2 * n):
                 if i not in iact[:nact]:
                     resid[i] = max(0.0, resid[i] - alpha * asd[i])
-            if iterc == 0:
-                resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
             reduct -= alpha * (sdgq + 0.5 * alpha * curv)
+        if iterc == 0:
+            resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
 
         # If the step that would be obtained in the unconstrained case is
         # insubstantial, the truncated conjugate gradient method is stopped.
         alphs = min(alphm, alpht)
         if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
+            break
+
+        # Prevent infinite cycling due to computer rounding errors.
+        if ncall > min(10000, 100 * (mlub + 2 * n) * (n - mleq)):
             break
 
         # Restart the calculations if a new constraint has been hit and either
@@ -342,7 +348,7 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
 
     # To prevent numerical difficulties emerging from computer rounding errors
     # on ill-conditioned problems, the reduction is computed from scratch.
-    hstep = np.asarray(hessp(sd, *args))
+    hstep = np.asarray(hessp(step, *args))
     if hstep.dtype.kind in np.typecodes['AllInteger']:
         hstep = np.asarray(hstep, dtype=float)
     reduct = -np.inner(gini, step) - 0.5 * np.inner(step, hstep)
