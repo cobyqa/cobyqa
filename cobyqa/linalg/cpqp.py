@@ -143,6 +143,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     # and the iteration counter reinitialized.
     step = np.zeros_like(xopt)
     sd = np.zeros_like(gq)
+    mu1 = kwargs.get('mu1', 0.2)
     reduct = 0.0
     stepsq = 0.0
     alpbd = 1.0
@@ -158,12 +159,12 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             # by the Goldfarb and Idnani algorithm is scaled to have length
             # 0.2 * delta, so that it is allowed by the linear constraints.
             sdd = getact(gq, evalc, resid, iact, 0, nact, qfac, rfac,
-                         delta, Aub, lcn)
+                         delta, Aub, lcn, **kwargs)
             snorm = np.linalg.norm(sdd)
             ncall += 1
-            if snorm <= 0.2 * tiny * delta:
+            if snorm <= mu1 * tiny * delta:
                 break
-            sdd *= 0.2 * delta / snorm
+            sdd *= mu1 * delta / snorm
 
             # If the modulus of the residual of an active constraint is
             # substantial, the search direction is the move towards the

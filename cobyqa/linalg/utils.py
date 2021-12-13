@@ -117,7 +117,8 @@ def get_lctol(A, b, **kwargs):
     return kwargs.get('lctol', lctol)
 
 
-def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
+def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args,
+           **kwargs):
     """
     Pick the current active set.
 
@@ -181,7 +182,7 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
     n = gq.size
     tol = 10.0 * eps * n
     gqtol = tol * np.max(np.abs(gq), initial=1.)
-    tdel = 0.2 * delta
+    tdel = kwargs.get('mu1', 0.2) * delta
 
     # Remove from the current active set the constraints that are not considered
     # active anymore, that is those whose residuals exceed tdel.

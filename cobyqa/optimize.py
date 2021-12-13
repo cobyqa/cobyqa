@@ -1883,7 +1883,8 @@ class TrustRegion:
         # trust-region ratio to be well-defined.
         if not self.target_reached:
             ksav = self.kopt
-            mx, mmx, mopt = self.increase_penalty(nstep, tstep, fx, cubx, ceqx)
+            mx, mmx, mopt = self.increase_penalty(nstep, tstep, fx, cubx, ceqx,
+                                                  **kwargs)
             if ksav != self.kopt:
                 # When increasing the penalty parameters is required to make the
                 # trust-region ratio meaningful, the index of the optimal point
@@ -1956,7 +1957,7 @@ class TrustRegion:
             self._lmleq = lm[mlub + mnlub:mlub + mnlub + self.mleq]
             self._lmnleq = lm[mlub + mnlub + self.mleq:]
 
-    def increase_penalty(self, nstep, tstep, fx, cubx, ceqx):
+    def increase_penalty(self, nstep, tstep, fx, cubx, ceqx, **kwargs):
         """
         Increase the penalty coefficients.
 
@@ -2018,8 +2019,8 @@ class TrustRegion:
             threshold = np.linalg.norm(lm)
             if violation > tiny * abs(reduct):
                 threshold = max(threshold, reduct / violation)
-            if self.penalty < 1.5 * threshold:
-                self._penalty = 2.0 * threshold
+            if self.penalty < kwargs.get('nu1') * threshold:
+                self._penalty = kwargs.get('nu2') * threshold
                 mx, mmx = self(xnew, fx, cubx, ceqx, True)
                 self.kopt = self.get_best_point()
                 mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
@@ -2134,20 +2135,21 @@ class TrustRegion:
             # from scipy.optimize import Bounds, NonlinearConstraint
             # from scipy.optimize import minimize as scipy_minimize
             # bounds = Bounds(self.xl, self.xu)
-            # constraints = [NonlinearConstraint(ball, -np.inf, 0.8 * delta)]
+            # constraints = [NonlinearConstraint(ball, -np.inf,
+            # kwargs.get('xi') * delta)]
             #
             # res = scipy_minimize(normal, self.xopt, jac=True, bounds=bounds,
             #                      constraints=constraints)  # noqa
             # nstep = res.x - self.xopt
             ####################################################################
             nstep = cpqp(self.xopt, aub, bub, aeq, beq, self.xl, self.xu,
-                         0.8 * delta, **kwargs)
+                         kwargs.get('xi') * delta, **kwargs)
             ####################################################################
             ssq = np.inner(nstep, nstep)
             if self.debug:
                 assert_(np.max(self.xl - self.xopt - nstep) < bdtol)
                 assert_(np.min(self.xu - self.xopt - nstep) > -bdtol)
-                assert_(ssq <= 0.7 * delta ** 2.0)
+                assert_(ssq <= delta ** 2.0)
 
         # Evaluate the tangential step of the trust-region subproblem, and set
         # the global trust-region step. Th tangential step attempts to reduce

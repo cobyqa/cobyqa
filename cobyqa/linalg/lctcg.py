@@ -163,6 +163,7 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
     # restarted and the iteration counter reinitialized.
     step = np.zeros_like(gq)
     sd = np.zeros_like(step)
+    mu1 = kwargs.get('mu1', 0.2)
     reduct = 0.0
     stepsq = 0.0
     alpbd = 1.0
@@ -178,12 +179,12 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
             # by the Goldfarb and Idnani algorithm is scaled to have length
             # 0.2 * delta, so that it is allowed by the linear constraints.
             sdd = getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta,
-                         Aub)
+                         Aub, **kwargs)
             snorm = np.linalg.norm(sdd)
             ncall += 1
-            if snorm <= 0.2 * tiny * delta:
+            if snorm <= mu1 * tiny * delta:
                 break
-            sdd *= 0.2 * delta / snorm
+            sdd *= mu1 * delta / snorm
 
             # If the modulus of the residual of an active constraint is
             # substantial, the search direction is the move towards the
@@ -322,7 +323,7 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
         # it is a bound constraint or the distance from the current step to the
         # boundary of the trust region is larger than 0.2 * delta.
         if inext >= 0:
-            if inext >= mlub or stepsq <= 0.64 * delta ** 2.0:
+            if inext >= mlub or stepsq <= ((1.0 - mu1) * delta) ** 2.0:
                 continue
             break
 
