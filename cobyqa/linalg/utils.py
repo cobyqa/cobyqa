@@ -225,8 +225,9 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args,
 
         # Select the index of the most violated constraint, if any. The step
         # that is considered in these calculations is the one of length delta
+        # that is considered in these calculations is the one of length delta
         # along the direction in the vector step.
-        test = np.sqrt(ssq) / delta
+        test = np.sqrt(stepsq) / delta
         inext = -1
         violmx = 0.0
         for i in range(resid.size):

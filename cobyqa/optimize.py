@@ -206,7 +206,7 @@ class TrustRegion:
             self._lmleq = np.zeros_like(beq)
             self._lmnlub = np.zeros(self.mnlub, dtype=float)
             self._lmnleq = np.zeros(self.mnleq, dtype=float)
-            self.update_multipliers(**kwargs)
+            self.update_multipliers()
 
             # Determine the optimal point so far.
             self.kopt = self.get_best_point()
@@ -1899,7 +1899,7 @@ class TrustRegion:
                 ratio = (mopt - mx) / (mopt - mmx)
             else:
                 ratio = -1.0
-            self.update_multipliers(**kwargs)
+            self.update_multipliers()
         else:
             mx = self(xnew, fx, cubx, ceqx)
             mopt = mx
@@ -1914,20 +1914,9 @@ class TrustRegion:
             self.check_models()
         return fx, mopt, ratio
 
-    def update_multipliers(self, **kwargs):
+    def update_multipliers(self):
         """
         Set the least-squares Lagrange multipliers.
-
-        Other Parameters
-        ----------------
-        bdtol : float, optional
-            Tolerance for comparisons on the bound constraints (the default is
-            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``).
-        lstol : float, optional
-            Tolerance on the approximate KKT conditions for the calculations of
-            the least-squares Lagrange multipliers (the default is
-            ``10 * eps * max(n, m) * max(1, max(abs(g)))``, where ``g`` is the
-            gradient of the current model of the objective function).
         """
         n = self.xopt.size
         if self.mlub + self.mleq + self.mnlub + self.mnleq > 0:
@@ -1949,7 +1938,7 @@ class TrustRegion:
             # Determine the least-squares Lagrange multipliers that have not
             # been fixed by the complementary slackness conditions.
             gopt = self.model_obj_grad(self.xopt)
-            lm, _ = nnls(A, -gopt, mlub + mnlub, **kwargs)
+            lm = nnls(A, -gopt, mlub + mnlub)
             self.lmlub.fill(0.0)
             self.lmnlub.fill(0.0)
             self.lmlub[ilub] = lm[:mlub]
@@ -2152,7 +2141,7 @@ class TrustRegion:
                 assert_(ssq <= delta ** 2.0)
 
         # Evaluate the tangential step of the trust-region subproblem, and set
-        # the global trust-region step. Th tangential step attempts to reduce
+        # the global trust-region step. The tangential step attempts to reduce
         # the objective function of the model without worsening the constraint
         # violation provided by the normal step.
         delta = np.sqrt(delta ** 2.0 - ssq)

@@ -294,7 +294,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
             break
 
         # Prevent infinite cycling due to computer rounding errors.
-        if ncall > min(10000, 200 * (mlub + n) ** 2):
+        if ncall > min(10000, 100 * (mlub + n) ** 2):
             break
 
         # Restart the calculations if a new constraint has been hit.

@@ -196,11 +196,10 @@ class TestNNLS:
         A = rng.standard_normal((m, n))
         b = rng.standard_normal(m)
         k = rng.integers(n + 1)
-        x, rnorm = nnls(A, b, k)
+        x = nnls(A, b, k)
         assert_dtype_equal(x, float)
         assert_(x.ndim == 1)
         assert_(x.size == n)
-        assert_allclose(rnorm, np.linalg.norm(np.dot(A, x) - b), atol=1e-11)
 
         # Ensure that the KKT conditions approximately hold at the solution.
         eps = np.finfo(float).eps
