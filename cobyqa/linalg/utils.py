@@ -54,6 +54,9 @@ def rot(x, y, c, s):
     xr, yr = blas_rot(x, y, c, s)
     np.copyto(x, xr)
     np.copyto(y, yr)
+    # temp = c * x + s * y
+    # y[:] = c * y - s * x
+    # x[:] = temp
 
 
 def get_bdtol(xl, xu, **kwargs):
@@ -215,11 +218,23 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args,
         # Set the new search direction. It is the vector that minimizes the
         # Euclidean norm of gq + step, subject to the active constraints. The
         # calculations are stopped if this vector is zero, of if its norm
-        # exceeds the norm of the previous direction.
+        # exceeds the norm of the previous direction. In the original Fortran
+        # code of GETACT, Powell stopped the computations whenever
+        # ssq >= stepsq, returning the zero vector. However, such a comparison
+        # is subjected to computer rounding errors (observed on the CUTEst
+        # problem FEEDLOC). This property should be observed from a theoretical
+        # standpoint, as ssq could be evaluated as
+        #
+        # >>> ssq = 0.0
+        # >>> for j in range(mleq + nact, n):
+        # ...     ssq += np.inner(qfac[:, j], gq) ** 2.0
+        #
+        # by using the orthogonality property of qfac. However, this
+        # orthogonality is only approximate in practice.
         temp = np.dot(qfac[:, mleq + nact:].T, -gq)
         step = np.dot(qfac[:, mleq + nact:], temp)
         ssq = np.inner(step, step)
-        if ssq >= stepsq or np.sqrt(ssq) <= gqtol:
+        if ssq - stepsq >= gqtol or np.sqrt(ssq) <= gqtol:
             return np.zeros_like(step)
         stepsq = ssq
 
@@ -227,7 +242,7 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args,
         # that is considered in these calculations is the one of length delta
         # that is considered in these calculations is the one of length delta
         # along the direction in the vector step.
-        test = np.sqrt(stepsq) / delta
+        test = np.sqrt(ssq) / delta
         inext = -1
         violmx = 0.0
         for i in range(resid.size):
@@ -280,8 +295,8 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args,
             vmult = violmx
             ic = -1
             for k in range(nact - 1):
-                if abs(vmu[k]) >= tiny * abs(vlam[k]):
-                    if vlam[k] >= vmult * vmu[k]:
+                if vlam[k] >= vmult * vmu[k]:
+                    if abs(vmu[k]) > tiny * abs(vlam[k]):
                         ic = k
                         vmult = vlam[k] / vmu[k]
             vlam[:nact] -= vmult * vmu

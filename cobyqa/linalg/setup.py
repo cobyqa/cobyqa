@@ -6,14 +6,20 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('linalg', parent_package, top_path)
 
     config.add_extension(
-        '_utils',
-        sources=['_utils.pyx'],
+        '_bvcs',
+        sources=['_bvcs.pyx'],
         include_dirs=[np.get_include()],
     )
 
     config.add_extension(
         '_nnls',
         sources=['_nnls.pyx'],
+        include_dirs=[np.get_include()],
+    )
+
+    config.add_extension(
+        '_utils',
+        sources=['_utils.pyx'],
         include_dirs=[np.get_include()],
     )
 

@@ -51,44 +51,45 @@ def nnls(double[::1, :] a, double[::1] b, int k, int maxiter):
     # Initialize the working arrays at the origin of the calculations.
     cdef bint[::1] iact = np_ones(k, dtype=np_int32)
     cdef double[::1] x = np_zeros(n, dtype=np_float64)
-    cdef int inc_x = x.strides[0] // x.itemsize
+    cdef int incx = x.strides[0] // x.itemsize
     cdef double[::1] xact = np_empty(n, dtype=np_float64)
     cdef double[::1] resid = np_empty(m, dtype=np_float64)
     resid[:] = b
 
     # Evaluate the objective function of the linear least-squares problem at the
     # origin of the calculations.
-    cdef int inc_resid = resid.strides[0] // resid.itemsize
-    cdef double lsx = 0.5 * ddot(&m, &resid[0], &inc_resid, &resid[0], &inc_resid)
+    cdef int incr = resid.strides[0] // resid.itemsize
+    cdef double lsx = 0.5 * ddot(&m, &resid[0], &incr, &resid[0], &incr)
 
     # Evaluate the gradient of the objective function of the linear
     # least-squares problem at the origin of the calculations.
     cdef double alpha = -1.0
     cdef double beta = 0.0
     cdef double[::1] grad = np_empty(n, dtype=np_float64)
-    cdef int inc_grad = grad.strides[0] // grad.itemsize
-    dgemv('t', &m, &n, &alpha, &a[0, 0], &m, &resid[0], &inc_resid, &beta, &grad[0], &inc_grad)
+    cdef int incg = grad.strides[0] // grad.itemsize
+    dgemv('t', &m, &n, &alpha, &a[0, 0], &m, &resid[0], &incr, &beta, &grad[0], &incg)
 
     # Allocate the working arrays required by the GELSY driver.
     cdef double tiny = np.finfo(np_float64).tiny
     cdef int[::1] jpvt = np_empty(n, dtype=np_int32)
     cdef double rcond = np.finfo(np_float64).eps * max(m, n)
-    cdef double dlwork
+    cdef double temp
     cdef int info
-    dlwork, info = dgelsy_lwork(m, n, 1, rcond)
+    temp, info = dgelsy_lwork(m, n, 1, rcond)
     if info != 0:
         raise ValueError(f'Internal work array size computation failed: {info}')
-    cdef int lwork = int(dlwork)
+    cdef int lwork = int(temp)
     cdef double[::1] work = np_empty(max(1, lwork), dtype=np_float64)
 
     # Start the iterative procedure, and iterate until the approximate KKT
     # conditions hold for the current vector of variables.
     cdef int iterc = 0
     cdef double lctol = get_lctol(a, b)
-    cdef double gamma, temp
+    cdef double gamma
     cdef Py_ssize_t i, inew
     while not check_kkt(grad, iact, lctol):
-        # Remove from the working set the least-gradient coordinate.
+        # Remove from the working set the least-gradient coordinate. The case
+        # nact > 0 is equivalent to k > 0 but is more comprehensible.
         if nact > 0:
             inew = -1
             for i in range(k):
@@ -106,21 +107,21 @@ def nnls(double[::1, :] a, double[::1] b, int k, int maxiter):
             # reached. The break statement of the outer loop is then reached
             # since the else statement below fails, which ends the computations.
             if iterc >= maxiter:
-                x = xact
+                x[:] = xact
                 break
             iterc += 1
 
             # Update the current vector of variable to the closest vector from
             # xact along the line joining x to xact that is feasible.
-            gamma = -1.0
+            gamma = 1.0
             for i in range(k):
-                if not iact[i] and xact[i] <= 0.0:
-                    if fabs(x[i] - xact[i]) > tiny * fabs(x[i]):
-                        temp = x[i] / (x[i] - xact[i])
-                        if gamma < 0.0 or temp < gamma:
-                            gamma = temp
+                temp = x[i] - xact[i]
+                if not iact[i] and xact[i] <= 0.0 and x[i] < gamma * temp:
+                    if fabs(temp) > tiny * fabs(x[i]):
+                        gamma = x[i] / temp
+            gamma = max(0.0, gamma)
             for i in range(n):
-                x[i] += max(0.0, gamma) * (xact[i] - x[i])
+                x[i] += gamma * (xact[i] - x[i])
 
             # Update the working set at the new vector of variables.
             for i in range(k):
@@ -139,14 +140,14 @@ def nnls(double[::1, :] a, double[::1] b, int k, int maxiter):
             x[:] = xact
             resid[:] = b
             beta = 1.0
-            dgemv('n', &m, &n, &alpha, &a[0, 0], &m, &x[0], &inc_x, &beta, &resid[0], &inc_resid)
-            temp = 0.5 * ddot(&m, &resid[0], &inc_resid, &resid[0], &inc_resid)
+            dgemv('n', &m, &n, &alpha, &a[0, 0], &m, &x[0], &incx, &beta, &resid[0], &incr)
+            temp = 0.5 * ddot(&m, &resid[0], &incr, &resid[0], &incr)
             if temp > (1.0 - lctol) * lsx:
                 lsx = temp
                 break
             lsx = temp
             beta = 0.0
-            dgemv('t', &m, &n, &alpha, &a[0, 0], &m, &resid[0], &inc_resid, &beta, &grad[0], &inc_grad)
+            dgemv('t', &m, &n, &alpha, &a[0, 0], &m, &resid[0], &incr, &beta, &grad[0], &incg)
             continue
         break
     return x
@@ -173,16 +174,16 @@ cdef bint check_kkt(double[::1] grad, bint[::1] iact, double tol):
     """
     cdef int n = grad.shape[0]
     cdef int k = iact.shape[0]
-    cdef bint res = True
+    cdef bint kktc = True
     cdef Py_ssize_t i
     for i in range(n):
         if i < k and iact[i]:
-            res = res and grad[i] >= -tol
+            kktc = kktc and grad[i] >= -tol
         elif i >= k:
-            res = res and fabs(grad[i]) <= tol
-        if not res:
+            kktc = kktc and fabs(grad[i]) <= tol
+        if not kktc:
             break
-    return res
+    return kktc
 
 cdef bint check_act(double[::1] x, bint[::1] iact):
     """
@@ -202,13 +203,13 @@ cdef bint check_act(double[::1] x, bint[::1] iact):
         Whether any variable must be included in the working set.
     """
     cdef int k = iact.shape[0]
-    cdef bint res = True
+    cdef bint actc = True
     cdef Py_ssize_t i
     for i in range(k):
         if not iact[i] and x[i] <= 0.0:
-            res = False
+            actc = False
             break
-    return res
+    return actc
 
 cdef void lstsq(double[::1, :] a, double[::1] b, bint[::1] iact, int nact, int[::1] jpvt, double rcond, int lwork, double[::1] work, double[::1] x):
     """
