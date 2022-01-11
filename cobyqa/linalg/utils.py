@@ -22,16 +22,16 @@ def rotg(a, b):
     float
         Sine of the angle of rotation.
     """
-    # if abs(a) > abs(b):
-    #     sigma = np.sign(a)
-    # else:
-    #     sigma = np.sign(b)
-    # r = sigma * np.hypot(a, b)
-    # blas_rotg, = get_blas_funcs(('rotg',), (a, b))
-    # c, s = blas_rotg(a, b)
-    r = np.hypot(a, b)
-    c = a / r
-    s = b / r
+    if abs(a) > abs(b):
+        sigma = np.sign(a)
+    else:
+        sigma = np.sign(b)
+    r = sigma * np.hypot(a, b)
+    blas_rotg, = get_blas_funcs(('rotg',), (a, b))
+    c, s = blas_rotg(a, b)
+    # r = np.hypot(a, b)
+    # c = a / r
+    # s = b / r
     return r, c, s
 
 
@@ -240,8 +240,10 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args,
 
         # Select the index of the most violated constraint, if any. The step
         # that is considered in these calculations is the one of length delta
-        # that is considered in these calculations is the one of length delta
-        # along the direction in the vector step.
+        # along the direction in the vector step. The selected constraint is
+        # linearly independent with the current constraints in the working set
+        # (both inequality and equality constraints) as the current step lies in
+        # the subspace spanned by the boundaries of these constraints.
         test = np.sqrt(ssq) / delta
         inext = -1
         violmx = 0.0

@@ -4,8 +4,9 @@ from contextlib import suppress
 
 import numpy as np
 from numpy.testing import assert_
+from scipy.linalg import get_blas_funcs
 
-from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls, rot, rotg
+from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls
 from .linalg.utils import get_bdtol
 from .utils import RestartRequiredException, huge, implicit_hessian, normalize
 
@@ -2110,30 +2111,8 @@ class TrustRegion:
             nstep = np.zeros_like(self.xopt)
             ssq = 0.0
         else:
-            ####################################################################
-            # def normal(x):
-            #     rub = np.maximum(0.0, np.dot(aub, x) - bub)
-            #     req = np.dot(aeq, x) - beq
-            #     fx = 0.5 * (np.inner(rub, rub) + np.inner(req, req))
-            #     gx = np.dot(aub.T, rub) + np.dot(aeq.T, req)
-            #     return fx, gx
-            #
-            # def ball(x):
-            #     return np.linalg.norm(x - self.xopt)
-            #
-            # from scipy.optimize import Bounds, NonlinearConstraint
-            # from scipy.optimize import minimize as scipy_minimize
-            # bounds = Bounds(self.xl, self.xu)
-            # constraints = [NonlinearConstraint(ball, -np.inf,
-            # kwargs.get('xi') * delta)]
-            #
-            # res = scipy_minimize(normal, self.xopt, jac=True, bounds=bounds,
-            #                      constraints=constraints)  # noqa
-            # nstep = res.x - self.xopt
-            ####################################################################
             nstep = cpqp(self.xopt, aub, bub, aeq, beq, self.xl, self.xu,
                          kwargs.get('xi') * delta, **kwargs)
-            ####################################################################
             ssq = np.inner(nstep, nstep)
             if self.debug:
                 assert_(np.max(self.xl - self.xopt - nstep) < bdtol)
@@ -2153,32 +2132,8 @@ class TrustRegion:
             tstep = bvtcg(xopt, gopt, self.model_obj_hessp, self.xl, self.xu,
                           delta, **kwargs)
         else:
-            ####################################################################
-            # def sqp(x):
-            #     hpx = self.model_lag_hessp(x - xopt)
-            #     fx = np.inner(gopt, x - xopt) + 0.5 * np.inner(x - xopt, hpx)
-            #     gx = gopt + hpx
-            #     return fx, gx
-            #
-            # def ball(x):
-            #     return np.linalg.norm(x - xopt)
-            #
-            # from scipy.optimize import Bounds, LinearConstraint, \
-            #     NonlinearConstraint, minimize as scipy_minimize
-            # bounds = Bounds(self.xl, self.xu)
-            # constraints = [NonlinearConstraint(ball, -np.inf, delta)]
-            # if bub.size > 0:
-            #     constraints.append(LinearConstraint(aub, -np.inf, bub))
-            # if beq.size > 0:
-            #     constraints.append(LinearConstraint(aeq, beq, beq))
-            #
-            # res = scipy_minimize(sqp, xopt, jac=True, bounds=bounds,
-            #                      constraints=constraints)  # noqa
-            # tstep = res.x - xopt
-            ####################################################################
             tstep = lctcg(xopt, gopt, self.model_lag_hessp, aub, bub, aeq, beq,
                           self.xl, self.xu, delta, **kwargs)
-            ####################################################################
         if self.debug:
             assert_(np.max(self.xl - xopt - tstep) < bdtol)
             assert_(np.min(self.xu - xopt - tstep) > -bdtol)
@@ -3938,6 +3893,8 @@ class Models:
 
         # Put zeros in the knew-th row of zmat by applying a sequence of Givens
         # rotations. The remaining updates are performed below.
+        drotg, = get_blas_funcs(('rotg',), (self.zmat,))
+        drot, = get_blas_funcs(('rot',), (self.zmat,))
         jdz = 0
         for j in range(1, npt - n - 1):
             if j == self.idz:
@@ -3945,8 +3902,9 @@ class Models:
             elif abs(self.zmat[knew, j]) > 0.0:
                 cval = self.zmat[knew, jdz]
                 sval = self.zmat[knew, j]
-                _, cosv, sinv = rotg(cval, sval)
-                rot(self.zmat[:, jdz], self.zmat[:, j], cosv, sinv)
+                cosv, sinv = drotg(cval, sval)
+                self.zmat[:, jdz], self.zmat[:, j] = \
+                    drot(self.zmat[:, jdz], self.zmat[:, j], cosv, sinv)
                 self.zmat[knew, j] = 0.0
 
         # Evaluate the denominator in Equation (2.12) of Powell (2004).

@@ -2,9 +2,9 @@ from pkg_resources import parse_version
 
 from ..utils._min_dependencies import CYTHON_MIN_VERSION  # noqa
 
-# Don't use the deprecated NumPy C API.
+# Don't use the deprecated pre-NumPy-1.7 C-API.
 numpy_nodepr_api = dict(
-    define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_9_API_VERSION')],
+    define_macros=[('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION')],
 )
 
 
