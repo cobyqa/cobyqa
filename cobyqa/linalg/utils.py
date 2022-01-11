@@ -1,3 +1,5 @@
+import struct
+
 import numpy as np
 from scipy.linalg import get_blas_funcs
 
@@ -83,7 +85,10 @@ def get_bdtol(xl, xu, **kwargs):
     xl = np.asarray(xl)
     xu = np.asarray(xu)
 
-    eps = np.finfo(float).eps
+    if struct.calcsize('P') == 8:
+        eps = np.finfo(np.float64).eps
+    else:
+        eps = np.finfo(np.float32).eps
     tol = 10.0 * eps * xl.size
     temp = np.nan_to_num(np.abs(np.r_[xl, xu]), nan=1.0, posinf=1.0)
     bdtol = tol * np.max(temp, initial=1.0)
@@ -114,7 +119,10 @@ def get_lctol(A, b, **kwargs):
     A = np.asarray(A)
     b = np.asarray(b)
 
-    eps = np.finfo(float).eps
+    if struct.calcsize('P') == 8:
+        eps = np.finfo(np.float64).eps
+    else:
+        eps = np.finfo(np.float32).eps
     tol = 10.0 * eps * max(A.shape)
     lctol = tol * np.max(np.abs(b), initial=1.0)
     return kwargs.get('lctol', lctol)

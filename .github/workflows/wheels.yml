@@ -156,8 +156,6 @@ jobs:
           CIBW_MANYLINUX_I686_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_MANYLINUX_AARCH64_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_TEST_SKIP: "*-macosx_arm64"
-          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: bash build_tools/github/repair_windows_wheels.sh {wheel} {dest_dir}
-          CIBW_BEFORE_BUILD_WINDOWS: bash build_tools/github/prepare_windows.sh
           CIBW_TEST_COMMAND: bash {project}/build_tools/github/test_wheels.sh
           CIBW_BUILD_VERBOSITY: 1
 

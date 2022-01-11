@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
-from numpy.testing import assert_, assert_allclose, assert_raises
+from numpy.testing import assert_, assert_raises
 
 from cobyqa.linalg import bvtcg, cpqp, lctcg, nnls
-from cobyqa.linalg.utils import get_bdtol
+from cobyqa.linalg.utils import get_bdtol, get_lctol
 from cobyqa.tests import assert_array_less_equal, assert_dtype_equal
 
 
@@ -134,10 +134,8 @@ class TestLCTCG:
         assert_(step.size == n)
 
         # Ensure the feasibility of the output.
-        eps = np.finfo(float).eps
-        tol = 10.0 * eps * n
         bdtol = get_bdtol(xl, xu)
-        lctol = tol * np.max(np.abs(bub), initial=1.0)
+        lctol = get_lctol(Aub, bub)
         assert_array_less_equal(xl - x0 - step, bdtol)
         assert_array_less_equal(x0 + step - xu, bdtol)
         if mlub > 0:
@@ -202,8 +200,7 @@ class TestNNLS:
         assert_(x.size == n)
 
         # Ensure that the KKT conditions approximately hold at the solution.
-        eps = np.finfo(float).eps
-        lctol = 100.0 * eps * max(n, m) * np.max(np.abs(b), initial=1.0)
+        lctol = 10. * get_lctol(A, b)
         grad = np.dot(A.T, np.dot(A, x) - b)
         assert_array_less_equal(np.abs(grad[k:]), lctol)
         assert_array_less_equal(np.abs(grad[:k] * x[:k]), lctol)
