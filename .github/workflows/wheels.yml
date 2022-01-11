@@ -2,7 +2,7 @@
 # GitHub Actions configuration file for building wheels
 # See https://github.com/pypa/cibuildwheel for details
 
-name: Build wheels
+name: wheels
 
 on:
   push:
@@ -20,11 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Windows 64-bit versions
-          - os: windows-latest
-            python: 36
-            bitness: 64
-            platform_id: win_amd64
+          # 64-bit Windows
           - os: windows-latest
             python: 37
             bitness: 64
@@ -42,12 +38,7 @@ jobs:
             bitness: 64
             platform_id: win_amd64
 
-          # Windows 32-bit versions
-          # NumPy is not yet compiled for Python 3.10
-          - os: windows-latest
-            python: 36
-            bitness: 32
-            platform_id: win32
+          # 32-bit Windows
           - os: windows-latest
             python: 37
             bitness: 32
@@ -61,59 +52,7 @@ jobs:
             bitness: 32
             platform_id: win32
 
-          # Linux 64-bit versions using manylinux1
-          # NumPy is not compiled for Python 3.10
-          - os: ubuntu-latest
-            python: 36
-            bitness: 64
-            platform_id: manylinux_x86_64
-            manylinux_image: manylinux1
-          - os: ubuntu-latest
-            python: 37
-            bitness: 64
-            platform_id: manylinux_x86_64
-            manylinux_image: manylinux1
-          - os: ubuntu-latest
-            python: 38
-            bitness: 64
-            platform_id: manylinux_x86_64
-            manylinux_image: manylinux1
-          - os: ubuntu-latest
-            python: 39
-            bitness: 64
-            platform_id: manylinux_x86_64
-            manylinux_image: manylinux1
-
-          # Linux 32-bit versions using manylinux1
-          # NumPy is not compiled for Python 3.10
-          - os: ubuntu-latest
-            python: 36
-            bitness: 32
-            platform_id: manylinux_i686
-            manylinux_image: manylinux1
-          - os: ubuntu-latest
-            python: 37
-            bitness: 32
-            platform_id: manylinux_i686
-            manylinux_image: manylinux1
-          - os: ubuntu-latest
-            python: 38
-            bitness: 32
-            platform_id: manylinux_i686
-            manylinux_image: manylinux1
-          - os: ubuntu-latest
-            python: 39
-            bitness: 32
-            platform_id: manylinux_i686
-            manylinux_image: manylinux1
-
-          # Linux 64-bit versions using manylinux2010
-          # NumPy is not compiled for Python 3.10
-          - os: ubuntu-latest
-            python: 36
-            bitness: 64
-            platform_id: manylinux_x86_64
-            manylinux_image: manylinux2010
+          # 64-bit Linux manylinux2010
           - os: ubuntu-latest
             python: 37
             bitness: 64
@@ -130,13 +69,7 @@ jobs:
             platform_id: manylinux_x86_64
             manylinux_image: manylinux2010
 
-          # Linux 32-bit versions using manylinux2010
-          # NumPy is not compiled for Python 3.10
-          - os: ubuntu-latest
-            python: 36
-            bitness: 32
-            platform_id: manylinux_i686
-            manylinux_image: manylinux2010
+          # 32-bit Linux manylinux2010
           - os: ubuntu-latest
             python: 37
             bitness: 32
@@ -153,19 +86,29 @@ jobs:
             platform_id: manylinux_i686
             manylinux_image: manylinux2010
 
-          # Linux 64-bit versions using manylinux2014
-          # NumPy for Python 3.10 is only available with manylinux2014
+          # 64-bit Linux manylinux2014
+          - os: ubuntu-latest
+            python: 37
+            bitness: 64
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
+          - os: ubuntu-latest
+            python: 38
+            bitness: 64
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
+          - os: ubuntu-latest
+            python: 39
+            bitness: 64
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
           - os: ubuntu-latest
             python: 310
             bitness: 64
             platform_id: manylinux_x86_64
             manylinux_image: manylinux2014
 
-          # macOS 64-bit versions
-          - os: macos-latest
-            bitness: 64
-            python: 36
-            platform_id: macosx_x86_64
+          # macOS x86_64
           - os: macos-latest
             bitness: 64
             python: 37
@@ -184,7 +127,6 @@ jobs:
             platform_id: macosx_x86_64
 
           # macOS arm64
-          # NumPy is not compiled for Python >= 3.8
           - os: macos-latest
             bitness: 64
             python: 38
@@ -199,26 +141,24 @@ jobs:
             platform_id: macosx_arm64
 
     steps:
-      - name: Checkout cobyqa
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Setup Python
         uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
 
-      - name: Build and test wheel distributions
+      - name: Build wheels
         run: bash build_tools/github/build_wheels.sh
         env:
           CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
           CIBW_ARCHS: all
           CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_MANYLINUX_I686_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_AARCH64_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_TEST_SKIP: "*-macosx_arm64"
-          # TODO: CIBW_REPAIR_WHEEL_COMMAND_WINDOWS
-          # TODO: CIBW_BEFORE_TEST_WINDOWS
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: bash build_tools/github/repair_windows_wheels.sh {wheel} {dest_dir}
+          CIBW_BEFORE_BUILD_WINDOWS: bash build_tools/github/prepare_windows.sh
           CIBW_TEST_COMMAND: bash {project}/build_tools/github/test_wheels.sh
-          # TODO: CIBW_TEST_COMMAND_WINDOWS
           CIBW_BUILD_VERBOSITY: 1
 
       - name: Store artifacts
@@ -231,7 +171,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout cobyqa
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Setup Python
@@ -255,7 +195,7 @@ jobs:
     needs: [build_wheels, build_sdist]
 
     steps:
-      - name: Checkout cobyqa
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Setup Python

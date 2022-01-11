@@ -2,7 +2,7 @@
 # GitHub Actions configuration file for Codecov
 # See https://github.com/codecov/codecov-action for details
 
-name: Upload coverage reports
+name: coverage
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
         python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
 
     steps:
-      - name: Checkout cobyqa
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Setup Python
@@ -31,10 +31,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Generate coverage report
+      - name: Generate coverage reports
         run: bash build_tools/github/build_coverage.sh
 
-      - name: Upload coverage to Codecov
+      - name: Upload coverage reports
         uses: codecov/codecov-action@v2
         with:
           fail_ci_if_error: true

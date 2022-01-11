@@ -6,8 +6,8 @@ import sys
 
 from pkg_resources import parse_version
 
-if sys.version_info < (3, 6):
-    raise RuntimeError('Python version >= 3.6 required.')
+if sys.version_info < (3, 7):
+    raise RuntimeError('Python version >= 3.7 required.')
 
 import builtins
 from pathlib import Path
@@ -157,7 +157,6 @@ def setup_package():
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3 :: Only',
-            'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: 3.8',
             'Programming Language :: Python :: 3.9',
@@ -170,7 +169,7 @@ def setup_package():
         ],
         platforms=['Linux', 'macOS', 'Unix', 'Windows'],
         cmdclass=cmdclass,
-        python_requires='>=3.6',
+        python_requires='>=3.7',
         install_requires=min_deps.tag_to_pkgs['install'],
         package_data={'': ['*.pxd']},
         **extra_setuptools_args
