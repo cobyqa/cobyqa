@@ -1,7 +1,5 @@
 import numpy as np
 
-from ._nnls import nnls as _nnls
-
 
 def nnls(A, b, k=None, maxiter=None):
     """
@@ -55,5 +53,6 @@ def nnls(A, b, k=None, maxiter=None):
     if maxiter is None:
         maxiter = 3 * n
 
+    from ._nnls import nnls as _nnls
     x = _nnls(A, b, k, maxiter)  # noqa
     return np.array(x, dtype=float)
