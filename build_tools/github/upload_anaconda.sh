@@ -10,4 +10,4 @@ source activate upload
 conda install -y anaconda-client
 
 # Upload the artifacts and force replacement if the remote files already exist
-anaconda -t "$ANACONDA_TOKEN" upload --force -u "$ANACONDA_ORG" dist/artifact/*
+anaconda -t "$ANACONDA_TOKEN" upload --force -u ragonneau dist/artifact/*
