@@ -6,8 +6,8 @@ import sys
 
 from pkg_resources import parse_version
 
-if sys.version_info < (3, 6):
-    raise RuntimeError('Python version >= 3.6 required.')
+if sys.version_info < (3, 7):
+    raise RuntimeError('Python version >= 3.7 required.')
 
 import builtins
 from pathlib import Path
@@ -21,8 +21,8 @@ from distutils.command.clean import clean  # noqa
 from distutils.command.sdist import sdist  # noqa
 
 # This is a bit hackish: to prevent loading components that are not yet built,
-# we set a global variable to endow the main __init__ with with the ability to
-# detect whether it is loaded by the setup routine.
+# we set the following global variable to endow the main __init__ with the
+# ability to detect whether it is loaded by the setup routine.
 builtins.__COBYQA_SETUP__ = True
 
 import cobyqa  # noqa
@@ -95,7 +95,7 @@ cmdclass = {'clean': CleanCommand, 'sdist': sdist}
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
-    # from cobyqa._build_utils import _check_cython_version  # noqa
+    from cobyqa._build_utils import _check_cython_version  # noqa
     config = Configuration(None, parent_package, top_path)
     config.set_options(
         ignore_setup_xxx_py=True,
@@ -104,7 +104,7 @@ def configuration(parent_package='', top_path=None):
         quiet=True,
     )
 
-    # _check_cython_version()
+    _check_cython_version()
     config.add_subpackage('cobyqa')
 
     return config
@@ -153,11 +153,10 @@ def setup_package():
             'Operating System :: POSIX',
             'Operating System :: POSIX :: Linux',
             'Operating System :: Unix',
-            # 'Programming Language :: Cython',
+            'Programming Language :: Cython',
             'Programming Language :: Python',
             'Programming Language :: Python :: 3',
             'Programming Language :: Python :: 3 :: Only',
-            'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: 3.8',
             'Programming Language :: Python :: 3.9',
@@ -170,7 +169,7 @@ def setup_package():
         ],
         platforms=['Linux', 'macOS', 'Unix', 'Windows'],
         cmdclass=cmdclass,
-        python_requires='>=3.6',
+        python_requires='>=3.7',
         install_requires=min_deps.tag_to_pkgs['install'],
         package_data={'': ['*.pxd']},
         **extra_setuptools_args

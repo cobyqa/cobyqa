@@ -21,7 +21,6 @@ This section presents the mathematical frameworks underneath the subproblem solv
 .. toctree::
     :maxdepth: 1
 
-    linalg.altmov
     linalg.bvtcg
     linalg.cpqp
     linalg.lctcg

@@ -2,7 +2,7 @@
 # GitHub Actions configuration file for building wheels
 # See https://github.com/pypa/cibuildwheel for details
 
-name: Build wheels
+name: wheels
 
 on:
   push:
@@ -13,35 +13,165 @@ on:
 
 jobs:
   build_wheels:
-    name: Build wheel distributions
-    runs-on: ubuntu-latest
+    name: Build wheel distribution for cp${{ matrix.python }}-${{ matrix.platform_id }}-${{ matrix.manylinux_image }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 64-bit Windows
+          - os: windows-latest
+            python: 37
+            bitness: 64
+            platform_id: win_amd64
+          - os: windows-latest
+            python: 38
+            bitness: 64
+            platform_id: win_amd64
+          - os: windows-latest
+            python: 39
+            bitness: 64
+            platform_id: win_amd64
+          - os: windows-latest
+            python: 310
+            bitness: 64
+            platform_id: win_amd64
+
+          # 32-bit Windows
+          - os: windows-latest
+            python: 37
+            bitness: 32
+            platform_id: win32
+          - os: windows-latest
+            python: 38
+            bitness: 32
+            platform_id: win32
+          - os: windows-latest
+            python: 39
+            bitness: 32
+            platform_id: win32
+
+          # 64-bit Linux manylinux2010
+          - os: ubuntu-latest
+            python: 37
+            bitness: 64
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2010
+          - os: ubuntu-latest
+            python: 38
+            bitness: 64
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2010
+          - os: ubuntu-latest
+            python: 39
+            bitness: 64
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2010
+
+          # 32-bit Linux manylinux2010
+          - os: ubuntu-latest
+            python: 37
+            bitness: 32
+            platform_id: manylinux_i686
+            manylinux_image: manylinux2010
+          - os: ubuntu-latest
+            python: 38
+            bitness: 32
+            platform_id: manylinux_i686
+            manylinux_image: manylinux2010
+          - os: ubuntu-latest
+            python: 39
+            bitness: 32
+            platform_id: manylinux_i686
+            manylinux_image: manylinux2010
+
+          # 64-bit Linux manylinux2014
+          - os: ubuntu-latest
+            python: 37
+            bitness: 64
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
+          - os: ubuntu-latest
+            python: 38
+            bitness: 64
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
+          - os: ubuntu-latest
+            python: 39
+            bitness: 64
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
+          - os: ubuntu-latest
+            python: 310
+            bitness: 64
+            platform_id: manylinux_x86_64
+            manylinux_image: manylinux2014
+
+          # macOS x86_64
+          - os: macos-latest
+            bitness: 64
+            python: 37
+            platform_id: macosx_x86_64
+          - os: macos-latest
+            bitness: 64
+            python: 38
+            platform_id: macosx_x86_64
+          - os: macos-latest
+            bitness: 64
+            python: 39
+            platform_id: macosx_x86_64
+          - os: macos-latest
+            bitness: 64
+            python: 310
+            platform_id: macosx_x86_64
+
+          # macOS arm64
+          - os: macos-latest
+            bitness: 64
+            python: 38
+            platform_id: macosx_arm64
+          - os: macos-latest
+            bitness: 64
+            python: 39
+            platform_id: macosx_arm64
+          - os: macos-latest
+            bitness: 64
+            python: 310
+            platform_id: macosx_arm64
 
     steps:
-      - name: Checkout cobyqa
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Setup Python
         uses: actions/setup-python@v2
-        with:
-          python-version: '3.6'
 
-      - name: Build wheel distribution
+      - name: Build wheels
         run: bash build_tools/github/build_wheels.sh
-
-      - name: Test wheel distribution
-        run: bash build_tools/github/test_wheels.sh
+        env:
+          CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
+          CIBW_ARCHS: all
+          CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_I686_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_AARCH64_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_TEST_SKIP: "*-macosx_arm64"
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: bash build_tools/github/repair_windows_wheels.sh {wheel} {dest_dir}
+          CIBW_BEFORE_BUILD_WINDOWS: bash build_tools/github/prepare_windows.sh
+          CIBW_TEST_COMMAND: bash {project}/build_tools/github/test_wheels.sh
+          CIBW_BUILD_VERBOSITY: 1
 
       - name: Store artifacts
         uses: actions/upload-artifact@v2
         with:
-          path: dist/*.whl
+          path: wheelhouse/*.whl
 
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout cobyqa
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Setup Python
@@ -65,7 +195,7 @@ jobs:
     needs: [build_wheels, build_sdist]
 
     steps:
-      - name: Checkout cobyqa
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Setup Python

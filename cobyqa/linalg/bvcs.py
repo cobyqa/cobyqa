@@ -141,16 +141,16 @@ def bvcs(xpt, kopt, gq, curv, xl, xu, delta, *args, **kwargs):
 
         # Set the free components of the Cauchy step and all components of the
         # trial step. The Cauchy step may be scaled hereinafter.
-        ifree = np.abs(cc - bigstp) < tol * bigstp
-        cc[ifree] = -stplen * gq[ifree]
-        step[ifree] = np.maximum(xl[ifree], np.minimum(xu[ifree], cc[ifree]))
-        iopt = np.logical_not(ifree) & (np.abs(cc) < tol * bigstp)
-        step[iopt] = 0.0
-        ifixed = np.logical_not(ifree | iopt)
-        ixl = ifixed & (gq > 0.0)
-        step[ixl] = xl[ixl]
-        ixu = ifixed & np.logical_not(ixl)
-        step[ixu] = xu[ixu]
+        for i in range(n):
+            if abs(cc[i] - bigstp) < tol * bigstp:
+                cc[i] = -stplen * gq[i]
+                step[i] = np.maximum(xl[i], np.minimum(xu[i], cc[i]))
+            elif abs(cc[i]) < tol * bigstp:
+                step[i] = 0.0
+            elif (xl[i] > -np.inf and gq[i] > 0.0) or xu[i] == np.inf:
+                step[i] = xl[i]
+            else:
+                step[i] = xu[i]
         gqcc = np.inner(gq, cc)
 
         # Set the curvature of the knew-th Lagrange function along the Cauchy

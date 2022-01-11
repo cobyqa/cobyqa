@@ -96,9 +96,8 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
     if xopt.dtype.kind in np.typecodes['AllInteger']:
         xopt = np.asarray(xopt, dtype=float)
     gq = np.atleast_1d(gq).astype(float)
-    Aub = np.atleast_2d(Aub)
-    if Aub.dtype.kind in np.typecodes['AllInteger']:
-        Aub = np.asarray(Aub, dtype=float)
+    gini = np.copy(gq)
+    Aub = np.atleast_2d(Aub).astype(float)
     bub = np.atleast_1d(bub).astype(float)
     Aeq = np.atleast_2d(Aeq)
     if Aeq.dtype.kind in np.typecodes['AllInteger']:
@@ -142,8 +141,8 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
         bub = bub[ikeep]
         temp = temp[ikeep]
         mlub -= np.count_nonzero(izero)
-    Aub = Aub / temp[:, np.newaxis]
-    bub = bub / temp
+    Aub /= temp[:, np.newaxis]
+    bub /= temp
 
     # Set the initial active set to the empty set, and calculate the normalized
     # residuals of the constraints at the origin. The residuals of the linear
@@ -152,7 +151,7 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
     nact = np.array(0, dtype=int)
     iact = np.empty(n, dtype=int)
     rfac = np.zeros((n, n), dtype=float)
-    qfac, req, _ = qr(Aeq.T, pivoting=True)
+    qfac, req, peq = qr(Aeq.T, pivoting=True)
     temp = np.maximum(1.0, np.linalg.norm(req[:, :np.min(req.shape)], axis=0))
     mleq = np.count_nonzero(np.abs(np.diag(req)) >= tol * temp)
     rfac[:, :mleq] = req[:, :mleq]
@@ -164,10 +163,12 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
     # restarted and the iteration counter reinitialized.
     step = np.zeros_like(gq)
     sd = np.zeros_like(step)
+    mu1 = kwargs.get('mu1', 0.2)
     reduct = 0.0
     stepsq = 0.0
     alpbd = 1.0
     inext = 0
+    ncall = 0
     iterc = 0
     gamma = 0.0
     while iterc < n - mleq - nact or inext >= 0:
@@ -178,11 +179,12 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
             # by the Goldfarb and Idnani algorithm is scaled to have length
             # 0.2 * delta, so that it is allowed by the linear constraints.
             sdd = getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta,
-                         Aub)
+                         Aub, **kwargs)
             snorm = np.linalg.norm(sdd)
-            if snorm <= 0.2 * tiny * delta:
+            ncall += 1
+            if snorm <= mu1 * tiny * delta:
                 break
-            sdd *= 0.2 * delta / snorm
+            sdd *= mu1 * delta / snorm
 
             # If the modulus of the residual of an active constraint is
             # substantial, the search direction is the move towards the
@@ -219,7 +221,7 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
                         if i not in iact[:nact]:
                             asd = evalc(i, sd, Aub)
                             asdd = evalc(i, sdd, Aub)
-                            if asd > tiny * abs(resid[i] - asdd):
+                            if asd > max(tiny * abs(resid[i] - asdd), bdtol):
                                 temp = max((resid[i] - asdd) / asd, 0.0)
                                 gamma = min(gamma, temp)
                     gamma = min(gamma, 1.0)
@@ -281,10 +283,13 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
             if i not in iact[:nact]:
                 asd[i] = evalc(i, sd, Aub)
                 if abs(asd[i]) > tiny * abs(resid[i]):
-                    if alphf * asd[i] > resid[i]:
+                    if alphf * asd[i] > resid[i] and asd[i] > bdtol:
                         alphf = max(resid[i] / asd[i], 0.0)
                         inext = i
-        alpha = min(alpha, alphf)
+        if alphf < alpha:
+            alpha = alphf
+        else:
+            inext = -1
         alpha = max(alpha, alpbd)
         alpha = min((alpha, alphm, alpht))
         if iterc == 0:
@@ -300,25 +305,31 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
             for i in range(mlub + 2 * n):
                 if i not in iact[:nact]:
                     resid[i] = max(0.0, resid[i] - alpha * asd[i])
-            if iterc == 0:
-                resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
             reduct -= alpha * (sdgq + 0.5 * alpha * curv)
+        if iterc == 0:
+            resid[iact[:nact]] *= max(0.0, 1.0 - gamma)
+
+        # If the step that would be obtained in the unconstrained case is
+        # insubstantial, the truncated conjugate gradient method is stopped.
+        alphs = min(alphm, alpht)
+        if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
+            break
+
+        # Prevent infinite cycling due to computer rounding errors.
+        if ncall > min(10000, 100 * (mlub + 2 * n) * (n - mleq)):
+            break
 
         # Restart the calculations if a new constraint has been hit and either
         # it is a bound constraint or the distance from the current step to the
         # boundary of the trust region is larger than 0.2 * delta.
         if inext >= 0:
-            if inext >= mlub or stepsq <= 0.64 * delta ** 2.0:
+            if inext >= mlub or stepsq <= ((1.0 - mu1) * delta) ** 2.0:
                 continue
             break
 
-        # If the step reached the boundary of the trust region or if the step
-        # that would be obtained in the unconstrained case is insubstantial.,
-        # the truncated conjugate gradient method must be stopped.
+        # If the step reached the boundary of the trust region, the truncated
+        # conjugate gradient method is stopped.
         if alpha >= alpht:
-            break
-        alphs = min(alphm, alpht)
-        if -alphs * (sdgq + 0.5 * alphs * curv) <= 1e-2 * reduct:
             break
 
         # Calculate next search direction, which is conjugate to the previous
@@ -335,6 +346,13 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
             beta = np.inner(sdu, hsd) / curv
         sd = beta * sd - sdu
         alpbd = 0.0
+
+    # To prevent numerical difficulties emerging from computer rounding errors
+    # on ill-conditioned problems, the reduction is computed from scratch.
+    hstep = np.asarray(hessp(step, *args))
+    if hstep.dtype.kind in np.typecodes['AllInteger']:
+        hstep = np.asarray(hstep, dtype=float)
+    reduct = -np.inner(gini, step) - 0.5 * np.inner(step, hstep)
     if reduct <= 0.0:
         return np.zeros_like(step)
     return step

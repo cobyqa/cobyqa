@@ -2,7 +2,7 @@
 # GitHub Actions configuration file for CodeQL
 # See https://github.com/github/codeql-action for details
 
-name: CodeQL
+name: codeql
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
         language: [python]
 
     steps:
-      - name: Checkout cobyqa
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Initialize CodeQL

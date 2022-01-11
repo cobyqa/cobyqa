@@ -3,6 +3,7 @@ include LICENSE
 include MANIFEST.in
 include pyproject.toml
 include tox.ini
+recursive-include cobyqa *.pyx *.pxd
 recursive-include examples *.py
 
 # Add documentation to sdist-generated tarballs

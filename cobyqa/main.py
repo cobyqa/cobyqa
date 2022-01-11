@@ -352,6 +352,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     # interpolation point (in which case the initial models are not built).
     if not isinstance(args, tuple):
         args = (args,)
+    _set_default_constants(kwargs)
     struct = TrustRegion(fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options,
                          *args, **kwargs)
     if np.all(struct.ifix):
@@ -391,24 +392,32 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         xopt = np.copy(struct.xopt)
         is_trust_region_step = not struct.is_model_step
         nit += 1
-        test = 0.5 / np.sqrt(2.0) if struct.type in 'LO' else 0.5
+        test = kwargs.get('mu2')
+        if struct.type in 'LO':
+            test /= np.sqrt(2.0)
         if is_trust_region_step:
-            step = struct.trust_region_step(delta, **kwargs)
+            nstep, tstep = struct.trust_region_step(delta, **kwargs)
+            step = nstep + tstep
             snorm = np.linalg.norm(step)
             inew = struct.active_set(struct.xopt + step, **kwargs)
             if not np.array_equal(iact, inew):
-                test = 0.1999 / np.sqrt(2.0) if struct.type in 'LO' else 0.1999
+                test = kwargs.get('mu1') - 1e-4
+                if struct.type in 'LO':
+                    test /= np.sqrt(2.0)
                 iact = inew
             if snorm <= test * delta:
-                delta = 0.5 * delta
-                if delta <= 1.4 * rho:
+                delta *= kwargs.get('gamma1')
+                if delta <= kwargs.get('gamma3') * rho:
                     delta = rho
                 if delsav > rho:
                     struct.prepare_model_step(delta)
                     continue
         else:
-            step = struct.model_step(max(0.1 * delta, rho), **kwargs)
-            snorm = np.linalg.norm(step)
+            deltx = max(kwargs.get('gamma4') * delta, rho)
+            nstep = np.zeros_like(struct.xopt)
+            tstep = struct.model_step(deltx, **kwargs)
+            step = tstep
+            snorm = np.linalg.norm(tstep)
 
         if not is_trust_region_step or snorm > test * delta:
             # Evaluate the objective function, include the trial point in the
@@ -418,7 +427,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 break
             nfev += 1
             try:
-                fx, mopt, ratio = struct.update(step, **kwargs)
+                fx, mopt, ratio = struct.update(nstep, tstep, **kwargs)
             except RestartRequiredException:
                 continue
             except ZeroDivisionError:
@@ -446,19 +455,21 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
             # Update the trust-region radius.
             if is_trust_region_step:
-                if ratio <= 0.1:
-                    delta *= 0.5
-                elif ratio <= 0.7:
-                    delta = max(0.5 * delta, snorm)
+                if ratio <= kwargs.get('eta1'):
+                    delta *= kwargs.get('gamma1')
+                elif ratio <= kwargs.get('eta2'):
+                    delta = max(kwargs.get('gamma1') * delta, snorm)
                 else:
-                    delbd = np.sqrt(2.0) * delta
-                    delta = min(delbd, max(0.2 * delta, 2.0 * snorm))
-                if delta <= 1.4 * rho:
+                    delbd = kwargs.get('gamma2') * delta
+                    delta = kwargs.get('gamma1') * delta
+                    delta = max(delta, snorm / kwargs.get('gamma1'))
+                    delta = min(delta, delbd)
+                if delta <= kwargs.get('gamma3') * rho:
                     delta = rho
 
             # Attempt to replace the models by the alternative ones.
-            if is_trust_region_step:
-                if ratio > 1e-2:
+            if is_trust_region_step and delta <= rho:
+                if ratio > kwargs.get('eta3'):
                     itest = 0
                 else:
                     itest += 1
@@ -473,7 +484,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             # If a trust-region step has provided a sufficient decrease or if a
             # model-improvement step has just been computed, then the next
             # iteration is a trust-region step.
-            if not is_trust_region_step or ratio >= 0.1:
+            if not is_trust_region_step or ratio >= kwargs.get('eta1'):
                 struct.prepare_trust_region_step()
                 continue
 
@@ -490,16 +501,16 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
         # Update the lower bound on the trust-region radius.
         if rho > struct.rhoend:
-            delta = 0.5 * rho
-            if rho > 250.0 * struct.rhoend:
-                rho *= 0.1
-            elif rho <= 16.0 * struct.rhoend:
+            delta = kwargs.get('gamma1') * rho
+            if rho > kwargs.get('theta1') * struct.rhoend:
+                rho *= kwargs.get('gamma4')
+            elif rho <= kwargs.get('theta2') * struct.rhoend:
                 rho = struct.rhoend
             else:
                 rho = np.sqrt(rho * struct.rhoend)
             delta = max(delta, rho)
             struct.prepare_trust_region_step()
-            struct.reduce_penalty_coefficients()
+            struct.reduce_penalty()
             if struct.disp:
                 message = f'New trust-region radius: {rho}.'
                 _print(struct, fun.__name__, nfev, message)
@@ -542,6 +553,23 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     if struct.disp:
         _print(struct, fun.__name__, nfev, result.message)
     return result
+
+
+def _set_default_constants(kwargs):
+    kwargs.setdefault('gamma1', 0.5)
+    kwargs.setdefault('gamma2', np.sqrt(2.0))
+    kwargs.setdefault('gamma3', 1.4)
+    kwargs.setdefault('gamma4', 0.1)
+    kwargs.setdefault('eta1', 0.1)
+    kwargs.setdefault('eta2', 0.7)
+    kwargs.setdefault('eta3', 1e-2)
+    kwargs.setdefault('theta1', 250.0)
+    kwargs.setdefault('theta2', 16.0)
+    kwargs.setdefault('mu1', 0.2)
+    kwargs.setdefault('mu2', 0.5)
+    kwargs.setdefault('nu1', 1.5)
+    kwargs.setdefault('nu2', 2.0)
+    kwargs.setdefault('xi', 0.8)
 
 
 def _print(problem, fun, nf, message):

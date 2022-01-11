@@ -37,8 +37,9 @@ Dependencies
 
 The following Python packages are required by COBYQA:
 
-* `NumPy <https://www.numpy.org>`_ 1.13.3 or higher, and
-* `SciPy <https://www.scipy.org>`_ 1.1.0 or higher.
+* `NumPy <https://www.numpy.org>`_ 1.13.3 or higher,
+* `SciPy <https://www.scipy.org>`_ 1.1.0 or higher, and
+* `Cython <https://cython.org>`_ 0.29.23 or higher
 
 User installation
 -----------------

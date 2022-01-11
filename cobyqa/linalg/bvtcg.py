@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_
 
-from cobyqa.linalg.utils import get_bdtol
+from .utils import get_bdtol
 
 
 def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):

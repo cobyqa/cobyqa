@@ -22,13 +22,16 @@ def rotg(a, b):
     float
         Sine of the angle of rotation.
     """
-    if abs(a) > abs(b):
-        sigma = np.sign(a)
-    else:
-        sigma = np.sign(b)
-    r = sigma * np.hypot(a, b)
-    blas_rotg, = get_blas_funcs(('rotg',), (a, b))
-    c, s = blas_rotg(a, b)
+    # if abs(a) > abs(b):
+    #     sigma = np.sign(a)
+    # else:
+    #     sigma = np.sign(b)
+    # r = sigma * np.hypot(a, b)
+    # blas_rotg, = get_blas_funcs(('rotg',), (a, b))
+    # c, s = blas_rotg(a, b)
+    r = np.hypot(a, b)
+    c = a / r
+    s = b / r
     return r, c, s
 
 
@@ -51,6 +54,9 @@ def rot(x, y, c, s):
     xr, yr = blas_rot(x, y, c, s)
     np.copyto(x, xr)
     np.copyto(y, yr)
+    # temp = c * x + s * y
+    # y[:] = c * y - s * x
+    # x[:] = temp
 
 
 def get_bdtol(xl, xu, **kwargs):
@@ -114,7 +120,8 @@ def get_lctol(A, b, **kwargs):
     return kwargs.get('lctol', lctol)
 
 
-def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
+def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args,
+           **kwargs):
     """
     Pick the current active set.
 
@@ -152,14 +159,8 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
         columns are the gradients of the active constraints, the first mleq
         constraints being the linear equality constraints. Only the first
         ``mleq + nact`` columns of rfac are meaningful.
-    delta : float or list of 2-tuple
-        Description of the set in which the step will be projected before
-        assessing its feasibility. If a float is provided, the step will be
-        projected into the ball centered at the origin of radius `delta`.
-        Otherwise, if `delta` is of the form ``[(i1, d1), (i2, d2), ...]``, it
-        is understood that the first ``i1`` coordinates are bounded in Euclidean
-        norm by ``d1``, the following ``i2`` coordinates are bounded in
-        Euclidean norm by ``d2``, etc.
+    delta : float
+        Current trust-region radius.
     *args : tuple, optional
         Parameters to forward to the constraint function.
 
@@ -184,8 +185,7 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
     n = gq.size
     tol = 10.0 * eps * n
     gqtol = tol * np.max(np.abs(gq), initial=1.)
-    deltx = delta if isinstance(delta, (float, np.floating)) else delta[0][1]
-    tdel = 0.2 * deltx
+    tdel = kwargs.get('mu1', 0.2) * delta
 
     # Remove from the current active set the constraints that are not considered
     # active anymore, that is those whose residuals exceed tdel.
@@ -213,31 +213,36 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
     # Start the iterative procedure. The calculations must be stopped if
     # nact + mleq equals n, as n linearly independent constraints would have
     # been found, which would make of the origin the only feasible point.
-    stepsq = np.inf
+    stepsq = 2.0 * np.inner(gq, gq)
     while nact < n - mleq:
         # Set the new search direction. It is the vector that minimizes the
         # Euclidean norm of gq + step, subject to the active constraints. The
         # calculations are stopped if this vector is zero, of if its norm
-        # exceeds the norm of the previous direction.
-        temp = np.dot(qfac[:, mleq + nact:].T, gq)
-        step = -np.dot(qfac[:, mleq + nact:], temp)
+        # exceeds the norm of the previous direction. In the original Fortran
+        # code of GETACT, Powell stopped the computations whenever
+        # ssq >= stepsq, returning the zero vector. However, such a comparison
+        # is subjected to computer rounding errors (observed on the CUTEst
+        # problem FEEDLOC). This property should be observed from a theoretical
+        # standpoint, as ssq could be evaluated as
+        #
+        # >>> ssq = 0.0
+        # >>> for j in range(mleq + nact, n):
+        # ...     ssq += np.inner(qfac[:, j], gq) ** 2.0
+        #
+        # by using the orthogonality property of qfac. However, this
+        # orthogonality is only approximate in practice.
+        temp = np.dot(qfac[:, mleq + nact:].T, -gq)
+        step = np.dot(qfac[:, mleq + nact:], temp)
         ssq = np.inner(step, step)
-        if ssq >= stepsq or np.sqrt(ssq) <= gqtol:
+        if ssq - stepsq >= gqtol or np.sqrt(ssq) <= gqtol:
             return np.zeros_like(step)
-        else:
-            stepsq = ssq
+        stepsq = ssq
 
         # Select the index of the most violated constraint, if any. The step
         # that is considered in these calculations is the one of length delta
+        # that is considered in these calculations is the one of length delta
         # along the direction in the vector step.
-        if isinstance(delta, (float, np.floating)):
-            test = np.sqrt(ssq) / delta
-        else:
-            isav = 0
-            test = 0.0
-            for i, radius in delta:
-                test = max(test, np.linalg.norm(step[isav:i]) / radius)
-                isav = i
+        test = np.sqrt(ssq) / delta
         inext = -1
         violmx = 0.0
         for i in range(resid.size):
@@ -251,7 +256,7 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
         # previously calculated is too small, as a positive value of violmx
         # might then be caused by computer rounding errors.
         ctol = 0.0
-        if 0.0 < violmx < 1e-2 * deltx:
+        if 0.0 < violmx < 1e-2 * delta:
             for k in range(nact):
                 ctol = max(ctol, abs(evalc(iact[k], step, *args)))
         ctol *= 10.0
@@ -288,19 +293,15 @@ def getact(gq, evalc, resid, iact, mleq, nact, qfac, rfac, delta, *args):
                 temp = -np.inner(rfac[kleq, kleq + 1:mleq + nact], vmu[k + 1:])
                 vmu[k] = temp / rfac[kleq, kleq]
             vmult = violmx
-            imult = np.abs(vmu) > tiny * np.abs(vlam[:nact])
-            imult = imult & (vlam[:nact] >= vmult * vmu)
-            imult[-1] = False
-            k = -1
-            if np.any(imult):
-                mult = np.copy(vlam[:nact])
-                mult[imult] = mult[imult] / vmu[imult]
-                mult[np.logical_not(imult)] = np.inf
-                k = np.argmin(mult)
-                vmult = mult[k]
+            ic = -1
+            for k in range(nact - 1):
+                if vlam[k] >= vmult * vmu[k]:
+                    if abs(vmu[k]) > tiny * abs(vlam[k]):
+                        ic = k
+                        vmult = vlam[k] / vmu[k]
             vlam[:nact] -= vmult * vmu
-            if k >= 0:
-                vlam[k] = 0.0
+            if ic >= 0:
+                vlam[ic] = 0.0
                 violmx = max(violmx - vmult, 0.0)
             else:
                 violmx = 0.0
@@ -353,7 +354,7 @@ def rmact(k, mleq, nact, qfac, rfac, *args):
         hval, cosv, sinv = rotg(cval, sval)
         slicing = np.s_[j:mleq + nact]
         rot(rfac[j + 1, slicing], rfac[j, slicing], cosv, sinv)
-        rfac[[j, j + 1], j:mleq + nact] = rfac[[j + 1, j], j:mleq + nact]
+        rfac[[j, j + 1], slicing] = rfac[[j + 1, j], slicing]
         rfac[:j + 2, [j, j + 1]] = rfac[:j + 2, [j + 1, j]]
         rfac[j, j] = hval
         rfac[j + 1, j] = 0.0

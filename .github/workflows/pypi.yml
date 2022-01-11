@@ -2,7 +2,7 @@
 # GitHub Actions configuration file for uploading wheels to PyPI
 # See https://github.com/pypa/gh-action-pypi-publish for details
 
-name: Publish to PyPI
+name: publish
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout cobyqa
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Setup Python
