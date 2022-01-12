@@ -200,7 +200,7 @@ class TestNNLS:
         assert_(x.size == n)
 
         # Ensure that the KKT conditions approximately hold at the solution.
-        lctol = 10. * get_lctol(A, b)
+        lctol = 1e3 * get_lctol(A, b)
         grad = np.dot(A.T, np.dot(A, x) - b)
         assert_array_less_equal(np.abs(grad[k:]), lctol)
         assert_array_less_equal(np.abs(grad[:k] * x[:k]), lctol)

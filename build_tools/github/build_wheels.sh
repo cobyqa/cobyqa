@@ -3,7 +3,7 @@
 set -e
 set -x
 
-if [[ "$RUNNER_OS" == "macOS" ]]; then
+if [[ "$RUNNER_OS" == macOS ]]; then
     if [[ "$CIBW_BUILD" == *-macosx_arm64 ]]; then
         # ARM64 builds must cross compile because CI runs on x64
         export PYTHON_CROSSENV=1

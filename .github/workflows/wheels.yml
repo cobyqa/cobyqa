@@ -13,7 +13,7 @@ on:
 
 jobs:
   build_wheels:
-    name: Build wheel distribution for cp${{ matrix.python }}-${{ matrix.platform_id }}-${{ matrix.manylinux_image }}
+    name: Build wheel for cp${{ matrix.python }}-${{ matrix.platform_id }}-${{ matrix.manylinux_image }}
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -179,7 +179,7 @@ jobs:
           CIBW_MANYLINUX_I686_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_MANYLINUX_AARCH64_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_ENVIRONMENT: PIP_DEFAULT_TIMEOUT=3600
-          CIBW_TEST_SKIP: "*-macosx_arm64"
+          CIBW_TEST_SKIP: "{*-*linux_{aarch64,ppc64le,s390x},*-macosx_arm64}"
           CIBW_TEST_COMMAND: bash {project}/build_tools/github/test_wheels.sh
           CIBW_BUILD_VERBOSITY: 1
 
