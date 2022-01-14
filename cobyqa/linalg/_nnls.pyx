@@ -71,21 +71,13 @@ def nnls(double[::1, :] a, double[::1] b, int k, int maxiter):
 
     # Allocate the working arrays required by the GELSY driver.
     cdef double tiny = np.finfo(np_float64).tiny
-    cdef int[::1] jpvt = np_empty(n, dtype=np_int32)
     cdef double rcond = np.finfo(np_float64).eps * max(m, n)
-    cdef double temp
-    cdef int info
-    temp, info = dgelsy_lwork(m, n, 1, rcond)
-    if info != 0:
-        raise ValueError(f'Internal work array size computation failed: {info}')
-    cdef int lwork = int(temp)
-    cdef double[::1] work = np_empty(max(1, lwork), dtype=np_float64)
 
     # Start the iterative procedure, and iterate until the approximate KKT
     # conditions hold for the current vector of variables.
     cdef int iterc = 0
     cdef double lctol = get_lctol(a, b)
-    cdef double gamma
+    cdef double gamma, temp
     cdef Py_ssize_t i, inew
     while not check_kkt(grad, iact, lctol):
         # Remove from the working set the least-gradient coordinate. The case
@@ -99,7 +91,7 @@ def nnls(double[::1, :] a, double[::1] b, int k, int maxiter):
             nact -= 1
 
         # Solve the least-squares problem on the inactive columns.
-        lstsq(a, b, iact, nact, jpvt, rcond, lwork, work, xact)
+        lstsq(a, b, iact, nact, rcond, xact)
 
         # Increase the working set if necessary.
         while not check_act(xact, iact):
@@ -130,7 +122,7 @@ def nnls(double[::1, :] a, double[::1] b, int k, int maxiter):
                     nact += 1
 
             # Solve the least-squares problem on the inactive columns.
-            lstsq(a, b, iact, nact, jpvt, rcond, lwork, work, xact)
+            lstsq(a, b, iact, nact, rcond, xact)
         else:
             # Continue the computations if any progress has been made, as the
             # inner loop terminated correctly. If the relative change of the
@@ -211,7 +203,7 @@ cdef bint check_act(double[::1] x, bint[::1] iact):
             break
     return actc
 
-cdef void lstsq(double[::1, :] a, double[::1] b, bint[::1] iact, int nact, int[::1] jpvt, double rcond, int lwork, double[::1] work, double[::1] x):
+cdef void lstsq(double[::1, :] a, double[::1] b, bint[::1] iact, int nact, double rcond, double[::1] x):
     """
     Compute the least-squares solution to the equation ``a @ x = b`` subject to
     ``x[i] = 0`` for any ``i <= iact.shape[0]`` such that ``iact[i] = True``.
@@ -227,20 +219,8 @@ cdef void lstsq(double[::1, :] a, double[::1] b, bint[::1] iact, int nact, int[:
     nact : int
         Number of constraints. It must equals ``np.count_nonzero(iact)``, but
         must be provided for numerical efficiency.
-    jpvt : memoryview of numpy.ndarray, shape (n,)
-        Working array required by the GELSY driver. Since this subroutine may be
-        invoked iteratively, it must be provided for numerical efficiency, to 
-        avoid allocating the array at each call.
     rcond : double
         Tolerance to determine the effective rank of `a`.
-    lwork : int
-        Dimension of the working array `work`. Although it might be evaluated 
-        (and even possibly reduced) in the subroutine, it must be provided for 
-        numerical efficiency, as its evaluation is made in Python.
-    work : memoryview of numpy.ndarray, shape (max(1, lwork),)
-        Working array required by the GELSY driver. Since this subroutine may be
-        invoked iteratively, it must be provided for numerical efficiency, to 
-        avoid allocating the array at each call.
     x : memoryview of numpy.ndarray, shape (n,)
         The constrained least-squares solution array.
     """
@@ -267,8 +247,15 @@ cdef void lstsq(double[::1, :] a, double[::1] b, bint[::1] iact, int nact, int[:
     # Solve the unconstrained linear least-squares problem using the GELSY
     # driver, which builds a complete orthogonal factorization with column
     # pivoting of the matrix afree.
-    cdef int info, rank
-    jpvt[:] = 0
+    cdef double temp
+    cdef int info
+    temp, info = dgelsy_lwork(m, nfree, 1, rcond)
+    if info != 0:
+        raise ValueError(f'Internal work array size computation failed: {info}')
+    cdef int lwork = int(temp)
+    cdef int[::1] jpvt = np_zeros(n, dtype=np_int32)
+    cdef double[::1] work = np_empty(max(1, lwork), dtype=np_float64)
+    cdef int rank
     dgelsy(&m, &nfree, &nrhs, &afree[0, 0], &m, &xfree[0, 0], &ldb, &jpvt[0], &rcond, &rank, &work[0], &lwork, &info)
     if info != 0:
         raise ValueError(f'{-info}-th argument of DGELSY received an illegal value')
