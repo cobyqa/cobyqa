@@ -148,7 +148,7 @@ cdef bint check_kkt(double[::1] grad, bint[::1] iact, double tol):
     """
     Check whether the approximate KKT conditions hold. The primal feasibility
     condition is assumed and is not checked by the function.
-    
+
     Parameters
     ----------
     grad : memoryview of numpy.ndarray, shape (n,)
@@ -180,7 +180,7 @@ cdef bint check_kkt(double[::1] grad, bint[::1] iact, double tol):
 cdef bint check_act(double[::1] x, bint[::1] iact):
     """
     Check whether any variable must be included in the working set.
-    
+
     Parameters
     ----------
     x : memoryview of numpy.ndarray, shape (n,)
@@ -207,7 +207,7 @@ cdef void lstsq(double[::1, :] a, double[::1] b, bint[::1] iact, int nact, doubl
     """
     Compute the least-squares solution to the equation ``a @ x = b`` subject to
     ``x[i] = 0`` for any ``i <= iact.shape[0]`` such that ``iact[i] = True``.
-    
+
     Parameters
     ----------
     a : memoryview of numpy.ndarray, shape (m, n)

@@ -2,6 +2,7 @@
 import inspect
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 
 # -- Path setup ---------------------------------------------------------------
@@ -18,8 +19,8 @@ sys.path.insert(0, str(BASE_DIR))
 import cobyqa  # noqa
 
 project = 'COBYQA'
-copyright = '2021, Tom M. Ragonneau'
 author = 'Tom M. Ragonneau'
+copyright = f'2021\u2013{datetime.now().year}, {author}'
 
 # The short version (including .devX, rcX, b1 suffixes if present).
 version = re.sub(r'(\d+\.\d+)\.\d+(.*)', r'\1\2', cobyqa.__version__)
