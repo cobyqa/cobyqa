@@ -167,11 +167,11 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Setup Python
-        if: ${{ runner.arch == 'X86' || runner.arch == 'X64' }}
+        if: ${{ matrix.platform_id != 'manylinux_aarch64' }}
         uses: actions/setup-python@v2
 
       - name: Build wheels on manylinux_aarch64
-        if: ${{ matrix.platform_id == 'manylinux_aarch64'}}
+        if: ${{ matrix.platform_id == 'manylinux_aarch64' }}
         run: bash build_tools/github/build_wheels.sh
         env:
           CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
@@ -182,7 +182,7 @@ jobs:
           CIBW_BUILD_VERBOSITY: 1
 
       - name: Build wheels on other platforms
-        if: ${{ matrix.platform_id != 'manylinux_aarch64'}}
+        if: ${{ matrix.platform_id != 'manylinux_aarch64' }}
         run: bash build_tools/github/build_wheels.sh
         env:
           CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform_id }}
