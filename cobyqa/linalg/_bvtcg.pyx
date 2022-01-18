@@ -18,6 +18,40 @@ from numpy import float64 as np_float64
 from ._utils cimport inner, max_array, max_abs_array, min_array
 
 def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double[::1] xu, double delta, bint debug):
+    """
+    Minimize approximately a quadratic function subject to bound and
+    trust-region constraints using a truncated conjugate gradient.
+
+    Parameters
+    ----------
+    xopt : memoryview of numpy.ndarray, shape (n,)
+        Point around which the Taylor expansions of the quadratic function is
+        defined.
+    gq : memoryview of numpy.ndarray, shape (n,)
+        Gradient of the quadratic function at `xopt`.
+    hessp : object
+        Function providing the product of the Hessian matrix of the quadratic
+        function with any vector.
+
+            ``hessp(x) -> numpy.ndarray, shape(n,)``
+
+        where ``x`` is an array with shape (n,). It is assumed that the Hessian
+        matrix implicitly defined by `hessp` is symmetric, but not necessarily
+        positive semidefinite.
+    xl : memoryview of numpy.ndarray, shape (n,)
+        Lower-bound constraints on the decision variables.
+    xu : memoryview of numpy.ndarray, shape (n,)
+        Upper-bound constraints on the decision variables.
+    delta : double
+        Upper bound on the length of the step from `xopt`.
+    debug : bint
+        Whether to make debugging tests during the execution.
+
+    Returns
+    -------
+    memoryview of numpy.ndarray, shape (n,)
+        Step from `xopt` towards the estimated point.
+    """
     cdef int n = gq.shape[0]
 
     # Shift the bounds to carry out all calculations at the origin.

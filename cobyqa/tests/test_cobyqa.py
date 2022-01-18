@@ -16,13 +16,6 @@ class TestBase(ABC):
         return np.sum(fvx)
 
     @staticmethod
-    def dixonpr(x):
-        x = np.asarray(x)
-        n = x.size
-        ssq = np.sum(np.arange(2, n + 1) * (2. * x[1:] ** 2.0 - x[:-1]) ** 2.0)
-        return (x[0] - 1.0) ** 2.0 + ssq
-
-    @staticmethod
     def perm0d(x):
         x = np.asarray(x)
         n = x.size
@@ -119,7 +112,6 @@ class TestBase(ABC):
     def x0(self, fun, n):
         return {
             'arwhead': np.zeros(n),
-            'dixonpr': np.ones(n),
             'perm0d': np.ones(n),
             'permd': np.ones(n),
             'powell': np.ones(n),
@@ -137,7 +129,6 @@ class TestBase(ABC):
     def xl(self, fun, n):
         return {
             'arwhead': -5.12 * np.ones(n),
-            'dixonpr': -10.0 * np.ones(n),
             'perm0d': -n * np.ones(n),
             'permd': -n * np.ones(n),
             'powell': -4.0 * np.ones(n),
@@ -155,7 +146,6 @@ class TestBase(ABC):
     def xu(self, fun, n):
         return {
             'arwhead': 5.12 * np.ones(n),
-            'dixonpr': 10.0 * np.ones(n),
             'perm0d': n * np.ones(n),
             'permd': n * np.ones(n),
             'powell': 3.0 * np.ones(n),
@@ -173,7 +163,6 @@ class TestBase(ABC):
     def x_sol(self, fun, n):
         return {
             'arwhead': np.r_[np.ones(n - 1), 0.0],
-            'dixonpr': 2.0 ** (2.0 ** (1.0 - np.arange(1, n + 1)) - 1.0),
             'perm0d': 1.0 / np.arange(1, n + 1),
             'permd': np.arange(1, n + 1),
             'powell': np.zeros(n),
@@ -191,7 +180,6 @@ class TestBase(ABC):
     def f_sol(self, fun, n):
         return {
             'arwhead': 0.0,
-            'dixonpr': 0.0,
             'perm0d': 0.0,
             'permd': 0.0,
             'powell': 0.0,
@@ -209,8 +197,8 @@ class TestBase(ABC):
 class TestUnconstrained(TestBase):
 
     @pytest.mark.parametrize('n', [2, 5, 10])
-    @pytest.mark.parametrize('fun', ['arwhead', 'dixonpr', 'power', 'rosen',
-                                     'rothyp', 'sphere', 'stybtang', 'trid'])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'rosen', 'rothyp',
+                                     'sphere', 'stybtang', 'trid'])
     def test_simple(self, fun, n, x0, x_sol, f_sol):
         res = minimize(
             fun=getattr(self, fun),
@@ -220,8 +208,8 @@ class TestUnconstrained(TestBase):
         self.assert_optimize(res, n, x_sol, f_sol)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
-    @pytest.mark.parametrize('fun', ['arwhead', 'dixonpr', 'power', 'rosen',
-                                     'rothyp', 'sphere', 'stybtang', 'trid'])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'rosen', 'rothyp',
+                                     'sphere', 'stybtang', 'trid'])
     def test_target(self, fun, n, x0, x_sol, f_sol):
         res = minimize(
             fun=getattr(self, fun),
@@ -229,6 +217,43 @@ class TestUnconstrained(TestBase):
             options={'debug': True, 'target': f_sol + 1.0},
         )
         self.assert_optimize(res, n, x_sol, f_sol, 1)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'rosen', 'rothyp',
+                                     'sphere', 'stybtang', 'trid'])
+    def test_options(self, fun, n, x0, x_sol, f_sol):
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            options={'rhobeg': 1.5, 'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol)
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            options={'rhoend': 1e-7, 'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol)
+        npt_max = (n + 1) * (n + 2) // 2
+        npt_min = min(n + 2, npt_max)
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            options={'npt': max(npt_min, min(npt_max, n + 3)), 'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol)
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            options={'npt': max(npt_min, min(npt_max, 2 * n + 3)), 'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol)
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            options={'maxfev': 300 * n, 'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol)
 
 
 class TestBoundConstrained(TestBase):
@@ -266,8 +291,8 @@ class TestBoundConstrained(TestBase):
         }.get(fun)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
-    @pytest.mark.parametrize('fun', ['arwhead', 'dixonpr', 'power', 'rosen',
-                                     'rothyp', 'sphere', 'stybtang', 'trid'])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'rosen', 'rothyp',
+                                     'sphere', 'stybtang', 'trid'])
     def test_simple(self, fun, n, x0, xl, xu, x_sol, f_sol):
         res = minimize(
             fun=getattr(self, fun),
@@ -279,8 +304,8 @@ class TestBoundConstrained(TestBase):
         self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
-    @pytest.mark.parametrize('fun', ['arwhead', 'dixonpr', 'power', 'rosen',
-                                     'rothyp', 'sphere', 'stybtang', 'trid'])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'rosen', 'rothyp',
+                                     'sphere', 'stybtang', 'trid'])
     def test_target(self, fun, n, x0, xl, xu, x_sol, f_sol):
         res = minimize(
             fun=getattr(self, fun),
@@ -304,8 +329,8 @@ class TestBoundConstrained(TestBase):
         self.assert_optimize(res, n, x_sol2, f_sol2, maxcv=True)
 
     @pytest.mark.parametrize('n', [2, 5, 10])
-    @pytest.mark.parametrize('fun', ['arwhead', 'dixonpr', 'power', 'rosen',
-                                     'rothyp', 'sphere', 'stybtang', 'trid'])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'rosen', 'rothyp',
+                                     'sphere', 'stybtang', 'trid'])
     def test_fixed(self, fun, n, x0, xl):
         res = minimize(
             fun=getattr(self, fun),

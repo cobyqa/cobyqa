@@ -43,16 +43,13 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
 
     Other Parameters
     ----------------
-    bdtol : float, optional
-        Tolerance for comparisons on the bound constraints (the default is
-        ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
     debug : bool, optional
         Whether to make debugging tests during the execution, which is
         not recommended in production (the default is False).
 
     Raises
     ------
-    AssertionError
+    ValueError
         The vector `xopt` is not feasible (only in debug mode).
 
     See Also

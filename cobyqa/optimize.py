@@ -755,7 +755,6 @@ class TrustRegion:
         str
             Type of the nonlinear optimization problem:
                 - U : the problem is unconstrained.
-                - X : the problem's only constraints are fixed variables.
                 - B : the problem's only constraints are bounds constraints.
                 - L : the problem's constraints are linear.
                 - O : the problem's constraints general.
@@ -1990,7 +1989,7 @@ class TrustRegion:
         xnew = self.xopt + step
         mx, mmx = self(xnew, fx, cubx, ceqx, True)
         mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
-        if self.type not in 'UXB' and not self.is_model_step:
+        if self.type not in 'UB' and not self.is_model_step:
             gopt = self.model_obj_grad(self.xopt)
             hstep = self.model_lag_hessp(step)
             reduct = np.inner(gopt, step) + 0.5 * np.inner(step, hstep)
@@ -2107,7 +2106,7 @@ class TrustRegion:
         # trust-region radius is shrunk to leave some elbow room to the
         # tangential subproblem for the computations whenever the trust-region
         # subproblem is infeasible.
-        if self.type in 'UXB':
+        if self.type in 'UB':
             nstep = np.zeros_like(self.xopt)
             ssq = 0.0
         else:
@@ -2128,7 +2127,7 @@ class TrustRegion:
         bub = np.maximum(bub, np.dot(aub, xopt))
         beq = np.dot(aeq, xopt)
         gopt = self.model_obj_grad(self.xopt) + self.model_lag_hessp(nstep)
-        if self.type in 'UXB':
+        if self.type in 'UB':
             tstep = bvtcg(xopt, gopt, self.model_obj_hessp, self.xl, self.xu,
                           delta, **kwargs)
         else:
@@ -2500,12 +2499,10 @@ class Models:
                 self._ceq_alt[i] = copy.deepcopy(self._ceq[i])
 
         # Determine the type of the problem.
-        eps = np.finfo(float).eps
+        tol = 10.0 * np.finfo(float).eps * n
         if self.mlub + self.mleq + self.mnlub + self.mnleq == 0:
             if np.all(self.xl == -np.inf) and np.all(self.xu == np.inf):
                 self._type = 'U'
-            elif np.all(self.xu - self.xl <= 10.0 * eps * n * np.abs(self.xu)):
-                self._type = 'X'
             else:
                 self._type = 'B'
         else:
@@ -2882,7 +2879,6 @@ class Models:
         str
             Type of the nonlinear optimization problem:
                 - U : the problem is unconstrained.
-                - X : the problem's only constraints are fixed variables.
                 - B : the problem's only constraints are bounds constraints.
                 - L : the problem's constraints are linear.
                 - O : the problem's constraints general.
