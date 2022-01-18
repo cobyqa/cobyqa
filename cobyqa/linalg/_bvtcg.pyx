@@ -48,7 +48,7 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
     # component is fixed by the upper bound.
     cdef double[::1] step = np_zeros(n, dtype=np_float64)
     cdef int[::1] xbdi = np_zeros(n, dtype=np_int32)
-    cdef int nact
+    cdef int nact = 0
     for i in range(n):
         if step[i] <= xl[i] and gq[i] >= 0.0:
             xbdi[i] = -1
@@ -230,6 +230,7 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
             # variable has reached a new bound.
             angbd = 1.0
             inew = -1
+            xsav = 0
             for i in range(n):
                 if xbdi[i] == 0:
                     tempa = step[i] - xl[i]
@@ -244,7 +245,6 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
                         inew = i
                         xbdi[inew] = 1
                         continue
-                    xsav = 0
                     ssq = step[i] ** 2.0 + sd[i] ** 2.0
                     temp = ssq - xl[i] ** 2.0
                     if temp > 0.0:
@@ -285,7 +285,7 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
             isav = -1
             ialt = int(17 * angbd + 3.1)
             for i in range(ialt):
-                angt = angbd * float(i) / float(ialt)
+                angt = angbd * float(i + 1) / float(ialt)
                 sinv = 2.0 * angt / (1.0 + angt ** 2.0)
                 temp = sdhsd + angt * (sthst * angt - 2.0 * sthsd)
                 rednew = sinv * (gdstep * angt - sdgq - 0.5 * sinv * temp)
@@ -294,7 +294,7 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
                     rdprev = redsav
                     isav = i
                 elif i == isav + 1:
-                    rdnext = rdprev
+                    rdnext = rednew
                 redsav = rednew
 
             # Set the sine and cosine of the angle of the alternative iteration,
