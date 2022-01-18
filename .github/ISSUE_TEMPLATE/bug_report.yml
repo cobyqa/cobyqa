@@ -1,3 +1,6 @@
+# .github/ISSUE_TEMPLATE/bug_report.yml
+# Bug report issue form
+
 name: Bug Report
 description: Report a bug.
 labels: ['bug']

@@ -1,5 +1,7 @@
 # cython: language_level=3
 
-cdef double get_tol(int n)
-cdef double get_bdtol(double[::1] xl, double[::1] xu)
-cdef double get_lctol(double[::1, :] a, double[::1] b)
+cdef void dot(double[::1, :] a, double[::1] b, double[::1] out, char* trans, double alpha, double beta)
+cdef double inner(double[::1] a, double[::1] b)
+cdef double max_array(double[::1] x)
+cdef double max_abs_array(double[::1] x, double initial)
+cdef double min_array(double[::1] x)

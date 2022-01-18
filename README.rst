@@ -5,9 +5,6 @@ COBYQA: derivative-free solver for nonlinear constrained optimization
 .. image:: https://readthedocs.org/projects/cobyqa/badge/?version=latest
     :target: https://cobyqa.readthedocs.io/en/latest/?badge=latest
 
-.. image:: https://github.com/ragonneau/cobyqa/actions/workflows/codeql.yml/badge.svg
-    :target: https://github.com/ragonneau/cobyqa/actions/workflows/codeql.yml
-
 .. image:: https://github.com/ragonneau/cobyqa/actions/workflows/wheels.yml/badge.svg
     :target: https://github.com/ragonneau/cobyqa/actions/workflows/wheels.yml
 

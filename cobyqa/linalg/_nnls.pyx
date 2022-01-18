@@ -16,11 +16,10 @@ from numpy import ones as np_ones
 from numpy import int32 as np_int32
 from numpy import float64 as np_float64
 
-from scipy.linalg.cython_blas cimport ddot, dgemv  # noqa
 from scipy.linalg.cython_lapack cimport dgelsy  # noqa
 from scipy.linalg.lapack import dgelsy_lwork  # noqa
 
-from ._utils cimport get_lctol
+from ._utils cimport dot, inner, max_abs_array
 
 def nnls(double[::1, :] a, double[::1] b, int k, int maxiter):
     """
@@ -51,32 +50,29 @@ def nnls(double[::1, :] a, double[::1] b, int k, int maxiter):
     # Initialize the working arrays at the origin of the calculations.
     cdef bint[::1] iact = np_ones(k, dtype=np_int32)
     cdef double[::1] x = np_zeros(n, dtype=np_float64)
-    cdef int incx = x.strides[0] // x.itemsize
     cdef double[::1] xact = np_empty(n, dtype=np_float64)
     cdef double[::1] resid = np_empty(m, dtype=np_float64)
     resid[:] = b
 
-    # Evaluate the objective function of the linear least-squares problem at the
-    # origin of the calculations.
-    cdef int incr = resid.strides[0] // resid.itemsize
-    cdef double lsx = 0.5 * ddot(&m, &resid[0], &incr, &resid[0], &incr)
+    # Evaluate the objective function of the linear least-squares problem.
+    cdef double lsx = 0.5 * inner(resid, resid)
 
     # Evaluate the gradient of the objective function of the linear
     # least-squares problem at the origin of the calculations.
     cdef double alpha = -1.0
     cdef double beta = 0.0
     cdef double[::1] grad = np_empty(n, dtype=np_float64)
-    cdef int incg = grad.strides[0] // grad.itemsize
-    dgemv('t', &m, &n, &alpha, &a[0, 0], &m, &resid[0], &incr, &beta, &grad[0], &incg)
+    dot(a, resid, grad, 't', alpha, beta)  # noqa
 
     # Allocate the working arrays required by the GELSY driver.
+    cdef double eps = np.finfo(np_float64).eps
     cdef double tiny = np.finfo(np_float64).tiny
-    cdef double rcond = np.finfo(np_float64).eps * max(m, n)
+    cdef double rcond = eps * max(m, n)
 
     # Start the iterative procedure, and iterate until the approximate KKT
     # conditions hold for the current vector of variables.
     cdef int iterc = 0
-    cdef double lctol = get_lctol(a, b)
+    cdef double lctol = 10.0 * eps * float(max(m, n)) * max_abs_array(b, 1.0)
     cdef double gamma, temp
     cdef Py_ssize_t i, inew
     while not check_kkt(grad, iact, lctol):
@@ -132,14 +128,14 @@ def nnls(double[::1, :] a, double[::1] b, int k, int maxiter):
             x[:] = xact
             resid[:] = b
             beta = 1.0
-            dgemv('n', &m, &n, &alpha, &a[0, 0], &m, &x[0], &incx, &beta, &resid[0], &incr)
-            temp = 0.5 * ddot(&m, &resid[0], &incr, &resid[0], &incr)
+            dot(a, x, resid, 'n', alpha, beta)  # noqa
+            temp = 0.5 * inner(resid, resid)
             if temp > (1.0 - lctol) * lsx:
                 lsx = temp
                 break
             lsx = temp
             beta = 0.0
-            dgemv('t', &m, &n, &alpha, &a[0, 0], &m, &resid[0], &incr, &beta, &grad[0], &incg)
+            dot(a, resid, grad, 't', alpha, beta)  # noqa
             continue
         break
     return x

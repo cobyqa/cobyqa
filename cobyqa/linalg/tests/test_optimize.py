@@ -42,13 +42,13 @@ class TestBVTCG:
         xl = np.zeros(5, dtype=float)
         xu = 2.0 * np.ones(5, dtype=float)
         delta = 1.0
-        with assert_raises(AssertionError):
+        with assert_raises(ValueError):
             bvtcg(x0, gq, np.dot, xl, xu, -1.0, Hq, debug=True)
         x0[2] = 2.1
-        with assert_raises(AssertionError):
+        with assert_raises(ValueError):
             bvtcg(x0, gq, np.dot, xl, xu, delta, Hq, debug=True)
         x0[2], xl[2], xu[2] = 1.0, 1.1, 0.9
-        with assert_raises(AssertionError):
+        with assert_raises(ValueError):
             bvtcg(x0, gq, np.dot, xl, xu, delta, Hq, debug=True)
 
 
