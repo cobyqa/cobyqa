@@ -18,5 +18,3 @@ They should be investigated for specific purposes only, and users who just wish 
     cpqp
     lctcg
     nnls
-    rot
-    rotg

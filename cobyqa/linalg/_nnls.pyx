@@ -21,6 +21,7 @@ from scipy.linalg.lapack import dgelsy_lwork  # noqa
 
 from ._utils cimport dot, inner, max_abs_array
 
+
 def nnls(double[::1, :] a, double[::1] b, int k, int maxiter):
     """
     Compute the least-squares solution to the equation ``a @ x = b`` subject to

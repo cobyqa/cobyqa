@@ -17,6 +17,7 @@ from numpy import float64 as np_float64
 
 from ._utils cimport inner, max_array, max_abs_array, min_array
 
+
 def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double[::1] xu, double delta, bint debug):
     """
     Minimize approximately a quadratic function subject to bound and
@@ -101,8 +102,8 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
     cdef int iterc = 0
     cdef int maxiter = n
     cdef double alpha, alpht, sdgq, sdsq, sdstep, rhs, temp, tempa, tempb
-    cdef double angt, cosv, gqsq, sinv
-    cdef double curv, sdhsd, sthsd, sthst
+    cdef double angt, cosv, gqsq, gqstep, sinv
+    cdef double curv, sdhsd, ssq, sthsd, sthst
     cdef double redmax, redsav, rdnext, rdprev
     cdef int xsav, ialt, isav
     while delta ** 2.0 - stepsq > tol * max_abs_array(sd, 1.0):
@@ -228,12 +229,12 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
             # Whenever the previous iteration has hit a bound, the computation
             # round the trust-region boundary are restarted.
             stepsq = 0.0
-            gdstep = 0.0
+            gqstep = 0.0
             gqsq = 0.0
             for i in range(n):
                 if xbdi[i] == 0:
                     stepsq += step[i] ** 2.0
-                    gdstep += gq[i] * step[i]
+                    gqstep += gq[i] * step[i]
                     gqsq += gq[i] ** 2.0
                 if iterc == 0 or inew >= 0:
                     if xbdi[i] == 0:
@@ -248,13 +249,13 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
             # Let the search direction be a linear combination of the reduced
             # step and the reduced gradient that is orthogonal to the step.
             iterc += 1
-            temp = gqsq * stepsq - gdstep ** 2.0
+            temp = gqsq * stepsq - gqstep ** 2.0
             if temp <= 1e-4 * reduct ** 2.0:
                 break
             sdgq = -sqrt(temp)
             for i in range(n):
                 if xbdi[i] == 0:
-                    sd[i] = (stepsq * gq[i] - gdstep * step[i]) / sdgq
+                    sd[i] = (stepsq * gq[i] - gqstep * step[i]) / sdgq
                 else:
                     sd[i] = 0.0
 
@@ -322,7 +323,7 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
                 angt = angbd * float(i + 1) / float(ialt)
                 sinv = 2.0 * angt / (1.0 + angt ** 2.0)
                 temp = sdhsd + angt * (sthst * angt - 2.0 * sthsd)
-                rednew = sinv * (gdstep * angt - sdgq - 0.5 * sinv * temp)
+                rednew = sinv * (gqstep * angt - sdgq - 0.5 * sinv * temp)
                 if rednew > redmax:
                     redmax = rednew
                     rdprev = redsav
@@ -345,7 +346,7 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
             cosv = (1.0 - angt ** 2.0) / (1.0 + angt ** 2.0)
             sinv = 2.0 * angt / (1.0 + angt ** 2.0)
             temp = sdhsd + angt * (angt * sthst - 2.0 * sthsd)
-            temp = sinv * (angt * gdstep - sdgq - 0.5 * sinv * temp)
+            temp = sinv * (angt * gqstep - sdgq - 0.5 * sinv * temp)
             if temp <= 0.0:
                 break
 
