@@ -1,6 +1,7 @@
 import numpy as np
 
 from ._bvcs import bvcs as _bvcs
+from ._bvlag import bvlag as _bvlag
 from ._bvtcg import bvtcg as _bvtcg
 from ._nnls import nnls as _nnls
 
@@ -86,6 +87,82 @@ def bvcs(xpt, kopt, gq, curv, xl, xu, delta, *args, **kwargs):
     debug = kwargs.get('debug', False)
     step, cauchy = _bvcs(xpt, kopt, gq, curv_safe, xl, xu, delta, debug)  # noqa
     return np.array(step, dtype=float), cauchy
+
+
+def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
+    """
+    Estimate a point that maximizes a lower bound on the denominator of the
+    updating formula, subject to bound constraints on its coordinates and its
+    length.
+
+    Parameters
+    ----------
+    xpt : numpy.ndarray, shape (npt, n)
+        Set of points. Each row of `xpt` stores the coordinates of a point.
+    kopt : int
+        Index of a point in `xpt`. The estimated point will lie on a line
+        joining ``xpt[kopt, :]`` to another point in `xpt`.
+    klag : int
+        Index of the point in `xpt`.
+    gq : array_like, shape (n,)
+        Gradient of the `klag`-th Lagrange polynomial at ``xpt[kopt, :]``.
+    xl : array_like, shape (n,)
+        Lower-bound constraints on the decision variables. Use ``-numpy.inf`` to
+        disable the bounds on some variables.
+    xu : array_like, shape (n,)
+        Upper-bound constraints on the decision variables. Use ``numpy.inf`` to
+        disable the bounds on some variables.
+    delta : float
+        Upper bound on the length of the step.
+    alpha : float
+        Real parameter.
+
+    Returns
+    -------
+    step : numpy.ndarray, shape (n,)
+        Step from ``xpt[kopt, :]`` towards the estimated point.
+
+    Other Parameters
+    ----------------
+    debug : bool, optional
+        Whether to make debugging tests during the execution, which is
+        not recommended in production (the default is False).
+
+    Raises
+    ------
+    AssertionError
+        The vector ``xpt[kopt, :]`` is not feasible (only in debug mode).
+
+    See Also
+    --------
+    bvcs : Bounded variable Cauchy step
+
+    Notes
+    -----
+    The denominator of the updating formula is given in Equation (3.9) of [2]_,
+    and the parameter `alpha` is the referred in Equation (4.12) of [1]_.
+
+    References
+    ----------
+    .. [1] M. J. D. Powell. "The NEWUOA software for unconstrained optimization
+       without derivatives." In: Large-Scale Nonlinear Optimization. Ed. by G.
+       Di Pillo and M. Roma. New York, NY, US: Springer, 2006, pp. 255-–297.
+    .. [2] M. J. D. Powell. The BOBYQA algorithm for bound constrained
+       optimization without derivatives. Tech. rep. DAMTP 2009/NA06. Cambridge,
+       UK: Department of Applied Mathematics and Theoretical Physics, University
+       of Cambridge, 2009.
+    """
+    xpt = np.atleast_2d(xpt).astype(float)
+    xpt = np.asfortranarray(xpt)
+    gq = np.atleast_1d(gq)
+    if gq.dtype.kind in np.typecodes['AllInteger']:
+        gq = np.asarray(gq, dtype=float)
+    xl = np.atleast_1d(xl).astype(float)
+    xu = np.atleast_1d(xu).astype(float)
+
+    debug = kwargs.get('debug', False)
+    step = _bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, debug)  # noqa
+    return np.array(step, dtype=float)
 
 
 def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):

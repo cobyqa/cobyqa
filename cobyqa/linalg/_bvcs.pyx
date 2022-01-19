@@ -65,7 +65,6 @@ def bvcs(double[::1, :] xpt, int kopt, double[::1] gq, object curv, double[::1] 
     # Ensure the feasibility of the initial guess.
     cdef double eps = np.finfo(np_float64).eps
     cdef double tiny = np.finfo(np_float64).tiny
-    cdef double huge = np.finfo(np_float64).max
     cdef double tol = 10.0 * eps * float(n)
     cdef double bdtol
     if debug:

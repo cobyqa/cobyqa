@@ -15,6 +15,13 @@ def configuration(parent_package='', top_path=None):
     )
 
     config.add_extension(
+        '_bvlag',
+        sources=['_bvlag.pyx'],
+        include_dirs=[np.get_include()],
+        # **numpy_nodepr_api,
+    )
+
+    config.add_extension(
         '_bvtcg',
         sources=['_bvtcg.pyx'],
         include_dirs=[np.get_include()],

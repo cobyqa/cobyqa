@@ -1,5 +1,4 @@
-from .bvlag import bvlag
-from .main import bvcs, bvtcg, nnls
+from .main import bvcs, bvlag, bvtcg, nnls
 from .cpqp import cpqp
 from .lctcg import lctcg
 
