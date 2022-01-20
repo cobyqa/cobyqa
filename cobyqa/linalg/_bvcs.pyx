@@ -14,44 +14,13 @@ from numpy import empty as np_empty
 from numpy import zeros as np_zeros
 from numpy import float64 as np_float64
 
-from ._utils cimport max_array, max_abs_array, min_array
+from ._utils cimport max_array, absmax_array, min_array
 
 
-def bvcs(double[::1, :] xpt, int kopt, double[::1] gq, object curv, double[::1] xl, double[::1] xu, double delta, bint debug):
+def bvcs(double[::1, :] xpt, int kopt, double[:] gq, object curv, double[:] xl, double[:] xu, double delta, bint debug):
     """
     Evaluate Cauchy step on the absolute value of a Lagrange polynomial, subject
     to bound constraints on its coordinates and its length.
-
-    Parameters
-    ----------
-    xpt : memoryview of numpy.ndarray, shape (npt, n)
-        Set of points. Each row of `xpt` stores the coordinates of a point.
-    kopt : int
-        Index of the point from which the Cauchy step is evaluated.
-    gq : memoryview of numpy.ndarray, shape (n,)
-        Gradient of the Lagrange polynomial of the points in `xpt` (not
-        necessarily the `kopt`-th one) at ``xpt[kopt, :]``.
-    curv : object
-        Function providing the curvature of the Lagrange polynomial.
-
-            ``curv(x) -> double``
-
-        where ``x`` is an array with shape (n,).
-    xl : memoryview of numpy.ndarray, shape (n,)
-        Lower-bound constraints on the decision variables.
-    xu : memoryview of numpy.ndarray, shape (n,)
-        Upper-bound constraints on the decision variables.
-    delta : double
-        Upper bound on the length of the Cauchy step.
-    debug : bint
-        Whether to make debugging tests during the execution.
-
-    Returns
-    -------
-    memoryview of numpy.ndarray, shape (n,)
-        Constrained Cauchy step.
-    double
-        Square of the Lagrange polynomial evaluation at the Cauchy point.
     """
     cdef int npt = xpt.shape[0]
     cdef int n = xpt.shape[1]
@@ -68,7 +37,7 @@ def bvcs(double[::1, :] xpt, int kopt, double[::1] gq, object curv, double[::1] 
     cdef double tol = 10.0 * eps * float(n)
     cdef double bdtol
     if debug:
-        bdtol = tol * fmax(max_abs_array(xl, 1.0), max_abs_array(xu, 1.0))
+        bdtol = tol * fmax(absmax_array(xl, 1.0), absmax_array(xu, 1.0))
         if max_array(xl) > bdtol:
             raise ValueError('Constraint xl <= xopt fails initially.')
         if min_array(xu) < -bdtol:
@@ -77,9 +46,9 @@ def bvcs(double[::1, :] xpt, int kopt, double[::1] gq, object curv, double[::1] 
             raise ValueError('Constraint delta > 0 fails initially.')
 
     # Start the procedure.
-    cdef double[::1] step = np_zeros(n, dtype=np_float64)
-    cdef double[::1] cstep = np_empty(n, dtype=np_float64)
-    cdef double[::1] stpsav = np_empty(n, dtype=np_float64)
+    cdef double[:] step = np_zeros(n, dtype=np_float64)
+    cdef double[:] cstep = np_empty(n, dtype=np_float64)
+    cdef double[:] stpsav = np_empty(n, dtype=np_float64)
     cdef double bigstp = 2.0 * delta
     cdef double csav = 0.0
     cdef double cauchy = 0.0
@@ -163,8 +132,7 @@ def bvcs(double[::1, :] xpt, int kopt, double[::1] gq, object curv, double[::1] 
             csav = cauchy
             continue
         if csav > cauchy:
-            for i in range(n):
-                step[i] = stpsav[i]
+            step[:] = stpsav
             cauchy = csav
 
     return step, cauchy

@@ -3,12 +3,12 @@ import warnings
 from contextlib import suppress
 
 import numpy as np
-from numpy.testing import assert_
+from numpy.testing import assert_, assert_array_less
 from scipy.linalg import get_blas_funcs
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls
-from .linalg.utils import get_bdtol
-from .utils import RestartRequiredException, huge, implicit_hessian, normalize
+from .utils import RestartRequiredException
+from .utils import huge, implicit_hessian, normalize, absmax_arrays
 
 
 class TrustRegion:
@@ -17,7 +17,7 @@ class TrustRegion:
     """
 
     def __init__(self, fun, x0, xl=None, xu=None, Aub=None, bub=None, Aeq=None,
-                 beq=None, cub=None, ceq=None, options=None, *args, **kwargs):
+                 beq=None, cub=None, ceq=None, options=None, *args):
         """
         Initialize the derivative-free trust-region SQP method.
 
@@ -98,14 +98,6 @@ class TrustRegion:
             Parameters to forward to the objective function, the nonlinear
             inequality constraint function, and the nonlinear equality
             constraint function.
-
-        Other Parameters
-        ----------------
-        lstol : float, optional
-            Tolerance on the approximate KKT conditions for the calculations of
-            the least-squares Lagrange multipliers (the default is
-            ``10 * eps * max(n, m) * max(1, max(abs(g)))``, where ``g`` is the
-            gradient of the current model of the objective function).
         """
         self._fun = fun
         self._cub = cub
@@ -148,7 +140,8 @@ class TrustRegion:
         beq = beq[ieq]
 
         # Remove the variables that are fixed by the bounds.
-        bdtol = get_bdtol(xl, xu, **kwargs)
+        bdtol = 10.0 * np.finfo(float).eps * n
+        bdtol *= absmax_arrays(xl, xu, initial=1.0)
         self._ifix = np.abs(xl - xu) <= bdtol
         ifree = np.logical_not(self.ifix)
         self._xfix = 0.5 * (xl[self.ifix] + xu[self.ifix])
@@ -834,7 +827,7 @@ class TrustRegion:
         """
         return self._eval_con(self._ceq, x)
 
-    def active_set(self, x, **kwargs):
+    def active_set(self, x):
         """
         Determine the set of active constraints of the models.
 
@@ -848,14 +841,9 @@ class TrustRegion:
         -------
         numpy.ndarray
             Indices of the active constraints of the models.
-
-        Other Parameters
-        ----------------
-        bdtol : float, optional
-            Tolerance for comparisons on the bound constraints (the default is
-            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
         """
-        bdtol = get_bdtol(self.xl, self.xu, **kwargs)
+        bdtol = 10.0 * np.finfo(float).eps * self.xopt.size
+        bdtol *= absmax_arrays(self.xl, self.xu, initial=1.0)
         aub, bub = self.get_linear_ub()
         resid = np.r_[np.dot(aub, x) - bub, self.xl - x, x - self.xu]
         iact = np.flatnonzero(np.abs(resid) <= bdtol)
@@ -1849,17 +1837,6 @@ class TrustRegion:
         float
             Trust-region ratio associated with the new interpolation point.
 
-        Other Parameters
-        ----------------
-        bdtol : float, optional
-            Tolerance for comparisons on the bound constraints (the default is
-            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
-        lstol : float, optional
-            Tolerance on the approximate KKT conditions for the calculations of
-            the least-squares Lagrange multipliers (the default is
-            ``10 * eps * max(n, m) * max(1, max(abs(g)))``, where ``g`` is the
-            gradient of the current model of the objective function).
-
         Raises
         ------
         RestartRequiredException
@@ -1869,7 +1846,8 @@ class TrustRegion:
         # Evaluate the objective function, the nonlinear inequality constraint
         # function, and the nonlinear equality constraint function at the trial
         # point. The functions are defined in the space centered at the origin.
-        bdtol = get_bdtol(self.xl, self.xu, **kwargs)
+        bdtol = 10.0 * np.finfo(float).eps * self.xopt.size
+        bdtol *= absmax_arrays(self.xl, self.xu, initial=1.0)
         step = nstep + tstep
         xsav = np.copy(self.xopt)
         xnew = xsav + step
@@ -2065,18 +2043,6 @@ class TrustRegion:
         numpy.ndarray, shape (n,)
             Trust-region step from `xopt`.
 
-        Other Parameters
-        ----------------
-        bdtol : float, optional
-            Tolerance for comparisons on the bound constraints (the default is
-            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``, where the
-            values of ``xl`` and ``xu`` evolve to include the shift of the
-            origin).
-        lctol : float, optional
-            Tolerance for comparisons on the linear constraints (the default is
-            ``10 * eps * max(mlub, n) * max(1, max(abs(bub)))``, where the
-            values of ``bub`` evolve to include the shift of the origin).
-
         Notes
         -----
         The trust-region constraint of the tangential subproblem is not centered
@@ -2088,7 +2054,6 @@ class TrustRegion:
         .. [1] A. R. Conn, N. I. M. Gould, and Ph. L. Toint. Trust-Region
            Methods. MPS-SIAM Ser. Optim. Philadelphia, PA, US: SIAM, 2009.
         """
-        bdtol = get_bdtol(self.xl, self.xu, **kwargs)
         kwargs = dict(kwargs)
         kwargs['debug'] = self.debug
 
@@ -2114,8 +2079,11 @@ class TrustRegion:
                          kwargs.get('xi') * delta, **kwargs)
             ssq = np.inner(nstep, nstep)
             if self.debug:
-                assert_(np.max(self.xl - self.xopt - nstep) < bdtol)
-                assert_(np.min(self.xu - self.xopt - nstep) > -bdtol)
+                tol = 10.0 * np.finfo(float).eps * self.xopt.size
+                assert_array_less(self.xl - self.xopt - nstep,
+                                  tol * absmax_arrays(self.xl, initial=1.0))
+                assert_array_less(self.xopt + nstep - self.xu,
+                                  tol * absmax_arrays(self.xl, initial=1.0))
                 assert_(ssq <= delta ** 2.0)
 
         # Evaluate the tangential step of the trust-region subproblem, and set
@@ -2134,8 +2102,11 @@ class TrustRegion:
             tstep = lctcg(xopt, gopt, self.model_lag_hessp, aub, bub, aeq, beq,
                           self.xl, self.xu, delta, **kwargs)
         if self.debug:
-            assert_(np.max(self.xl - xopt - tstep) < bdtol)
-            assert_(np.min(self.xu - xopt - tstep) > -bdtol)
+            tol = 10.0 * np.finfo(float).eps * self.xopt.size
+            assert_array_less(self.xl - xopt - tstep,
+                              tol * absmax_arrays(self.xl, initial=1.0))
+            assert_array_less(xopt + tstep - self.xu,
+                              tol * absmax_arrays(self.xu, initial=1.0))
             assert_(np.linalg.norm(nstep + tstep) <= 1.1 * delsav)
             reduct = np.inner(gopt, tstep)
             reduct += 0.5 * np.inner(tstep, self.model_lag_hessp(tstep))
@@ -2155,14 +2126,6 @@ class TrustRegion:
         -------
         numpy.ndarray, shape (n,)
             Model-improvement step from `xopt`.
-
-        Other Parameters
-        ----------------
-        bdtol : float, optional
-            Tolerance for comparisons on the bound constraints (the default is
-            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``, where the
-            values of ``xl`` and ``xu`` evolve to include the shift of the
-            origin).
 
         Notes
         -----
@@ -2186,9 +2149,11 @@ class TrustRegion:
         kwargs['debug'] = self.debug
         step = self._models.improve_geometry(self.knew, delta, **kwargs)
         if self.debug:
-            bdtol = get_bdtol(self.xl, self.xu, **kwargs)
-            assert_(np.max(self.xl - self.xopt - step) < bdtol)
-            assert_(np.min(self.xu - self.xopt - step) > -bdtol)
+            tol = 10.0 * np.finfo(float).eps * self.xopt.size
+            assert_array_less(self.xl - self.xopt - step,
+                              tol * absmax_arrays(self.xl, initial=1.0))
+            assert_array_less(self.xopt + step - self.xu,
+                              tol * absmax_arrays(self.xl, initial=1.0))
             assert_(np.linalg.norm(step) <= 1.1 * delta)
         return step
 
@@ -2280,8 +2245,7 @@ class Models:
        pp. 183--215.
     """
 
-    def __init__(self, fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options,
-                 **kwargs):
+    def __init__(self, fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options):
         """
         Construct the initial models of an optimization problem.
 
@@ -2366,12 +2330,6 @@ class Models:
                 debug : bool, optional
                     Whether to make debugging tests during the execution, which
                     is not recommended in production (the default is False).
-
-        Other Parameters
-        ----------------
-        bdtol : float, optional
-            Tolerance for comparisons on the bound constraints (the default is
-            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``.
         """
         self._xl = xl
         self._xu = xu
@@ -2401,7 +2359,8 @@ class Models:
         self._kopt = 0
         stepa = 0.0
         stepb = 0.0
-        bdtol = get_bdtol(xl, xu, **kwargs)
+        bdtol = 10.0 * np.finfo(float).eps * n
+        bdtol *= absmax_arrays(xl, xu, initial=1.0)
         for k in range(npt):
             km = k - 1
             kx = km - n
@@ -2499,7 +2458,6 @@ class Models:
                 self._ceq_alt[i] = copy.deepcopy(self._ceq[i])
 
         # Determine the type of the problem.
-        tol = 10.0 * np.finfo(float).eps * n
         if self.mlub + self.mleq + self.mnlub + self.mnleq == 0:
             if np.all(self.xl == -np.inf) and np.all(self.xu == np.inf):
                 self._type = 'U'
@@ -4067,11 +4025,6 @@ class Models:
 
         Other Parameters
         ----------------
-        bdtol : float, optional
-            Tolerance for comparisons on the bound constraints (the default is
-            ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``, where the
-            values of ``xl`` and ``xu`` evolve to include the shift of the
-            origin).
         debug : bool, optional
             Whether to make debugging tests during the execution, which is
             not recommended in production (the default is False).

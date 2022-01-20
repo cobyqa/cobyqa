@@ -3,7 +3,6 @@ import pytest
 from numpy.testing import assert_, assert_raises
 
 from cobyqa.linalg import bvcs, bvlag
-from cobyqa.linalg.utils import get_bdtol
 from cobyqa.tests import assert_array_less_equal, assert_dtype_equal
 
 
@@ -32,10 +31,10 @@ class TestBVCS:
         assert_(isinstance(cauchy, float))
 
         # Ensure the feasibility of the output.
-        bdtol = get_bdtol(xl, xu)
-        assert_array_less_equal(xl - xpt[kopt, :] - step, bdtol)
-        assert_array_less_equal(xpt[kopt, :] + step - xu, bdtol)
-        assert_(np.linalg.norm(step) - delta <= bdtol)
+        tol = 10.0 * np.finfo(float).eps * n
+        assert_array_less_equal(xl - xpt[kopt, :] - step, tol)
+        assert_array_less_equal(xpt[kopt, :] + step - xu, tol)
+        assert_(np.linalg.norm(step) - delta <= tol)
         assert_(cauchy >= 0.0)
 
     def test_exceptions(self):
@@ -75,10 +74,10 @@ class TestBVLAG:
         assert_(step.size == n)
 
         # Ensure the feasibility of the output.
-        bdtol = get_bdtol(xl, xu)
-        assert_array_less_equal(xl - xpt[kopt, :] - step, bdtol)
-        assert_array_less_equal(xpt[kopt, :] + step - xu, bdtol)
-        assert_(np.linalg.norm(step) - delta <= bdtol)
+        tol = 10.0 * np.finfo(float).eps * n
+        assert_array_less_equal(xl - xpt[kopt, :] - step, tol)
+        assert_array_less_equal(xpt[kopt, :] + step - xu, tol)
+        assert_(np.linalg.norm(step) - delta <= tol)
 
     def test_exceptions(self):
         xpt = np.ones((11, 5), dtype=float)

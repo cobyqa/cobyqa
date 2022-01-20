@@ -29,11 +29,20 @@ def configuration(parent_package='', top_path=None):
     )
 
     config.add_extension(
+        '_lctcg',
+        sources=['_lctcg.pyx'],
+        include_dirs=[np.get_include()],
+        # **numpy_nodepr_api,
+    )
+
+    config.add_extension(
         '_nnls',
         sources=['_nnls.pyx'],
         include_dirs=[np.get_include()],
         # **numpy_nodepr_api,
     )
+
+    config.add_data_dir('tests')
 
     config.add_extension(
         '_utils',
@@ -41,8 +50,6 @@ def configuration(parent_package='', top_path=None):
         include_dirs=[np.get_include()],
         # **numpy_nodepr_api,
     )
-
-    config.add_data_dir('tests')
 
     return config
 

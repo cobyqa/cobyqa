@@ -13,10 +13,15 @@ np.import_array()
 from numpy import empty as np_empty
 from numpy import float64 as np_float64
 
-from ._utils cimport max_array, max_abs_array, min_array
+from ._utils cimport inner, max_array, absmax_array, min_array
 
 
-def bvlag(double[::1, :] xpt, int kopt, int klag, double[::1] gq, double[::1] xl, double[::1] xu, double delta, double alpha, bint debug):
+def bvlag(double[::1, :] xpt, int kopt, int klag, double[:] gq, double[:] xl, double[:] xu, double delta, double alpha, bint debug):
+    """
+    Estimate a point that maximizes a lower bound on the denominator of the
+    updating formula, subject to bound constraints on its coordinates and its
+    length.
+    """
     cdef int npt = xpt.shape[0]
     cdef int n = xpt.shape[1]
 
@@ -34,7 +39,7 @@ def bvlag(double[::1, :] xpt, int kopt, int klag, double[::1] gq, double[::1] xl
     cdef double eps = np.finfo(np_float64).eps
     cdef double tiny = np.finfo(np_float64).tiny
     cdef double tol = 10.0 * eps * float(n)
-    cdef double bdtol = tol * fmax(max_abs_array(xl, 1.0), max_abs_array(xu, 1.0))
+    cdef double bdtol = tol * fmax(absmax_array(xl, 1.0), absmax_array(xu, 1.0))
     if debug:
         if max_array(xl) > bdtol:
             raise ValueError('Constraint xl <= xopt fails initially.')
@@ -60,11 +65,8 @@ def bvlag(double[::1, :] xpt, int kopt, int klag, double[::1] gq, double[::1] xl
         # bounds for the moment.
         if k == kopt:
             continue
-        xgq = 0.0
-        distsq = 0.0
-        for i in range(n):
-            xgq += xpt[k, i] * gq[i]
-            distsq += xpt[k, i] ** 2.0
+        xgq = inner(xpt[k, :], gq[:])
+        distsq = inner(xpt[k, :], xpt[k, :])
         dist = sqrt(distsq)
         if dist > tiny * delta:
             xubd = delta / dist
@@ -140,7 +142,7 @@ def bvlag(double[::1, :] xpt, int kopt, int klag, double[::1] gq, double[::1] xl
             ksav = k
 
     # Construct the returned step.
-    cdef double[::1] step = np_empty(n, dtype=np_float64)
+    cdef double[:] step = np_empty(n, dtype=np_float64)
     for i in range(n):
         step[i] = fmax(xl[i], fmin(xu[i], stpsav * xpt[ksav, i]))
     if ibdsav < 0:

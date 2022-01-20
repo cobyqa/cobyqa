@@ -1,8 +1,10 @@
 import numpy as np
+from numpy.testing import assert_
 
 from ._bvcs import bvcs as _bvcs
 from ._bvlag import bvlag as _bvlag
 from ._bvtcg import bvtcg as _bvtcg
+from ._lctcg import lctcg as _lctcg
 from ._nnls import nnls as _nnls
 
 
@@ -79,6 +81,15 @@ def bvcs(xpt, kopt, gq, curv, xl, xu, delta, *args, **kwargs):
     gq = np.atleast_1d(gq).astype(float)
     xl = np.atleast_1d(xl).astype(float)
     xu = np.atleast_1d(xu).astype(float)
+
+    # Check the sizes of the inputs.
+    assert_(xpt.ndim == 2)
+    assert_(gq.ndim == 1)
+    assert_(xl.ndim == 1)
+    assert_(xu.ndim == 1)
+    assert_(gq.size == xpt.shape[1])
+    assert_(xl.size == xpt.shape[1])
+    assert_(xu.size == xpt.shape[1])
 
     def curv_safe(x):
         cx = np.float64(curv(x, *args))
@@ -160,6 +171,15 @@ def bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, **kwargs):
     xl = np.atleast_1d(xl).astype(float)
     xu = np.atleast_1d(xu).astype(float)
 
+    # Check the sizes of the inputs.
+    assert_(xpt.ndim == 2)
+    assert_(gq.ndim == 1)
+    assert_(xl.ndim == 1)
+    assert_(xu.ndim == 1)
+    assert_(gq.size == xpt.shape[1])
+    assert_(xl.size == xpt.shape[1])
+    assert_(xu.size == xpt.shape[1])
+
     debug = kwargs.get('debug', False)
     step = _bvlag(xpt, kopt, klag, gq, xl, xu, delta, alpha, debug)  # noqa
     return np.array(step, dtype=float)
@@ -238,6 +258,15 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
     xl = np.atleast_1d(xl).astype(float)
     xu = np.atleast_1d(xu).astype(float)
 
+    # Check the sizes of the inputs.
+    assert_(xopt.ndim == 1)
+    assert_(gq.ndim == 1)
+    assert_(xl.ndim == 1)
+    assert_(xu.ndim == 1)
+    assert_(gq.size == xopt.size)
+    assert_(xl.size == xopt.size)
+    assert_(xu.size == xopt.size)
+
     def hessp_safe(x):
         hx = np.atleast_1d(hessp(x, *args))
         if hx.dtype.kind in np.typecodes['AllInteger']:
@@ -246,6 +275,129 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
 
     debug = kwargs.get('debug', False)
     step = _bvtcg(xopt, gq, hessp_safe, xl, xu, delta, debug)  # noqa
+    return np.array(step, dtype=float)
+
+
+def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
+    """
+    Minimize approximately a quadratic function subject to bound, linear, and
+    trust-region constraints using a truncated conjugate gradient.
+
+    Parameters
+    ----------
+    xopt : numpy.ndarray, shape (n,)
+        Point around which the Taylor expansions of the quadratic function is
+        defined.
+    gq : array_like, shape (n,)
+        Gradient of the quadratic function at `xopt`.
+    hessp : callable
+        Function providing the product of the Hessian matrix of the quadratic
+        function with any vector.
+
+            ``hessp(x, *args) -> array_like, shape(n,)``
+
+        where ``x`` is an array with shape (n,) and `args` is a tuple of
+        parameters to forward to the objective function. It is assumed that the
+        Hessian matrix implicitly defined by `hessp` is symmetric, but not
+        necessarily positive semidefinite.
+    Aub : array_like, shape (mlub, n), optional
+        Jacobian matrix of the linear inequality constraints. Each row of `Aub`
+        stores the gradient of a linear inequality constraint.
+    bub : array_like, shape (mlub,), optional
+        Right-hand side vector of the linear inequality constraints
+        ``Aub @ x <= bub``, where ``x`` has the same size than `xopt`.
+    Aeq : array_like, shape (mleq, n), optional
+        Jacobian matrix of the linear equality constraints. Each row of `Aeq`
+        stores the gradient of a linear equality constraint.
+    beq : array_like, shape (mleq,), optional
+        Right-hand side vector of the linear equality constraints
+        `Aeq @ x = beq`, where ``x`` has the same size than `xopt`.
+    xl : array_like, shape (n,)
+        Lower-bound constraints on the decision variables. Use ``-numpy.inf`` to
+        disable the bounds on some variables.
+    xu : array_like, shape (n,)
+        Upper-bound constraints on the decision variables. Use ``numpy.inf`` to
+        disable the bounds on some variables.
+    delta : float
+        Upper bound on the length of the step from `xopt`.
+    *args : tuple, optional
+        Parameters to forward to the Hessian product function.
+
+    Returns
+    -------
+    step : numpy.ndarray, shape (n,)
+        Step from `xopt` towards the estimated point.
+
+    Other Parameters
+    ----------------
+    debug : bool, optional
+        Whether to make debugging tests during the execution, which is
+        not recommended in production (the default is False).
+
+    Raises
+    ------
+    AssertionError
+        The vector `xopt` is not feasible (only in debug mode).
+
+    See Also
+    --------
+    bvtcg : Bounded variable truncated conjugate gradient
+    cpqp : Convex piecewise quadratic programming
+    nnls : Nonnegative least squares
+
+    Notes
+    -----
+    The method is adapted from the TRSTEP algorithm [1]_. It is an active-set
+    variation of the truncated conjugate gradient method, which maintains the QR
+    factorization of the matrix whose columns are the gradients of the active
+    constraints. The linear equality constraints are then handled by considering
+    them as always active.
+
+    References
+    ----------
+    .. [1] M. J. D. Powell. "On fast trust region methods for quadratic models
+       with linear constraints." In: Math. Program. Comput. 7 (2015), pp.
+       237--267.
+    """
+    xopt = np.atleast_1d(xopt)
+    if xopt.dtype.kind in np.typecodes['AllInteger']:
+        xopt = np.asarray(xopt, dtype=float)
+    gq = np.atleast_1d(gq).astype(float)
+    Aub = np.atleast_2d(Aub).astype(float)
+    Aub = np.asfortranarray(Aub)
+    bub = np.atleast_1d(bub).astype(float)
+    Aeq = np.atleast_2d(Aeq).astype(float)
+    Aeq = np.asfortranarray(Aeq)
+    beq = np.atleast_1d(beq).astype(float)
+    xl = np.atleast_1d(xl).astype(float)
+    xu = np.atleast_1d(xu).astype(float)
+
+    # Check the sizes of the inputs.
+    assert_(xopt.ndim == 1)
+    assert_(gq.ndim == 1)
+    assert_(Aub.ndim == 2)
+    assert_(bub.ndim == 1)
+    assert_(Aeq.ndim == 2)
+    assert_(beq.ndim == 1)
+    assert_(xl.ndim == 1)
+    assert_(xu.ndim == 1)
+    assert_(gq.size == xopt.size)
+    assert_(Aub.shape[0] == bub.size)
+    assert_(Aub.shape[1] == xopt.size)
+    assert_(Aeq.shape[0] == beq.size)
+    assert_(Aeq.shape[1] == xopt.size)
+    assert_(xl.size == xopt.size)
+    assert_(xu.size == xopt.size)
+
+    def hessp_safe(x):
+        hx = np.atleast_1d(hessp(x, *args))
+        if hx.dtype.kind in np.typecodes['AllInteger']:
+            hx = np.asarray(hx, dtype=np.float64)
+        return hx
+
+    debug = kwargs.get('debug', False)
+    mu = kwargs.get('mu1', 0.2)
+    step = _lctcg(xopt, gq, hessp_safe, Aub, bub, Aeq, beq, xl, xu, delta, debug, mu)  # noqa
     return np.array(step, dtype=float)
 
 
@@ -300,6 +452,11 @@ def nnls(A, b, k=None, maxiter=None):
         raise ValueError('Number of nonnegative constraints is invalid')
     if maxiter is None:
         maxiter = 3 * n
+
+    # Check the sizes of the inputs.
+    assert_(A.ndim == 2)
+    assert_(b.ndim == 1)
+    assert_(A.shape[0] == b.size)
 
     x = _nnls(A, b, k, maxiter)  # noqa
     return np.array(x, dtype=float)

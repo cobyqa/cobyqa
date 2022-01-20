@@ -15,43 +15,13 @@ from numpy import zeros as np_zeros
 from numpy import int32 as np_int32
 from numpy import float64 as np_float64
 
-from ._utils cimport inner, max_array, max_abs_array, min_array
+from ._utils cimport inner, absmax_array, max_array, min_array
 
 
-def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double[::1] xu, double delta, bint debug):
+def bvtcg(double[:] xopt, double[:] gq, object hessp, double[:] xl, double[:] xu, double delta, bint debug):
     """
     Minimize approximately a quadratic function subject to bound and
     trust-region constraints using a truncated conjugate gradient.
-
-    Parameters
-    ----------
-    xopt : memoryview of numpy.ndarray, shape (n,)
-        Point around which the Taylor expansions of the quadratic function is
-        defined.
-    gq : memoryview of numpy.ndarray, shape (n,)
-        Gradient of the quadratic function at `xopt`.
-    hessp : object
-        Function providing the product of the Hessian matrix of the quadratic
-        function with any vector.
-
-            ``hessp(x) -> numpy.ndarray, shape(n,)``
-
-        where ``x`` is an array with shape (n,). It is assumed that the Hessian
-        matrix implicitly defined by `hessp` is symmetric, but not necessarily
-        positive semidefinite.
-    xl : memoryview of numpy.ndarray, shape (n,)
-        Lower-bound constraints on the decision variables.
-    xu : memoryview of numpy.ndarray, shape (n,)
-        Upper-bound constraints on the decision variables.
-    delta : double
-        Upper bound on the length of the step from `xopt`.
-    debug : bint
-        Whether to make debugging tests during the execution.
-
-    Returns
-    -------
-    memoryview of numpy.ndarray, shape (n,)
-        Step from `xopt` towards the estimated point.
     """
     cdef int n = gq.shape[0]
 
@@ -68,7 +38,7 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
     cdef double tol = 10.0 * eps * float(n)
     cdef double bdtol
     if debug:
-        bdtol = tol * fmax(max_abs_array(xl, 1.0), max_abs_array(xu, 1.0))
+        bdtol = tol * fmax(absmax_array(xl, 1.0), absmax_array(xu, 1.0))
         if max_array(xl) > bdtol:
             raise ValueError('Constraint xl <= xopt fails initially.')
         if min_array(xu) < -bdtol:
@@ -81,8 +51,8 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
     # component is not restricted by the bounds, the value -1 indicates that the
     # component is fixed by the lower bound, and the value 1 indicates that the
     # component is fixed by the upper bound.
-    cdef double[::1] step = np_zeros(n, dtype=np_float64)
-    cdef int[::1] xbdi = np_zeros(n, dtype=np_int32)
+    cdef double[:] step = np_zeros(n, dtype=np_float64)
+    cdef int[:] xbdi = np_zeros(n, dtype=np_int32)
     cdef int nact = 0
     for i in range(n):
         if step[i] <= xl[i] and gq[i] >= 0.0:
@@ -93,9 +63,9 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
             nact += 1
 
     # Start the iterative procedure.
-    cdef double[::1] sd = np_zeros(n, dtype=np_float64)
-    cdef double[::1] hsd = np_empty(n, dtype=np_float64)
-    cdef double[::1] hst = np_empty(n, dtype=np_float64)
+    cdef double[:] sd = np_zeros(n, dtype=np_float64)
+    cdef double[:] hsd = np_empty(n, dtype=np_float64)
+    cdef double[:] hst = np_empty(n, dtype=np_float64)
     cdef double stepsq = 0.0
     cdef double beta = 0.0
     cdef double reduct = 0.0
@@ -106,7 +76,7 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
     cdef double curv, sdhsd, ssq, sthsd, sthst
     cdef double redmax, redsav, rdnext, rdprev
     cdef int xsav, ialt, isav
-    while delta ** 2.0 - stepsq > tol * max_abs_array(sd, 1.0):
+    while delta ** 2.0 - stepsq > tol * absmax_array(sd, 1.0):
         # Set the next search direction of the conjugate gradient method to the
         # steepest descent direction initially and when the iterations are
         # restarted because a variable has just been fixed by a bound. The
@@ -126,7 +96,7 @@ def bvtcg(double[::1] xopt, double[::1] gq, object hessp, double[::1] xl, double
                 sdstep += sd[i] * step[i]
             else:
                 sd[i] = 0.0
-        if sqrt(sdsq) < tol * max_abs_array(sd, 1.0):
+        if sqrt(sdsq) < tol * absmax_array(sd, 1.0):
             break
         if beta <= 0.0:
             maxiter = iterc + n - nact

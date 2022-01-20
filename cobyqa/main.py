@@ -2,9 +2,8 @@ from contextlib import suppress
 
 import numpy as np
 
-from .linalg.utils import get_bdtol
 from .optimize import TrustRegion
-from .utils import RestartRequiredException
+from .utils import RestartRequiredException, absmax_arrays
 
 
 class OptimizeResult(dict):
@@ -231,22 +230,6 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         termination status of the optimization. See `OptimizeResult` for a
         description of other attributes.
 
-    Other Parameters
-    ----------------
-    bdtol : float, optional
-        Tolerance for comparisons on the bound constraints (the default is
-        ``10 * eps * n * max(1, max(abs(xl)), max(abs(xu)))``, where the values
-        of ``xl`` and ``xu`` evolve to include the shift of the origin).
-    lctol : float, optional
-        Tolerance for comparisons on the linear constraints (the default is
-        ``10 * eps * max(mlub, n) * max(1, max(abs(bub)))``, where the values
-        of ``bub`` evolve to include the shift of the origin).
-    lstol : float, optional
-        Tolerance on the approximate KKT conditions for the calculations of the
-        least-squares Lagrange multipliers (the default is
-        ``10 * eps * max(n, m) * max(1, max(abs(g)))``, where ``g`` is the
-        gradient of the current model of the objective function).
-
     References
     ----------
     .. [1] J. Nocedal and S. J. Wright. Numerical Optimization. Second. Springer
@@ -354,7 +337,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         args = (args,)
     _set_default_constants(kwargs)
     struct = TrustRegion(fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options,
-                         *args, **kwargs)
+                         *args)
     if np.all(struct.ifix):
         exit_status = 8
         nfev = 1
@@ -378,7 +361,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         # built and an evaluation of the active set would then fail.
         iact = np.array([])
     else:
-        iact = struct.active_set(struct.xopt, **kwargs)
+        iact = struct.active_set(struct.xopt)
     while exit_status == 0:
         # Update the shift of the origin to manage computer rounding errors.
         struct.shift_origin(delta)
@@ -399,7 +382,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             nstep, tstep = struct.trust_region_step(delta, **kwargs)
             step = nstep + tstep
             snorm = np.linalg.norm(step)
-            inew = struct.active_set(struct.xopt + step, **kwargs)
+            inew = struct.active_set(struct.xopt + step)
             if not np.array_equal(iact, inew):
                 test = kwargs.get('mu1') - 1e-4
                 if struct.type in 'LO':
@@ -519,7 +502,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
     # Get the success flag.
     if exit_status == 8:
-        bdtol = get_bdtol(struct.xl, struct.xu, **kwargs)
+        bdtol = 10.0 * np.finfo(float).eps * struct.xopt.size
+        bdtol *= absmax_arrays(xl, xu, initial=1.0)
         success = struct.type == 'U' or struct.maxcv <= bdtol
     else:
         success = exit_status in [0, 1, 2, 3, 4, 5]

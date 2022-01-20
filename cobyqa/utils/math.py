@@ -85,6 +85,29 @@ def normalize(A, b=None):
     return A, b
 
 
+def absmax_arrays(*arrays, initial=0.0):
+    """
+    Get the maximum among several arrays.
+
+    Parameters
+    ----------
+    *arrays : tuple
+        List of arrays.
+    initial : float
+        The minimum value of the output element.
+
+    Returns
+    -------
+    float
+        The maximum.
+    """
+    amax = initial
+    for array in arrays:
+        isfinite = np.isfinite(array)
+        amax = np.max(np.abs(array[isfinite]), initial=amax)
+    return amax
+
+
 def huge(dtype):
     """
     Get the threshold value of the function evaluations.

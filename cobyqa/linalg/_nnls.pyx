@@ -19,40 +19,23 @@ from numpy import float64 as np_float64
 from scipy.linalg.cython_lapack cimport dgelsy  # noqa
 from scipy.linalg.lapack import dgelsy_lwork  # noqa
 
-from ._utils cimport dot, inner, max_abs_array
+from ._utils cimport dot, inner, absmax_array
 
 
-def nnls(double[::1, :] a, double[::1] b, int k, int maxiter):
+def nnls(double[::1, :] a, double[:] b, int k, int maxiter):
     """
     Compute the least-squares solution to the equation ``a @ x = b`` subject to
     the nonnegativity constraints ``x[:k] >= 0``.
-
-    Parameters
-    ----------
-    a : memoryview of numpy.ndarray, shape (m, n)
-        Matrix `a` as shown above.
-    b : memoryview of numpy.ndarray, shape (m,)
-        Vector `b` as shown above.
-    k : int
-        Number of nonnegativity constraints. The first `k` components of the
-        solution vector are nonnegative.
-    maxiter : int
-        Maximum number of inner iterations.
-
-    Returns
-    -------
-    memoryview of numpy.ndarray, shape (n,)
-        Solution vector ``x`` as shown above.
     """
     cdef int m = a.shape[0]
     cdef int n = a.shape[1]
     cdef int nact = k
 
     # Initialize the working arrays at the origin of the calculations.
-    cdef bint[::1] iact = np_ones(k, dtype=np_int32)
-    cdef double[::1] x = np_zeros(n, dtype=np_float64)
-    cdef double[::1] xact = np_empty(n, dtype=np_float64)
-    cdef double[::1] resid = np_empty(m, dtype=np_float64)
+    cdef bint[:] iact = np_ones(k, dtype=np_int32)
+    cdef double[:] x = np_zeros(n, dtype=np_float64)
+    cdef double[:] xact = np_empty(n, dtype=np_float64)
+    cdef double[:] resid = np_empty(m, dtype=np_float64)
     resid[:] = b
 
     # Evaluate the objective function of the linear least-squares problem.
@@ -60,20 +43,18 @@ def nnls(double[::1, :] a, double[::1] b, int k, int maxiter):
 
     # Evaluate the gradient of the objective function of the linear
     # least-squares problem at the origin of the calculations.
-    cdef double alpha = -1.0
-    cdef double beta = 0.0
-    cdef double[::1] grad = np_empty(n, dtype=np_float64)
-    dot(a, resid, grad, 't', alpha, beta)  # noqa
+    cdef double[:] grad = np_empty(n, dtype=np_float64)
+    dot(a, resid, grad, 't', -1.0, 0.0)  # noqa
 
     # Allocate the working arrays required by the GELSY driver.
     cdef double eps = np.finfo(np_float64).eps
     cdef double tiny = np.finfo(np_float64).tiny
-    cdef double rcond = eps * max(m, n)
+    cdef double rcond = eps * float(max(m, n))
 
     # Start the iterative procedure, and iterate until the approximate KKT
     # conditions hold for the current vector of variables.
     cdef int iterc = 0
-    cdef double lctol = 10.0 * eps * float(max(m, n)) * max_abs_array(b, 1.0)
+    cdef double lctol = 10.0 * rcond * absmax_array(b, 1.0)
     cdef double gamma, temp
     cdef Py_ssize_t i, inew
     while not check_kkt(grad, iact, lctol):
@@ -128,38 +109,21 @@ def nnls(double[::1, :] a, double[::1] b, int k, int maxiter):
             # cycling, which may occur due to computer rounding errors.
             x[:] = xact
             resid[:] = b
-            beta = 1.0
-            dot(a, x, resid, 'n', alpha, beta)  # noqa
+            dot(a, x, resid, 'n', -1.0, 1.0)  # noqa
             temp = 0.5 * inner(resid, resid)
             if temp > (1.0 - lctol) * lsx:
                 lsx = temp
                 break
             lsx = temp
-            beta = 0.0
-            dot(a, resid, grad, 't', alpha, beta)  # noqa
+            dot(a, resid, grad, 't', -1.0, 0.0)  # noqa
             continue
         break
     return x
 
-cdef bint check_kkt(double[::1] grad, bint[::1] iact, double tol):
+cdef bint check_kkt(double[:] grad, bint[:] iact, double tol):
     """
     Check whether the approximate KKT conditions hold. The primal feasibility
     condition is assumed and is not checked by the function.
-
-    Parameters
-    ----------
-    grad : memoryview of numpy.ndarray, shape (n,)
-        Gradient of the linear least-squares objective function.
-    iact : memoryview of numpy.ndarray, shape (k,)
-        Working set. The ``i``-th variable in included in the working set if
-        ``i < iact.shape[0]`` and ``iact[i] = True``.
-    tol : double
-        Tolerance on the approximate KKT conditions.
-
-    Returns
-    -------
-    bint:
-        Whether the approximate KKT conditions hold.
     """
     cdef int n = grad.shape[0]
     cdef int k = iact.shape[0]
@@ -174,22 +138,9 @@ cdef bint check_kkt(double[::1] grad, bint[::1] iact, double tol):
             break
     return kktc
 
-cdef bint check_act(double[::1] x, bint[::1] iact):
+cdef bint check_act(double[:] x, bint[:] iact):
     """
     Check whether any variable must be included in the working set.
-
-    Parameters
-    ----------
-    x : memoryview of numpy.ndarray, shape (n,)
-        Vector of variables.
-    iact : memoryview of numpy.ndarray, shape (k,)
-        Working set. The ``i``-th variable in included in the working set if
-        ``i < iact.shape[0]`` and ``iact[i] = True``.
-
-    Returns
-    -------
-    bint
-        Whether any variable must be included in the working set.
     """
     cdef int k = iact.shape[0]
     cdef bint actc = True
@@ -200,26 +151,10 @@ cdef bint check_act(double[::1] x, bint[::1] iact):
             break
     return actc
 
-cdef void lstsq(double[::1, :] a, double[::1] b, bint[::1] iact, int nact, double rcond, double[::1] x):
+cdef void lstsq(double[::1, :] a, double[:] b, bint[:] iact, int nact, double rcond, double[:] x):
     """
     Compute the least-squares solution to the equation ``a @ x = b`` subject to
     ``x[i] = 0`` for any ``i <= iact.shape[0]`` such that ``iact[i] = True``.
-
-    Parameters
-    ----------
-    a : memoryview of numpy.ndarray, shape (m, n)
-        Matrix `a` as shown above.
-    b : memoryview of numpy.ndarray, shape (m,)
-        Vector `b` as shown above.
-    iact : memoryview of numpy.ndarray, shape (k,)
-        Indices of the constraints as mentioned above.
-    nact : int
-        Number of constraints. It must equals ``np.count_nonzero(iact)``, but
-        must be provided for numerical efficiency.
-    rcond : double
-        Tolerance to determine the effective rank of `a`.
-    x : memoryview of numpy.ndarray, shape (n,)
-        The constrained least-squares solution array.
     """
     cdef int m = a.shape[0]
     cdef int n = a.shape[1]
@@ -250,8 +185,8 @@ cdef void lstsq(double[::1, :] a, double[::1] b, bint[::1] iact, int nact, doubl
     if info != 0:
         raise ValueError(f'Internal work array size computation failed: {info}')
     cdef int lwork = int(temp)
-    cdef int[::1] jpvt = np_zeros(n, dtype=np_int32)
-    cdef double[::1] work = np_empty(max(1, lwork), dtype=np_float64)
+    cdef int[:] jpvt = np_zeros(n, dtype=np_int32)
+    cdef double[:] work = np_empty(max(1, lwork), dtype=np_float64)
     cdef int rank
     dgelsy(&m, &nfree, &nrhs, &afree[0, 0], &m, &xfree[0, 0], &ldb, &jpvt[0], &rcond, &rank, &work[0], &lwork, &info)
     if info != 0:
