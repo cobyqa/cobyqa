@@ -29,6 +29,13 @@ def configuration(parent_package='', top_path=None):
     )
 
     config.add_extension(
+        '_cpqp',
+        sources=['_cpqp.pyx'],
+        include_dirs=[np.get_include()],
+        # **numpy_nodepr_api,
+    )
+
+    config.add_extension(
         '_lctcg',
         sources=['_lctcg.pyx'],
         include_dirs=[np.get_include()],

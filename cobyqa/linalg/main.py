@@ -4,6 +4,7 @@ from numpy.testing import assert_
 from ._bvcs import bvcs as _bvcs
 from ._bvlag import bvlag as _bvlag
 from ._bvtcg import bvtcg as _bvtcg
+from ._cpqp import cpqp as _cpqp
 from ._lctcg import lctcg as _lctcg
 from ._nnls import nnls as _nnls
 
@@ -275,6 +276,115 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
 
     debug = kwargs.get('debug', False)
     step = _bvtcg(xopt, gq, hessp_safe, xl, xu, delta, debug)  # noqa
+    return np.array(step, dtype=float)
+
+
+def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
+    r"""
+    Minimize approximately a convex piecewise quadratic function subject to
+    bound and trust-region constraints using a truncated conjugate gradient.
+
+    The method minimizes the function
+
+    .. math::
+
+        \frac{1}{2} ( \| [ \mathtt{Aub} \times x - \mathtt{bub} ]_+\|_2^2 +
+        \| \mathtt{Aeq} \times x - \mathtt{beq} \|_2^2 ),
+
+    where :math:`[ \cdot ]_+` denotes the componentwise positive part operator.
+
+    Parameters
+    ----------
+    xopt : numpy.ndarray, shape (n,)
+        Center of the trust-region constraint.
+    Aub : array_like, shape (mlub, n)
+        Matrix `Aub` as shown above.
+    bub : array_like, shape (mlub,)
+        Vector `bub` as shown above.
+    Aeq : array_like, shape (mleq, n)
+        Matrix `Aeq` as shown above.
+    beq : array_like, shape (meq,)
+        Vector `beq` as shown above.
+    xl : array_like, shape (n,)
+        Lower-bound constraints on the decision variables. Use ``-numpy.inf`` to
+        disable the bounds on some variables.
+    xu : array_like, shape (n,)
+        Upper-bound constraints on the decision variables. Use ``numpy.inf`` to
+        disable the bounds on some variables.
+    delta : float
+        Upper bound on the length of the step from `xopt`.
+
+    Returns
+    -------
+    step : numpy.ndarray, shape (n,)
+        Step from `xopt` towards the estimated point.
+
+    Other Parameters
+    ----------------
+    debug : bool, optional
+        Whether to make debugging tests during the execution, which is
+        not recommended in production (the default is False).
+
+    Raises
+    ------
+    AssertionError
+        The vector `xopt` is not feasible (only in debug mode).
+
+    See Also
+    --------
+    bvtcg : Bounded variable truncated conjugate gradient
+    lctcg : Linear constrained truncated conjugate gradient
+    nnls : Nonnegative least squares
+
+    Notes
+    -----
+    The method is adapted from the TRSTEP algorithm [1]_. To cope with the
+    convex piecewise quadratic objective function, the method minimizes
+
+    .. math::
+
+        \frac{1}{2} ( \| \mathtt{Aeq} \times x - \mathtt{beq} \|_2^2 +
+        \| y \|_2^2 )
+
+    subject to the original constraints, where the slack variable :math:`y` is
+    lower bounded by zero and :math:`\mathtt{Aub} \times x - \mathtt{bub}`.
+
+    References
+    ----------
+    .. [1] M. J. D. Powell. "On fast trust region methods for quadratic models
+       with linear constraints." In: Math. Program. Comput. 7 (2015), pp.
+       237–-267.
+    """
+    xopt = np.atleast_1d(xopt)
+    if xopt.dtype.kind in np.typecodes['AllInteger']:
+        xopt = np.asarray(xopt, dtype=float)
+    Aub = np.atleast_2d(Aub).astype(float)
+    Aub = np.asfortranarray(Aub)
+    bub = np.atleast_1d(bub).astype(float)
+    Aeq = np.atleast_2d(Aeq).astype(float)
+    Aeq = np.asfortranarray(Aeq)
+    beq = np.atleast_1d(beq).astype(float)
+    xl = np.atleast_1d(xl).astype(float)
+    xu = np.atleast_1d(xu).astype(float)
+
+    # Check the sizes of the inputs.
+    assert_(xopt.ndim == 1)
+    assert_(Aub.ndim == 2)
+    assert_(bub.ndim == 1)
+    assert_(Aeq.ndim == 2)
+    assert_(beq.ndim == 1)
+    assert_(xl.ndim == 1)
+    assert_(xu.ndim == 1)
+    assert_(Aub.shape[0] == bub.size)
+    assert_(Aub.shape[1] == xopt.size)
+    assert_(Aeq.shape[0] == beq.size)
+    assert_(Aeq.shape[1] == xopt.size)
+    assert_(xl.size == xopt.size)
+    assert_(xu.size == xopt.size)
+
+    debug = kwargs.get('debug', False)
+    mu = kwargs.get('mu1', 0.2)
+    step = _cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, mu, debug)  # noqa
     return np.array(step, dtype=float)
 
 
