@@ -115,11 +115,10 @@ def lctcg(double[:] xopt, double[:] gq, object hessp, double[::1, :] aub, double
     cdef double[:] step = np_zeros(n, dtype=np_float64)
     cdef double[:] sd = np_zeros(n, dtype=np_float64)
     cdef double[:] sdd = np_zeros(n, dtype=np_float64)
-    cdef double[:] vecta = np_empty(n, dtype=np_float64)
-    cdef double[:] vectb = np_empty(n, dtype=np_float64)
     cdef double[:] hsd = np_empty(n, dtype=np_float64)
     cdef double[:] asd = np_empty(mlub + 2 * n, dtype=np_float64)
     cdef double[:] asdd = np_empty(mlub + 2 * n, dtype=np_float64)
+    cdef double[:] work = np_empty(2 * n, dtype=np_float64)
     cdef double reduct = 0.0
     cdef double stepsq = 0.0
     cdef double alpbd = 1.0
@@ -157,10 +156,10 @@ def lctcg(double[:] xopt, double[:] gq, object hessp, double[::1, :] aub, double
                 # Calculate the projection towards the boundaries of the active
                 # constraints. The length of this step is computed hereinafter.
                 for k in range(nact[0]):
-                    vecta[k] = resid[iact[k]]
-                    vecta[k] -= inner(rfac[mleq:mleq + k, mleq + k], vecta[:k])
-                    vecta[k] /= rfac[mleq + k, mleq + k]
-                dot(qfac[:, mleq:mleq + nact[0]], vecta[:nact[0]], sd, 'n', 1.0, 0.0)  # noqa
+                    work[k] = resid[iact[k]]
+                    work[k] -= inner(rfac[mleq:mleq + k, mleq + k], work[:k])
+                    work[k] /= rfac[mleq + k, mleq + k]
+                dot(qfac[:, mleq:mleq + nact[0]], work[:nact[0]], sd, 'n', 1.0, 0.0)  # noqa
 
                 # Determine the greatest steplength along the previously
                 # calculated direction allowed by the trust-region constraint.
@@ -308,16 +307,16 @@ def lctcg(double[:] xopt, double[:] gq, object hessp, double[::1, :] aub, double
         # one, except if iterc is zero, which occurs if the previous search
         # direction was not determined by the quadratic objective function to be
         # minimized but by the active constraints.
-        vecta[:] = gq
+        work[:n] = gq
         if mleq + nact[0] > 0:
-            dot(qfac[:, mleq + nact[0]:], vecta, vectb[:n - mleq - nact[0]], 't', 1.0, 0.0)  # noqa
-            dot(qfac[:, mleq + nact[0]:], vectb[:n - mleq - nact[0]], vecta, 'n', 1.0, 0.0)  # noqa
+            dot(qfac[:, mleq + nact[0]:], work[:n], work[n:2 * n - mleq - nact[0]], 't', 1.0, 0.0)  # noqa
+            dot(qfac[:, mleq + nact[0]:], work[n:2 * n - mleq - nact[0]], work[:n], 'n', 1.0, 0.0)  # noqa
         if iterc == 0:
             beta = 0.0
         else:
-            beta = inner(vecta, hsd) / curv
+            beta = inner(work[:n], hsd) / curv
         for i in range(n):
-            sd[i] = beta * sd[i] - vecta[i]
+            sd[i] = beta * sd[i] - work[i]
         alpbd = 0.0
     free(nact)
 

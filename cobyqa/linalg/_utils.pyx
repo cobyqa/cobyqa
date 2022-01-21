@@ -194,7 +194,7 @@ cdef void getact(double[:] gq, evalc_t evalc, double[:] resid, int[:] iact, int 
     # Start the iterative procedure. The calculations must be stopped if
     # nact + mleq equals n, as n linearly independent constraints would have
     # been found, which would make of the origin the only feasible point.
-    cdef double[:] vect = np_empty(n, dtype=np_float64)
+    cdef double[:] work = np_empty(n, dtype=np_float64)
     cdef double stepsq = inner(gq, gq)
     cdef double eps = np.finfo(np_float64).eps
     cdef double tiny = np.finfo(np_float64).tiny
@@ -220,8 +220,8 @@ cdef void getact(double[:] gq, evalc_t evalc, double[:] resid, int[:] iact, int 
         #
         # by using the orthogonality property of qfac. However, this
         # orthogonality is only approximate in practice.
-        dot(qfac[:, mleq + nact[0]:], gq, vect, 't', 1.0, 0.0)  # noqa
-        dot(qfac[:, mleq + nact[0]:], vect, step, 'n', -1.0, 0.0)  # noqa
+        dot(qfac[:, mleq + nact[0]:], gq, work, 't', 1.0, 0.0)  # noqa
+        dot(qfac[:, mleq + nact[0]:], work, step, 'n', -1.0, 0.0)  # noqa
         ssq = inner(step, step)
         if ssq - stepsq >= gqtol or sqrt(ssq) <= gqtol:
             step[:] = 0.0
@@ -283,19 +283,19 @@ cdef void getact(double[:] gq, evalc_t evalc, double[:] resid, int[:] iact, int 
             # Update the vector of the Lagrange multipliers of the calculations
             # to include the new constraint. When a constraint is added or
             # removed, all the Lagrange multipliers must be updated.
-            vect[nact[0] - 1] = 1.0 / rfac[mleq + nact[0] - 1, mleq + nact[0] - 1] ** 2.0
+            work[nact[0] - 1] = 1.0 / rfac[mleq + nact[0] - 1, mleq + nact[0] - 1] ** 2.0
             for k in range(nact[0] - 2, -1, -1):
-                vect[k] = -inner(rfac[mleq + k, mleq + k + 1:mleq + nact[0]], vect[k + 1:nact[0]])
-                vect[k] /= rfac[mleq + k, mleq + k]
+                work[k] = -inner(rfac[mleq + k, mleq + k + 1:mleq + nact[0]], work[k + 1:nact[0]])
+                work[k] /= rfac[mleq + k, mleq + k]
             vmult = violmx
             ic = -1
             for k in range(nact[0] - 1):
-                if vlam[k] >= vmult * vect[k]:
-                    if fabs(vect[k]) > tiny * fabs(vlam[k]):
+                if vlam[k] >= vmult * work[k]:
+                    if fabs(work[k]) > tiny * fabs(vlam[k]):
                         ic = k
-                        vmult = vlam[k] / vect[k]
+                        vmult = vlam[k] / work[k]
             for k in range(nact[0]):
-                vlam[k] -= vmult * vect[k]
+                vlam[k] -= vmult * work[k]
             if ic >= 0:
                 vlam[ic] = 0.0
                 violmx = fmax(violmx - vmult, 0.0)

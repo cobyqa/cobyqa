@@ -99,11 +99,10 @@ def cpqp(double[:] xopt, double[::1, :] aub, double[:] bub, double[::1, :] aeq, 
     cdef double[:] step = np_zeros(n, dtype=np_float64)
     cdef double[:] sd = np_zeros(mlub + n, dtype=np_float64)
     cdef double[:] sdd = np_zeros(mlub + n, dtype=np_float64)
-    cdef double[:] vecta = np_empty(max(mlub + n, mleq), dtype=np_float64)
-    cdef double[:] vectb = np_empty(mlub + n, dtype=np_float64)
     cdef double[:] hsd = np_empty(mlub + n, dtype=np_float64)
     cdef double[:] asd = np_empty(2 * (mlub + n), dtype=np_float64)
     cdef double[:] asdd = np_empty(2 * (mlub + n), dtype=np_float64)
+    cdef double[:] work = np_empty(max(2 * (mlub + n), mleq), dtype=np_float64)
     cdef double reduct = 0.0
     cdef double stepsq = 0.0
     cdef double alpbd = 1.0
@@ -141,10 +140,10 @@ def cpqp(double[:] xopt, double[::1, :] aub, double[:] bub, double[::1, :] aeq, 
                 # Calculate the projection towards the boundaries of the active
                 # constraints. The length of this step is computed hereinafter.
                 for k in range(nact[0]):
-                    vecta[k] = resid[iact[k]]
-                    vecta[k] -= inner(rfac[:k, k], vecta[:k])
-                    vecta[k] /= rfac[k, k]
-                dot(qfac[:, :nact[0]], vecta[:nact[0]], sd, 'n', 1.0, 0.0)  # noqa
+                    work[k] = resid[iact[k]]
+                    work[k] -= inner(rfac[:k, k], work[:k])
+                    work[k] /= rfac[k, k]
+                dot(qfac[:, :nact[0]], work[:nact[0]], sd, 'n', 1.0, 0.0)  # noqa
 
                 # Determine the greatest steplength along the previously
                 # calculated direction allowed by the trust-region constraint.
@@ -217,8 +216,8 @@ def cpqp(double[:] xopt, double[::1, :] aub, double[:] bub, double[::1, :] aeq, 
         # to be positive semidefinite, so that the curvature of the model at the
         # current search direction may be negative, in which case the model is
         # not lower bounded.
-        dot(aeq, sd[:n], vecta[:mleq], 'n', 1.0, 0.0)
-        dot(aeq, vecta[:mleq], hsd[:n], 't', 1.0, 0.0)
+        dot(aeq, sd[:n], work[:mleq], 'n', 1.0, 0.0)
+        dot(aeq, work[:mleq], hsd[:n], 't', 1.0, 0.0)
         hsd[n:] = sd[n:]
         curv = inner(sd, hsd)
         if curv >= huge:
@@ -293,16 +292,16 @@ def cpqp(double[:] xopt, double[::1, :] aub, double[:] bub, double[::1, :] aeq, 
         # one, except if iterc is zero, which occurs if the previous search
         # direction was not determined by the quadratic objective function to be
         # minimized but by the active constraints.
-        vecta[:mlub + n] = gq
+        work[:mlub + n] = gq
         if nact[0] > 0:
-            dot(qfac[:, nact[0]:], vecta[:mlub + n], vectb[:mlub + n - nact[0]], 't', 1.0, 0.0)  # noqa
-            dot(qfac[:, nact[0]:], vectb[:mlub + n - nact[0]], vecta[:mlub + n], 'n', 1.0, 0.0)  # noqa
+            dot(qfac[:, nact[0]:], work[:mlub + n], work[mlub + n:2 * (mlub + n) - nact[0]], 't', 1.0, 0.0)  # noqa
+            dot(qfac[:, nact[0]:], work[mlub + n:2 * (mlub + n) - nact[0]], work[:mlub + n], 'n', 1.0, 0.0)  # noqa
         if iterc == 0:
             beta = 0.0
         else:
-            beta = inner(vecta[:mlub + n], hsd) / curv
+            beta = inner(work[:mlub + n], hsd) / curv
         for i in range(mlub + n):
-            sd[i] = beta * sd[i] - vecta[i]
+            sd[i] = beta * sd[i] - work[i]
         alpbd = 0.0
     free(nact)
 
