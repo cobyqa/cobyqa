@@ -55,7 +55,7 @@ default_role = 'autolink'
 # Whether parentheses are appended to function and method role text.
 add_function_parentheses = False
 
-# Suppress "WARNING: unknown mimetype for ..., ignoring"
+# Suppress "WARNING: unknown mimetype for ..., ignoring".
 suppress_warnings = ['epub.unknown_project_files']
 
 
@@ -63,9 +63,9 @@ suppress_warnings = ['epub.unknown_project_files']
 
 html_theme = 'pydata_sphinx_theme'
 
+html_logo = '_static/cobyqa.svg'
+
 html_theme_options = {
-    'collapse_navigation': True,
-    'footer_items': ['copyright', 'last-updated', 'sphinx-version'],
     'icon_links': [
         {
             'name': 'GitHub',
@@ -78,12 +78,21 @@ html_theme_options = {
             'icon': 'fab fa-python',
         },
     ],
+    'collapse_navigation': True,
     'logo_link': 'index',
+    'footer_items': ['copyright', 'last-updated', 'sphinx-version'],
+    'google_analytics_id': 'G-QTL4NYPHTV',
+}
+
+html_sidebars = {
+    '**': [
+        'search-field.html',
+        'sidebar-nav-bs.html',
+        'sidebar-ethical-ads.html',
+    ],
 }
 
 html_title = f'{project} v{version} Manual'
-
-html_logo = '_static/cobyqa.svg'
 
 html_favicon = '_static/favicon/favicon.ico'
 
@@ -219,9 +228,13 @@ def linkcode_resolve(domain, info):
     except OSError:
         lines = ''
 
-    repository = 'https://github.com/ragonneau/cobyqa'
+    github_url = html_context.get('github_url', 'https://github.com')
+    github_user = html_context.get('github_user')
+    github_repo = html_context.get('github_user')
+    github_version = html_context.get('github_version')
+    repository = f'{github_url}/{github_user}/{github_repo}'
     if 'dev' in release:
-        return f'{repository}/blob/main/cobyqa/{fn}{lines}'
+        return f'{repository}/blob/{github_version}/cobyqa/{fn}{lines}'
     else:
         return f'{repository}/blob/v{release}/cobyqa/{fn}{lines}'
 
