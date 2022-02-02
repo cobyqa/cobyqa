@@ -5,6 +5,8 @@ from contextlib import suppress
 import numpy as np
 from numpy.testing import assert_, assert_array_less
 from scipy.linalg import get_blas_funcs
+from scipy.optimize import Bounds, NonlinearConstraint
+from scipy.optimize import minimize as scipy_minimize
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls
 from .utils import RestartRequiredException
@@ -2075,8 +2077,32 @@ class TrustRegion:
             nstep = np.zeros_like(self.xopt)
             ssq = 0.0
         else:
+            ####################################################################
+            # xi = kwargs.get('xi')
+            #
+            # def normal_obj(x):
+            #     rub = np.maximum(0.0, np.dot(aub, x) - bub)
+            #     req = np.dot(aeq, x) - beq
+            #     fx = 0.5 * (np.inner(rub, rub) + np.inner(req, req))
+            #     gx = np.dot(aub.T, rub) + np.dot(aeq.T, req)
+            #     return fx, gx
+            #
+            # def ball(x):
+            #     return np.linalg.norm(x - self.xopt) - xi * delta
+            #
+            # bounds = Bounds(self.xl, self.xu)
+            # constraints = NonlinearConstraint(ball, -np.inf, 0.0)
+            # options = {'ftol': max(1e-15, 1e-8 * delta)}
+            # with warnings.catch_warnings():
+            #     warnings.simplefilter('ignore')
+            #     res = scipy_minimize(
+            #         normal_obj, self.xopt, method='slsqp', jac=True,
+            #         bounds=bounds, constraints=constraints, options=options)
+            # nstep = res.x - self.xopt
+            ####################################################################
             nstep = cpqp(self.xopt, aub, bub, aeq, beq, self.xl, self.xu,
                          kwargs.get('xi') * delta, **kwargs)
+            ####################################################################
             ssq = np.inner(nstep, nstep)
             if self.debug:
                 tol = 10.0 * np.finfo(float).eps * self.xopt.size
