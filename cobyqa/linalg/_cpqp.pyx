@@ -305,6 +305,10 @@ def cpqp(double[:] xopt, double[::1, :] aub, double[:] bub, double[::1, :] aeq, 
         alpbd = 0.0
     free(nact)
 
+    # Ensure that the bound constraints are respected.
+    for i in range(n):
+        step[i] = fmax(xl[i], fmin(xu[i], step[i]))
+
     # To prevent numerical difficulties emerging from computer rounding errors
     # on ill-conditioned problems, the reduction is computed from scratch.
     reduct = 0.0

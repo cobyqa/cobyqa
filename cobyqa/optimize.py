@@ -870,13 +870,19 @@ class TrustRegion:
         x_full[np.logical_not(self.ifix)] = x
         return x_full
 
-    def get_linear_ub(self):
+    def get_linear_ub(self, x=None):
         """
         Get the linear inequality constraints of the models.
 
         The linear inequality constraints of the models start with the linear
         inequality constraints of the original problem, followed by the linear
         Taylor-like expansion of the nonlinear inequality constraints.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point around which to expand the Taylor models (the default is the
+            best point so far).
 
         Returns
         -------
@@ -887,20 +893,28 @@ class TrustRegion:
         """
         aub = np.copy(self.aub)
         bub = np.copy(self.bub)
+        if x is None:
+            x = self.xopt
         for i in range(self.mnlub):
-            lhs = self.model_cub_grad(self.xopt, i)
-            rhs = np.inner(self.xopt, lhs) - self.coptub[i]
+            lhs = self.model_cub_grad(x, i)
+            rhs = np.inner(x, lhs) - self.coptub[i]
             aub = np.vstack([aub, lhs])
             bub = np.r_[bub, rhs]
         return aub, bub
 
-    def get_linear_eq(self):
+    def get_linear_eq(self, x=None):
         """
         Get the linear equality constraints of the models.
 
         The linear equality constraints of the models start with the linear
         equality constraints of the original problem, followed by the linear
         Taylor-like expansion of the nonlinear equality constraints.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point around which to expand the Taylor models (the default is the
+            best point so far).
 
         Returns
         -------
@@ -911,9 +925,11 @@ class TrustRegion:
         """
         aeq = np.copy(self.aeq)
         beq = np.copy(self.beq)
+        if x is None:
+            x = self.xopt
         for i in range(self.mnleq):
-            lhs = self.model_ceq_grad(self.xopt, i)
-            rhs = np.inner(self.xopt, lhs) - self.copteq[i]
+            lhs = self.model_ceq_grad(x, i)
+            rhs = np.inner(x, lhs) - self.copteq[i]
             aeq = np.vstack([aeq, lhs])
             beq = np.r_[beq, rhs]
         return aeq, beq
@@ -1814,7 +1830,7 @@ class TrustRegion:
             if self.debug:
                 self.check_models()
 
-    def update(self, nstep, tstep, **kwargs):
+    def update(self, nstep, tstep, delta, **kwargs):
         """
         Include a new point in the interpolation set.
 
@@ -1829,6 +1845,8 @@ class TrustRegion:
         tstep: numpy.ndarray, shape (n,)
             Tangential step from `xopt + nstep` of the new point to include in
             the interpolation set.
+        delta : float
+            Trust-region radius.
 
         Returns
         -------
@@ -1851,8 +1869,7 @@ class TrustRegion:
         bdtol = 10.0 * np.finfo(float).eps * self.xopt.size
         bdtol *= absmax_arrays(self.xl, self.xu, initial=1.0)
         step = nstep + tstep
-        xsav = np.copy(self.xopt)
-        xnew = xsav + step
+        xnew = self.xopt + step
         fx = self.fun(self.xbase + xnew)
         cubx = self.cub(self.xbase + xnew)
         ceqx = self.ceq(self.xbase + xnew)
@@ -1861,6 +1878,8 @@ class TrustRegion:
 
         # Update the Lagrange multipliers and the penalty parameters for the
         # trust-region ratio to be well-defined.
+        tiny = np.finfo(float).tiny
+        is_trust_region_step = not self.is_model_step
         if not self.target_reached:
             ksav = self.kopt
             mx, mmx, mopt = self.increase_penalty(nstep, tstep, fx, cubx, ceqx,
@@ -1873,8 +1892,6 @@ class TrustRegion:
                 raise RestartRequiredException
 
             # Determine the trust-region ratio.
-            tiny = np.finfo(float).tiny
-            is_trust_region_step = not self.is_model_step
             if is_trust_region_step and abs(mopt - mmx) > tiny * abs(mopt - mx):
                 ratio = (mopt - mx) / (mopt - mmx)
             else:
@@ -1885,11 +1902,31 @@ class TrustRegion:
             mopt = mx
             ratio = -1.0
 
-        # Update the models of the problem.
+        # Update the models of the problem and perform a second-order correction
+        # step if possible whenever the trust-region ratio is too low.
         self._knew = self._models.update(step, fx, cubx, ceqx, self.knew)
         if self.target_reached or self.less_merit(mx, rx, mopt, self.maxcv):
             self.kopt = self.knew
             mopt = mx
+        elif is_trust_region_step and self.type in 'QO':
+            nssq = np.inner(nstep, nstep)
+            if nssq <= kwargs.get('xi') ** 4.0 * delta ** 2.0:
+                ssoc = self.soc_step(step, **kwargs)
+                if np.inner(ssoc, ssoc) > 0.0:
+                    xsoc = self.xopt + step + ssoc
+                    fxs = self.fun(self.xbase + xsoc)
+                    cubx = self.cub(self.xbase + xsoc)
+                    ceqx = self.ceq(self.xbase + xsoc)
+                    mx, mmx = self(xsoc, fxs, cubx, ceqx, True)
+                    rx = self._models.resid(xsoc, cubx, ceqx)
+                    if self.less_merit(mx, rx, mopt, self.maxcv):
+                        if abs(mopt - mmx) > tiny * abs(mopt - mx):
+                            fx = fxs
+                            ratio = (mopt - mx) / (mopt - mmx)
+                            mopt = mx
+                            self._knew = self._models.update(
+                                ssoc, fx, cubx, ceqx, self.knew)
+                            self.kopt = self.knew
         if not self.target_reached and self.debug:
             self.check_models()
         return fx, mopt, ratio
@@ -2077,32 +2114,32 @@ class TrustRegion:
             nstep = np.zeros_like(self.xopt)
             ssq = 0.0
         else:
-            ####################################################################
-            # xi = kwargs.get('xi')
-            #
-            # def normal_obj(x):
-            #     rub = np.maximum(0.0, np.dot(aub, x) - bub)
-            #     req = np.dot(aeq, x) - beq
-            #     fx = 0.5 * (np.inner(rub, rub) + np.inner(req, req))
-            #     gx = np.dot(aub.T, rub) + np.dot(aeq.T, req)
-            #     return fx, gx
-            #
-            # def ball(x):
-            #     return np.linalg.norm(x - self.xopt) - xi * delta
-            #
-            # bounds = Bounds(self.xl, self.xu)
-            # constraints = NonlinearConstraint(ball, -np.inf, 0.0)
-            # options = {'ftol': max(1e-15, 1e-8 * delta)}
-            # with warnings.catch_warnings():
-            #     warnings.simplefilter('ignore')
-            #     res = scipy_minimize(
-            #         normal_obj, self.xopt, method='slsqp', jac=True,
-            #         bounds=bounds, constraints=constraints, options=options)
-            # nstep = res.x - self.xopt
-            ####################################################################
-            nstep = cpqp(self.xopt, aub, bub, aeq, beq, self.xl, self.xu,
-                         kwargs.get('xi') * delta, **kwargs)
-            ####################################################################
+            xi = kwargs.get('xi')
+
+            def normal_obj(x):
+                rub = np.maximum(0.0, np.dot(aub, x) - bub)
+                req = np.dot(aeq, x) - beq
+                fx = 0.5 * (np.inner(rub, rub) + np.inner(req, req))
+                gx = np.dot(aub.T, rub) + np.dot(aeq.T, req)
+                return fx, gx
+
+            def ball(x):
+                return np.linalg.norm(x - self.xopt) - xi * delta
+
+            if kwargs.get('exact_normal_step'):
+                bounds = Bounds(self.xl, self.xu)
+                constraints = NonlinearConstraint(ball, -np.inf, 0.0)
+                options = {'ftol': max(np.finfo(float).eps, 1e-8 * delta)}
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore')
+                    res = scipy_minimize(normal_obj, self.xopt, method='slsqp',
+                                         jac=True, bounds=bounds,
+                                         constraints=constraints,  # noqa
+                                         options=options)
+                nstep = res.x - self.xopt
+            else:
+                nstep = cpqp(self.xopt, aub, bub, aeq, beq, self.xl, self.xu,
+                             xi * delta, **kwargs)
             ssq = np.inner(nstep, nstep)
             if self.debug:
                 tol = 10.0 * np.finfo(float).eps * self.xopt.size
@@ -2182,6 +2219,34 @@ class TrustRegion:
                               tol * absmax_arrays(self.xl, initial=1.0))
             assert_(np.linalg.norm(step) <= 1.1 * delta)
         return step
+
+    def soc_step(self, step, **kwargs):
+        """
+
+        Parameters
+        ----------
+        step : numpy.ndarray, shape (n,)
+            The current trust-region step.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            Second order correction step from `xopt + step`.
+        """
+        delta = np.linalg.norm(step)
+        xsav = self.xopt + step
+        aub, bub = self.get_linear_ub(xsav)
+        aeq, beq = self.get_linear_eq(xsav)
+        ssoc = cpqp(xsav, aub, bub, aeq, beq, self.xl, self.xu, delta, **kwargs)
+        ssq = np.inner(ssoc, ssoc)
+        if self.debug:
+            tol = 10.0 * np.finfo(float).eps * self.xopt.size
+            assert_array_less(self.xl - xsav - ssoc,
+                              tol * absmax_arrays(self.xl, initial=1.0))
+            assert_array_less(xsav + ssoc - self.xu,
+                              tol * absmax_arrays(self.xl, initial=1.0))
+            assert_(ssq <= 1.1 * delta ** 2.0)
+        return ssoc
 
     def reset_models(self):
         """

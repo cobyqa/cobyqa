@@ -320,6 +320,10 @@ def lctcg(double[:] xopt, double[:] gq, object hessp, double[::1, :] aub, double
         alpbd = 0.0
     free(nact)
 
+    # Ensure that the bound constraints are respected.
+    for i in range(n):
+        step[i] = fmax(xl[i], fmin(xu[i], step[i]))
+
     # To prevent numerical difficulties emerging from computer rounding errors
     # on ill-conditioned problems, the reduction is computed from scratch.
     hsd = hessp(step)

@@ -19,7 +19,7 @@ import cobyqa  # noqa
 
 project = 'COBYQA'
 author = 'Tom M. Ragonneau'
-copyright = f'2021\u2013{datetime.now().year}, {author}'
+copyright = f'2021-{datetime.now().year}, {author}'
 
 # The short version (including .devX, rcX, b1 suffixes if present).
 version = re.sub(r'(\d+\.\d+)\.\d+(.*)', r'\1\2', cobyqa.__version__)
@@ -175,7 +175,7 @@ autosummary_generate = True
 # -- Link to other projects’ documentation ------------------------------------
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/dev', None),
+    'python': ('https://docs.python.org/', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
     'scipy': ('https://scipy.github.io/devdocs/', None),
 }
@@ -228,13 +228,9 @@ def linkcode_resolve(domain, info):
     except OSError:
         lines = ''
 
-    github_url = html_context.get('github_url', 'https://github.com')
-    github_user = html_context.get('github_user')
-    github_repo = html_context.get('github_user')
-    github_version = html_context.get('github_version')
-    repository = f'{github_url}/{github_user}/{github_repo}'
+    repository = f'https://github.com/ragonneau/cobyqa'
     if 'dev' in release:
-        return f'{repository}/blob/{github_version}/cobyqa/{fn}{lines}'
+        return f'{repository}/blob/main/cobyqa/{fn}{lines}'
     else:
         return f'{repository}/blob/v{release}/cobyqa/{fn}{lines}'
 

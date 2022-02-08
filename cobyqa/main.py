@@ -410,7 +410,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 break
             nfev += 1
             try:
-                fx, mopt, ratio = struct.update(nstep, tstep, **kwargs)
+                fx, mopt, ratio = struct.update(nstep, tstep, delta, **kwargs)
             except RestartRequiredException:
                 continue
             except ZeroDivisionError:
@@ -540,6 +540,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
 
 def _set_default_constants(kwargs):
+    kwargs.setdefault('exact_normal_step', False)
     kwargs.setdefault('gamma1', 0.5)
     kwargs.setdefault('gamma2', np.sqrt(2.0))
     kwargs.setdefault('gamma3', 1.4)
