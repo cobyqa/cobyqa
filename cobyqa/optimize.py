@@ -129,7 +129,7 @@ class TrustRegion:
             options = {}
         self._options = dict(options)
 
-        # Remove NaN and infinite values in the constraints.
+        # Remove NaN and infinite values from the constraints.
         xl[np.isnan(xl)] = -np.inf
         xu[np.isnan(xu)] = np.inf
         np.nan_to_num(Aub, False)
@@ -246,16 +246,13 @@ class TrustRegion:
         if self.penalty > 0.0:
             cx = np.r_[
                 np.maximum(0.0, np.dot(self.aub, x) - self.bub),
-                np.maximum(0.0, cubx),
                 np.dot(self.aeq, x) - self.beq,
+                np.maximum(0.0, cubx),
                 ceqx,
             ]
             ax += self.penalty * np.linalg.norm(cx)
         if model:
-            hx = self.model_lag_hessp(x - self.xopt)
-            mx = self.fopt
-            mx += np.inner(self.model_obj_grad(self.xopt), x - self.xopt)
-            mx += 0.5 * np.inner(hx, x - self.xopt)
+            mx = self.model_obj(x)
             if self.penalty > 0.0:
                 aub, bub = self.get_linear_ub()
                 aeq, beq = self.get_linear_eq()
@@ -1882,8 +1879,8 @@ class TrustRegion:
         is_trust_region_step = not self.is_model_step
         if not self.target_reached:
             ksav = self.kopt
-            mx, mmx, mopt = self.increase_penalty(nstep, tstep, fx, cubx, ceqx,
-                                                  **kwargs)
+            mx, mmx, mopt = self.increase_penalty(
+                nstep, tstep, fx, cubx, ceqx, **kwargs)
             if ksav != self.kopt:
                 # When increasing the penalty parameters is required to make the
                 # trust-region ratio meaningful, the index of the optimal point
@@ -2222,6 +2219,7 @@ class TrustRegion:
 
     def soc_step(self, step, **kwargs):
         """
+        Estimate a second-order correction step from ``xopt + step``.
 
         Parameters
         ----------
@@ -4210,11 +4208,11 @@ class Models:
         stack_level += 1
         self._obj.check_model(self.xpt, self.fval, self.kopt, stack_level)
         for i in range(self.mnlub):
-            self._cub[i].check_model(self.xpt, self.cvalub[:, i], self.kopt,
-                                     stack_level)
+            self._cub[i].check_model(
+                self.xpt, self.cvalub[:, i], self.kopt, stack_level)
         for i in range(self.mnleq):
-            self._ceq[i].check_model(self.xpt, self.cvaleq[:, i], self.kopt,
-                                     stack_level)
+            self._ceq[i].check_model(
+                self.xpt, self.cvaleq[:, i], self.kopt, stack_level)
 
     def _get_point_to_remove(self, beta, vlag):
         """

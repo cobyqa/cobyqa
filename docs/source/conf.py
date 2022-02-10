@@ -84,14 +84,6 @@ html_theme_options = {
     'google_analytics_id': 'G-QTL4NYPHTV',
 }
 
-html_sidebars = {
-    '**': [
-        'search-field.html',
-        'sidebar-nav-bs.html',
-        'sidebar-ethical-ads.html',
-    ],
-}
-
 html_title = f'{project} v{version} Manual'
 
 html_favicon = '_static/favicon/favicon.ico'

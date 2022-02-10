@@ -8,7 +8,7 @@ from .utils import RestartRequiredException, absmax_arrays
 
 class OptimizeResult(dict):
     """
-    Structure for the result of an optimization algorithm.
+    Structure for the result of the optimization algorithm.
 
     Attributes
     ----------
@@ -138,7 +138,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
     The minimization can be subject to bound, linear inequality, linear
     equality, nonlinear inequality, and nonlinear equality constraints using a
-    derivative-free trust-region SQP method. Although the solver may tackle
+    derivative-free trust-region SQP method. Although the solver may encounter
     infeasible points (including the initial guess), the bounds constraints (if
     any) are always respected.
 
@@ -336,8 +336,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     if not isinstance(args, tuple):
         args = (args,)
     _set_default_constants(kwargs)
-    struct = TrustRegion(fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options,
-                         *args)
+    struct = TrustRegion(
+        fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options, *args)
     if np.all(struct.ifix):
         exit_status = 8
         nfev = 1
@@ -400,7 +400,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             nstep = np.zeros_like(struct.xopt)
             tstep = struct.model_step(deltx, **kwargs)
             step = tstep
-            snorm = np.linalg.norm(tstep)
+            snorm = np.linalg.norm(step)
 
         if not is_trust_region_step or snorm > test * delta:
             # Evaluate the objective function, include the trial point in the
