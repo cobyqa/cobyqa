@@ -2,7 +2,7 @@ from abc import ABC
 
 import numpy as np
 import pytest
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import assert_, assert_allclose, assert_warns
 
 from cobyqa import minimize
 
@@ -196,6 +196,11 @@ class TestBase(ABC):
 
 class TestUnconstrained(TestBase):
 
+    def get_npt(self, n, npt):
+        npt_max = (n + 1) * (n + 2) // 2
+        npt_min = min(n + 2, npt_max)
+        return max(npt_min, min(npt_max, npt))
+
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['arwhead', 'power', 'rosen', 'rothyp',
                                      'sphere', 'stybtang', 'trid'])
@@ -225,6 +230,11 @@ class TestUnconstrained(TestBase):
         res = minimize(
             fun=getattr(self, fun),
             x0=x0,
+        )
+        self.assert_optimize(res, n, x_sol, f_sol)
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
             options={'rhobeg': 1.5, 'debug': True},
         )
         self.assert_optimize(res, n, x_sol, f_sol)
@@ -234,18 +244,16 @@ class TestUnconstrained(TestBase):
             options={'rhoend': 1e-7, 'debug': True},
         )
         self.assert_optimize(res, n, x_sol, f_sol)
-        npt_max = (n + 1) * (n + 2) // 2
-        npt_min = min(n + 2, npt_max)
         res = minimize(
             fun=getattr(self, fun),
             x0=x0,
-            options={'npt': max(npt_min, min(npt_max, n + 3)), 'debug': True},
+            options={'npt': self.get_npt(n, n + 3), 'debug': True},
         )
         self.assert_optimize(res, n, x_sol, f_sol)
         res = minimize(
             fun=getattr(self, fun),
             x0=x0,
-            options={'npt': max(npt_min, min(npt_max, 2 * n + 3)), 'debug': True},
+            options={'npt': self.get_npt(n, n + 3), 'debug': True},
         )
         self.assert_optimize(res, n, x_sol, f_sol)
         res = minimize(
@@ -254,6 +262,36 @@ class TestUnconstrained(TestBase):
             options={'maxfev': 300 * n, 'debug': True},
         )
         self.assert_optimize(res, n, x_sol, f_sol)
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            options={'disp': True, 'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol)
+        with assert_warns(RuntimeWarning):
+            minimize(
+                fun=getattr(self, fun),
+                x0=x0,
+                options={'npt': n},
+            )
+        with assert_warns(RuntimeWarning):
+            minimize(
+                fun=getattr(self, fun),
+                x0=x0,
+                options={'npt': (n + 2) ** 2.0 // 2},
+            )
+        with assert_warns(RuntimeWarning):
+            minimize(
+                fun=getattr(self, fun),
+                x0=x0,
+                options={'maxfev': n},
+            )
+        with assert_warns(RuntimeWarning):
+            minimize(
+                fun=getattr(self, fun),
+                x0=x0,
+                options={'rhobeg': 1e-3, 'rhoend': 1e-2},
+            )
 
 
 class TestBoundConstrained(TestBase):

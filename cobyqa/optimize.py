@@ -5,12 +5,12 @@ from contextlib import suppress
 import numpy as np
 from numpy.testing import assert_, assert_array_less
 from scipy.linalg import get_blas_funcs
-from scipy.optimize import Bounds, NonlinearConstraint
-from scipy.optimize import minimize as scipy_minimize
+from scipy.optimize import Bounds, NonlinearConstraint,\
+    minimize as scipy_minimize
 
 from .linalg import bvcs, bvlag, bvtcg, cpqp, lctcg, nnls
-from .utils import RestartRequiredException
-from .utils import huge, implicit_hessian, normalize, absmax_arrays
+from .utils import RestartRequiredException, huge, implicit_hessian, \
+    normalize, absmax_arrays
 
 
 class TrustRegion:
