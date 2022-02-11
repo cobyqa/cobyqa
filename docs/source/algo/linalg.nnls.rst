@@ -36,7 +36,7 @@ The framework of the method is described below.
 #. Set :math:`\alpha_k = \min \set{x_i^k / (x_i^k - z_i^k) : z_i^k \le 0, ~ i \notin \mathcal{I}^k, ~ i \le n_0}`.
 #. Update :math:`x^{k + 1} = x^k + \alpha_k (z^k - x^k)`, :math:`\mathcal{I}^{k + 1} = \mathcal{I}^k \cup \set{i \le n_0 : x_i^{k + 1} = 0}`, increment :math:`k`, and go to step 5.
 
-The unconstrained least-squares subproblem of `nnls` at step 6 is solved using `scipy.linalg.lstsq`.
+The unconstrained least-squares subproblem of `nnls` at step 6 is solved using the GELSY driver of the LAPACK library.
 Several refinements of this framework have been made in the implementation.
 
 #. The number of past iterations is maintained to stop the computations if a given threshold is exceeded.

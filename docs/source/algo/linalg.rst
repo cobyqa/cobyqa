@@ -14,9 +14,7 @@ This section presents the mathematical frameworks underneath the subproblem solv
     `bvtcg`,
     `cpqp`,
     `lctcg`,
-    `nnls`,
-    `rot`,
-    `rotg`
+    `nnls`
 
 .. toctree::
     :maxdepth: 1

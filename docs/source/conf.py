@@ -80,6 +80,12 @@ html_theme_options = {
     ],
     'collapse_navigation': True,
     'logo_link': 'index',
+    'switcher': {
+        'json_url': 'https://cobyqa.readthedocs.io/en/latest/_static/switcher.json',
+        'url_template': 'https://cobyqa.readthedocs.io/en/{version}/',
+        'version_match': f'v{version}',
+    },
+    'navbar_end': ['version-switcher', 'navbar-icon-links'],
     'footer_items': ['copyright', 'last-updated', 'sphinx-version'],
     'google_analytics_id': 'G-QTL4NYPHTV',
 }
@@ -167,7 +173,6 @@ autosummary_generate = True
 # -- Link to other projects’ documentation ------------------------------------
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
     'scipy': ('https://scipy.github.io/devdocs/', None),
 }
