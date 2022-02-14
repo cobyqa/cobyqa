@@ -1910,7 +1910,8 @@ class TrustRegion:
             if nssq <= kwargs.get('xi') ** 4.0 * delta ** 2.0:
                 ssoc = self.soc_step(step, **kwargs)
                 if np.inner(ssoc, ssoc) > 0.0:
-                    xsoc = self.xopt + step + ssoc
+                    ssoc += step
+                    xsoc = self.xopt + ssoc
                     fxs = self.fun(self.xbase + xsoc)
                     cubx = self.cub(self.xbase + xsoc)
                     ceqx = self.ceq(self.xbase + xsoc)

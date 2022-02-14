@@ -27,14 +27,14 @@ BSD-3-Clause license.
 Installation
 ============
 
-COBYQA can be installed on `Python 3.6 or above <https://www.python.org>`_.
+COBYQA can be installed on `Python 3.7 or above <https://www.python.org>`_.
 
 Dependencies
 ------------
 
 The following Python packages are required by COBYQA:
 
-* `NumPy <https://www.numpy.org>`_ 1.13.3 or higher,
+* `NumPy <https://www.numpy.org>`_,
 * `SciPy <https://www.scipy.org>`_ 1.1.0 or higher, and
 * `Cython <https://cython.org>`_ 0.29.23 or higher
 
