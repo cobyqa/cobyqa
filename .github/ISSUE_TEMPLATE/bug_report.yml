@@ -51,7 +51,10 @@ body:
       label: Versions
       description: >
         Please run the following and paste the output below.
-        ```python -c "import cobyqa; cobyqa.show_versions()"```
+        ```
+        python -c "import cobyqa; cobyqa.show_versions()"
+        ```
+        Adapt the Python executable name if necessary.
     validations:
       required: true
 

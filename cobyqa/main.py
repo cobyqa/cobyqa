@@ -230,6 +230,52 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         termination status of the optimization. See `OptimizeResult` for a
         description of other attributes.
 
+    Other Parameters
+    ----------------
+    alternative_models_radius_threshold : float, optional
+        Threshold on the trust-region ratio used to decide whether alternative
+        models should be used (the default is 1e-2).
+    constraint_activation_factor : float, optional
+        Factor on the linear models of the constraints used by the trust-region
+        subproblem solvers to decide whether a constraint should be considered
+        active (the default is 0.2).
+    exact_normal_step : bool, optional
+        Whether the normal subproblem should be solved exactly using SciPy (the
+        default is False).
+    large_radius_bound_detection_factor : float, optional
+        Factor on the trust-region radius lower bound used to decide whether the
+        current trust-region radius is large (the default is 250).
+    large_radius_reduction_factor : float, optional
+        Factor on the trust-region radius lower bound used to reduce large
+        trust-region radii (the default is 0.1)
+    large_ratio_threshold: float, optional
+        Threshold on the trust-region ratio used to decide whether an iteration
+        performed well (the default is 0.7).
+    low_ratio_threshold: float, optional
+        Threshold on the trust-region ratio used to decide whether an iteration
+        performed poorly (the default is 0.1).
+    normal_step_shrinkage_factor : float, optional
+        Shrinkage factor on the trust-region radius for the normal subproblems
+        (the default is 0.8).
+    penalty_detection_factor : float, optional
+        Factor on the penalty coefficient used to decide whether it should be
+        increased (the default is 1.5).
+    penalty_growth_factor : float, optional
+        Increasing factor on the penalty coefficient (the default is 2).
+    radius_growth_factor : float, optional
+        Increasing factor on the trust-region radius (the default is sqrt(2)).
+    radius_reduction_factor : float, optional
+        Reduction factor on the trust-region radius (the default is 0.5).
+    short_radius_bound_detection_factor : float, optional
+        Factor on the trust-region radius lower bound used to decide whether the
+        current trust-region radius is short (the default is 16).
+    short_radius_detection_factor : float, optional
+        Factor on the trust-region radius lower bound used to reduce short
+        trust-region radii (the default is 1.4)
+    short_step_detection_factor : float, optional
+        Factor on the norm of the current trust-region step to decide whether is
+        small (the default is 0.5).
+
     References
     ----------
     .. [1] J. Nocedal and S. J. Wright. Numerical Optimization. Second. Springer
@@ -375,7 +421,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         xopt = np.copy(struct.xopt)
         is_trust_region_step = not struct.is_model_step
         nit += 1
-        test = kwargs.get('mu2')
+        test = kwargs.get('short_step_detection_factor')
         if struct.type in 'LO':
             test /= np.sqrt(2.0)
         if is_trust_region_step:
@@ -384,19 +430,20 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             snorm = np.linalg.norm(step)
             inew = struct.active_set(struct.xopt + step)
             if not np.array_equal(iact, inew):
-                test = kwargs.get('mu1') - 1e-4
+                test = kwargs.get('constraint_activation_factor') - 1e-4
                 if struct.type in 'LO':
                     test /= np.sqrt(2.0)
                 iact = inew
             if snorm <= test * delta:
-                delta *= kwargs.get('gamma1')
-                if delta <= kwargs.get('gamma3') * rho:
+                delta *= kwargs.get('radius_reduction_factor')
+                if delta <= kwargs.get('short_radius_detection_factor') * rho:
                     delta = rho
                 if delsav > rho:
                     struct.prepare_model_step(delta)
                     continue
         else:
-            deltx = max(kwargs.get('gamma4') * delta, rho)
+            deltx = kwargs.get('large_radius_reduction_factor') * delta
+            deltx = max(deltx, rho)
             nstep = np.zeros_like(struct.xopt)
             tstep = struct.model_step(deltx, **kwargs)
             step = tstep
@@ -437,22 +484,23 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             xsav = xfull
 
             # Update the trust-region radius.
+            low_ratio = kwargs.get('low_ratio_threshold')
             if is_trust_region_step:
-                if ratio <= kwargs.get('eta1'):
-                    delta *= kwargs.get('gamma1')
-                elif ratio <= kwargs.get('eta2'):
-                    delta = max(kwargs.get('gamma1') * delta, snorm)
+                gamma = kwargs.get('radius_reduction_factor')
+                if ratio <= low_ratio:
+                    delta *= gamma
+                elif ratio <= kwargs.get('large_ratio_threshold'):
+                    delta = max(gamma * delta, snorm)
                 else:
-                    delbd = kwargs.get('gamma2') * delta
-                    delta = kwargs.get('gamma1') * delta
-                    delta = max(delta, snorm / kwargs.get('gamma1'))
+                    delbd = kwargs.get('radius_growth_factor') * delta
+                    delta = max(gamma * delta, snorm / gamma)
                     delta = min(delta, delbd)
-                if delta <= kwargs.get('gamma3') * rho:
+                if delta <= kwargs.get('short_radius_detection_factor') * rho:
                     delta = rho
 
             # Attempt to replace the models by the alternative ones.
             if is_trust_region_step and delta <= rho:
-                if ratio > kwargs.get('eta3'):
+                if ratio > kwargs.get('alternative_models_radius_threshold'):
                     itest = 0
                 else:
                     itest += 1
@@ -467,7 +515,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             # If a trust-region step has provided a sufficient decrease or if a
             # model-improvement step has just been computed, then the next
             # iteration is a trust-region step.
-            if not is_trust_region_step or ratio >= kwargs.get('eta1'):
+            if not is_trust_region_step or ratio >= low_ratio:
                 struct.prepare_trust_region_step()
                 continue
 
@@ -484,10 +532,12 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
         # Update the lower bound on the trust-region radius.
         if rho > struct.rhoend:
-            delta = kwargs.get('gamma1') * rho
-            if rho > kwargs.get('theta1') * struct.rhoend:
-                rho *= kwargs.get('gamma4')
-            elif rho <= kwargs.get('theta2') * struct.rhoend:
+            large_radius = kwargs.get('large_radius_bound_detection_factor')
+            short_radius = kwargs.get('short_radius_bound_detection_factor')
+            delta = kwargs.get('radius_reduction_factor') * rho
+            if rho > large_radius * struct.rhoend:
+                rho *= kwargs.get('large_radius_reduction_factor')
+            elif rho <= short_radius * struct.rhoend:
                 rho = struct.rhoend
             else:
                 rho = np.sqrt(rho * struct.rhoend)
@@ -540,21 +590,21 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
 
 def _set_default_constants(kwargs):
+    kwargs.setdefault('alternative_models_radius_threshold', 1e-2)
+    kwargs.setdefault('constraint_activation_factor', 0.2)
     kwargs.setdefault('exact_normal_step', False)
-    kwargs.setdefault('gamma1', 0.5)
-    kwargs.setdefault('gamma2', np.sqrt(2.0))
-    kwargs.setdefault('gamma3', 1.4)
-    kwargs.setdefault('gamma4', 0.1)
-    kwargs.setdefault('eta1', 0.1)
-    kwargs.setdefault('eta2', 0.7)
-    kwargs.setdefault('eta3', 1e-2)
-    kwargs.setdefault('theta1', 250.0)
-    kwargs.setdefault('theta2', 16.0)
-    kwargs.setdefault('mu1', 0.2)
-    kwargs.setdefault('mu2', 0.5)
-    kwargs.setdefault('nu1', 1.5)
-    kwargs.setdefault('nu2', 2.0)
-    kwargs.setdefault('xi', 0.8)
+    kwargs.setdefault('large_radius_bound_detection_factor', 250.0)
+    kwargs.setdefault('large_radius_reduction_factor', 0.1)
+    kwargs.setdefault('large_ratio_threshold', 0.7)
+    kwargs.setdefault('low_ratio_threshold', 0.1)
+    kwargs.setdefault('normal_step_shrinkage_factor', 0.8)
+    kwargs.setdefault('penalty_detection_factor', 1.5)
+    kwargs.setdefault('penalty_growth_factor', 2.0)
+    kwargs.setdefault('radius_growth_factor', np.sqrt(2.0))
+    kwargs.setdefault('radius_reduction_factor', 0.5)
+    kwargs.setdefault('short_radius_bound_detection_factor', 16.0)
+    kwargs.setdefault('short_radius_detection_factor', 1.4)
+    kwargs.setdefault('short_step_detection_factor', 0.5)
 
 
 def _print(problem, fun, nf, message):

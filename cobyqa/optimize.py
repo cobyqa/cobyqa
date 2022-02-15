@@ -1905,9 +1905,10 @@ class TrustRegion:
         if self.target_reached or self.less_merit(mx, rx, mopt, self.maxcv):
             self.kopt = self.knew
             mopt = mx
-        elif is_trust_region_step and self.type in 'QO':
+        elif is_trust_region_step and self.type == 'O':
             nssq = np.inner(nstep, nstep)
-            if nssq <= kwargs.get('xi') ** 4.0 * delta ** 2.0:
+            xi = kwargs.get('normal_step_shrinkage_factor')
+            if nssq <= xi ** 4.0 * delta ** 2.0:
                 ssoc = self.soc_step(step, **kwargs)
                 if np.inner(ssoc, ssoc) > 0.0:
                     ssoc += step
@@ -2020,11 +2021,11 @@ class TrustRegion:
             ]
             violation -= np.linalg.norm(resid)
             lm = np.r_[self.lmlub, self.lmleq, self.lmnlub, self.lmnleq]
-            threshold = np.linalg.norm(lm)
+            thold = np.linalg.norm(lm)
             if violation > tiny * abs(reduct):
-                threshold = max(threshold, reduct / violation)
-            if self.penalty < kwargs.get('nu1') * threshold:
-                self._penalty = kwargs.get('nu2') * threshold
+                thold = max(thold, reduct / violation)
+            if self.penalty < kwargs.get('penalty_detection_factor') * thold:
+                self._penalty = kwargs.get('penalty_growth_factor') * thold
                 mx, mmx = self(xnew, fx, cubx, ceqx, True)
                 self.kopt = self.get_best_point()
                 mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
@@ -2112,7 +2113,7 @@ class TrustRegion:
             nstep = np.zeros_like(self.xopt)
             ssq = 0.0
         else:
-            xi = kwargs.get('xi')
+            xi = kwargs.get('normal_step_shrinkage_factor')
 
             def normal_obj(x):
                 rub = np.maximum(0.0, np.dot(aub, x) - bub)

@@ -383,7 +383,7 @@ def cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, **kwargs):
     assert_(xu.size == xopt.size)
 
     debug = kwargs.get('debug', False)
-    mu = kwargs.get('mu1', 0.2)
+    mu = kwargs.get('constraint_activation_factor', 0.2)
     step = _cpqp(xopt, Aub, bub, Aeq, beq, xl, xu, delta, mu, debug)  # noqa
     return np.array(step, dtype=float)
 
@@ -506,7 +506,7 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
         return hx
 
     debug = kwargs.get('debug', False)
-    mu = kwargs.get('mu1', 0.2)
+    mu = kwargs.get('constraint_activation_factor', 0.2)
     step = _lctcg(xopt, gq, hessp_safe, Aub, bub, Aeq, beq, xl, xu, delta, debug, mu)  # noqa
     return np.array(step, dtype=float)
 
