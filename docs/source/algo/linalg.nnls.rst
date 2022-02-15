@@ -5,7 +5,7 @@
 Nonnegative least squares
 =========================
 
-The update mechanism of the Lagrange multipliers in COBYQA is based on constrained least-squares problems, where some variables must remain nonnegative (in order to satisfy some complementary slackness conditions).
+The update mechanism of the Lagrange multipliers in |project| is based on constrained least-squares problems, where some variables must remain nonnegative (in order to satisfy some complementary slackness conditions).
 The problem it solves are of the form
 
 .. math::

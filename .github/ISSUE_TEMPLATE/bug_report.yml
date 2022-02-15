@@ -50,11 +50,9 @@ body:
     attributes:
       label: Versions
       description: >
-        Please run the following and paste the output below.
-        ```
-        python -c "import cobyqa; cobyqa.show_versions()"
-        ```
-        Adapt the Python executable name if necessary.
+        Please run the following and paste the output below (you may adapt the
+        Python executable name if necessary).
+        ```python -c "import cobyqa; cobyqa.show_versions()"```
     validations:
       required: true
 

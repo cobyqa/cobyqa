@@ -1,8 +1,8 @@
 .. _cobyqa_docs_mainpage:
 
-********************
-COBYQA documentation
-********************
+***********************
+|project| documentation
+***********************
 
 .. toctree::
    :maxdepth: 1

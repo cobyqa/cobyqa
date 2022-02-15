@@ -1,6 +1,6 @@
-**************
-COBYQA license
-**************
+*****************
+|project| license
+*****************
 
 .. include:: ../../LICENSE
     :literal:

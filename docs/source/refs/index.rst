@@ -1,13 +1,13 @@
 .. _refs:
 
-################
-COBYQA reference
-################
+###################
+|project| reference
+###################
 
 :Release: |version|
 :Date: |today|
 
-This section references an exhaustive manual detailing the functions, modules, and objects included in COBYQA.
+This section references an exhaustive manual detailing the functions, modules, and objects included in |project|.
 For a complete description of the software, see the :ref:`general documentation <cobyqa_docs_mainpage>`.
 
 .. toctree::
@@ -22,3 +22,4 @@ For a complete description of the software, see the :ref:`general documentation 
 
     ../bugs
     ../license
+    ../cite

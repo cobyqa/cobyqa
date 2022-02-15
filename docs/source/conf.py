@@ -55,6 +55,13 @@ default_role = 'autolink'
 # Whether parentheses are appended to function and method role text.
 add_function_parentheses = False
 
+# String to include at the end of every source file.
+rst_epilog = f'''
+.. |doc_url| replace:: https://cobyqa.readthedocs.io/
+.. |project| replace:: {project}
+.. |year| replace:: {datetime.now().year}
+'''
+
 # Suppress "WARNING: unknown mimetype for ..., ignoring".
 suppress_warnings = ['epub.unknown_project_files']
 

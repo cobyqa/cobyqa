@@ -5,7 +5,7 @@
 Linear constrained truncated conjugate gradient
 ===============================================
 
-In general (that is when some linear and/or nonlinear constraints are provided), to determine a trust-region tangential step, COBYQA must solve a problem of the form
+In general (that is when some linear and/or nonlinear constraints are provided), to determine a trust-region tangential step, |project| must solve a problem of the form
 
 .. math::
     :label: lctcg
@@ -46,7 +46,7 @@ where :math:`g^k = \nabla q(x^k) = g + Hx^k`. The computations are stopped if ei
 The constrained case
 --------------------
 
-When linear and/or nonlinear constraints are provided, COBYQA solves its trust-region tangential subproblems using a modified TRSTEP algorithm :cite:`lctcg-Powell_2015`.
+When linear and/or nonlinear constraints are provided, |project| solves its trust-region tangential subproblems using a modified TRSTEP algorithm :cite:`lctcg-Powell_2015`.
 It is an active-set variation of the truncated conjugate gradient algorithm, which maintains the QR factorization of the matrix whose columns are the gradients of the active constraints.
 As for `bvtcg`, if a new constraint is added to the working set, the procedure is restarted.
 However, we allow constraints to be removed from the working set in this method.

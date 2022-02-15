@@ -5,7 +5,7 @@
 Convex piecewise quadratic programming
 ======================================
 
-In general (that is when some linear and/or nonlinear constraints are provided), to determine a trust-region normal step, COBYQA must solve a problem of the form
+In general (that is when some linear and/or nonlinear constraints are provided), to determine a trust-region normal step, |project| must solve a problem of the form
 
 .. math::
     :label: cpqp

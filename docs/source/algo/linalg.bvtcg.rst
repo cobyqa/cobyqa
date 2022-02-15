@@ -5,7 +5,7 @@
 Bound constrained truncated conjugate gradient
 ==============================================
 
-When no linear nor nonlinear constraints are provided to COBYQA (that is when the considered problem is bound constrained), the trust-region subproblem to solve at each iteration is of the form
+When no linear nor nonlinear constraints are provided to |project| (that is when the considered problem is bound constrained), the trust-region subproblem to solve at each iteration is of the form
 
 .. math::
     :label: bvtcg
@@ -59,7 +59,7 @@ The constrained case
 --------------------
 
 We assume in this section that at least some values of the lower and upper bounds in :eq:`bvtcg` are finite.
-When no linear nor nonlinear constraints are provided, COBYQA solves the trust-region subproblem using the TRSBOX algorithm :cite:`bvtcg-Powell_2009`, which is presented below.
+When no linear nor nonlinear constraints are provided, |project| solves the trust-region subproblem using the TRSBOX algorithm :cite:`bvtcg-Powell_2009`, which is presented below.
 
 The bound constrained truncated conjugate gradient procedure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -6,7 +6,7 @@ Test support (:mod:`cobyqa.tests`)
 
 .. currentmodule:: cobyqa.tests
 
-This module extends the test support of `numpy.testing` to include extra functions, aiming at simplifying the test scripts of COBYQA.
+This module extends the test support of `numpy.testing` to include extra functions, aiming at simplifying the test scripts of |project|.
 
 .. autosummary::
     :toctree: generated/
