@@ -265,6 +265,12 @@ class TestUnconstrained(TestBase):
         res = minimize(
             fun=getattr(self, fun),
             x0=x0,
+            options={'maxiter': 500 * n, 'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol)
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
             options={'disp': True, 'debug': True},
         )
         self.assert_optimize(res, n, x_sol, f_sol)
@@ -377,7 +383,7 @@ class TestBoundConstrained(TestBase):
             xu=xl,
             options={'debug': True},
         )
-        assert_(res.status == 8)
+        assert_(res.status == 9)
         assert_(res.success, res.message)
 
 

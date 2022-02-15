@@ -201,6 +201,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             maxfev : int, optional
                 Upper bound on the number of objective and constraint function
                 evaluations (the default is ``500 * n``).
+            maxiter: int, optional
+                Upper bound on the number of main loop iterations (the default
+                is ``750 * n``).
             target : float, optional
                 Target value on the objective function (the default is
                 ``-numpy.inf``). If the solver encounters a feasible point at
@@ -385,7 +388,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     struct = TrustRegion(
         fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options, *args)
     if np.all(struct.ifix):
-        exit_status = 8
+        exit_status = 9
         nfev = 1
     elif struct.target_reached:
         exit_status = 1
@@ -410,6 +413,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         iact = struct.active_set(struct.xopt)
     while exit_status == 0:
         # Update the shift of the origin to manage computer rounding errors.
+        if nit >= struct.maxiter:
+            exit_status = 7
+            break
+        nit += 1
         struct.shift_origin(delta)
 
         # Evaluate the trial step.
@@ -420,7 +427,6 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         copteq = np.copy(struct.copteq)
         xopt = np.copy(struct.xopt)
         is_trust_region_step = not struct.is_model_step
-        nit += 1
         test = kwargs.get('short_step_detection_factor')
         if struct.type in 'LO':
             test /= np.sqrt(2.0)
@@ -461,7 +467,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             except RestartRequiredException:
                 continue
             except ZeroDivisionError:
-                exit_status = 7
+                exit_status = 8
                 break
             if struct.target_reached:
                 exit_status = 1
@@ -551,7 +557,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         break
 
     # Get the success flag.
-    if exit_status == 8:
+    if exit_status == 9:
         bdtol = 10.0 * np.finfo(float).eps * struct.xopt.size
         bdtol *= absmax_arrays(xl, xu, initial=1.0)
         success = struct.type == 'U' or struct.maxcv <= bdtol
@@ -580,8 +586,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         4: 'Absolute tolerance on the decision variables has been reached.',
         5: 'Relative tolerance on the decision variables has been reached.',
         6: 'Maximum number of function evaluations has been exceeded.',
-        7: 'Denominator of the updating formula is zero.',
-        8: 'All variables are fixed by the constraints.',
+        7: 'Maximum number of iterations has been exceeded.',
+        8: 'Denominator of the updating formula is zero.',
+        9: 'All variables are fixed by the constraints.',
         -1: 'Bound constraints are infeasible',
     }.get(exit_status, 'Unknown exit status.')
     if struct.disp:
