@@ -40,7 +40,7 @@ Given the initial values :math:`x^0 = 0` and :math:`s^0 = -g`, it generates the 
 
 where :math:`g^k = \nabla q(x^k) = g + Hx^k`. The computations are stopped if either
 
-#. :math:`g^k = 0` and :math:`\inner{s^k, Hs^k} \ge 0`, in which case the global minimizer is found; or
+#. :math:`\norm{g^k} = 0`; or
 #. :math:`\norm{x^{k + 1}} \ge \Delta` or :math:`\inner{s^k, Hs^k} < 0`, in which case :math:`x^k + \alpha_{\Delta} s^k` is returned, where :math:`\alpha_{\Delta} > 0` is chosen so that :math:`\norm{x^k + \alpha_{\Delta} s^k} = \Delta`.
 
 The constrained case

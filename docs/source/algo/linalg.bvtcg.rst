@@ -50,7 +50,7 @@ Given the initial values :math:`x^0 = 0` and :math:`d^0 = -g`, it generates the 
 where :math:`g^k = \nabla q(x^k) = g + Hx^k`.
 The computations are stopped if either
 
-#. :math:`g^k = 0` and :math:`\inner{d^k, Hd^k} \ge 0`, in which case the global minimizer is found; or
+#. :math:`\norm{g^k} = 0`; or
 #. :math:`\norm{x^{k + 1}} \ge \Delta` or :math:`\inner{d^k, Hd^k} < 0`, in which case :math:`x^k + \alpha_{\Delta} d^k` is returned, where :math:`\alpha_{\Delta} > 0` is chosen so that :math:`\norm{x^k + \alpha_{\Delta} d^k} = \Delta`.
 
 It is known that the truncated conjugate gradient method terminates after at most :math:`n` iterations, and that the reduction in the objective function obtained with the truncated conjugate gradient method is at least half of the reduction obtained by the global minimizer.

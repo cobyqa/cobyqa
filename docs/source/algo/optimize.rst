@@ -20,9 +20,9 @@ The optimization solver |project| is designed to solve the nonlinearly-constrain
 
     \begin{array}{ll}
         \min        & \quad f(x)\\
-        \text{s.t.} & \quad l \le x \le u,\\
-                    & \quad c_i(x) \le 0, ~ i \in \mathcal{I},\\
+        \text{s.t.} & \quad c_i(x) \le 0, ~ i \in \mathcal{I},\\
                     & \quad c_i(x) = 0, ~ i \in \mathcal{E},\\
+                    & \quad l \le x \le u,\\
                     & \quad x \in \R^n,
     \end{array}
 
@@ -38,14 +38,37 @@ Such a problem could already be solved using existing solvers, such as COBYLA :c
 Outline of the method
 =====================
 
-- The method is derivative-free trust-region SQP method.
-- The bound constraints are always satisfied.
+The optimization solver |project| is a derivative-free trust-region SQP method, described below.
+We emphasize once again that the method always respect the bound constraints, at each step of the algorithm.
 
 Sequential quadratic programming (SQP) framework
 ------------------------------------------------
 
 - Description of the SQP framework in a derivative-based setting.
 - The SQP framework can be used in a DFO setting by replacing the derivatives by models.
+
+We denote :math:`\mathcal{L}` the Lagrangian function for problem :eq:`nlcp`, defined by
+
+.. math::
+
+    \mathcal{L}(x, \lambda) = f(x) + \sum_{i \in \mathcal{I} \cup \mathcal{E}} \lambda_i c_i(x),
+
+where :math:`\lambda_i`, for :math:`i \in \mathcal{I} \cup \mathcal{E}`, denote the Lagrange multipliers.
+We do not include the bound constraints in this definition, as they are always respected.
+When derivatives of :math:`f` and :math:`c_i`, for :math:`i \in \mathcal{I} \cup \mathcal{E}`, are available, the SQP framework :cite:`opti-Wilson_1963,opti-Han_1976,opti-Han_1977,opti-Powell_1978a,opti-Powell_1978b` generates a step :math:`d^k` from a given iterate :math:`x^k` by solving
+
+.. math::
+    :label: sqp
+
+    \begin{array}{ll}
+        \min        & \quad f(x^k) + \inner{\nabla f(x^k), d} + \frac{1}{2} \inner{d, B^k d}\\
+        \text{s.t.} & \quad c_i(x^k) + \inner{\nabla c_i(x^k), d} \le 0, ~ i \in \mathcal{I},\\
+                    & \quad c_i(x^k) + \inner{\nabla c_i(x^k), d} = 0, ~ i \in \mathcal{E},\\
+                    & \quad l \le x^k + d \le u,\\
+                    & \quad d \in \R^n,
+    \end{array}
+
+where :math:`B^k \approx \nabla_{x, x}^2 \mathcal{L} (x^k, \lambda^k)`, for some Lagrange multiplier approximations :math:`\lambda^k`, and sets :math:`x^{k + 1} = x^k + d^k`.
 
 Trust-region framework
 ----------------------
