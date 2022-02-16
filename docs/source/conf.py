@@ -19,7 +19,7 @@ import cobyqa  # noqa
 
 project = 'COBYQA'
 author = 'Tom M. Ragonneau'
-copyright = f'2021-{datetime.now().year}, {author}'
+project_copyright = f'2021-{datetime.now().year}, {author}'
 
 # The short version (including .devX, rcX, b1 suffixes if present).
 version = re.sub(r'(\d+\.\d+)\.\d+(.*)', r'\1\2', cobyqa.__version__)
@@ -163,11 +163,14 @@ latex_elements = {
 
 % Mathematical operators in sans serif style font
 \def\T{\ensuremath{\mathsf{T}}}
+
+% Increase the default table of content depth
+\setcounter{tocdepth}{2}
     ''',
 }
 
 
-# -- Numpy’s Sphinx extensions ------------------------------------------------
+# -- Numpy’s Sphinx extension -------------------------------------------------
 
 numpydoc_use_plots = True
 
