@@ -105,6 +105,10 @@ Otherwise, at the end of each inner loop, we have
 
 since :math:`\alpha_k \in (0, 1)`. The termination of the outer loop is then proven, as well as the convergence of the method.
 
+.. only:: html or text
+
+    .. rubric:: References
+
 .. bibliography::
     :labelprefix: N
     :keyprefix: nnls-

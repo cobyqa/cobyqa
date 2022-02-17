@@ -104,7 +104,7 @@ We denote :math:`\big(\Pi_{x, k}(u, v), \Pi_{y, k}(u, v)\big) \in \R^n \times \R
 
 where :math:`u \in \R^n` and :math:`v \in \R^{m_1}`.
 Then the initial search directions :math:`s_x^0 \in \R^n` and :math:`s_y^0 \in \R^{m_1}` are set to :math:`s_x^0 = -\Pi_{x, 0}(g_x^0, y^0)` and :math:`s_y^0 = -\Pi_{y, 0}(g_x^0, y^0)`, where :math:`g_x^k = \nabla_x q(x^k, y^k) = C^{\T} (C x^k - d)`.
-The solution of such a problem is calculated using the Goldfarb and Idnani method for quadratic programming :cite:`lctcg-Goldfarb_Idnani_1983`
+The solution of such a problem is calculated using the Goldfarb and Idnani method for quadratic programming :cite:`cpqp-Goldfarb_Idnani_1983`
 
 The linearly constrained truncated conjugate gradient-like procedure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -123,12 +123,16 @@ The general framework employed by `cpqp` to solve problem :eq:`cpqp-slack`, and 
 #. Set :math:`\beta_k = (\inner{\Pi_{x, \hat{k}}(g_x^{k + 1}), C^{\T} C s_x^k} + \inner{\Pi_{y, \hat{k}}(y^{k + 1}), s_y^k}) / (\norm{Cs_x^k}^2 + \norm{s_y^k}^2)`.
 #. Update :math:`s_x^{k + 1} = -\Pi_{x, \hat{k}}(g_x^{k + 1}) + \beta_k s_x^k`, :math:`s_y^{k + 1} = -\Pi_{y, \hat{k}}(y^{k + 1}) + \beta_k s_y^k`, increment :math:`k`, and go to step 3.
 
-The operators :math:`\Pi_{x, \hat{k}}` and :math:`\Pi_{y, \hat{k}}` are evaluated using the Goldfarb and Idnani method for quadratic programming :cite:`lctcg-Goldfarb_Idnani_1983` (and hence, `lctcg` and `cpqp` share a function that determines the active set).
+The operators :math:`\Pi_{x, \hat{k}}` and :math:`\Pi_{y, \hat{k}}` are evaluated using the Goldfarb and Idnani method for quadratic programming :cite:`cpqp-Goldfarb_Idnani_1983` (and hence, `lctcg` and `cpqp` share a function that determines the active set).
 
 Similarly to `lctcg`, after calculating the search directions :math:`s_x^k` and :math:`s_y^k` at step 2, the term :math:`g_j - \inner{e_j, x^k + s_x^k} - \inner{f_j, y^k + s_y^k}` may be substantial.
 In such a case, the method will make a first step towards the boundaries of the active constraints.
 
 .. TODO: Termination analysis
+
+.. only:: html or text
+
+    .. rubric:: References
 
 .. bibliography::
     :labelprefix: C

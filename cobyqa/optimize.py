@@ -4134,7 +4134,7 @@ class Models:
 
         # Determine the klag-th Lagrange polynomial. It is the quadratic
         # function whose value is zero at each interpolation point, except at
-        # the klag-th one, hose value is one. The freedom bequeathed by these
+        # the klag-th one, whose value is one. The freedom bequeathed by these
         # interpolation conditions is taken up by minimizing the Hessian matrix
         # of the quadratic function is Frobenius norm.
         lag = self.new_model(klag)

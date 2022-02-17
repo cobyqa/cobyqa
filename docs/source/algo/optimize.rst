@@ -44,9 +44,6 @@ We emphasize once again that the method always respect the bound constraints, at
 Sequential quadratic programming (SQP) framework
 ------------------------------------------------
 
-- Description of the SQP framework in a derivative-based setting.
-- The SQP framework can be used in a DFO setting by replacing the derivatives by models.
-
 We denote :math:`\mathcal{L}` the Lagrangian function for problem :eq:`nlcp`, defined by
 
 .. math::
@@ -58,53 +55,249 @@ We do not include the bound constraints in this definition, as they are always r
 When derivatives of :math:`f` and :math:`c_i`, for :math:`i \in \mathcal{I} \cup \mathcal{E}`, are available, the SQP framework :cite:`opti-Wilson_1963,opti-Han_1976,opti-Han_1977,opti-Powell_1978a,opti-Powell_1978b` generates a step :math:`d^k` from a given iterate :math:`x^k` by solving
 
 .. math::
-    :label: sqp
 
     \begin{array}{ll}
-        \min        & \quad f(x^k) + \inner{\nabla f(x^k), d} + \frac{1}{2} \inner{d, B^k d}\\
+        \min        & \quad \inner{\nabla f(x^k), d} + \frac{1}{2} \inner{d, B^k d}\\
         \text{s.t.} & \quad c_i(x^k) + \inner{\nabla c_i(x^k), d} \le 0, ~ i \in \mathcal{I},\\
                     & \quad c_i(x^k) + \inner{\nabla c_i(x^k), d} = 0, ~ i \in \mathcal{E},\\
                     & \quad l \le x^k + d \le u,\\
                     & \quad d \in \R^n,
     \end{array}
 
-where :math:`B^k \approx \nabla_{x, x}^2 \mathcal{L} (x^k, \lambda^k)`, for some Lagrange multiplier approximations :math:`\lambda^k`, and sets :math:`x^{k + 1} = x^k + d^k`.
+where :math:`B^k \approx \nabla_{x, x}^2 \mathcal{L}(x^k, \lambda^k)` and :math:`\inner{\cdot, \cdot}` denotes the Euclidean inner product, for some Lagrange multiplier approximations :math:`\lambda^k`, and sets :math:`x^{k + 1} = x^k + d^k`.
+The SQP framework can be used in derivative-free settings by replacing the gradients :math:`\nabla f(x^k)` and :math:`\nabla c_i(x^k)` for :math:`i \in \mathcal{I} \cup \mathcal{E}` by some approximations.
+In |project|, we build some quadratic approximations :math:`\widehat{f}_k` and :math:`\widehat{c}_{k, i}` of :math:`f` and :math:`c_i` for :math:`i \in \mathcal{I} \cup \mathcal{E}` around :math:`x^k` (more details are given below), and we hence consider the SQP subproblem
+
+.. math::
+    :label: dfsqp
+
+    \begin{array}{ll}
+        \min        & \quad \inner{\nabla \widehat{f}_k(x^k), d} + \frac{1}{2} \inner{d, \nabla_{x, x}^2 \widehat{\mathcal{L}}_k(x^k, \lambda^k) d}\\
+        \text{s.t.} & \quad \widehat{c}_{k, i}(x^k) + \inner{\nabla \widehat{c}_{k, i}(x^k), d} \le 0, ~ i \in \mathcal{I},\\
+                    & \quad \widehat{c}_{k, i}(x^k) + \inner{\nabla \widehat{c}_{k, i}(x^k), d} = 0, ~ i \in \mathcal{E},\\
+                    & \quad l \le x^k + d \le u,\\
+                    & \quad d \in \R^n,
+    \end{array}
+
+where :math:`\widehat{\mathcal{L}}_k` is defined by
+
+.. math::
+
+    \widehat{\mathcal{L}}_k(x, \lambda) = \widehat{f}_k(x) + \sum_{i \in \mathcal{I} \cup \mathcal{E}} \lambda_i \widehat{c}_{k, i}(x).
+
+The main flaw of the SQP method is that its convergence requires the initial guess :math:`x^0` to be close enough from a true solution :math:`x^{\ast}` of :eq:`nlcp`.
+Hence, in |project|, we embedded the SQP subproblem :eq:`dfsqp` in a trust-region framework as explained below, to globalize its convergence properties.
 
 Trust-region framework
 ----------------------
 
-- The SQP framework is not globally convergent, hence the need of a trust-region embedment (line-search strategies are usually slow in practice).
-- Description of the trust-region framework in the unconstrained case.
-- Powell's trust-region radii.
-- Given a merit function that satisfy some properties, the trust-region framework can be easily adapted to the constrained case.
+The trust-region SQP subproblem (see, e.g., :cite:`opti-Conn_Gould_Toint_2009`) considered by |project| can be written as
+
+.. math::
+    :label: trsqp
+
+    \begin{array}{ll}
+        \min        & \quad \inner{\nabla \widehat{f}_k(x^k), d} + \frac{1}{2} \inner{d, \nabla_{x, x}^2 \widehat{\mathcal{L}}_k(x^k, \lambda^k) d}\\
+        \text{s.t.} & \quad \widehat{c}_{k, i}(x^k) + \inner{\nabla \widehat{c}_{k, i}(x^k), d} \le 0, ~ i \in \mathcal{I},\\
+                    & \quad \widehat{c}_{k, i}(x^k) + \inner{\nabla \widehat{c}_{k, i}(x^k), d} = 0, ~ i \in \mathcal{E},\\
+                    & \quad l \le x^k + d \le u,\\
+                    & \quad \norm{d} \le \Delta_k,\\
+                    & \quad d \in \R^n,
+    \end{array}
+
+were :math:`\Delta_k` is the current trust-region radius, automatically adjusted by the method, and :math:`\norm{\cdot}` denotes the :math:`\ell_2`-norm.
+Given a merit function :math:`\varphi_k` on the original problem :eq:`nlcp` and its modelled counterpart :math:`\widehat{\varphi}_k`, we define the trust-region ratio
+
+.. math::
+    :label: ratio
+
+    \rho_k = \frac{\varphi_k(x^k) - \varphi_k(x^k + d^k)}{\widehat{\varphi}_k(x^k) - \widehat{\varphi}_k(x^k + d^k)},
+
+were :math:`d^k` is an approximate solution to subproblem :eq:`trsqp`.
+A crucial property we have to ensure is :math:`\widehat{\varphi}_k(x^k + d^k) \le \widehat{\varphi}_k(x^k)` for the ratio :eq:`ratio` to be meaningful.
+Given constants :math:`\eta_1`, :math:`\eta_2`, :math:`\eta_3`, :math:`\gamma_1`, and :math:`\gamma_2` (set respectively to :math:`0`, :math:`0.1`, :math:`0.7`, :math:`0.5`, and :math:`\sqrt{2}` in |project|), the next iterate :math:`x^{k + 1}` is set to :math:`x^k + d^k` if :math:`\rho_k > \eta_1` and :math:`x^k` otherwise.
+Moreover, the next trust-region radius :math:`\Delta_{k + 1}` is set to
+
+.. math::
+
+    \left\{
+    \begin{array}{ll}
+        \gamma_1 \Delta_k                                                                       & \text{if} ~ \rho_k \le \eta_2,\\
+        \max \set{\gamma_1 \Delta_k, \norm{d^k}}                                                & \text{if} ~ \eta_2 < \rho_k \le \eta_3,\\
+        \min \set{\gamma_2 \Delta_k, \max \set{\gamma_1 \Delta_k, \gamma_1^{-1} \norm{d^k}}}    & \text{otherwise}.
+    \end{array}
+    \right.
+
+A lower bound on :math:`\Delta_k` is also maintained by |project|, as in :cite:`opti-Powell_1994` or :cite:`opti-Powell_2006`.
+
+Byrd-Omojokun-like trust-region composite steps
+-----------------------------------------------
+
+.. currentmodule:: cobyqa.linalg
+
+The main difficulty in solving the trust-region subproblem :eq:`trsqp` is that it may be infeasible.
+To cope with this difficulty, |project| employs a composite-step approach.
+It consists in solving it as :math:`d^k = n^k + t^k`, were
+
+#. The normal step :math:`n^k` aims at improving the infeasibility of :math:`x^k` (and is hence zero if :math:`x^k` is feasible); and
+#. The tangential step :math:`t^k` aims at reducing the objective function in :eq:`trsqp` without worsening the constraint violations.
+
+We employ a Byrd-Omojokun-like approach :cite:`opti-Byrd_1987,opti-Omojokun_1989`, for which the normal step :math:`n^k` solves
+
+.. math::
+
+    \begin{array}{ll}
+        \min        & \quad \sum_{i \in \mathcal{I}} \big[\widehat{c}_{k, i}(x^k) + \inner{\nabla \widehat{c}_{k, i}(x^k), d}\big]_+^2 + \sum_{i \in \mathcal{E}} \big[\widehat{c}_{k, i}(x^k) + \inner{\nabla \widehat{c}_{k, i}(x^k), d}\big]^2\\
+        \text{s.t.} & \quad l \le x^k + d \le u,\\
+                    & \quad \norm{d} \le \zeta \Delta_k,\\
+                    & \quad d \in \R^n,
+    \end{array}
+
+where :math:`[\cdot]_+` denotes the positive-part operator, and :math:`\zeta \in (0, 1)`.
+Such a problem is feasible, and is solved in |project| using a modified truncated conjugate gradient method (see `cpqp` for details). The tangential step :math:`t^k` then solves
+
+.. math::
+    :label: tgsp
+
+    \begin{array}{ll}
+        \min        & \quad \inner{\nabla \widehat{f}_k(x^k) + \nabla_{x, x}^2 \widehat{\mathcal{L}}_k(x^k, \lambda^k) n^k, d} + \frac{1}{2} \inner{d, \nabla_{x, x}^2 \widehat{\mathcal{L}}_k(x^k, \lambda^k) d}\\
+        \text{s.t.} & \quad \min \set{0, \widehat{c}_{k, i}(x^k) + \inner{\nabla \widehat{c}_{k, i}(x^k), n^k}} + \inner{\nabla \widehat{c}_{k, i}(x^k), d} \le 0, ~ i \in \mathcal{I},\\
+                    & \quad \inner{\nabla \widehat{c}_{k, i}(x^k), d} = 0, ~ i \in \mathcal{E},\\
+                    & \quad l \le x^k + n^k + d \le u,\\
+                    & \quad \norm{n^k + d} \le \Delta_k,\\
+                    & \quad d \in \R^n,
+    \end{array}
+
+Such a problem is also feasible, and it is not clear that the constant :math:`\zeta` is designed to prevent the tangential step to be zero if the current point is far from being feasible.
+However the trust-region constraint of the tangential subproblem :eq:`tgsp` is not centered, and is then replace for convenience by
+
+.. math::
+
+    \norm{d} \le \sqrt{\Delta_k^2 - \norm{n^k}^2}.
+
+In doing so, it is easy to verify that
+
+.. math::
+
+    \norm{n^k + t^k} \le \max_{d \in \R^n, ~ \norm{d} \le \Delta_k} \norm{d} + \sqrt{\Delta_k^2 - \norm{d}^2} \le \sqrt{2} \Delta_k.
+
+This problem is then solved in |project| using a modified truncated conjugate gradient method (see `bvtcg` and `lctcg` for details).
 
 Quadratic models based on underdetermined interpolation
 -------------------------------------------------------
 
-- Given the SQP framework, it is natural to use quadratic models of the objective and constraint functions.
-- Models obtained by fully-determined interpolation and regression are prohibitively expensive to initialize.
-- Default models minimize the update in the Hessian in Frobenius norm and alternative models minimizes the Hessian itself in Frobenius norm.
-- The alternative models replace the default models whenever 3 successive trust-region trial steps provided a very low trust-region ratio (rare).
-- At each iteration, at most one point of the interpolation set is modified, resulting in an at-most rank-2 update of the matrix of the KKT system.
-- Quick description of the update of the interpolation set and the models.
+It is natural to use quadratic models of the objective and constraint functions when using an SQP framework.
+However, models obtained by fully-determined interpolation and regression are prohibitively expensive to initialize, as they require at least :math:`(n + 1) (n + 2) / 2` function evaluations to build the initial models.
+Therefore, |project| uses quadratic models obtained by underdetermined interpolation.
+Given a finite interpolation set :math:`\mathcal{Y}_k \subseteq \R^n` with :math:`x^k \in \mathcal{Y}_k`, the quadratic function :math:`\widehat{f}_k` (and similarly :math:`\widehat{c}_{k, i}` for :math:`i \in \mathcal{I} \cup \mathcal{E}`) satisfy
+
+.. math::
+    :label: interp
+
+    \widehat{f}_k(y) = f(y), ~ y \in \mathcal{Y}_k.
+
+If the number of element in :math:`\mathcal{Y}_k` is strictly less than :math:`(n + 1) (n + 2) / 2`, the quadratic function :math:`\widehat{f}_k` is not entirely defined by :eq:`interp`.
+The remaining freedom in building :math:`\mathcal{f}_{k + 1}` is bequeathed by satisfying the variational problem
+
+.. math::
+    :label: model
+
+    \begin{array}{ll}
+        \min        & \quad \norm{\nabla^2 \widehat{f}_{k + 1} - \nabla^2 \widehat{f}_k}_{\mathsf{F}}\\
+        \text{s.t.} & \quad \widehat{f}_{k + 1}(y) = f(y), ~ y \in \mathcal{Y}_k,\\
+                    & \quad \widehat{f}_{k + 1} \in \R^2 [X^n],
+    \end{array}
+
+where :math:`\norm{\cdot}_{\mathsf{F}}` denotes the Frobenius norm.
+Interested reader may refer to :cite:`opti-Powell_2004a` for more information.
+Rarely (when three consecutive trust-region step provided a very low trust-region ratio :eq:`ratio`), |project| considers that the model :math:`\widehat{f}_k` do not represent accurately enough the true objective :math:`f` and builds the next model as
+
+.. math::
+
+    \begin{array}{ll}
+        \min        & \quad \norm{\nabla^2 \widehat{f}_{k + 1}}_{\mathsf{F}}\\
+        \text{s.t.} & \quad \widehat{f}_{k + 1}(y) = f(y), ~ y \in \mathcal{Y}_k,\\
+                    & \quad \widehat{f}_{k + 1} \in \R^2 [X^n].
+    \end{array}
+
+At each iteration, |project| replaces a point of :math:`\mathcal{Y}_k` by :math:`x^k + d^k`.
+This results in an at-most rank-2 update of the matrix of the KKT system of the variational problem :eq:`model`.
+Therefore, this matrix is maintained by |project|, and is updated iteratively.
+The updating formula can be found in :cite:`opti-Powell_2004b` and :cite:`opti-Powell_2006`.
+This updating formula has a denominator, and |project| must therefore ensure that it always remains nonzero.
+
+Geometry-improvement steps
+--------------------------
+
+The interpolation conditions :eq:`interp` must not contradict each others, and the conditioning of the corresponding system :eq:`model` has to be maintained.
+To do this, |project| entertains geometry-improvement iterations :cite:`opti-Conn_Scheinberg_Vicente_2008a,opti-Conn_Scheinberg_Vicente_2008b` in place of the trust-region iterations to prevent the geometry of the interpolation set :math:`\mathcal{Y}_k` from deteriorating.
+|project| assumes that the geometry of the interpolation set is acceptable whenever :math:`\norm{x^k - y} \le \Delta_k` for all :math:`y \in \mathcal{Y_k}`.
+A geometry-improvement step is then entertained if either :math:`d^k` is low compared to :math:`\Delta_k` or if :math:`\rho_k < \eta_1`.
+Note that a geometry-improvement step necessarily followed by a usual trust-region step.
+
+The general idea used by |project| to maintain the geometry of the interpolation set is to prevent the denominator of the updating formula of the KKT matrix of interpolation (see :cite:`opti-Powell_2004b` and :cite:`opti-Powell_2006`) from being too small.
+Powell :cite:`opti-Powell_2001` showed that this denominator is lower bounded by :math:`\abs{\ell_k(x^k + d)}`, were :math:`\ell_k` denotes the :math:`k`-th Lagrange polynomial of the interpolation set.
+It is the quadratic function whose value is zero at each interpolation point, except at the :math:`k`-th one, whose value is one.
+The freedom bequeathed by these interpolation conditions is taken up by minimizing the Hessian matrix of the quadratic function is Frobenius norm.
+
+The strategy of |project| to estimate the optimal geometry-improvement step is as follows.
+A first step :math:`s^{k, 1} = \alpha_k x^k + (1 - \alpha_k) y^k` is calculated (see `bvlag`), were :math:`\alpha_k` and :math:`y^k` solve the problem
+
+.. math::
+
+    \begin{array}{ll}
+        \min        & \quad \abs{\ell_k(\alpha x^k + (1 - \alpha) y)}\\
+        \text{s.t.} & \quad l \le \alpha x^k + (1 - \alpha) y \le u,\\
+                    & \quad \alpha \in (0, 1), ~ y \in \mathcal{Y}_k \setminus \set{x^k}.
+    \end{array}
+
+A second estimation :math:`s^{k, 2}` is made by simply performing a bound constrained Cauchy step on :math:`\abs{\ell_k(x^k + d)}` (see `bvcs`).
+|project| then select the geometry-improvement step among :math:`\set{s^{k, 1}, s^{k, 2}}`, selecting the one leading to the greatest denominator in the updating formula.
+This mechanism is taken from :cite:`opti-Powell_2009`.
 
 Merit function and penalty coefficient
 --------------------------------------
 
-- The choice of the merit function needs to satisfy the above-mentioned properties.
+Recall that the chosen merit functions :math:`\varphi_k` and :math:`\widehat{\varphi}_k` must satisfy the crucial property :math:`\widehat{\varphi}_k(x^k + d^k) \le \widehat{\varphi}_k(x^k)` when :math:`d^k` is obtained during a trust-region iteration.
 
 The merit function
 ^^^^^^^^^^^^^^^^^^
 
-- Description of the l-2 merit function.
-- To satisfy the properties, the trial steps need to satisfy some properties.
+The merit functions we employ in |project| are the :math:`\ell_2`-merit functions
+
+.. math::
+
+    \varphi_k(x) = f(x) + \sigma_k \sqrt{\sum_{i \in \mathcal{I}} [c_i(x)]_+^2 + \sum_{i \in \mathcal{E}} c_i(x)^2},
+
+and
+
+.. math::
+
+    \widehat{\varphi}_k(x) = \widehat{f}_k(x) + \sigma_k \sqrt{\sum_{i \in \mathcal{I}} [\widehat{c}_i(x^k) + \inner{\nabla \widehat{c}_i(x^k), x - x^k}]_+^2 + \sum_{i \in \mathcal{E}} [\widehat{c}_i(x^k) + \inner{\nabla \widehat{c}_i(x^k), x - x^k}]^2},
+
+where :math:`\sigma_k \ge 0` is a penalty parameter automatically maintained by |project|.
+Using the above-mentioned merit function and Byrd-Omojokun-like composite step, we easily have the following theorem.
+
+    **Theorem 1.** If the :math:`k`-th iteration is a trust-region step for which the trial step :math:`d^k` is provided by the above-mentioned Byrd-Omojokun-like composite step, then there exists :math:`\overline{\sigma}_k > 0` such that for all :math:`\sigma_k \ge \overline{\sigma}_k`, we have :math:`\widehat{\varphi}_k(x^k + d^k) \le \widehat{\varphi}(x^k)`.
+
+Thus, the necessary property of the merit function is satisfied by choosing wisely its penalty parameter at each iteration.
+Moreover, |project| considers that the optimal point so far is given by
+
+.. math::
+
+    \argmin_{y \in \mathcal{Y}_k} \varphi_k(y).
 
 Increasing the penalty coefficient
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- The lower bound on the penalty coefficient is the maximum between the norm of the Lagrange multipliers and the the value making the trust-region ratio meaningful.
-- The penalty coefficient is increased if its current value is too close from the threshold.
-- The optimal point in the interpolation set may change when the penalty coefficient is increased, and the method may then need a restart.
+If we wish to obtain second-order criticality conditions on the penalty function, we need to have :math:`\liminf_{k \to \infty} \sigma_k > \norm{\lambda^{\ast}}`, where the :math:`\lambda^{\ast}` is the optimal Lagrange multiplier. (see, e.g., Theorem 14.5.1 of :cite:`opti-Conn_Gould_Toint_2009`).
+Therefore, |project| ensures that the penalty parameter satisfies :math:`\sigma_k > \max\set{\overline{\sigma}^k, \norm{\lambda^k}}`.
+The strategy of |project| to increase the penalty parameter is as follows.
+If :math:`\sigma_k \le \nu_1 \max\set{\overline{\sigma}^{k + 1}, \norm{\lambda^{k + 1}}}`, then :math:`\sigma_{k + 1} = \nu_2 \max\set{\overline{\sigma}^{k + 1}, \norm{\lambda^{k + 1}}}`, where :math:`\nu_1 > 1` and :math:`\nu_2 > \nu_1` are constants (respectively set to :math:`1.5` and :math:`2`).
+Otherwise, :math:`\sigma_{k + 1} = \sigma_k`.
+
+When increasing the penalty parameter, we may have :math:`\varphi_{k + 1}(x^k) > \varphi_{k + 1}(y)` for some :math:`y \in \mathcal{Y}_k`.
+In such a case, a trust-region iteration is entertained after modifying the optimal point so far.
 
 Decreasing the penalty coefficient
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -112,34 +305,64 @@ Decreasing the penalty coefficient
 - To prevent the penalty coefficient from being excessively big, it is reduced when the bound on the trust-region radius is reduced.
 - Description of the new value of the penalty coefficient.
 
+To prevent the penalty coefficient from being intensively big, |project| attempts to reduce the penalty parameter as in :cite:`opti-Powell_1994`.
+We define for convenience the operators :math:`\xi_{i, 1}` and :math:`\xi_{i, 1}` as
+
+.. math::
+
+    \xi_{i, 1}(x) = \left\{
+    \begin{array}{ll}
+        c_i(x)          & \text{if} ~ i \in \mathcal{I},\\
+        \abs{c_i(x)}    & \text{if} ~ i \in \mathcal{E},\\
+    \end{array}
+    \right.
+
+and
+
+.. math::
+
+    \xi_{i, 2}(x) = \left\{
+    \begin{array}{ll}
+        c_i(x)          & \text{if} ~ i \in \mathcal{I},\\
+        -\abs{c_i(x)}   & \text{if} ~ i \in \mathcal{E},\\
+    \end{array}
+    \right.
+
+When the lower bound on the trust-region radius is reduced, the penalty parameter is tentatively set to
+
+.. math::
+    :label: ppred
+
+    \sigma_{k + 1} = \frac{\max_{y \in \mathcal{Y}_k} f(y) - \min_{y \in \mathcal{Y}_k} f(y)}{\min_{i \in \mathcal{I} \cup \mathcal{E}} \set[\big]{\max_{y \in \mathcal{Y}_k} \xi_{i, 1}(y) - \big[\min_{y \in \mathcal{Y}_k} \xi_{i, 2}(y)\big]_-}}
+
+where :math:`[\cdot]_-` denotes the negative-part operator, provided that this value provides an actual decrease in the penalty parameter.
+See :cite:`opti-Powell_1994` for an example of the ratio :eq:`ppred`.
+
 Estimation of the Lagrange multipliers
 --------------------------------------
 
-.. currentmodule:: cobyqa.linalg
+The Lagrange multiplier :math:`\lambda^k` is estimated as follows.
+Assuming that the original problem is smooth, and given some constraint qualification condition, the KKT conditions provide that given a solution :math:`x^{\ast}` to the original problem :eq:`nlcp`, there exists a Lagrange multiplier :math:`\lambda^{\ast}` such that
 
-- The estimation of the Lagrange multipliers is based on the KKT conditions on the modelled subproblem.
-- Description of the Lagrange multipliers estimates.
-- The complementary slackness condition is "relaxed" to prevent most of the multipliers related to the inequality constraints from being zero.
-- The subproblem is numerically solved by `nnls`.
+.. math::
 
-Byrd-Omojokun-like trust-region composite steps
------------------------------------------------
+    \left\{
+    \begin{array}{l}
+        \nabla_x \mathcal{L}(x^{\ast}, \lambda^{\ast}) = 0,\\
+        \lambda_i^{\ast} c_i(x^{\ast}) = 0, ~ i \in \mathcal{I},\\
+        c_i(x^{\ast}) \le 0, ~ i \in \mathcal{I},\\
+        c_i(x^{\ast}) = 0, ~ i \in \mathcal{E},\\
+        \lambda_i^{\ast} \ge 0, ~ i \in \mathcal{I}.
+    \end{array}
+    \right.
 
-- The trust-region SQP subproblem may be infeasible, and hence cannot be solved as-is.
-- Composite step approaches split the trust-region subproblems into two subproblems, each being feasible.
-- Other composite step approaches exist such as Vardi and CDT.
-- Description of the two subproblems.
-- They need to be solved only approximately (done by `bvtcg`, `lctcg`, and `cpqp`).
-- The trust-region radius of the tangential subproblem is estimated smartly.
-- The trial step satisfy the properties required by the merit function.
+Therefore, to attempts to solve this KKT system as much as possible using the information available so far, |project| sets :math:`\lambda^k` to the least-squares multipliers, defined by
 
-Geometry-improvement steps
---------------------------
+.. math::
 
-- This mechanism attempts to maintain an acceptable geometry of the interpolation set.
-- Description of the conditions indicating that a geometry-improvement step is required.
-- The absolute value of the Lagrange polynomial bound the denominator of the updating formula from below.
-- Two steps are calculated, and the one leading to the greatest denominator of the updating formula is chosen.
+    \lambda^k = \argmin_{\lambda} \set[\big]{\norm{\nabla_x \widehat{\mathcal{L}}_k(x^k, \lambda)} : \lambda_i [\widehat{c}_{k, i}(x^k)]_- = 0, ~ \lambda_i \ge 0, ~ i \in \mathcal{I}}.
+
+This subproblem is a nonnegatively constrained linear least-squares problem (see `nnls` for details on how to solve such a problem).
 
 Maratos effect and second-order correction steps
 ------------------------------------------------
@@ -175,6 +398,10 @@ Storage of the quadratic models
 
 - For numerical efficiency, the second-order term of the quadratic models is stored using an implicit/explicit scheme.
 - The matrix of the KKT system is not solved directly, as is NEWUOA.
+
+.. only:: html or text
+
+    .. rubric:: References
 
 .. bibliography::
     :labelprefix: O

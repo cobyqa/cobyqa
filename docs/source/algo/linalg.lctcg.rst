@@ -133,6 +133,10 @@ Thus, the iterations are also stopped if the reduction provided by the current s
 
 .. TODO: Termination analysis
 
+.. only:: html or text
+
+    .. rubric:: References
+
 .. bibliography::
     :labelprefix: L
     :keyprefix: lctcg-

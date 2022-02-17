@@ -142,8 +142,8 @@ latex_elements = {
 \def\eu{\ensuremath{\mathrm{e}}}
 \def\iu{\ensuremath{\mathrm{i}}}
 \def\du{\ensuremath{\mathrm{d}}}
-\DeclareMathOperator{\argmax}{arg\,max}
-\DeclareMathOperator{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator{\vspan}{span}
 
 % Extra mathematical functions
@@ -251,8 +251,8 @@ mathjax3_config = {
             'eu': r'{\mathrm{e}}',
             'iu': r'{\mathrm{i}}',
             'du': r'{\mathrm{d}}',
-            'argmax': r'\operatorname{arg\,max}',
-            'argmin': r'\operatorname{arg\,min}',
+            'argmax': r'\operatorname*{arg\,max}',
+            'argmin': r'\operatorname*{arg\,min}',
             'vspan': r'\operatorname{span}',
 
             # Extra mathematical functions
@@ -294,11 +294,3 @@ bibtex_footcite_id = 'footcite-{key}'
 bibtex_bibliography_id = 'bibliography-{bibliography_count}'
 
 bibtex_footbibliography_id = 'footbibliography-{footbibliography_count}'
-
-bibtex_bibliography_header = '''
-.. only:: html or text
-
-    .. rubric:: References
-'''
-
-bibtex_footbibliography_header = bibtex_bibliography_header

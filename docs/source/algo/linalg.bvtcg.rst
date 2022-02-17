@@ -118,6 +118,10 @@ To solve approximately such a problem, `bvtcg` seeks for the greatest reduction 
 If the value of the approximate solution is restricted by a bound, it is added to the working set :math:`\mathcal{I}^k`, and the refinement procedure is restarted.
 Since the working set is only increased, this procedure terminates in at most :math:`n - \abs{\mathcal{I}^k}`, where :math:`\abs{\mathcal{I}^k}` denotes the number of active bounds at the end of the constrained truncated conjugate gradient procedure.
 
+.. only:: html or text
+
+    .. rubric:: References
+
 .. bibliography::
     :labelprefix: B
     :keyprefix: bvtcg-
