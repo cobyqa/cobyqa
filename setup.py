@@ -143,7 +143,7 @@ def setup_package():
             'Source Code': 'https://github.com/ragonneau/cobyqa',
         },
         classifiers=[
-            'Development Status :: 2 - Pre-Alpha',
+            'Development Status :: 3 - Alpha',
             'Intended Audience :: Developers',
             'Intended Audience :: Education',
             'Intended Audience :: Science/Research',

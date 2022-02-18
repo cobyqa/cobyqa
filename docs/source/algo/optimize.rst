@@ -13,7 +13,7 @@ Optimization framework (`cobyqa`)
 Statement of the problem
 ========================
 
-The optimization solver |project| is designed to solve the nonlinearly-constrained optimization problem
+The optimization solver |project| is designed to solve nonlinearly-constrained optimization problems of the form
 
 .. math::
     :label: nlcp
@@ -51,7 +51,7 @@ We denote :math:`\mathcal{L}` the Lagrangian function for problem :eq:`nlcp`, de
     \mathcal{L}(x, \lambda) = f(x) + \sum_{i \in \mathcal{I} \cup \mathcal{E}} \lambda_i c_i(x),
 
 where :math:`\lambda_i`, for :math:`i \in \mathcal{I} \cup \mathcal{E}`, denote the Lagrange multipliers.
-We do not include the bound constraints in this definition, as they are always respected.
+We do not include the bound constraints in this definition, as this does not modify the calculations presented hereunder.
 When derivatives of :math:`f` and :math:`c_i`, for :math:`i \in \mathcal{I} \cup \mathcal{E}`, are available, the SQP framework :cite:`opti-Wilson_1963,opti-Han_1976,opti-Han_1977,opti-Powell_1978a,opti-Powell_1978b` generates a step :math:`d^k` from a given iterate :math:`x^k` by solving
 
 .. math::
@@ -64,7 +64,7 @@ When derivatives of :math:`f` and :math:`c_i`, for :math:`i \in \mathcal{I} \cup
                     & \quad d \in \R^n,
     \end{array}
 
-where :math:`B^k \approx \nabla_{x, x}^2 \mathcal{L}(x^k, \lambda^k)` and :math:`\inner{\cdot, \cdot}` denotes the Euclidean inner product, for some Lagrange multiplier approximations :math:`\lambda^k`, and sets :math:`x^{k + 1} = x^k + d^k`.
+where :math:`\inner{\cdot, \cdot}` denotes the Euclidean inner product and :math:`B^k \approx \nabla_{x, x}^2 \mathcal{L}(x^k, \lambda^k)`, for some Lagrange multiplier approximations :math:`\lambda^k`, and sets :math:`x^{k + 1} = x^k + d^k`.
 The SQP framework can be used in derivative-free settings by replacing the gradients :math:`\nabla f(x^k)` and :math:`\nabla c_i(x^k)` for :math:`i \in \mathcal{I} \cup \mathcal{E}` by some approximations.
 In |project|, we build some quadratic approximations :math:`\widehat{f}_k` and :math:`\widehat{c}_{k, i}` of :math:`f` and :math:`c_i` for :math:`i \in \mathcal{I} \cup \mathcal{E}` around :math:`x^k` (more details are given below), and we hence consider the SQP subproblem
 
@@ -139,8 +139,8 @@ The main difficulty in solving the trust-region subproblem :eq:`trsqp` is that i
 To cope with this difficulty, |project| employs a composite-step approach.
 It consists in solving it as :math:`d^k = n^k + t^k`, were
 
-#. The normal step :math:`n^k` aims at improving the infeasibility of :math:`x^k` (and is hence zero if :math:`x^k` is feasible); and
-#. The tangential step :math:`t^k` aims at reducing the objective function in :eq:`trsqp` without worsening the constraint violations.
+#. the normal step :math:`n^k` aims at improving the infeasibility of :math:`x^k` (and is hence zero if :math:`x^k` is feasible); and
+#. the tangential step :math:`t^k` aims at reducing the objective function in :eq:`trsqp` without worsening the constraint violations.
 
 We employ a Byrd-Omojokun-like approach :cite:`opti-Byrd_1987,opti-Omojokun_1989`, for which the normal step :math:`n^k` solves
 
@@ -168,7 +168,7 @@ Such a problem is feasible, and is solved in |project| using a modified truncate
                     & \quad d \in \R^n,
     \end{array}
 
-Such a problem is also feasible, and it is not clear that the constant :math:`\zeta` is designed to prevent the tangential step to be zero if the current point is far from being feasible.
+Such a problem is also feasible, and it is now clear that the constant :math:`\zeta` is designed to prevent the tangential step to be zero if the current point is far from being feasible.
 However the trust-region constraint of the tangential subproblem :eq:`tgsp` is not centered, and is then replace for convenience by
 
 .. math::
@@ -206,7 +206,7 @@ The remaining freedom in building :math:`\mathcal{f}_{k + 1}` is bequeathed by s
     \begin{array}{ll}
         \min        & \quad \norm{\nabla^2 \widehat{f}_{k + 1} - \nabla^2 \widehat{f}_k}_{\mathsf{F}}\\
         \text{s.t.} & \quad \widehat{f}_{k + 1}(y) = f(y), ~ y \in \mathcal{Y}_k,\\
-                    & \quad \widehat{f}_{k + 1} \in \R^2 [X^n],
+                    & \quad \widehat{f}_{k + 1} \in \R_2 [X^n],
     \end{array}
 
 where :math:`\norm{\cdot}_{\mathsf{F}}` denotes the Frobenius norm.
@@ -218,7 +218,7 @@ Rarely (when three consecutive trust-region step provided a very low trust-regio
     \begin{array}{ll}
         \min        & \quad \norm{\nabla^2 \widehat{f}_{k + 1}}_{\mathsf{F}}\\
         \text{s.t.} & \quad \widehat{f}_{k + 1}(y) = f(y), ~ y \in \mathcal{Y}_k,\\
-                    & \quad \widehat{f}_{k + 1} \in \R^2 [X^n].
+                    & \quad \widehat{f}_{k + 1} \in \R_2 [X^n].
     \end{array}
 
 At each iteration, |project| replaces a point of :math:`\mathcal{Y}_k` by :math:`x^k + d^k`.
@@ -234,7 +234,7 @@ The interpolation conditions :eq:`interp` must not contradict each others, and t
 To do this, |project| entertains geometry-improvement iterations :cite:`opti-Conn_Scheinberg_Vicente_2008a,opti-Conn_Scheinberg_Vicente_2008b` in place of the trust-region iterations to prevent the geometry of the interpolation set :math:`\mathcal{Y}_k` from deteriorating.
 |project| assumes that the geometry of the interpolation set is acceptable whenever :math:`\norm{x^k - y} \le \Delta_k` for all :math:`y \in \mathcal{Y_k}`.
 A geometry-improvement step is then entertained if either :math:`d^k` is low compared to :math:`\Delta_k` or if :math:`\rho_k < \eta_1`.
-Note that a geometry-improvement step necessarily followed by a usual trust-region step.
+Note that a geometry-improvement step is necessarily followed by a usual trust-region step.
 
 The general idea used by |project| to maintain the geometry of the interpolation set is to prevent the denominator of the updating formula of the KKT matrix of interpolation (see :cite:`opti-Powell_2004b` and :cite:`opti-Powell_2006`) from being too small.
 Powell :cite:`opti-Powell_2001` showed that this denominator is lower bounded by :math:`\abs{\ell_k(x^k + d)}`, were :math:`\ell_k` denotes the :math:`k`-th Lagrange polynomial of the interpolation set.
@@ -253,7 +253,7 @@ A first step :math:`s^{k, 1} = \alpha_k x^k + (1 - \alpha_k) y^k` is calculated 
     \end{array}
 
 A second estimation :math:`s^{k, 2}` is made by simply performing a bound constrained Cauchy step on :math:`\abs{\ell_k(x^k + d)}` (see `bvcs`).
-|project| then select the geometry-improvement step among :math:`\set{s^{k, 1}, s^{k, 2}}`, selecting the one leading to the greatest denominator in the updating formula.
+|project| then select the geometry-improvement step among :math:`\set{s^{k, 1}, s^{k, 2}}`, choosing the one leading to the greatest denominator in the updating formula.
 This mechanism is taken from :cite:`opti-Powell_2009`.
 
 Merit function and penalty coefficient
@@ -274,14 +274,14 @@ and
 
 .. math::
 
-    \widehat{\varphi}_k(x) = \widehat{f}_k(x) + \sigma_k \sqrt{\sum_{i \in \mathcal{I}} [\widehat{c}_i(x^k) + \inner{\nabla \widehat{c}_i(x^k), x - x^k}]_+^2 + \sum_{i \in \mathcal{E}} [\widehat{c}_i(x^k) + \inner{\nabla \widehat{c}_i(x^k), x - x^k}]^2},
+    \widehat{\varphi}_k(x) = \widehat{f}_k(x) + \sigma_k \sqrt{\sum_{i \in \mathcal{I}} [\widehat{c}_{k, i}(x^k) + \inner{\nabla \widehat{c}_{k, i}(x^k), x - x^k}]_+^2 + \sum_{i \in \mathcal{E}} [\widehat{c}_{k, i}(x^k) + \inner{\nabla \widehat{c}_{k, i}(x^k), x - x^k}]^2},
 
 where :math:`\sigma_k \ge 0` is a penalty parameter automatically maintained by |project|.
-Using the above-mentioned merit function and Byrd-Omojokun-like composite step, we easily have the following theorem.
+Using the above-mentioned merit functions and Byrd-Omojokun-like composite step, we easily have the following theorem.
 
     **Theorem 1.** If the :math:`k`-th iteration is a trust-region step for which the trial step :math:`d^k` is provided by the above-mentioned Byrd-Omojokun-like composite step, then there exists :math:`\overline{\sigma}_k > 0` such that for all :math:`\sigma_k \ge \overline{\sigma}_k`, we have :math:`\widehat{\varphi}_k(x^k + d^k) \le \widehat{\varphi}(x^k)`.
 
-Thus, the necessary property of the merit function is satisfied by choosing wisely its penalty parameter at each iteration.
+Thus, the necessary property of the merit functions is satisfied by choosing wisely its penalty parameter at each iteration.
 Moreover, |project| considers that the optimal point so far is given by
 
 .. math::
@@ -340,7 +340,7 @@ Estimation of the Lagrange multipliers
 --------------------------------------
 
 The Lagrange multiplier :math:`\lambda^k` is estimated as follows.
-Assuming that the original problem is smooth, and given some constraint qualification condition, the KKT conditions provide that given a solution :math:`x^{\ast}` to the original problem :eq:`nlcp`, there exists a Lagrange multiplier :math:`\lambda^{\ast}` such that
+Assuming that the original problem is smooth, and given some constraint qualification conditions, the KKT conditions provide that given a solution :math:`x^{\ast}` to the original problem :eq:`nlcp`, there exists a Lagrange multiplier :math:`\lambda^{\ast}` such that
 
 .. math::
 
@@ -354,7 +354,7 @@ Assuming that the original problem is smooth, and given some constraint qualific
     \end{array}
     \right.
 
-Therefore, to attempts to solve this KKT system as much as possible using the information available so far, |project| sets :math:`\lambda^k` to the least-squares multipliers, i.e., a solution to
+Therefore, to attempt solving this KKT system as much as possible using the information available so far, |project| sets :math:`\lambda^k` to the least-squares multipliers, i.e., a solution to
 
 .. math::
 
@@ -371,7 +371,7 @@ Maratos effect and second-order correction steps
 
 It is well-known that the Maratos effect may prevent Newton-type methods from achieving superlinear convergence :cite:`opti-Maratos_1978`.
 Such an effect occurs when the linear models of the constraints in :eq:`trsqp` does not represent accurately enough the curvature of the actual constraints and is caused by discontinuities of the derivatives.
-In a trust-region framework, this defect is usually coped using a second-order correction (see, e.g., :cite:`opti-Conn_Gould_Toint_2009`), the simplest of which is the minimum :math:`\ell_2`-norm.
+In a trust-region framework, this defect is usually coped using second-order corrections (see, e.g., :cite:`opti-Conn_Gould_Toint_2009`), the simplest of which is the minimum :math:`\ell_2`-norm.
 It is attempted when the current trial point does not provide any decrease in the objective function and the normal step is not too large.
 In such a case, the trust-region step :math:`d^k` is replaced by :math:`d^k + s^k` where :math:`s^k` solves
 
@@ -393,17 +393,17 @@ Exit statuses of the method
 .. currentmodule:: cobyqa
 
 We provide here for convenience details on the possibles exit statuses of |project|.
-A detailed documentation of the structure of the outputs can be found at `OptimizeResult`.
+A complete documentation of the structure of the outputs can be found at `OptimizeResult`.
 
 ===========  ===================================================================
 Exit status  Explanation
 ===========  ===================================================================
 0            The lower bound for the trust-region radius has been reached, the
-             usual stopping criterion of trust-region method. If such an exit
+             usual stopping criterion of trust-region methods. If such an exit
              status is achieved, the optimization terminated successfully.
 -----------  -------------------------------------------------------------------
 1            The user can provide a target function value to |project|, which
-             stops the computation is this value has been achieved by a feasible
+             stops the computation is this value has been reached by a feasible
              point. If such an exit status is achieved, the optimization
              terminated successfully.
 -----------  -------------------------------------------------------------------
@@ -438,9 +438,9 @@ Exit status  Explanation
              been performed.
 -----------  -------------------------------------------------------------------
 8            Occasionally, due to computer rounding errors, the denominator of
-             the updating formula of the KKT matrix of interpolation is zero.
-             It means that the above-mentioned mechanisms deployed to prevent
-             this from happening failed. This occurs very rarely.
+             the updating formula of the inverse KKT matrix of interpolation is
+             zero. It means that the above-mentioned mechanisms deployed to
+             prevent this from happening failed. This occurs very rarely.
 -----------  -------------------------------------------------------------------
 9            All variables are fixed by the constraints. If such an exit status
              is achieved and if this point is feasible, the optimization
@@ -452,7 +452,7 @@ Exit status  Explanation
 Computational and numerical efficiencies
 ========================================
 
-We prevent in this section some implementation details aiming at improving the computational and numerical efficiencies of |project|.
+We present in this section some implementation details aiming at improving the computational and numerical efficiencies of |project|.
 
 Shift of the origin in the calculations
 ---------------------------------------
@@ -465,12 +465,12 @@ Storage of the quadratic models
 -------------------------------
 
 For numerical efficiency, the second-order term of the quadratic models is not stored as-is.
-Rather, the implementation technique suggested in section 3 of :cite:`opti-Powell_2004a` is used by |project|.
+Rather, the implementation technique suggested in :cite:`opti-Powell_2004a` is used by |project|.
 The general idea is to write the the Hessian matrix of the models as
 
 .. math::
 
-    \nabla^2 \widehat{f}_k(x) = \Omega_k + \sum_{y \in \mathcal{Y}_k} \omega_{k, y} (y - x^k) (y - x^k)^{\mathsf{T}},
+    \nabla^2 \widehat{f}_k = \Omega_k + \sum_{y \in \mathcal{Y}_k} \omega_{k, y} (y - x^k) (y - x^k)^{\mathsf{T}},
 
 where :math:`\Omega_k \in \R^{n \times n}` is referred to as the explicit part of the Hessian matrix, and :math:`\set{\omega_{k, y}}_{y \in \mathcal{Y}_k}` is referred to as the implicit part of the Hessian matrix.
 Of course, this matrix is never built, as only matrix-vector products are needed by |project|.
@@ -478,9 +478,9 @@ Such a decomposition of the Hessian matrices of the quadratic models reduces the
 
 |project| also maintains the inverse matrix of the KKT system of interpolation (see :cite:`opti-Powell_2004b`).
 Since only its inverse is required in the computations, the original matrix is not stored.
-From a theoretical standpoint, the leading :math:`\abs{\mathcal{Y_k}} \times \abs{\mathcal{Y_k}}` submatrix :math:`\Lambda` of the inverse matrix has rank :math:`\abs{\mathcal{Y}_k} - n - 1` and is positive definite.
+From a theoretical standpoint, the leading :math:`\abs{\mathcal{Y_k}} \times \abs{\mathcal{Y_k}}` submatrix of the inverse matrix has rank :math:`\abs{\mathcal{Y}_k} - n - 1` and is positive definite.
 However, as mentioned in :cite:`opti-Powell_2006`, these properties may be lost in practice.
-Therefore, a decomposition :math:`\Lambda = Z D Z^{\mathsf{T}}` is used instead, where :math:`Z` is a general matrix of size :math:`\abs{\mathcal{Y}_k} \times (\abs{\mathcal{Y}_k} - n - 1)` (which preserves the rank), and :math:`D` is a diagonal matrix with entries :math:`\pm 1`.
+Therefore, a decomposition :math:`Z D Z^{\mathsf{T}}` is used instead, where :math:`Z` is a general matrix of size :math:`\abs{\mathcal{Y}_k} \times (\abs{\mathcal{Y}_k} - n - 1)` (which preserves the rank), and :math:`D` is a diagonal matrix with entries :math:`\pm 1`.
 Theoretically, :math:`D` could always be the identity matrix, but negative values are allowed to tackle numerical difficulties.
 Nevertheless, it has been observed that this matrix remains the identity matrix in most of the tested applications.
 
