@@ -1,3 +1,4 @@
+import re
 from abc import ABC
 
 import numpy as np
@@ -96,6 +97,26 @@ class TestBase(ABC):
         n = x.size
         swi = 0.5 * np.sum(np.arange(1, n + 1) * x)
         return np.inner(x, x) + swi ** 2.0 + swi ** 4.0
+
+    @staticmethod
+    def _unstable(fun, x):
+        test = np.cos(1e12 * np.sum(x))
+        if test >= 0.95:
+            return np.nan
+        else:
+            return fun(x)
+
+    def __getattr__(self, item):
+        unstable = re.compile('(?P<fun>[a-z]+)_unstable')
+        stable = unstable.match(item)
+        if stable:
+            try:
+                fun = getattr(self, stable.group('fun'))
+                return lambda x: self._unstable(fun, x)
+            except AttributeError as exc:
+                raise AttributeError(item) from exc
+        else:
+            raise AttributeError(item)
 
     @staticmethod
     def assert_optimize(res, n, x_sol, f_sol, status=0, maxcv=False):
@@ -211,6 +232,15 @@ class TestUnconstrained(TestBase):
             options={'debug': True},
         )
         self.assert_optimize(res, n, x_sol, f_sol)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'rosen', 'rothyp',
+                                     'sphere', 'stybtang', 'trid'])
+    def test_unstable(self, fun, n, x0, x_sol, f_sol):
+        minimize(
+            fun=getattr(self, fun + '_unstable'),
+            x0=x0,
+        )
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['arwhead', 'power', 'rosen', 'rothyp',
@@ -350,6 +380,17 @@ class TestBoundConstrained(TestBase):
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['arwhead', 'power', 'rosen', 'rothyp',
                                      'sphere', 'stybtang', 'trid'])
+    def test_unstable(self, fun, n, x0, xl, xu, x_sol, f_sol):
+        minimize(
+            fun=getattr(self, fun + '_unstable'),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+        )
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'rosen', 'rothyp',
+                                     'sphere', 'stybtang', 'trid'])
     def test_target(self, fun, n, x0, xl, xu, x_sol, f_sol):
         res = minimize(
             fun=getattr(self, fun),
@@ -437,6 +478,16 @@ class TestLinearEqualityConstrained(TestBase):
         res = minimize(
             fun=getattr(self, fun),
             x0=x0,
+            Aeq=aeq,
+            beq=beq,
+            options={'debug': True},
+            exact_normal_step=True,
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
             xl=xl,
             xu=xu,
             Aeq=aeq,
@@ -444,6 +495,37 @@ class TestLinearEqualityConstrained(TestBase):
             options={'debug': True},
         )
         self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            Aeq=aeq,
+            beq=beq,
+            options={'debug': True},
+            exact_normal_step=True,
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    def test_unstable(self, fun, n, x0, xl, xu, aeq, beq, x_sol, f_sol):
+        minimize(
+            fun=getattr(self, fun + '_unstable'),
+            x0=x0,
+            Aeq=aeq,
+            beq=beq,
+        )
+
+        minimize(
+            fun=getattr(self, fun + '_unstable'),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            Aeq=aeq,
+            beq=beq,
+        )
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
@@ -515,6 +597,16 @@ class TestLinearInequalityConstrained(TestBase):
         res = minimize(
             fun=getattr(self, fun),
             x0=x0,
+            Aub=aub,
+            bub=bub,
+            options={'debug': True},
+            exact_normal_step=True,
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
             xl=xl,
             xu=xu,
             Aub=aub,
@@ -522,6 +614,37 @@ class TestLinearInequalityConstrained(TestBase):
             options={'debug': True},
         )
         self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            Aub=aub,
+            bub=bub,
+            options={'debug': True},
+            exact_normal_step=True,
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['power', 'sphere'])
+    def test_unstable(self, fun, n, x0, xl, xu, aub, bub, x_sol, f_sol):
+        minimize(
+            fun=getattr(self, fun + '_unstable'),
+            x0=x0,
+            Aub=aub,
+            bub=bub,
+        )
+
+        minimize(
+            fun=getattr(self, fun + '_unstable'),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            Aub=aub,
+            bub=bub,
+        )
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['power', 'sphere'])
@@ -549,12 +672,20 @@ class TestLinearInequalityConstrained(TestBase):
 
 class TestNonlinearEqualityConstrained(TestBase):
 
-    @pytest.fixture
-    def ceq(self, fun):
+    @staticmethod
+    def ceq_base(fun):
         return lambda x: {
             'power': np.sum(x) - 1.0,
             'sphere': np.sum(x) - 1.0,
         }.get(fun)
+
+    @pytest.fixture
+    def ceq(self, fun):
+        return self.ceq_base(fun)
+
+    @pytest.fixture
+    def ceq_unstable(self, fun):
+        return lambda x: self._unstable(self.ceq_base(fun), x)
 
     @pytest.fixture
     def x_sol(self, fun, n):
@@ -585,12 +716,49 @@ class TestNonlinearEqualityConstrained(TestBase):
         res = minimize(
             fun=getattr(self, fun),
             x0=x0,
+            ceq=ceq,
+            options={'debug': True},
+            exact_normal_step=True,
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
             xl=xl,
             xu=xu,
             ceq=ceq,
             options={'debug': True},
         )
         self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            ceq=ceq,
+            options={'debug': True},
+            exact_normal_step=True,
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['power', 'sphere'])
+    def test_unstable(self, fun, n, x0, xl, xu, ceq_unstable, x_sol, f_sol):
+        minimize(
+            fun=getattr(self, fun + '_unstable'),
+            x0=x0,
+            ceq=ceq_unstable,
+        )
+
+        minimize(
+            fun=getattr(self, fun + '_unstable'),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            ceq=ceq_unstable,
+        )
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['power', 'sphere'])
@@ -616,12 +784,20 @@ class TestNonlinearEqualityConstrained(TestBase):
 
 class TestNonlinearInequalityConstrained(TestBase):
 
-    @pytest.fixture
-    def cub(self, fun):
+    @staticmethod
+    def cub_base(fun):
         return lambda x: {
             'power': 1.0 - np.sum(x),
             'sphere': 1.0 - np.sum(x),
         }.get(fun)
+
+    @pytest.fixture
+    def cub(self, fun):
+        return self.cub_base(fun)
+
+    @pytest.fixture
+    def cub_unstable(self, fun):
+        return lambda x: self._unstable(self.cub_base(fun), x)
 
     @pytest.fixture
     def x_sol(self, fun, n):
@@ -652,12 +828,49 @@ class TestNonlinearInequalityConstrained(TestBase):
         res = minimize(
             fun=getattr(self, fun),
             x0=x0,
+            cub=cub,
+            options={'debug': True},
+            exact_normal_step=True,
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
             xl=xl,
             xu=xu,
             cub=cub,
             options={'debug': True},
         )
         self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            cub=cub,
+            options={'debug': True},
+            exact_normal_step=True,
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['power', 'sphere'])
+    def test_unstable(self, fun, n, x0, xl, xu, cub_unstable, x_sol, f_sol):
+        minimize(
+            fun=getattr(self, fun + '_unstable'),
+            x0=x0,
+            cub=cub_unstable,
+        )
+
+        minimize(
+            fun=getattr(self, fun + '_unstable'),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            cub=cub_unstable,
+        )
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['power', 'sphere'])
