@@ -1,4 +1,4 @@
-Cython==0.29.27
+Cython==0.29.28
 numpy==1.22.2
 numpydoc==1.2
 pydata-sphinx-theme==0.8.0
