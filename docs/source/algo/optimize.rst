@@ -172,6 +172,7 @@ Such a problem is also feasible, and it is not clear that the constant :math:`\z
 However the trust-region constraint of the tangential subproblem :eq:`tgsp` is not centered, and is then replace for convenience by
 
 .. math::
+    :label: center
 
     \norm{d} \le \sqrt{\Delta_k^2 - \norm{n^k}^2}.
 
@@ -302,9 +303,6 @@ In such a case, a trust-region iteration is entertained after modifying the opti
 Decreasing the penalty coefficient
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-- To prevent the penalty coefficient from being excessively big, it is reduced when the bound on the trust-region radius is reduced.
-- Description of the new value of the penalty coefficient.
-
 To prevent the penalty coefficient from being intensively big, |project| attempts to reduce the penalty parameter as in :cite:`opti-Powell_1994`.
 We define for convenience the operators :math:`\xi_{i, 1}` and :math:`\xi_{i, 1}` as
 
@@ -336,7 +334,7 @@ When the lower bound on the trust-region radius is reduced, the penalty paramete
     \sigma_{k + 1} = \frac{\max_{y \in \mathcal{Y}_k} f(y) - \min_{y \in \mathcal{Y}_k} f(y)}{\min_{i \in \mathcal{I} \cup \mathcal{E}} \set[\big]{\max_{y \in \mathcal{Y}_k} \xi_{i, 1}(y) - \big[\min_{y \in \mathcal{Y}_k} \xi_{i, 2}(y)\big]_-}}
 
 where :math:`[\cdot]_-` denotes the negative-part operator, provided that this value provides an actual decrease in the penalty parameter.
-See :cite:`opti-Powell_1994` for an example of the ratio :eq:`ppred`.
+See :cite:`opti-Powell_1994` for an explanation of the ratio :eq:`ppred`.
 
 Estimation of the Lagrange multipliers
 --------------------------------------
@@ -356,48 +354,135 @@ Assuming that the original problem is smooth, and given some constraint qualific
     \end{array}
     \right.
 
-Therefore, to attempts to solve this KKT system as much as possible using the information available so far, |project| sets :math:`\lambda^k` to the least-squares multipliers, defined by
+Therefore, to attempts to solve this KKT system as much as possible using the information available so far, |project| sets :math:`\lambda^k` to the least-squares multipliers, i.e., a solution to
 
 .. math::
 
-    \lambda^k = \argmin_{\lambda} \set[\big]{\norm{\nabla_x \widehat{\mathcal{L}}_k(x^k, \lambda)} : \lambda_i [\widehat{c}_{k, i}(x^k)]_- = 0, ~ \lambda_i \ge 0, ~ i \in \mathcal{I}}.
+    \begin{array}{ll}
+        \min        & \quad \norm[\big]{\nabla_x \widehat{\mathcal{L}}_k(x^k, \lambda)}\\
+        \text{s.t.} & \quad \lambda_i [\widehat{c}_{k, i}(x^k)]_- = 0, ~ i \in \mathcal{I},\\
+                    & \quad \lambda_i \ge 0, ~ i \in \mathcal{I}.
+    \end{array}
 
 This subproblem is a nonnegatively constrained linear least-squares problem (see `nnls` for details on how to solve such a problem).
 
 Maratos effect and second-order correction steps
 ------------------------------------------------
 
-- Description of the Maratos effect.
-- It can be handled by making a second-order correction step in the trust-region framework.
-- It is attempted when the current trial point does not provide any decrease in the objective function and the normal step is not too large.
-- Description of the second-order correction subproblem.
-- It needs to be solved only approximately (done by `cpqp`).
+It is well-known that the Maratos effect may prevent Newton-type methods from achieving superlinear convergence :cite:`opti-Maratos_1978`.
+Such an effect occurs when the linear models of the constraints in :eq:`trsqp` does not represent accurately enough the curvature of the actual constraints and is caused by discontinuities of the derivatives.
+In a trust-region framework, this defect is usually coped using a second-order correction (see, e.g., :cite:`opti-Conn_Gould_Toint_2009`), the simplest of which is the minimum :math:`\ell_2`-norm.
+It is attempted when the current trial point does not provide any decrease in the objective function and the normal step is not too large.
+In such a case, the trust-region step :math:`d^k` is replaced by :math:`d^k + s^k` where :math:`s^k` solves
+
+.. math::
+    :label: soc
+
+    \begin{array}{ll}
+        \min        & \quad \sum_{i \in \mathcal{I}} \big[\widehat{c}_{k, i}(x^k + d^k) + \inner{\nabla \widehat{c}_{k, i}(x^k + d^k), d}\big]_+^2 + \sum_{i \in \mathcal{E}} \big[\widehat{c}_{k, i}(x^k + d^k) + \inner{\nabla \widehat{c}_{k, i}(x^k + d^k), d}\big]^2\\
+        \text{s.t.} & \quad l \le x^k + d^k + d \le u,\\
+                    & \quad \norm{d} \le \norm{d^k},\\
+                    & \quad d \in \R^n,
+    \end{array}
+
+Since only an approximate second-order correction step is required, problem :eq:`soc` can clearly be solved numerically using `cpqp`.
 
 Exit statuses of the method
 ---------------------------
 
 .. currentmodule:: cobyqa
 
-- Description of all the possible exit statuses of |project|.
-- A detailed documentation of the structure of the outputs can be found at `OptimizeResult`,
+We provide here for convenience details on the possibles exit statuses of |project|.
+A detailed documentation of the structure of the outputs can be found at `OptimizeResult`.
+
+===========  ===================================================================
+Exit status  Explanation
+===========  ===================================================================
+0            The lower bound for the trust-region radius has been reached, the
+             usual stopping criterion of trust-region method. If such an exit
+             status is achieved, the optimization terminated successfully.
+-----------  -------------------------------------------------------------------
+1            The user can provide a target function value to |project|, which
+             stops the computation is this value has been achieved by a feasible
+             point. If such an exit status is achieved, the optimization
+             terminated successfully.
+-----------  -------------------------------------------------------------------
+2            The user can provide an absolute tolerance on the objective
+             function values to |project|, which stops the computations if two
+             consecutive function values are within such a tolerance. If such an
+             exit status is achieved, the optimization terminated successfully.
+-----------  -------------------------------------------------------------------
+3            The user can provide a relative tolerance on the objective function
+             values to |project|, which stops the computations if two
+             consecutive function values are within such a tolerance. If such an
+             exit status is achieved, the optimization terminated successfully.
+-----------  -------------------------------------------------------------------
+4            The user can provide an absolute tolerance on the decision variable
+             (that is, the current iterate) to |project|, which stops the
+             computations if two consecutive iterates are within such a
+             tolerance in :math:`\ell_2`-norm. If such an exit status is
+             achieved, the optimization terminated successfully.
+-----------  -------------------------------------------------------------------
+5            The user can provide a relative tolerance on the decision variable
+             (that is, the current iterate) to |project|, which stops the
+             computations if two consecutive iterates are within such a
+             tolerance in :math:`\ell_2`-norm. If such an exit status is
+             achieved, the optimization terminated successfully.
+-----------  -------------------------------------------------------------------
+6            The user can provide a maximum number of function evaluations to
+             |project|, which stops the computation if such an amount of
+             function evaluations has been performed.
+-----------  -------------------------------------------------------------------
+7            The user can provide a maximum number of iterations to |project|,
+             which stops the computation if such an amount of iterations has
+             been performed.
+-----------  -------------------------------------------------------------------
+8            Occasionally, due to computer rounding errors, the denominator of
+             the updating formula of the KKT matrix of interpolation is zero.
+             It means that the above-mentioned mechanisms deployed to prevent
+             this from happening failed. This occurs very rarely.
+-----------  -------------------------------------------------------------------
+9            All variables are fixed by the constraints. If such an exit status
+             is achieved and if this point is feasible, the optimization
+             terminated successfully.
+-----------  -------------------------------------------------------------------
+-1           The bound constraints are infeasible.
+===========  ===================================================================
 
 Computational and numerical efficiencies
 ========================================
 
-- This section presents some implementation details aiming at improving the computational and numerical efficiencies of |project|.
+We prevent in this section some implementation details aiming at improving the computational and numerical efficiencies of |project|.
 
 Shift of the origin in the calculations
 ---------------------------------------
 
-- The origin in the calculations is shifted to prevent defects from computer rounding errors.
-- The models need to be updated when the origin in the calculations is shifted.
-- The mechanism is triggered whenever the current optimal best point is far from the current origin, and the origin in the calculations becomes the current optimal best point.
+The origin in the calculations is shifted to prevent defects from computer rounding errors.
+This means that all the calculations are done relatively to a vector maintained by |project|.
+It is initially set to the best point in the initial interpolation set, and it is updated whenever the current optimal best point is far from the current origin, and the origin in the calculations becomes the current optimal best point.
 
 Storage of the quadratic models
 -------------------------------
 
-- For numerical efficiency, the second-order term of the quadratic models is stored using an implicit/explicit scheme.
-- The matrix of the KKT system is not solved directly, as is NEWUOA.
+For numerical efficiency, the second-order term of the quadratic models is not stored as-is.
+Rather, the implementation technique suggested in section 3 of :cite:`opti-Powell_2004a` is used by |project|.
+The general idea is to write the the Hessian matrix of the models as
+
+.. math::
+
+    \nabla^2 \widehat{f}_k(x) = \Omega_k + \sum_{y \in \mathcal{Y}_k} \omega_{k, y} (y - x^k) (y - x^k)^{\mathsf{T}},
+
+where :math:`\Omega_k \in \R^{n \times n}` is referred to as the explicit part of the Hessian matrix, and :math:`\set{\omega_{k, y}}_{y \in \mathcal{Y}_k}` is referred to as the implicit part of the Hessian matrix.
+Of course, this matrix is never built, as only matrix-vector products are needed by |project|.
+Such a decomposition of the Hessian matrices of the quadratic models reduces the numerical complexity the updates of the models when a point of :math:`\mathcal{Y}_k` is modified.
+
+|project| also maintains the inverse matrix of the KKT system of interpolation (see :cite:`opti-Powell_2004b`).
+Since only its inverse is required in the computations, the original matrix is not stored.
+From a theoretical standpoint, the leading :math:`\abs{\mathcal{Y_k}} \times \abs{\mathcal{Y_k}}` submatrix :math:`\Lambda` of the inverse matrix has rank :math:`\abs{\mathcal{Y}_k} - n - 1` and is positive definite.
+However, as mentioned in :cite:`opti-Powell_2006`, these properties may be lost in practice.
+Therefore, a decomposition :math:`\Lambda = Z D Z^{\mathsf{T}}` is used instead, where :math:`Z` is a general matrix of size :math:`\abs{\mathcal{Y}_k} \times (\abs{\mathcal{Y}_k} - n - 1)` (which preserves the rank), and :math:`D` is a diagonal matrix with entries :math:`\pm 1`.
+Theoretically, :math:`D` could always be the identity matrix, but negative values are allowed to tackle numerical difficulties.
+Nevertheless, it has been observed that this matrix remains the identity matrix in most of the tested applications.
 
 .. only:: html or text
 

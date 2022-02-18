@@ -589,7 +589,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         7: 'Maximum number of iterations has been exceeded.',
         8: 'Denominator of the updating formula is zero.',
         9: 'All variables are fixed by the constraints.',
-        -1: 'Bound constraints are infeasible',
+        -1: 'Bound constraints are infeasible.',
     }.get(exit_status, 'Unknown exit status.')
     if struct.disp:
         _print(struct, fun.__name__, nfev, result.message)
