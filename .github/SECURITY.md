@@ -12,7 +12,7 @@ currently being supported with security updates.
 ## Reporting a Vulnerability
 
 Please report suspected security vulnerabilities of the project by email to
-`tom.ragonneau@connect.polyu.hk`.
+`t.ragonneau@gmail.com`.
 
 If the issue is confirmed, we will privately craft a dedicated patch as soon as
 possible, depending on the complexity of the bugfix.

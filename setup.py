@@ -125,7 +125,7 @@ def check_pkg_status(pkg, min_version):
 def setup_package():
     metadata = dict(
         name='cobyqa',
-        author='Tom M. Ragonneau',
+        author='Tom M. Ragonneau, Zaikun Zhang',
         author_email='tom.ragonneau@connect.polyu.hk',
         maintainer='Tom M. Ragonneau',
         maintainer_email='tom.ragonneau@connect.polyu.hk',

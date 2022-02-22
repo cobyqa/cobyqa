@@ -14,7 +14,7 @@
 # Dev branch marker is: 'X.Y.dev' or 'X.Y.devN' where N is an integer.
 # 'X.Y.dev0' is the canonical version of 'X.Y.dev'
 #
-__version__ = '1.0.dev0'
+__version__ = '1.0.0a0'
 
 try:
     # Enable subpackage importing when binaries are not yet built.

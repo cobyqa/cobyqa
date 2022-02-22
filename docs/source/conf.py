@@ -18,7 +18,7 @@ from pathlib import Path
 import cobyqa  # noqa
 
 project = 'COBYQA'
-author = 'Tom M. Ragonneau'
+author = 'Tom M. Ragonneau and Zaikun Zhang'
 project_copyright = f'2021-{datetime.now().year}, {author}'
 
 # The short version (including .devX, rcX, b1 suffixes if present).

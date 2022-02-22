@@ -5,14 +5,14 @@ Citing |project|
 If you would like to acknowledge the significance of |project| in your research
 projects, we suggest citing the project as follows:
 
-- T.\  M.\  Ragonneau. *COBYQA v1.0.dev0*. Available at https://cobyqa.readthedocs.io/. 2022.
+- T.\  M.\  Ragonneau and Z.\  Zhang. \ |project|\  v\ |release|\ . Available at \ |doc_url|\ . \ |year|\ .
 
 The corresponding BibTeX entry is given hereunder.
 
 .. parsed-literal::
 
-    @misc{rago\ |year|\ ,
-        author          = "T. M. Ragonneau",
+    @misc{cobyqa,
+        author          = "T. M. Ragonneau and Z. Zhang",
         title           = "\ |project|\  v\ |release|\ ",
         howpublished    = "Available at \\url{\ |doc_url|\ }",
         year            = \ |year|\ ,
