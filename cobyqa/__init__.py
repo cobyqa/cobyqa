@@ -6,15 +6,14 @@
 #   X.Y.Z   # For bugfix releases
 #
 # Admissible pre-release markers:
-#   X.Y.ZaN   # Alpha release
-#   X.Y.ZbN   # Beta release
-#   X.Y.ZrcN  # Release Candidate
-#   X.Y.Z     # Final release
+#   X.YaN   # Alpha release
+#   X.YbN   # Beta release
+#   X.YrcN  # Release Candidate
 #
 # Dev branch marker is: 'X.Y.dev' or 'X.Y.devN' where N is an integer.
 # 'X.Y.dev0' is the canonical version of 'X.Y.dev'
 #
-__version__ = '1.0.0a0'
+__version__ = '1.0a0'
 
 try:
     # Enable subpackage importing when binaries are not yet built.
