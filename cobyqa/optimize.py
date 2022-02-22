@@ -79,7 +79,7 @@ class TrustRegion:
                     function evaluations (the default is ``500 * n``).
                 maxiter: int, optional
                     Upper bound on the number of main loop iterations (the
-                    default is ``750 * n``).
+                    default is ``1000 * n``).
                 target : float, optional
                     Target value on the objective function (the default is
                     ``-numpy.inf``). If the solver encounters a feasible point
@@ -1676,7 +1676,7 @@ class TrustRegion:
         self.options.setdefault('rhoend', min(rhoend, self.rhobeg))
         self.options.setdefault('npt', 2 * n + 1)
         self.options.setdefault('maxfev', max(500 * n, self.npt + 1))
-        self.options.setdefault('maxiter', 750 * n)
+        self.options.setdefault('maxiter', 1000 * n)
         self.options.setdefault('target', -np.inf)
         self.options.setdefault('ftol_abs', -1.0)
         self.options.setdefault('ftol_rel', -1.0)
@@ -2408,7 +2408,7 @@ class Models:
                     function evaluations (the default is ``500 * n``).
                 maxiter: int, optional
                     Upper bound on the number of main loop iterations (the
-                    default is ``750 * n``).
+                    default is ``1000 * n``).
                 target : float, optional
                     Target value on the objective function (the default is
                     ``-numpy.inf``). If the solver encounters a feasible point

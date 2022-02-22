@@ -203,7 +203,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 evaluations (the default is ``500 * n``).
             maxiter: int, optional
                 Upper bound on the number of main loop iterations (the default
-                is ``750 * n``).
+                is ``1000 * n``).
             target : float, optional
                 Target value on the objective function (the default is
                 ``-numpy.inf``). If the solver encounters a feasible point at
@@ -397,13 +397,18 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         exit_status = 0
         nfev = struct.npt
 
-    # Begin the iterative procedure.
+    # Begin the iterative procedure. The purpose of n_alt_models is to decide
+    # whether alternatives models should be used. The purpose of n_short_half
+    # and n_short_tenth is to prevent the algorithm from reducing the lower
+    # bound on the trust-region radius too fast.
     rho = struct.rhobeg
     delta = rho
     fsav = struct.fopt
     xsav = struct.xbase + struct.xopt
     nit = 0
-    itest = 0
+    n_alt_models = 0
+    n_short_half = 0
+    n_short_tenth = 0
     if exit_status == 1:
         # If the target value has been reached when building the initial
         # interpolation set, then the models of the nonlinear functions are not
@@ -412,7 +417,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     else:
         iact = struct.active_set(struct.xopt)
     while exit_status == 0:
-        # Update the shift of the origin to manage computer rounding errors.
+        # Update the shift of the origin to manage computer rounding errors. The
+        # computations are stopped beforehand if the maximum number of
+        # iterations has been reached.
         if nit >= struct.maxiter:
             exit_status = 7
             break
@@ -426,8 +433,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         coptub = np.copy(struct.coptub)
         copteq = np.copy(struct.copteq)
         xopt = np.copy(struct.xopt)
-        is_trust_region_step = not struct.is_model_step
         test = kwargs.get('short_step_detection_factor')
+        is_trust_region_step = not struct.is_model_step
+        reduce_rho = False
         if struct.type in 'LO':
             test /= np.sqrt(2.0)
         if is_trust_region_step:
@@ -445,8 +453,26 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 if delta <= kwargs.get('short_radius_detection_factor') * rho:
                     delta = rho
                 if delsav > rho:
+                    n_short_half = 0
+                    n_short_tenth = 0
+                else:
+                    n_short_half += 1
+                    n_short_tenth += 1
+                    if snorm >= 0.5 * rho:
+                        n_short_half = 0
+                    if snorm >= 0.1 * rho:
+                        n_short_tenth = 0
+                if delsav > rho or n_short_half < 5 and n_short_tenth < 3:
                     struct.prepare_model_step(delta)
                     continue
+
+                # The current iteration is a trust-region iteration for which
+                # the trust-region radius is at its lower bound. Since the trial
+                # step is considered too small compared to delta (and hence
+                # rho), we reduce the lower bound on the trust-region radius.
+                reduce_rho = True
+            n_short_half = 0
+            n_short_tenth = 0
         else:
             deltx = kwargs.get('large_radius_reduction_factor') * delta
             deltx = max(deltx, rho)
@@ -455,9 +481,11 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             step = tstep
             snorm = np.linalg.norm(step)
 
-        if not is_trust_region_step or snorm > test * delta:
+        if not reduce_rho:
             # Evaluate the objective function, include the trial point in the
-            # interpolation set, and update accordingly the models.
+            # interpolation set, and update accordingly the models. The
+            # computations are stopped beforehand if the maximum number of
+            # function evaluations has been reached.
             if nfev >= struct.maxfev:
                 exit_status = 6
                 break
@@ -507,16 +535,16 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             # Attempt to replace the models by the alternative ones.
             if is_trust_region_step and delta <= rho:
                 if ratio > kwargs.get('alternative_models_radius_threshold'):
-                    itest = 0
+                    n_alt_models = 0
                 else:
-                    itest += 1
+                    n_alt_models += 1
                     gd = struct.model_obj_grad(struct.xopt)
                     gd_alt = struct.model_obj_alt_grad(struct.xopt)
                     if np.linalg.norm(gd) < 10.0 * np.linalg.norm(gd_alt):
-                        itest = 0
-                    if itest >= 3:
+                        n_alt_models = 0
+                    if n_alt_models >= 3:
                         struct.reset_models()
-                        itest = 0
+                        n_alt_models = 0
 
             # If a trust-region step has provided a sufficient decrease or if a
             # model-improvement step has just been computed, then the next
@@ -535,6 +563,17 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             rsav = struct.rval[kopt]
             if struct.less_merit(mopt, ropt, msav, rsav):
                 continue
+
+            # If this code is reached, the current iteration is a trust-region
+            # iteration with the following properties:
+            #   - The trust-region ratio is low.
+            #   - The length of the trial step is not considered too low.
+            #   - The trust-region radius equaled its lower bound at the
+            #     beginning of the iteration (and hence also at the end).
+            #   - The trial did not provide any decrease in the merit function.
+            # When all these conditions meet, we reduce the lower bound on the
+            # trust-region radius to improve the resolution of the method.
+            # reduce_rho = True
 
         # Update the lower bound on the trust-region radius.
         if rho > struct.rhoend:

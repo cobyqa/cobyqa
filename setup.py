@@ -126,9 +126,9 @@ def setup_package():
     metadata = dict(
         name='cobyqa',
         author='Tom M. Ragonneau, Zaikun Zhang',
-        author_email='tom.ragonneau@connect.polyu.hk',
+        author_email='cobyqa@python.org',
         maintainer='Tom M. Ragonneau',
-        maintainer_email='tom.ragonneau@connect.polyu.hk',
+        maintainer_email='t.ragonneau@gmail.com',
         version=cobyqa.__version__,
         description='Constrained Optimization BY Quadratic Approximation',
         long_description=open('README.rst').read().rstrip(),
