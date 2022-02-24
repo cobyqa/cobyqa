@@ -416,7 +416,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         iact = np.array([])
     else:
         iact = struct.active_set(struct.xopt)
-    while exit_status == 0:
+    while exit_status == 0 and (rho > struct.rhoend or nit == 0):
         # Update the shift of the origin to manage computer rounding errors. The
         # computations are stopped beforehand if the maximum number of
         # iterations has been reached.
@@ -436,6 +436,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         test = kwargs.get('short_step_detection_factor')
         is_trust_region_step = not struct.is_model_step
         reduce_rho = False
+        evaluate_fun = True
         if struct.type in 'LO':
             test /= np.sqrt(2.0)
         if is_trust_region_step:
@@ -448,13 +449,13 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 if struct.type in 'LO':
                     test /= np.sqrt(2.0)
                 iact = inew
-            if snorm <= test * delta:
+            evaluate_fun = snorm > test * delta
+            if not evaluate_fun:
                 delta *= kwargs.get('radius_reduction_factor')
                 if delta <= kwargs.get('short_radius_detection_factor') * rho:
                     delta = rho
                 if delsav > rho:
-                    n_short_half = 0
-                    n_short_tenth = 0
+                    n_short_half, n_short_tenth = 0, 0
                 else:
                     n_short_half += 1
                     n_short_tenth += 1
@@ -462,17 +463,14 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                         n_short_half = 0
                     if snorm >= 0.1 * rho:
                         n_short_tenth = 0
-                if delsav > rho or n_short_half < 5 and n_short_tenth < 3:
+                reduce_rho = n_short_half >= 5 or n_short_tenth >= 3
+                reduce_rho = reduce_rho and delsav <= rho
+                if not reduce_rho:
                     struct.prepare_model_step(delta)
-                    continue
-
-                # The current iteration is a trust-region iteration for which
-                # the trust-region radius is at its lower bound. Since the trial
-                # step is considered too small compared to delta (and hence
-                # rho), we reduce the lower bound on the trust-region radius.
-                reduce_rho = True
-            n_short_half = 0
-            n_short_tenth = 0
+                else:
+                    n_short_half, n_short_tenth = 0, 0
+            else:
+                n_short_half, n_short_tenth = 0, 0
         else:
             deltx = kwargs.get('large_radius_reduction_factor') * delta
             deltx = max(deltx, rho)
@@ -481,7 +479,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             step = tstep
             snorm = np.linalg.norm(step)
 
-        if not reduce_rho:
+        if evaluate_fun:
             # Evaluate the objective function, include the trial point in the
             # interpolation set, and update accordingly the models. The
             # computations are stopped beforehand if the maximum number of
@@ -548,35 +546,22 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
 
             # If a trust-region step has provided a sufficient decrease or if a
             # model-improvement step has just been computed, then the next
-            # iteration is a trust-region step.
+            # iteration is a trust-region step. If an interpolation point is
+            # substantially far from the trust-region center, a
+            # model-improvement step is entertained.
             if not is_trust_region_step or ratio >= low_ratio:
                 struct.prepare_trust_region_step()
-                continue
-
-            # If an interpolation point is substantially far from the
-            # trust-region center, a model-improvement step is entertained.
-            struct.prepare_model_step(max(delta, 2.0 * rho))
-            if struct.is_model_step or delsav > rho:
-                continue
-            ropt = struct.rval[struct.kopt]
-            msav = struct(xopt, fopt, coptub, copteq)
-            rsav = struct.rval[kopt]
-            if struct.less_merit(mopt, ropt, msav, rsav):
-                continue
-
-            # If this code is reached, the current iteration is a trust-region
-            # iteration with the following properties:
-            #   - The trust-region ratio is low.
-            #   - The length of the trial step is not considered too low.
-            #   - The trust-region radius equaled its lower bound at the
-            #     beginning of the iteration (and hence also at the end).
-            #   - The trial did not provide any decrease in the merit function.
-            # When all these conditions meet, we reduce the lower bound on the
-            # trust-region radius to improve the resolution of the method.
-            # reduce_rho = True
+            else:
+                struct.prepare_model_step(max(delta, 2.0 * rho))
+                if not struct.is_model_step and delsav <= rho:
+                    ropt = struct.rval[struct.kopt]
+                    msav = struct(xopt, fopt, coptub, copteq)
+                    rsav = struct.rval[kopt]
+                    reduce_rho = not struct.less_merit(mopt, ropt, msav, rsav)
 
         # Update the lower bound on the trust-region radius.
-        if rho > struct.rhoend:
+        reduce_rho = reduce_rho and rho > struct.rhoend
+        if reduce_rho:
             large_radius = kwargs.get('large_radius_bound_detection_factor')
             short_radius = kwargs.get('short_radius_bound_detection_factor')
             delta = kwargs.get('radius_reduction_factor') * rho
@@ -592,8 +577,6 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             if struct.disp:
                 message = f'New trust-region radius: {rho}.'
                 _print(struct, fun.__name__, nfev, message)
-            continue
-        break
 
     # Get the success flag.
     if exit_status == 9:
