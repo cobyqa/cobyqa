@@ -1,6 +1,6 @@
-# cython: boundscheck=False
-# cython: wraparound=False
-# cython: cdivision=True
+# cython: boundscheck=True
+# cython: wraparound=True
+# cython: cdivision=False
 # cython: language_level=3
 
 from libc.math cimport fabs, fmax, fmin, isfinite, sqrt
@@ -43,7 +43,10 @@ cdef double inner(double[:] a, double[:] b):
     cdef int n = a.shape[0]
     cdef int inc_a = a.strides[0] / a.itemsize
     cdef int inc_b = b.strides[0] / b.itemsize
-    return ddot(&n, &a[0], &inc_a, &b[0], &inc_b)
+    if n > 0:
+        return ddot(&n, &a[0], &inc_a, &b[0], &inc_b)
+    else:
+        return 0.0
 
 
 cdef double[::1, :] transpose(double[::1, :] a):
@@ -112,32 +115,35 @@ cdef void qr(double[::1, :] a, double[::1, :] q, int[:] p):
     cdef int n = a.shape[1]
     cdef int k = min(m, n)
 
-    # Compute the QR factorization with column pivoting using DGEQP3.
-    cdef int lwork_dgeqp3 = 3 * n + 1
+    cdef int lwork = max(3 * n + 1, m)
     cdef double[:] tau = np_empty(k, dtype=np_float64)
-    cdef double[:] work_dgeqp3 = np_empty(lwork_dgeqp3, dtype=np_float64)
+    cdef double[:] work = np_empty(lwork, dtype=np_float64)
     cdef int info
-    p[:] = 0
-    dgeqp3(&m, &n, &a[0, 0], &m, &p[0], &tau[0], &work_dgeqp3[0], &lwork_dgeqp3, &info)
-    if info != 0:
-        raise ValueError(f'{-info}-th argument of DGEQP3 received an illegal value')
-
-    # Adapt the indices in p to match Python indexing and triangularize a.
     cdef Py_ssize_t i, j
-    for i in range(n):
-        p[i] -= 1
-        for j in range(m):
-            if i < m:
-                q[j, i] = a[j, i]
-            if j > i:
-                a[j, i] = 0.0
+    if k > 0:
+        # Compute the QR factorization with column pivoting using DGEQP3.
+        p[:] = 0
+        dgeqp3(&m, &n, &a[0, 0], &m, &p[0], &tau[0], &work[0], &lwork, &info)
+        if info != 0:
+            raise ValueError(f'{-info}-th argument of DGEQP3 received an illegal value')
 
-    # Build the orthogonal matrix q.
-    cdef int lwork_dorgqr = max(1, m)
-    cdef double[:] work_dorgqr = np_empty(lwork_dorgqr, dtype=np_float64)
-    dorgqr(&m, &m, &k, &q[0, 0], &m, &tau[0], &work_dorgqr[0], &lwork_dorgqr, &info)
-    if info != 0:
-        raise ValueError(f'{-info}-th argument of DORGQR received an illegal value')
+        # Adapt the indices in p to match Python indexing and triangularize a.
+        for i in range(n):
+            p[i] -= 1
+            for j in range(m):
+                if i < m:
+                    q[j, i] = a[j, i]
+                if j > i:
+                    a[j, i] = 0.0
+
+        # Build the orthogonal matrix q.
+        dorgqr(&m, &m, &k, &q[0, 0], &m, &tau[0], &work[0], &lwork, &info)
+        if info != 0:
+            raise ValueError(f'{-info}-th argument of DORGQR received an illegal value')
+    else:
+        q[:, :] = 0.0
+        for i in range(m):
+            q[i, i] = 1.0
 
 
 cdef bint isact(int i, int[:] iact, int* nact):
@@ -283,7 +289,7 @@ cdef void getact(double[:] gq, evalc_t evalc, double[:] resid, int[:] iact, int 
             # Update the vector of the Lagrange multipliers of the calculations
             # to include the new constraint. When a constraint is added or
             # removed, all the Lagrange multipliers must be updated.
-            work[nact[0] - 1] = 1.0 / rfac[mleq + nact[0] - 1, mleq + nact[0] - 1] ** 2.0
+            work[nact[0] - 1] = (1.0 / rfac[mleq + nact[0] - 1, mleq + nact[0] - 1]) ** 2.0
             for k in range(nact[0] - 2, -1, -1):
                 work[k] = -inner(rfac[mleq + k, mleq + k + 1:mleq + nact[0]], work[k + 1:nact[0]])
                 work[k] /= rfac[mleq + k, mleq + k]

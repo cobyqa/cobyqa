@@ -1,6 +1,6 @@
-# cython: boundscheck=False
-# cython: wraparound=False
-# cython: cdivision=True
+# cython: boundscheck=True
+# cython: wraparound=True
+# cython: cdivision=False
 # cython: language_level=3
 
 from libc.stdlib cimport free, malloc
