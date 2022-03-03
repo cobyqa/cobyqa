@@ -1,6 +1,6 @@
-# cython: boundscheck=True
-# cython: wraparound=True
-# cython: cdivision=False
+# cython: boundscheck=False
+# cython: wraparound=False
+# cython: cdivision=True
 # cython: language_level=3
 
 from libc.stdlib cimport free, malloc
@@ -48,6 +48,9 @@ def cpqp(double[:] xopt, double[::1, :] aub, double[:] bub, double[::1, :] aeq, 
             raise ValueError('Constraint xopt <= xu fails initially.')
         if not isfinite(delta) or delta <= 0.0:
             raise ValueError('Constraint delta > 0 fails initially.')
+    for i in range(n):
+        xl[i] = fmin(xl[i], 0.0)
+        xu[i] = fmax(xu[i], 0.0)
 
     # Normalize the linear constraints of the reformulated problem. The bound
     # constraints are already normalized.
@@ -68,7 +71,7 @@ def cpqp(double[:] xopt, double[::1, :] aub, double[:] bub, double[::1, :] aeq, 
     nact[0] = 0
     cdef int[:] iact = np_empty(mlub + n, dtype=np_int32)
     cdef double[::1, :] qfac = np_zeros((mlub + n, mlub + n), dtype=np_float64, order='F')
-    cdef double[::1, :] rfac = np_empty((mlub + n, mlub + n), dtype=np_float64, order='F')
+    cdef double[::1, :] rfac = np_zeros((mlub + n, mlub + n), dtype=np_float64, order='F')
     for i in range(mlub + n):
         qfac[i, i] = 1.0
 

@@ -1,7 +1,8 @@
-# cython: boundscheck=True
-# cython: wraparound=True
-# cython: cdivision=False
+# cython: boundscheck=False
+# cython: wraparound=False
+# cython: cdivision=True
 # cython: language_level=3
+import traceback
 
 from libc.stdlib cimport free, malloc
 from libc.math cimport fabs, fmax, fmin, isfinite, sqrt
@@ -46,7 +47,7 @@ def lctcg(double[:] xopt, double[:] gq, object hessp, double[::1, :] aub, double
         lctol = tol * fmax(1.0, float(mlub) / float(n)) * absmax_array(bub, 1.0)
         if mlub > 0 and min_array(bub) < -lctol:
             raise ValueError('Constraint aub @ xopt <= bub fails initially.')
-        if mleq and (min_array(beq) < -lctol or max_array(beq) > lctol):
+        if mleq > 0 and (min_array(beq) < -lctol or max_array(beq) > lctol):
             raise ValueError('Constraint aeq @ xopt = beq fails initially.')
         if max_array(xl) > bdtol:
             raise ValueError('Constraint xl <= xopt fails initially.')
@@ -54,6 +55,11 @@ def lctcg(double[:] xopt, double[:] gq, object hessp, double[::1, :] aub, double
             raise ValueError('Constraint xopt <= xu fails initially.')
         if not isfinite(delta) or delta <= 0.0:
             raise ValueError('Constraint delta > 0 fails initially.')
+    for i in range(mlub):
+        bub[i] = fmax(bub[i], 0.0)
+    for i in range(n):
+        xl[i] = fmin(xl[i], 0.0)
+        xu[i] = fmax(xu[i], 0.0)
 
     # Remove the linear constraints whose gradients are zero, and normalize the
     # remaining constraints. The bound constraints are already normalized.
@@ -82,7 +88,7 @@ def lctcg(double[:] xopt, double[:] gq, object hessp, double[::1, :] aub, double
     cdef int[:] iact = np_empty(n, dtype=np_int32)
     cdef double[::1, :] req = transpose(aeq)
     cdef double[::1, :] qfac = np_empty((n, n), dtype=np_float64, order='F')
-    cdef double[::1, :] rfac = np_empty((n, n), dtype=np_float64, order='F')
+    cdef double[::1, :] rfac = np_zeros((n, n), dtype=np_float64, order='F')
     cdef int[:] peq = np.empty(mleq, dtype=np_int32)
     qr(req, qfac, peq)
     cdef int rank = 0
@@ -155,11 +161,13 @@ def lctcg(double[:] xopt, double[:] gq, object hessp, double[::1, :] aub, double
             if resmax > 0.0:
                 # Calculate the projection towards the boundaries of the active
                 # constraints. The length of this step is computed hereinafter.
-                for k in range(nact[0]):
-                    work[k] = resid[iact[k]]
-                    work[k] -= inner(rfac[mleq:mleq + k, mleq + k], work[:k])
-                    work[k] /= rfac[mleq + k, mleq + k]
-                dot(qfac[:, mleq:mleq + nact[0]], work[:nact[0]], sd, 'n', 1.0, 0.0)  # noqa
+                for k in range(mleq + nact[0]):
+                    work[k] = 0.0
+                    if k >= mleq:
+                        work[k] = resid[iact[k - mleq]]
+                    work[k] -= inner(rfac[:k, k], work[:k])
+                    work[k] /= rfac[k, k]
+                dot(qfac[:, :mleq + nact[0]], work[:mleq + nact[0]], sd, 'n', 1.0, 0.0)  # noqa
 
                 # Determine the greatest steplength along the previously
                 # calculated direction allowed by the trust-region constraint.

@@ -1,6 +1,6 @@
-# cython: boundscheck=True
-# cython: wraparound=True
-# cython: cdivision=False
+# cython: boundscheck=False
+# cython: wraparound=False
+# cython: cdivision=True
 # cython: language_level=3
 
 from libc.math cimport INFINITY, fabs, fmax, fmin, isfinite, sqrt
@@ -44,6 +44,10 @@ def bvcs(double[::1, :] xpt, int kopt, double[:] gq, object curv, double[:] xl, 
             raise ValueError('Constraint xopt <= xu fails initially.')
         if not isfinite(delta) or delta <= 0.0:
             raise ValueError('Constraint delta > 0 fails initially.')
+    for i in range(n):
+        xl[i] = fmin(xl[i], 0.0)
+        xu[i] = fmax(xu[i], 0.0)
+
 
     # Start the procedure.
     cdef double[:] step = np_zeros(n, dtype=np_float64)

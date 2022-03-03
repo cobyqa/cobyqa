@@ -17,5 +17,6 @@ if [[ "$RUNNER_OS" == macOS ]]; then
 fi
 
 # Build the wheel distribution
+# Option for development: --platform {auto,linux,macos,windows}
 python -m pip install --progress-bar=off cibuildwheel
 python -m cibuildwheel --output-dir wheelhouse

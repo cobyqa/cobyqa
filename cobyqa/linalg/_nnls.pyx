@@ -1,6 +1,6 @@
-# cython: boundscheck=True
-# cython: wraparound=True
-# cython: cdivision=False
+# cython: boundscheck=False
+# cython: wraparound=False
+# cython: cdivision=True
 # cython: language_level=3
 
 from libc.math cimport fabs
@@ -185,12 +185,15 @@ cdef void lstsq(double[::1, :] a, double[:] b, bint[:] iact, int nact, double rc
     if info != 0:
         raise ValueError(f'Internal work array size computation failed: {info}')
     cdef int lwork = int(temp)
-    cdef int[:] jpvt = np_zeros(n, dtype=np_int32)
+    cdef int[:] jpvt = np_zeros(nfree, dtype=np_int32)
     cdef double[:] work = np_empty(max(1, lwork), dtype=np_float64)
     cdef int rank
-    dgelsy(&m, &nfree, &nrhs, &afree[0, 0], &m, &xfree[0, 0], &ldb, &jpvt[0], &rcond, &rank, &work[0], &lwork, &info)
-    if info != 0:
-        raise ValueError(f'{-info}-th argument of DGELSY received an illegal value')
+    if min(m, nfree) > 0:
+        dgelsy(&m, &nfree, &nrhs, &afree[0, 0], &m, &xfree[0, 0], &ldb, &jpvt[0], &rcond, &rank, &work[0], &lwork, &info)
+        if info != 0:
+            raise ValueError(f'{-info}-th argument of DGELSY received an illegal value')
+    elif nfree > 0:
+        xfree[:nfree, :nrhs] = 0.0
 
     # Build the solution of the constrained linear least-squares problem, by
     # setting the variables included in the working set to zero.

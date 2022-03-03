@@ -416,7 +416,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         iact = np.array([])
     else:
         iact = struct.active_set(struct.xopt)
-    while exit_status == 0 and (rho > struct.rhoend or nit == 0):
+    while exit_status == 0:
         # Update the shift of the origin to manage computer rounding errors. The
         # computations are stopped beforehand if the maximum number of
         # iterations has been reached.
@@ -549,19 +549,22 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             # iteration is a trust-region step. If an interpolation point is
             # substantially far from the trust-region center, a
             # model-improvement step is entertained.
-            if not is_trust_region_step or ratio >= low_ratio:
+            reduce_rho = is_trust_region_step and ratio < low_ratio
+            if not reduce_rho:
                 struct.prepare_trust_region_step()
             else:
                 struct.prepare_model_step(max(delta, 2.0 * rho))
-                if not struct.is_model_step and delsav <= rho:
+                reduce_rho = not struct.is_model_step and delsav <= rho
+                if reduce_rho:
                     ropt = struct.rval[struct.kopt]
                     msav = struct(xopt, fopt, coptub, copteq)
                     rsav = struct.rval[kopt]
                     reduce_rho = not struct.less_merit(mopt, ropt, msav, rsav)
 
         # Update the lower bound on the trust-region radius.
-        reduce_rho = reduce_rho and rho > struct.rhoend
         if reduce_rho:
+            if rho <= struct.rhoend:
+                break
             large_radius = kwargs.get('large_radius_bound_detection_factor')
             short_radius = kwargs.get('short_radius_bound_detection_factor')
             delta = kwargs.get('radius_reduction_factor') * rho

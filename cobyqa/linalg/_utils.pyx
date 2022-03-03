@@ -1,9 +1,9 @@
-# cython: boundscheck=True
-# cython: wraparound=True
-# cython: cdivision=False
+# cython: boundscheck=False
+# cython: wraparound=False
+# cython: cdivision=True
 # cython: language_level=3
 
-from libc.math cimport fabs, fmax, fmin, isfinite, sqrt
+from libc.math cimport fabs, fmax, fmin, hypot, isfinite, sqrt
 
 import numpy as np
 cimport numpy as np
@@ -14,7 +14,7 @@ from numpy import empty as np_empty
 from numpy import zeros as np_zeros
 from numpy import float64 as np_float64
 
-from scipy.linalg.cython_blas cimport ddot, dgemv, drotg  # noqa
+from scipy.linalg.cython_blas cimport ddot, dgemv  # noqa
 from scipy.linalg.cython_lapack cimport dgeqp3, dorgqr  # noqa
 
 
@@ -29,7 +29,7 @@ cdef void dot(double[::1, :] a, double[:] b, double[:] out, char* trans, double 
     cdef int inc_out = out.strides[0] / out.itemsize
     cdef int m_out = out.shape[0]
     cdef Py_ssize_t i
-    if m > 0 and n > 0:
+    if min(m, n) > 0:
         dgemv(trans, &m, &n, &alpha, &a[0, 0], &m, &b[0], &inc_b, &beta, &out[0], &inc_out)
     else:
         for i in range(m_out):
@@ -140,6 +140,12 @@ cdef void qr(double[::1, :] a, double[::1, :] q, int[:] p):
         dorgqr(&m, &m, &k, &q[0, 0], &m, &tau[0], &work[0], &lwork, &info)
         if info != 0:
             raise ValueError(f'{-info}-th argument of DORGQR received an illegal value')
+        for i in range(k):
+            if a[i, i] < 0.0:
+                for j in range(i, n):
+                    a[i, j] = -a[i, j]
+                for j in range(m):
+                    q[j, i] = -q[j, i]
     else:
         q[:, :] = 0.0
         for i in range(m):
@@ -173,7 +179,8 @@ cdef void getact(double[:] gq, evalc_t evalc, double[:] resid, int[:] iact, int 
     # Remove from the current active set the constraints that are not considered
     # active anymore, that is those whose residuals exceed tdel.
     cdef Py_ssize_t k
-    for k in range(nact[0] - 1, -1, -1):
+    cdef int nactc = nact[0]
+    for k in range(nactc - 1, -1, -1):
         if resid[iact[k]] > tdel:
             _rmact(k, mleq, nact, qfac, rfac)
             iact[k:nact[0]] = iact[k + 1:nact[0] + 1]
@@ -271,8 +278,7 @@ cdef void getact(double[:] gq, evalc_t evalc, double[:] resid, int[:] iact, int 
             elif fabs(sval) <= tol * fabs(cval):
                 sval = cval
             else:
-                drotg(&cval, &sval, &cosv, &sinv)
-                sval = cval
+                sval = _drotg(cval, sval, &cosv, &sinv)
                 for i in range(n):
                     temp = cosv * qfac[i, k] + sinv * qfac[i, k + 1]
                     qfac[i, k + 1] = cosv * qfac[i, k + 1] - sinv * qfac[i, k]
@@ -311,7 +317,8 @@ cdef void getact(double[:] gq, evalc_t evalc, double[:] resid, int[:] iact, int 
             # Remove from the active set the constraints whose Lagrange
             # multipliers are nonnegative. This mechanism ensures the active
             # constraints are linearly independent.
-            for k in range(nact[0] - 1, -1, -1):
+            nactc = nact[0]
+            for k in range(nactc - 1, -1, -1):
                 if vlam[k] >= 0.0:
                     _rmact(k, mleq, nact, qfac, rfac)
                     iact[k:nact[0]] = iact[k + 1:nact[0] + 1]
@@ -319,6 +326,20 @@ cdef void getact(double[:] gq, evalc_t evalc, double[:] resid, int[:] iact, int 
 
     step[:] = 0.0
     return
+
+
+cdef double _drotg(double a, double b, double* c, double* s):
+    """
+    Prepare a Givens rotation.
+    """
+    cdef double r = hypot(a, b)
+    if r == 0.0:
+        c[0] = 1.0
+        s[0] = 0.0
+    else:
+        c[0] = a / r
+        s[0] = b / r
+    return r
 
 
 cdef void _rmact(int k, int mleq, int* nact, double[::1, :] qfac, double[::1, :] rfac):
@@ -333,20 +354,20 @@ cdef void _rmact(int k, int mleq, int* nact, double[::1, :] qfac, double[::1, :]
     for j in range(mleq + k, mleq + nact[0] - 1):
         cval = rfac[j + 1, j + 1]
         sval = rfac[j, j + 1]
-        drotg(&cval, &sval, &cosv, &sinv)
-        hval = cval
-        for i in range(j, mleq + nact[0]):
+        hval = _drotg(cval, sval, &cosv, &sinv)
+        rfac[j, j + 1] = sinv * rfac[j, j]
+        rfac[j + 1, j + 1] = cosv * rfac[j, j]
+        rfac[j, j] = hval
+        for i in range(j + 2, mleq + nact[0]):
             temp = cosv * rfac[j + 1, i] + sinv * rfac[j, i]
             rfac[j + 1, i] = cosv * rfac[j, i] - sinv * rfac[j + 1, i]
             rfac[j, i] = temp
         for i in range(n):
-            if i < j + 2:
-                temp = rfac[i, j]
-                rfac[i, j] = rfac[i, j + 1]
-                rfac[i, j + 1] = temp
+            if i < j:
+                temp = rfac[i, j + 1]
+                rfac[i, j + 1] = rfac[i, j]
+                rfac[i, j] = temp
             temp = cosv * qfac[i, j + 1] + sinv * qfac[i, j]
             qfac[i, j + 1] = cosv * qfac[i, j] - sinv * qfac[i, j + 1]
             qfac[i, j] = temp
-        rfac[j, j] = hval
-        rfac[j + 1, j] = 0.0
     nact[0] -= 1
