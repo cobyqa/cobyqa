@@ -4104,9 +4104,12 @@ class Models:
                `xopt` to the other interpolation points that maximize a lower
                bound on the denominator of the updating formula.
             2. The second alternative is a constrained Cauchy step.
+            3. The third alternative uses a truncated conjugate gradient method
+               to estimate the maximum of a lower bound on the denominator of
+               the updating formula.
 
-        Among the two alternative steps, the method selects the one that leads
-        to the greatest denominator of the updating formula.
+        Among the alternative steps, the method selects the one that leads to
+        the greatest denominator of the updating formula.
 
         Parameters
         ----------
@@ -4138,27 +4141,42 @@ class Models:
         # interpolation conditions is taken up by minimizing the Hessian matrix
         # of the quadratic function is Frobenius norm.
         lag = self.new_model(klag)
+        omega = implicit_hessian(self.zmat, self.idz, klag)
+        alpha = omega[klag]
 
         # Determine a point on a line between xopt and another interpolation
         # points, chosen to maximize the absolute value of the klag-th Lagrange
         # polynomial, which is a lower bound on the denominator of the updating
         # formula.
-        omega = implicit_hessian(self.zmat, self.idz, klag)
-        alpha = omega[klag]
         glag = lag.grad(self.xopt, self.xpt, self.kopt)
         step = bvlag(self.xpt, self.kopt, klag, glag, self.xl, self.xu, delta,
                      alpha, **kwargs)
+        beta, vlag = self._beta(step)
+        sigma = vlag[klag] ** 2.0 + alpha * beta
 
         # Evaluate the constrained Cauchy step from the optimal point of the
         # absolute value of the klag-th Lagrange polynomial.
         salt, cauchy = bvcs(self.xpt, self.kopt, glag, lag.curv, self.xl,
                             self.xu, delta, self.xpt, **kwargs)
-
-        # Among the two computed alternative points, we select the one that
-        # leads to the greatest denominator of the updating formula.
-        beta, vlag = self._beta(step)
-        sigma = vlag[klag] ** 2.0 + alpha * beta
         if sigma < cauchy and cauchy > tol * max(1.0, abs(sigma)):
+            step = salt
+            sigma = cauchy
+
+        # Estimate the maximum of the absolute value of the klag-th Lagrange
+        # polynomial using a truncated conjugate gradient method.
+        salt1 = bvtcg(self.xopt, glag, lag.hessp, self.xl, self.xu, delta,
+                      self.xpt, **kwargs)
+        lalt1 = -lag(self.xopt + salt1, self.xpt, self.kopt)
+        salt2 = bvtcg(self.xopt, -glag, lambda x: -lag.hessp(x, self.xpt),
+                      self.xl, self.xu, delta, **kwargs)
+        lalt2 = -lag(self.xopt + salt2, self.xpt, self.kopt)
+        if lalt1 > lalt2:
+            salt = salt1
+        else:
+            salt = salt2
+        beta, vlag = self._beta(salt)
+        sigalt = vlag[klag] ** 2.0 + alpha * beta
+        if sigma < sigalt:
             step = salt
         return step
 
