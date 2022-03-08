@@ -161,13 +161,11 @@ def lctcg(double[:] xopt, double[:] gq, object hessp, double[::1, :] aub, double
             if resmax > 0.0:
                 # Calculate the projection towards the boundaries of the active
                 # constraints. The length of this step is computed hereinafter.
-                for k in range(mleq + nact[0]):
-                    work[k] = 0.0
-                    if k >= mleq:
-                        work[k] = resid[iact[k - mleq]]
-                    work[k] -= inner(rfac[:k, k], work[:k])
-                    work[k] /= rfac[k, k]
-                dot(qfac[:, :mleq + nact[0]], work[:mleq + nact[0]], sd, 'n', 1.0, 0.0)  # noqa
+                for k in range(nact[0]):
+                    work[k] = resid[iact[k]]
+                    work[k] -= inner(rfac[mleq:mleq + k, k + mleq], work[:k])
+                    work[k] /= rfac[mleq + k, mleq + k]
+                dot(qfac[:, mleq:mleq + nact[0]], work[:nact[0]], sd, 'n', 1.0, 0.0)  # noqa
 
                 # Determine the greatest steplength along the previously
                 # calculated direction allowed by the trust-region constraint.

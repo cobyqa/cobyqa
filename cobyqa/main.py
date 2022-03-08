@@ -245,6 +245,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     exact_normal_step : bool, optional
         Whether the normal subproblem should be solved exactly using SciPy (the
         default is False).
+    improve_tcg : bool, optional
+        Whether to improve the truncated conjugate gradient step round the
+        trust-region boundary (the default is True). It is currently only
+        implemented for bound-constrained problems.
     large_radius_bound_detection_factor : float, optional
         Factor on the trust-region radius lower bound used to decide whether the
         current trust-region radius is large (the default is 250).
@@ -625,6 +629,7 @@ def _set_default_constants(kwargs):
     kwargs.setdefault('alternative_models_radius_threshold', 1e-2)
     kwargs.setdefault('constraint_activation_factor', 0.2)
     kwargs.setdefault('exact_normal_step', False)
+    kwargs.setdefault('improve_tcg', True)
     kwargs.setdefault('large_radius_bound_detection_factor', 250.0)
     kwargs.setdefault('large_radius_reduction_factor', 0.1)
     kwargs.setdefault('large_ratio_threshold', 0.7)

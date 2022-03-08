@@ -18,7 +18,7 @@ from numpy import float64 as np_float64
 from ._utils cimport inner, absmax_array, max_array, min_array
 
 
-def bvtcg(double[:] xopt, double[:] gq, object hessp, double[:] xl, double[:] xu, double delta, bint debug):
+def bvtcg(double[:] xopt, double[:] gq, object hessp, double[:] xl, double[:] xu, double delta, bint debug, bint improve_tcg):
     """
     Minimize approximately a quadratic function subject to bound and
     trust-region constraints using a truncated conjugate gradient.
@@ -198,7 +198,7 @@ def bvtcg(double[:] xopt, double[:] gq, object hessp, double[:] xl, double[:] xu
         # of the step and the gradient.
         iterc = 0
         inew = -1
-        while nact < n - 1:
+        while improve_tcg and nact < n - 1:
             # Whenever the previous iteration has hit a bound, the computation
             # round the trust-region boundary are restarted.
             stepsq = 0.0

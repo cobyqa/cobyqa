@@ -2085,6 +2085,12 @@ class TrustRegion:
         numpy.ndarray, shape (n,)
             Trust-region step from `xopt`.
 
+        Other Parameters
+        ----------------
+        improve_tcg : bool, optional
+            Whether to improve the truncated conjugate gradient step round the
+            trust-region boundary (the default is True).
+
         Notes
         -----
         The trust-region constraint of the tangential subproblem is not centered
@@ -4129,6 +4135,9 @@ class Models:
         debug : bool, optional
             Whether to make debugging tests during the execution, which is
             not recommended in production (the default is False).
+        improve_tcg : bool, optional
+            Whether to improve the truncated conjugate gradient step round the
+            trust-region boundary (the default is True).
         """
         # Define the tolerances to compare floating-point numbers with zero.
         npt = self.xpt.shape[0]
@@ -4164,16 +4173,14 @@ class Models:
 
         # Estimate the maximum of the absolute value of the klag-th Lagrange
         # polynomial using a truncated conjugate gradient method.
-        salt1 = bvtcg(self.xopt, glag, lag.hessp, self.xl, self.xu, delta,
-                      self.xpt, **kwargs)
-        lalt1 = -lag(self.xopt + salt1, self.xpt, self.kopt)
-        salt2 = bvtcg(self.xopt, -glag, lambda x: -lag.hessp(x, self.xpt),
-                      self.xl, self.xu, delta, **kwargs)
-        lalt2 = -lag(self.xopt + salt2, self.xpt, self.kopt)
-        if lalt1 > lalt2:
-            salt = salt1
-        else:
-            salt = salt2
+        salt = bvtcg(self.xopt, glag, lag.hessp, self.xl, self.xu, delta,
+                     self.xpt, **kwargs)
+        beta, vlag = self._beta(salt)
+        sigalt = vlag[klag] ** 2.0 + alpha * beta
+        if sigma < sigalt:
+            step = salt
+        salt = bvtcg(self.xopt, -glag, lambda x: -lag.hessp(x, self.xpt),
+                     self.xl, self.xu, delta, **kwargs)
         beta, vlag = self._beta(salt)
         sigalt = vlag[klag] ** 2.0 + alpha * beta
         if sigma < sigalt:

@@ -229,6 +229,9 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
     debug : bool, optional
         Whether to make debugging tests during the execution, which is
         not recommended in production (the default is False).
+    improve_tcg : bool, optional
+        Whether to improve the truncated conjugate gradient step round the
+        trust-region boundary (the default is True).
 
     Raises
     ------
@@ -275,7 +278,8 @@ def bvtcg(xopt, gq, hessp, xl, xu, delta, *args, **kwargs):
         return hx
 
     debug = kwargs.get('debug', False)
-    step = _bvtcg(xopt, gq, hessp_safe, xl, xu, delta, debug)  # noqa
+    improve_tcg = kwargs.get('improve_tcg', True)
+    step = _bvtcg(xopt, gq, hessp_safe, xl, xu, delta, debug, improve_tcg)  # noqa
     return np.array(step, dtype=float)
 
 
