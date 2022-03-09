@@ -2199,6 +2199,18 @@ class TrustRegion:
         numpy.ndarray, shape (n,)
             Model-improvement step from `xopt`.
 
+        Other Parameters
+        ----------------
+        debug : bool, optional
+            Whether to make debugging tests during the execution, which is
+            not recommended in production (the default is False).
+        improve_tcg : bool, optional
+            Whether to improve the truncated conjugate gradient step round the
+            trust-region boundary (the default is True).
+        model_step_tcg : bool, optional
+            Whether to perform the model step using a truncated conjugate
+            gradient method (the default is False).
+
         Notes
         -----
         Two alternative steps are computed.
@@ -4138,6 +4150,9 @@ class Models:
         improve_tcg : bool, optional
             Whether to improve the truncated conjugate gradient step round the
             trust-region boundary (the default is True).
+        model_step_tcg : bool, optional
+            Whether to perform the model step using a truncated conjugate
+            gradient method (the default is False).
         """
         # Define the tolerances to compare floating-point numbers with zero.
         npt = self.xpt.shape[0]
@@ -4150,41 +4165,39 @@ class Models:
         # interpolation conditions is taken up by minimizing the Hessian matrix
         # of the quadratic function is Frobenius norm.
         lag = self.new_model(klag)
+        glag = lag.grad(self.xopt, self.xpt, self.kopt)
         omega = implicit_hessian(self.zmat, self.idz, klag)
         alpha = omega[klag]
 
-        # Determine a point on a line between xopt and another interpolation
-        # points, chosen to maximize the absolute value of the klag-th Lagrange
-        # polynomial, which is a lower bound on the denominator of the updating
-        # formula.
-        glag = lag.grad(self.xopt, self.xpt, self.kopt)
-        step = bvlag(self.xpt, self.kopt, klag, glag, self.xl, self.xu, delta,
-                     alpha, **kwargs)
-        beta, vlag = self._beta(step)
-        sigma = vlag[klag] ** 2.0 + alpha * beta
+        if not kwargs['model_step_tcg']:
+            # Determine a point on a line between xopt and another interpolation
+            # points, chosen to maximize the absolute value of the klag-th
+            # Lagrange polynomial, which is a lower bound on the denominator of
+            # the updating formula.
+            step = bvlag(self.xpt, self.kopt, klag, glag, self.xl, self.xu,
+                         delta, alpha, **kwargs)
+            beta, vlag = self._beta(step)
+            sigma = vlag[klag] ** 2.0 + alpha * beta
 
-        # Evaluate the constrained Cauchy step from the optimal point of the
-        # absolute value of the klag-th Lagrange polynomial.
-        salt, cauchy = bvcs(self.xpt, self.kopt, glag, lag.curv, self.xl,
-                            self.xu, delta, self.xpt, **kwargs)
-        if sigma < cauchy and cauchy > tol * max(1.0, abs(sigma)):
-            step = salt
-            sigma = cauchy
-
-        # Estimate the maximum of the absolute value of the klag-th Lagrange
-        # polynomial using a truncated conjugate gradient method.
-        salt = bvtcg(self.xopt, glag, lag.hessp, self.xl, self.xu, delta,
-                     self.xpt, **kwargs)
-        beta, vlag = self._beta(salt)
-        sigalt = vlag[klag] ** 2.0 + alpha * beta
-        if sigma < sigalt:
-            step = salt
-        salt = bvtcg(self.xopt, -glag, lambda x: -lag.hessp(x, self.xpt),
-                     self.xl, self.xu, delta, **kwargs)
-        beta, vlag = self._beta(salt)
-        sigalt = vlag[klag] ** 2.0 + alpha * beta
-        if sigma < sigalt:
-            step = salt
+            # Evaluate the constrained Cauchy step from the optimal point of the
+            # absolute value of the klag-th Lagrange polynomial.
+            salt, cauchy = bvcs(self.xpt, self.kopt, glag, lag.curv, self.xl,
+                                self.xu, delta, self.xpt, **kwargs)
+            if sigma < cauchy and cauchy > tol * max(1.0, abs(sigma)):
+                step = salt
+        else:
+            # Estimate the maximum of the absolute value of the klag-th Lagrange
+            # polynomial using a truncated conjugate gradient method.
+            step = bvtcg(self.xopt, glag, lag.hessp, self.xl, self.xu, delta,
+                         self.xpt, **kwargs)
+            beta, vlag = self._beta(step)
+            sigma = vlag[klag] ** 2.0 + alpha * beta
+            salt = bvtcg(self.xopt, -glag, lambda x: -lag.hessp(x, self.xpt),
+                         self.xl, self.xu, delta, **kwargs)
+            beta, vlag = self._beta(salt)
+            sigalt = vlag[klag] ** 2.0 + alpha * beta
+            if abs(sigma) < abs(sigalt):
+                step = salt
         return step
 
     def resid(self, x, cubx=None, ceqx=None):

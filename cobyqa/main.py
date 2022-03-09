@@ -261,6 +261,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     low_ratio_threshold: float, optional
         Threshold on the trust-region ratio used to decide whether an iteration
         performed poorly (the default is 0.1).
+    model_step_tcg : bool, optional
+        Whether to perform the model step using a truncated conjugate gradient
+        method (the default is False).
     normal_step_shrinkage_factor : float, optional
         Shrinkage factor on the trust-region radius for the normal subproblems
         (the default is 0.8).
@@ -634,6 +637,7 @@ def _set_default_constants(kwargs):
     kwargs.setdefault('large_radius_reduction_factor', 0.1)
     kwargs.setdefault('large_ratio_threshold', 0.7)
     kwargs.setdefault('low_ratio_threshold', 0.1)
+    kwargs.setdefault('model_step_tcg', False)
     kwargs.setdefault('normal_step_shrinkage_factor', 0.8)
     kwargs.setdefault('penalty_detection_factor', 1.5)
     kwargs.setdefault('penalty_growth_factor', 2.0)
