@@ -180,9 +180,11 @@ cdef void getact(double[:] gq, evalc_t evalc, double[:] resid, int[:] iact, int 
     # active anymore, that is those whose residuals exceed tdel.
     cdef Py_ssize_t k
     cdef int nactc = nact[0]
+    cdef int ncall = 0
     for k in range(nactc - 1, -1, -1):
         if resid[iact[k]] > tdel:
             _rmact(k, mleq, nact, qfac, rfac)
+            ncall += 1
             iact[k:nact[0]] = iact[k + 1:nact[0] + 1]
 
     # The vector vlam stores the Lagrange multipliers of the calculations (only
@@ -197,6 +199,7 @@ cdef void getact(double[:] gq, evalc_t evalc, double[:] resid, int[:] iact, int 
         temp -= inner(rfac[mleq + k, mleq + k + 1:mleq + nact[0]], vlam[k + 1:nact[0]])
         if temp >= 0:
             _rmact(k, mleq, nact, qfac, rfac)
+            ncall += 1
             iact[k:nact[0]] = iact[k + 1:nact[0] + 1]
             vlam[k:nact[0]] = vlam[k + 1:nact[0] + 1]
             k = nact[0] - 1
@@ -321,8 +324,17 @@ cdef void getact(double[:] gq, evalc_t evalc, double[:] resid, int[:] iact, int 
             for k in range(nactc - 1, -1, -1):
                 if vlam[k] >= 0.0:
                     _rmact(k, mleq, nact, qfac, rfac)
+                    ncall += 1
                     iact[k:nact[0]] = iact[k + 1:nact[0] + 1]
                     vlam[k:nact[0]] = vlam[k + 1:nact[0] + 1]
+
+            # Prevent infinite cycling. During the tested phase, the code below
+            # has never been reached, but is kept as a safeguard.
+            if ncall > min(10000, 100 * m * (n - mleq)):
+                break
+        else:
+            continue
+        break
 
     step[:] = 0.0
     return
