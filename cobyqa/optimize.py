@@ -13,13 +13,138 @@ from .utils import RestartRequiredException, huge, implicit_hessian, \
     normalize, absmax_arrays
 
 
+class OptimizeResult(dict):
+    """
+    Structure for the result of the optimization algorithm.
+
+    Attributes
+    ----------
+    x : numpy.ndarray, shape (n,)
+        Solution point provided by the optimization solver.
+    success : bool
+        Flag indicating whether the optimization solver terminated successfully.
+    status : int
+        Termination status of the optimization solver.
+    message : str
+        Description of the termination status of the optimization solver.
+    fun : float
+        Value of the objective function at the solution point provided by the
+        optimization solver.
+    jac : numpy.ndarray, shape (n,)
+        Approximation of the gradient of the objective function at the solution
+        point provided by the optimization solver, based on undetermined
+        interpolation. If the value of a component (or more) of the gradient is
+        unknown, it is replaced by ``numpy.nan``.
+    nfev : int
+        Number of objective and constraint function evaluations.
+    nit : int
+        Number of iterations performed by the optimization solver.
+    maxcv : float
+        Maximum constraint violation at the solution point provided by the
+        optimization solver. It is set only if the problem is not declared
+        unconstrained by the optimization solver.
+    """
+
+    def __dir__(self):
+        """
+        Get the names of the attributes in the current scope.
+
+        Returns
+        -------
+        list:
+            Names of the attributes in the current scope.
+        """
+        return list(self.keys())
+
+    def __getattr__(self, name):
+        """
+        Get the value of an attribute that is not explicitly defined.
+
+        Parameters
+        ----------
+        name : str
+            Name of the attribute to be assessed.
+
+        Returns
+        -------
+        object
+            Value of the attribute.
+
+        Raises
+        ------
+        AttributeError
+            The required attribute does not exist.
+        """
+        try:
+            return self[name]
+        except KeyError as exc:
+            raise AttributeError(name) from exc
+
+    def __setattr__(self, key, value):
+        """
+        Assign an existing or a new attribute.
+
+        Parameters
+        ----------
+        key : str
+            Name of the attribute to be assigned.
+        value : object
+            Value of the attribute to be assigned.
+        """
+        super().__setitem__(key, value)
+
+    def __delattr__(self, key):
+        """
+        Delete an attribute.
+
+        Parameters
+        ----------
+        key : str
+            Name of the attribute to be deleted.
+
+        Raises
+        ------
+        KeyError
+            The required attribute does not exist.
+        """
+        super().__delitem__(key)
+
+    def __repr__(self):
+        """
+        Get a string representation that looks like valid Python expression,
+        which can be used to recreate an object with the same value, given an
+        appropriate environment.
+
+        Returns
+        -------
+        str
+            String representation of instances of this class.
+        """
+        attrs = ', '.join(f'{k}={repr(v)}' for k, v in sorted(self.items()))
+        return f'{self.__class__.__name__}({attrs})'
+
+    def __str__(self):
+        """
+        Get a string representation, designed to be nicely printable.
+
+        Returns
+        -------
+        str
+            String representation of instances of this class.
+        """
+        if self.keys():
+            m = max(map(len, self.keys())) + 1
+            return '\n'.join(f'{k:>{m}}: {v}' for k, v in sorted(self.items()))
+        return f'{self.__class__.__name__}()'
+
+
 class TrustRegion:
     """
     Framework atomization of the derivative-free trust-region SQP method.
     """
 
     def __init__(self, fun, x0, xl=None, xu=None, Aub=None, bub=None, Aeq=None,
-                 beq=None, cub=None, ceq=None, options=None, *args):
+                 beq=None, cub=None, ceq=None, options=None, *args, **kwargs):
         """
         Initialize the derivative-free trust-region SQP method.
 
@@ -103,6 +228,12 @@ class TrustRegion:
             Parameters to forward to the objective function, the nonlinear
             inequality constraint function, and the nonlinear equality
             constraint function.
+
+        Other Parameters
+        ----------------
+        store_history : bool, optional
+            Whether the history of the different evaluations should be stored
+            (the default is False).
         """
         self._fun = fun
         self._cub = cub
@@ -190,10 +321,14 @@ class TrustRegion:
         # Set the initial shift of the origin, designed to manage the effects
         # of computer rounding errors in the calculations.
         self._xbase = x0
+        self._x_hist = []
+        self._fun_hist = []
+        self._cub_hist = []
+        self._ceq_hist = []
 
         # Set the initial models of the problem.
         self._models = Models(self.fun, self.xbase, xl, xu, Aub, bub, Aeq, beq,
-                              self.cub, self.ceq, self.options)
+                              self.cub, self.ceq, self.options, **kwargs)
         self._target_reached = self._models.target_reached
         if not self.target_reached:
             if self.debug:
@@ -738,6 +873,57 @@ class TrustRegion:
         return self._models.copteq
 
     @property
+    def x_hist(self):
+        """
+        History of the decision variables considered.
+
+        Returns
+        -------
+        numpy.ndarray, shape (-1, n)
+            History of the decision variables considered.
+        """
+        x_hist = np.array(self._x_hist, dtype=float)
+        return np.reshape(x_hist, (-1, self.xopt.size))
+
+    @property
+    def fun_hist(self):
+        """
+        History of the objective function values.
+
+        Returns
+        -------
+        numpy.ndarray, shape (-1, n)
+            History of the objective function values.
+        """
+        return np.array(self._fun_hist, dtype=float)
+
+    @property
+    def cub_hist(self):
+        """
+        History of the nonlinear inequality constraint function values.
+
+        Returns
+        -------
+        numpy.ndarray, shape (-1, n)
+            History of the nonlinear inequality constraint function values.
+        """
+        cub_hist = np.array(self._cub_hist, dtype=float)
+        return np.reshape(cub_hist, (-1, max(self.mnlub, 1)))
+
+    @property
+    def ceq_hist(self):
+        """
+        History of the nonlinear equality constraint function values.
+
+        Returns
+        -------
+        numpy.ndarray, shape (-1, n)
+            History of the nonlinear equality constraint function values.
+        """
+        ceq_hist = np.array(self._ceq_hist, dtype=float)
+        return np.reshape(ceq_hist, (-1, max(self.mnleq, 1)))
+
+    @property
     def type(self):
         """
         Type of the nonlinear optimization problem.
@@ -768,7 +954,7 @@ class TrustRegion:
         """
         return self.knew is not None
 
-    def fun(self, x):
+    def fun(self, x, **kwargs):
         """
         Evaluate the objective function of the nonlinear optimization problem.
 
@@ -782,6 +968,12 @@ class TrustRegion:
         float
             Value of the objective function of the nonlinear optimization
             problem at `x`.
+
+        Other Parameters
+        ----------------
+        store_history : bool, optional
+            Whether the history of the different evaluations should be stored
+            (the default is False).
         """
         x_full = self.get_x(x)
         fx = float(self._fun(x_full, *self._args))
@@ -789,11 +981,14 @@ class TrustRegion:
         if np.isnan(fx) or fx > threshold:
             fx = threshold
         fx = np.nan_to_num(fx)
+        if kwargs.get('store_history'):
+            self._x_hist.append(np.copy(x))
+            self._fun_hist.append(fx)
         if self.disp:
             print(f'{self._fun.__name__}({x_full}) = {fx}.')
         return fx
 
-    def cub(self, x):
+    def cub(self, x, **kwargs):
         """
         Evaluate the nonlinear inequality constraint function of the nonlinear
         optimization problem.
@@ -808,10 +1003,19 @@ class TrustRegion:
         numpy.ndarray, shape (mnlub,)
             Value of the nonlinear inequality constraint function of the
             nonlinear optimization problem at `x`.
-        """
-        return self._eval_con(self._cub, x)
 
-    def ceq(self, x):
+        Other Parameters
+        ----------------
+        store_history : bool, optional
+            Whether the history of the different evaluations should be stored
+            (the default is False).
+        """
+        cx = self._eval_con(self._cub, x)
+        if kwargs.get('store_history') and cx.size > 0:
+            self._cub_hist.append(np.copy(cx))
+        return cx
+
+    def ceq(self, x, **kwargs):
         """
         Evaluate the nonlinear equality constraint function of the nonlinear
         optimization problem.
@@ -826,8 +1030,17 @@ class TrustRegion:
         numpy.ndarray, shape (mnleq,)
             Value of the nonlinear equality constraint function of the
             nonlinear optimization problem at `x`.
+
+        Other Parameters
+        ----------------
+        store_history : bool, optional
+            Whether the history of the different evaluations should be stored
+            (the default is False).
         """
-        return self._eval_con(self._ceq, x)
+        cx = self._eval_con(self._ceq, x)
+        if kwargs.get('store_history') and cx.size > 0:
+            self._ceq_hist.append(np.copy(cx))
+        return cx
 
     def active_set(self, x):
         """
@@ -1858,6 +2071,17 @@ class TrustRegion:
         float
             Trust-region ratio associated with the new interpolation point.
 
+        Other Parameters
+        ----------------
+        penalty_detection_factor : float, optional
+            Factor on the penalty coefficient used to decide whether it should
+            be increased (the default is 1.5).
+        penalty_growth_factor : float, optional
+            Increasing factor on the penalty coefficient (the default is 2).
+        store_history : bool, optional
+            Whether the history of the different evaluations should be stored
+            (the default is False).
+
         Raises
         ------
         RestartRequiredException
@@ -1871,9 +2095,9 @@ class TrustRegion:
         bdtol *= absmax_arrays(self.xl, self.xu, initial=1.0)
         step = nstep + tstep
         xnew = self.xopt + step
-        fx = self.fun(self.xbase + xnew)
-        cubx = self.cub(self.xbase + xnew)
-        ceqx = self.ceq(self.xbase + xnew)
+        fx = self.fun(self.xbase + xnew, **kwargs)
+        cubx = self.cub(self.xbase + xnew, **kwargs)
+        ceqx = self.ceq(self.xbase + xnew, **kwargs)
         rx = self._models.resid(xnew, cubx, ceqx)
         self._target_reached = fx <= self.target and rx <= bdtol
 
@@ -1917,9 +2141,9 @@ class TrustRegion:
                 if np.inner(ssoc, ssoc) > 0.0:
                     ssoc += step
                     xsoc = self.xopt + ssoc
-                    fxs = self.fun(self.xbase + xsoc)
-                    cubx = self.cub(self.xbase + xsoc)
-                    ceqx = self.ceq(self.xbase + xsoc)
+                    fxs = self.fun(self.xbase + xsoc, **kwargs)
+                    cubx = self.cub(self.xbase + xsoc, **kwargs)
+                    ceqx = self.ceq(self.xbase + xsoc, **kwargs)
                     mx, mmx = self(xsoc, fxs, cubx, ceqx, True)
                     rx = self._models.resid(xsoc, cubx, ceqx)
                     if self.less_merit(mx, rx, mopt, self.maxcv):
@@ -2003,6 +2227,14 @@ class TrustRegion:
         float
             Value of the merit function at `xopt`, evaluated on the nonlinear
             optimization problem.
+
+        Other Parameters
+        ----------------
+        penalty_detection_factor : float, optional
+            Factor on the penalty coefficient used to decide whether it should
+            be increased (the default is 1.5).
+        penalty_growth_factor : float, optional
+            Increasing factor on the penalty coefficient (the default is 2).
         """
         tiny = np.finfo(float).tiny
         step = nstep + tstep
@@ -2280,6 +2512,83 @@ class TrustRegion:
         """
         self._models.reset_models()
 
+    def build_result(self, penalty=0.0, **kwargs):
+        """
+        Build the result of the optimization solver.
+
+        Parameters
+        ----------
+        penalty : float, optional
+            Penalty parameter of the merit function used to decide which point
+            in the history is the best (only if the history is recorded).
+
+        Returns
+        -------
+        OptimizeResult
+            Result of the optimization solver. See `OptimizeResult` for a
+            description of the attributes.
+
+        Other Parameters
+        ----------------
+        store_history : bool, optional
+            Whether the history of the different evaluations has been stored
+            (the default is False).
+        """
+        if kwargs.get('store_history'):
+            # Evaluate the constraint violation at each point in the history.
+            violmx = np.empty_like(self.fun_hist)
+            for i in range(violmx.size):
+                x = self.x_hist[i, :] - self.xbase
+                cubx = self.cub_hist[i, :] if self.cub_hist.size > 0 else []
+                ceqx = self.ceq_hist[i, :] if self.ceq_hist.size > 0 else []
+                violmx[i] = self._models.resid(x, cubx, ceqx)
+
+            # The points considers are those for which the constraint violation
+            # is at most twice as large as the least one.
+            iref = violmx <= 2.0 * np.min(violmx)
+
+            # Select the point at minimize the merit values. If there are
+            # multiple minimizers, we select the one with the least constraint
+            # violation. If there are again multiple minimizers, we select the
+            # with the least objective function value.
+            phi = np.full_like(violmx, np.inf)
+            if penalty <= 0:
+                phi[iref] = self.fun_hist[iref]
+            elif np.isinf(penalty):
+                phi[iref] = violmx[iref]
+            else:
+                phi[iref] = self.fun_hist[iref] + penalty * violmx[iref]
+            imin = np.argmin(phi)
+            iref = iref & (phi <= phi[imin])
+            if np.count_nonzero(iref) > 1:
+                violmx[np.logical_not(iref)] = np.inf
+                imin = np.argmin(violmx)
+                iref = iref & (violmx <= violmx[imin])
+                if np.count_nonzero(iref) > 1:
+                    fun_hist = np.copy(self.fun_hist)
+                    fun_hist[np.logical_not(iref)] = np.inf
+                    imin = np.argmin(fun_hist)
+            xopt = self.x_hist[imin, :]
+            fopt = self.fun_hist[imin]
+            maxcv = violmx[imin]
+        else:
+            # The optimal point is the best point in the interpolation set.
+            xopt = self.xopt
+            fopt = self.fopt
+            maxcv = self.maxcv
+
+        # Build the optimization result.
+        result = OptimizeResult()
+        result.x = self.get_x(self.xbase + xopt)
+        result.fun = fopt
+        result.jac = np.full_like(result.x, np.nan)
+        with suppress(AttributeError):
+            free_indices = np.logical_not(self.ifix)
+            result.jac[free_indices] = self.model_obj_grad(xopt)
+        if self.type != 'U':
+            result.maxcv = maxcv
+        return result
+
     def check_models(self, stack_level=2):
         """
         Check the interpolation conditions.
@@ -2358,7 +2667,8 @@ class Models:
        pp. 183--215.
     """
 
-    def __init__(self, fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options):
+    def __init__(self, fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options,
+                 **kwargs):
         """
         Construct the initial models of an optimization problem.
 
@@ -2446,6 +2756,12 @@ class Models:
                 debug : bool, optional
                     Whether to make debugging tests during the execution, which
                     is not recommended in production (the default is False).
+
+        Other Parameters
+        ----------------
+        store_history : bool, optional
+            Whether the history of the different evaluations should be stored
+            (the default is False).
         """
         self._xl = xl
         self._xu = xu
@@ -2513,15 +2829,15 @@ class Models:
             # the interpolations points and set the residual of each
             # interpolation point in rval. Stop the computations if a feasible
             # point has reached the target value.
-            self.fval[k] = fun(x0 + self.xpt[k, :])
+            self.fval[k] = fun(x0 + self.xpt[k, :], **kwargs)
             if k == 0:
                 # The constraints functions have already been evaluated at x0
                 # to initialize the shapes of cvalub and cvaleq.
                 self.cvalub[0, :] = cub_x0
                 self.cvaleq[0, :] = ceq_x0
             else:
-                self.cvalub[k, :] = cub(x0 + self.xpt[k, :])
-                self.cvaleq[k, :] = ceq(x0 + self.xpt[k, :])
+                self.cvalub[k, :] = cub(x0 + self.xpt[k, :], **kwargs)
+                self.cvaleq[k, :] = ceq(x0 + self.xpt[k, :], **kwargs)
             self.rval[k] = self.resid(k)
             if self.fval[k] <= target and self.rval[k] <= bdtol:
                 self.kopt = k

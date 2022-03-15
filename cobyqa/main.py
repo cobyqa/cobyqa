@@ -6,131 +6,6 @@ from .optimize import TrustRegion
 from .utils import RestartRequiredException, absmax_arrays
 
 
-class OptimizeResult(dict):
-    """
-    Structure for the result of the optimization algorithm.
-
-    Attributes
-    ----------
-    x : numpy.ndarray, shape (n,)
-        Solution point provided by the optimization solver.
-    success : bool
-        Flag indicating whether the optimization solver terminated successfully.
-    status : int
-        Termination status of the optimization solver.
-    message : str
-        Description of the termination status of the optimization solver.
-    fun : float
-        Value of the objective function at the solution point provided by the
-        optimization solver.
-    jac : numpy.ndarray, shape (n,)
-        Approximation of the gradient of the objective function at the solution
-        point provided by the optimization solver, based on undetermined
-        interpolation. If the value of a component (or more) of the gradient is
-        unknown, it is replaced by ``numpy.nan``.
-    nfev : int
-        Number of objective and constraint function evaluations.
-    nit : int
-        Number of iterations performed by the optimization solver.
-    maxcv : float
-        Maximum constraint violation at the solution point provided by the
-        optimization solver. It is set only if the problem is not declared
-        unconstrained by the optimization solver.
-    """
-
-    def __dir__(self):
-        """
-        Get the names of the attributes in the current scope.
-
-        Returns
-        -------
-        list:
-            Names of the attributes in the current scope.
-        """
-        return list(self.keys())
-
-    def __getattr__(self, name):
-        """
-        Get the value of an attribute that is not explicitly defined.
-
-        Parameters
-        ----------
-        name : str
-            Name of the attribute to be assessed.
-
-        Returns
-        -------
-        object
-            Value of the attribute.
-
-        Raises
-        ------
-        AttributeError
-            The required attribute does not exist.
-        """
-        try:
-            return self[name]
-        except KeyError as exc:
-            raise AttributeError(name) from exc
-
-    def __setattr__(self, key, value):
-        """
-        Assign an existing or a new attribute.
-
-        Parameters
-        ----------
-        key : str
-            Name of the attribute to be assigned.
-        value : object
-            Value of the attribute to be assigned.
-        """
-        super().__setitem__(key, value)
-
-    def __delattr__(self, key):
-        """
-        Delete an attribute.
-
-        Parameters
-        ----------
-        key : str
-            Name of the attribute to be deleted.
-
-        Raises
-        ------
-        KeyError
-            The required attribute does not exist.
-        """
-        super().__delitem__(key)
-
-    def __repr__(self):
-        """
-        Get a string representation that looks like valid Python expression,
-        which can be used to recreate an object with the same value, given an
-        appropriate environment.
-
-        Returns
-        -------
-        str
-            String representation of instances of this class.
-        """
-        attrs = ', '.join(f'{k}={repr(v)}' for k, v in sorted(self.items()))
-        return f'{self.__class__.__name__}({attrs})'
-
-    def __str__(self):
-        """
-        Get a string representation, designed to be nicely printable.
-
-        Returns
-        -------
-        str
-            String representation of instances of this class.
-        """
-        if self.keys():
-            m = max(map(len, self.keys())) + 1
-            return '\n'.join(f'{k:>{m}}: {v}' for k, v in sorted(self.items()))
-        return f'{self.__class__.__name__}()'
-
-
 def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
              beq=None, cub=None, ceq=None, options=None, **kwargs):
     r"""
@@ -285,6 +160,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     short_step_detection_factor : float, optional
         Factor on the norm of the current trust-region step to decide whether is
         small (the default is 0.5).
+    store_history : bool, optional
+        Whether the history of the different evaluations should be stored (the
+        default is False).
 
     References
     ----------
@@ -392,8 +270,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     if not isinstance(args, tuple):
         args = (args,)
     _set_default_constants(kwargs)
-    struct = TrustRegion(
-        fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options, *args)
+    struct = TrustRegion(fun, x0, xl, xu, Aub, bub, Aeq, beq, cub, ceq, options,
+                         *args, **kwargs)
     if np.all(struct.ifix):
         exit_status = 9
         nfev = 1
@@ -585,8 +463,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             struct.prepare_trust_region_step()
             struct.reduce_penalty()
             if struct.disp:
+                x_full = struct.get_x(struct.xbase + struct.xopt)
+                maxcv = struct.maxcv if struct.type not in 'UB' else None
                 message = f'New trust-region radius: {rho}.'
-                _print(struct, fun.__name__, nfev, message)
+                _print(fun.__name__, x_full, struct.fopt, maxcv, nfev, message)
 
     # Get the success flag.
     if exit_status == 9:
@@ -597,17 +477,13 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         success = exit_status in [0, 1, 2, 3, 4, 5]
 
     # Build the result structure and return.
-    result = OptimizeResult()
-    result.x = struct.get_x(struct.xbase + struct.xopt)
-    result.fun = struct.fopt
-    result.jac = np.full_like(result.x, np.nan)
-    with suppress(AttributeError):
-        free_indices = np.logical_not(struct.ifix)
-        result.jac[free_indices] = struct.model_obj_grad(struct.xopt)
+    try:
+        penalty = struct.penalty
+    except AttributeError:
+        penalty = 0.0
+    result = struct.build_result(penalty, **kwargs)
     result.nfev = nfev
     result.nit = nit
-    if struct.type != 'U':
-        result.maxcv = struct.maxcv
     result.status = exit_status
     result.success = success
     result.message = {
@@ -624,7 +500,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
         -1: 'Bound constraints are infeasible.',
     }.get(exit_status, 'Unknown exit status.')
     if struct.disp:
-        _print(struct, fun.__name__, nfev, result.message)
+        _print(fun.__name__, result.x, result.fun, result.get('maxcv'),
+               result.nfev, result.message)
     return result
 
 
@@ -646,15 +523,15 @@ def _set_default_constants(kwargs):
     kwargs.setdefault('short_radius_bound_detection_factor', 16.0)
     kwargs.setdefault('short_radius_detection_factor', 1.4)
     kwargs.setdefault('short_step_detection_factor', 0.5)
+    kwargs.setdefault('store_history', False)
 
 
-def _print(problem, fun, nf, message):
-    x_full = problem.get_x(problem.xbase + problem.xopt)
+def _print(fun, x, fopt, maxcv, nf, message):
     print()
     print(message)
     print(f'Number of function evaluations: {nf}.')
-    print(f'Least value of {fun}: {problem.fopt}.')
-    if problem.type not in 'UB':
-        print(f'Maximum constraint violation: {problem.maxcv}.')
-    print(f'Corresponding point: {x_full}.')
+    print(f'Least value of {fun}: {fopt}.')
+    if maxcv is not None:
+        print(f'Maximum constraint violation: {maxcv}.')
+    print(f'Corresponding point: {x}.')
     print()
