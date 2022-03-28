@@ -3,5 +3,5 @@ numpy==1.22.3
 numpydoc==1.2
 pydata-sphinx-theme==0.8.1
 scipy==1.8.0
-Sphinx==4.4.0
+Sphinx==4.5.0
 sphinxcontrib-bibtex==2.4.1
