@@ -1,7 +1,7 @@
 Cython==0.29.28
 numpy==1.22.3
 numpydoc==1.2
-pydata-sphinx-theme==0.8.0
+pydata-sphinx-theme==0.8.1
 scipy==1.8.0
 Sphinx==4.4.0
 sphinxcontrib-bibtex==2.4.1
