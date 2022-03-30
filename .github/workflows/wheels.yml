@@ -161,7 +161,6 @@ jobs:
       - name: Store artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: cp${{ matrix.python }}-${{ matrix.platform }}
           path: wheelhouse/*.whl
 
   build_sdist:
