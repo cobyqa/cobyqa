@@ -2,6 +2,7 @@ import importlib
 import os
 import platform
 import sys
+import warnings
 
 from cobyqa.utils._min_dependencies import dependent_pkgs
 
@@ -31,7 +32,8 @@ def _get_deps_info():
     dict:
         Versions of the package and its dependencies.
     """
-    deps = ['pip', 'setuptools', 'cobyqa']
+    # TODO: Use `importlib.metadata.version` (only for Python 3.8 onwards).
+    deps = ['setuptools', 'pip', 'cobyqa']
     for pkg, (_, extras) in dependent_pkgs.items():
         if {'build', 'install'}.intersection(extras.split(', ')):
             deps.append(pkg)
@@ -41,7 +43,9 @@ def _get_deps_info():
             if module in sys.modules:
                 mod = sys.modules[module]
             else:
-                mod = importlib.import_module(module)
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', UserWarning)
+                    mod = importlib.import_module(module)
             deps_info[module] = mod.__version__  # noqa
         except ImportError:
             deps_info[module] = None
@@ -55,7 +59,6 @@ def show_versions():
     sys_info = _get_sys_info()
     deps_info = _get_deps_info()
 
-    print()
     print('System settings')
     print('---------------')
     sys_width = max(map(len, sys_info.keys())) + 1
@@ -66,6 +69,5 @@ def show_versions():
     print('Python dependencies')
     print('-------------------')
     deps_width = max(map(len, deps_info.keys())) + 1
-    for k, stat in deps_info.items():
+    for k, stat in sorted(deps_info.items()):
         print(f'{k:>{deps_width}}: {stat}')
-    print()
