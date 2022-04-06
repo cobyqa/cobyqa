@@ -129,6 +129,7 @@ def setup_package():
         author_email='cobyqa@python.org',
         maintainer='Tom M. Ragonneau',
         maintainer_email='t.ragonneau@gmail.com',
+        packages=setuptools.find_packages(),
         version=cobyqa.__version__,
         description='Constrained Optimization BY Quadratic Approximation',
         long_description=open('README.rst').read().rstrip(),
