@@ -35,7 +35,7 @@ jobs:
         run: bash build_tools/github/build_coverage.sh
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: true
           verbose: true
