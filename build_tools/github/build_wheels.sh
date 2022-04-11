@@ -19,6 +19,7 @@ fi
 # Build the wheel distribution
 # Option for development: --platform {auto,linux,macos,windows}
 if [[ $(python -c "import sys; print(sys.version_info[0])") -lt 3 ]]; then
+    shopt -s expand_aliases
     alias python="python3"
 fi
 python -m pip install --progress-bar=off cibuildwheel

@@ -5,6 +5,7 @@ set -x
 
 # Generate the coverage report
 if [[ $(python -c "import sys; print(sys.version_info[0])") -lt 3 ]]; then
+    shopt -s expand_aliases
     alias python="python3"
 fi
 python -m pip install --progress-bar=off numpy scipy cython

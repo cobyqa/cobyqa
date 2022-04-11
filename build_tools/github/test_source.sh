@@ -6,6 +6,7 @@ set -x
 # Create a virtual environment outside of the source folder
 cd ../../
 if [[ $(python -c "import sys; print(sys.version_info[0])") -lt 3 ]]; then
+    shopt -s expand_aliases
     alias python="python3"
 fi
 python -m venv test_env
