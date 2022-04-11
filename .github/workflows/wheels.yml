@@ -13,7 +13,7 @@ on:
 
 jobs:
   build_wheels:
-    name: Build wheel for cp${{ matrix.python }}-${{ matrix.platform }}-${{ matrix.manylinux_image }}
+    name: Build wheel for cp${{ matrix.python }}-${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -45,69 +45,33 @@ jobs:
             python: 39
             platform: win32
 
-          # 64-bit Linux manylinux2010
+          # 64-bit Linux x86_64
           - os: ubuntu-latest
             python: 37
             platform: manylinux_x86_64
-            manylinux_image: manylinux2010
           - os: ubuntu-latest
             python: 38
             platform: manylinux_x86_64
-            manylinux_image: manylinux2010
           - os: ubuntu-latest
             python: 39
             platform: manylinux_x86_64
-            manylinux_image: manylinux2010
-
-          # 32-bit Linux manylinux2010
-          - os: ubuntu-latest
-            python: 37
-            platform: manylinux_i686
-            manylinux_image: manylinux2010
-          - os: ubuntu-latest
-            python: 38
-            platform: manylinux_i686
-            manylinux_image: manylinux2010
-          - os: ubuntu-latest
-            python: 39
-            platform: manylinux_i686
-            manylinux_image: manylinux2010
-
-          # 64-bit Linux manylinux2014 x86_64
-          - os: ubuntu-latest
-            python: 37
-            platform: manylinux_x86_64
-            manylinux_image: manylinux2014
-          - os: ubuntu-latest
-            python: 38
-            platform: manylinux_x86_64
-            manylinux_image: manylinux2014
-          - os: ubuntu-latest
-            python: 39
-            platform: manylinux_x86_64
-            manylinux_image: manylinux2014
           - os: ubuntu-latest
             python: 310
             platform: manylinux_x86_64
-            manylinux_image: manylinux2014
 
-          # 64-bit Linux manylinux2014 aarch64
+          # 64-bit Linux aarch64
           - os: [self-hosted, Linux, ARM64]
             python: 37
             platform: manylinux_aarch64
-            manylinux_image: manylinux2014
           - os: [self-hosted, Linux, ARM64]
             python: 38
             platform: manylinux_aarch64
-            manylinux_image: manylinux2014
           - os: [self-hosted, Linux, ARM64]
             python: 39
             platform: manylinux_aarch64
-            manylinux_image: manylinux2014
           - os: [self-hosted, Linux, ARM64]
             python: 310
             platform: manylinux_aarch64
-            manylinux_image: manylinux2014
 
           # macOS x86_64
           - os: macos-latest
@@ -147,7 +111,6 @@ jobs:
         run: bash build_tools/github/build_wheels.sh
         env:
           CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform }}
-          CIBW_MANYLINUX_AARCH64_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_ENVIRONMENT: PIP_DEFAULT_TIMEOUT=21600 PIP_EXTRA_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 
       - name: Build wheels on other platforms
@@ -155,8 +118,6 @@ jobs:
         run: bash build_tools/github/build_wheels.sh
         env:
           CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform }}
-          CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.manylinux_image }}
-          CIBW_MANYLINUX_I686_IMAGE: ${{ matrix.manylinux_image }}
 
       - name: Store artifacts
         uses: actions/upload-artifact@v2
