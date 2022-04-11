@@ -18,7 +18,7 @@ archs = "all"
 build-verbosity = "3"
 manylinux-x86_64-image = "manylinux2014"
 manylinux-i686-image = "manylinux2014"
-manylinux_aarch64_image = "manylinux2014"
+manylinux-aarch64-image = "manylinux2014"
 test-command = "bash {project}/build_tools/github/test_wheels.sh"
 
 [tool.cibuildwheel.macos]
