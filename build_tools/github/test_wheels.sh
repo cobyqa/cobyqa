@@ -4,6 +4,9 @@ set -e
 set -x
 
 # Test the wheel distribution
-python3 -m pip install --progress-bar=off pytest
-python3 -c "import cobyqa; cobyqa.show_versions()"
-python3 -m pytest --pyargs cobyqa
+if [[ $(python -c "import sys; print(sys.version_info[0])") -lt 3 ]]; then
+    alias python="python3"
+fi
+python -m pip install --progress-bar=off pytest
+python -c "import cobyqa; cobyqa.show_versions()"
+python -m pytest --pyargs cobyqa
