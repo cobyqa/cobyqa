@@ -18,5 +18,5 @@ fi
 
 # Build the wheel distribution
 # Option for development: --platform {auto,linux,macos,windows}
-python -m pip install --progress-bar=off cibuildwheel
-python -m cibuildwheel --output-dir wheelhouse
+python3 -m pip install --progress-bar=off cibuildwheel
+python3 -m cibuildwheel --output-dir wheelhouse
