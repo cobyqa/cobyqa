@@ -18,5 +18,8 @@ fi
 
 # Build the wheel distribution
 # Option for development: --platform {auto,linux,macos,windows}
-python3 -m pip install --progress-bar=off cibuildwheel
-python3 -m cibuildwheel --output-dir wheelhouse
+if [[ $(python -c "import sys; print(sys.version_info[0])") -lt 3 ]]; then
+    alias python="python3"
+fi
+python -m pip install --progress-bar=off cibuildwheel
+python -m cibuildwheel --output-dir wheelhouse

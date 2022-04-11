@@ -5,12 +5,15 @@ set -x
 
 # Create a virtual environment outside of the source folder
 cd ../../
-python3 -m venv build_env
+if [[ $(python -c "import sys; print(sys.version_info[0])") -lt 3 ]]; then
+    alias python="python3"
+fi
+python -m venv build_env
 source build_env/bin/activate
 
 # Build and check the source distribution
 cd cobyqa/cobyqa
-python3 -m pip install --progress-bar=off numpy scipy cython
-python3 -m pip install --progress-bar=off twine
-python3 setup.py sdist
-python3 -m twine check dist/*.tar.gz
+python -m pip install --progress-bar=off numpy scipy cython
+python -m pip install --progress-bar=off twine
+python setup.py sdist
+python -m twine check dist/*.tar.gz
