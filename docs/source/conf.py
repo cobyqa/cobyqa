@@ -86,15 +86,17 @@ html_theme_options = {
         },
     ],
     'collapse_navigation': True,
-    'logo_link': 'index',
     'switcher': {
         'json_url': 'https://cobyqa.readthedocs.io/en/latest/_static/switcher.json',
-        'url_template': 'https://cobyqa.readthedocs.io/en/{version}/',
         'version_match': f'v{version}',
     },
     'navbar_end': ['version-switcher', 'navbar-icon-links'],
     'footer_items': ['copyright', 'last-updated', 'sphinx-version'],
     'google_analytics_id': 'G-QTL4NYPHTV',
+}
+
+html_context = {
+   'default_mode': 'light',
 }
 
 html_title = f'{project} v{version} Manual'

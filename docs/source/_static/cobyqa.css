@@ -4,18 +4,16 @@ body {
     font-family: 'Lato', sans-serif;
 }
 
-#navbar-icon-links i:before {
-    color: #333333;
+i.fa-github-square:before {
+   color: #333333;
 }
 
-.btn-primary, .btn-primary:hover, .btn-primary:active, .btn-primary:visited {
+i.fa-python:before {
+   color: #333333;
+}
+
+#version_switcher_button {
     color: #fff;
-    background-color: rgba(var(--pst-color-link), 1) !important;
-    border-color: rgba(var(--pst-color-link), 1) !important;
-}
-
-.list-group-item, .list-group-item.active {
-    color: rgba(var(--pst-color-navbar-link), 1);
-    background-color: #fff;
-    border-color: rgba(0, 0, 0, 0.125);
+    background-color: var(--pst-color-primary);
+    border-color: var(--pst-color-primary);
 }
