@@ -293,7 +293,7 @@ Increasing the penalty coefficient
 
 If we wish to obtain second-order criticality conditions on the penalty function, we need to have :math:`\liminf_{k \to \infty} \sigma_k > \norm{\lambda^{\ast}}`, where the :math:`\lambda^{\ast}` is the optimal Lagrange multiplier. (see, e.g., Theorem 14.5.1 of :cite:`opti-Conn_Gould_Toint_2009`).
 Therefore, |project| ensures that the penalty parameter satisfies :math:`\sigma_k > \max\set{\overline{\sigma}^k, \norm{\lambda^k}}`.
-The strategy of |project| to increase the penalty parameter is as follows.
+The strategy of |project| to increase the penalty parameter is inspired by Section 2 of :cite:`opti-Powell_1994`.
 If :math:`\sigma_k \le \nu_1 \max\set{\overline{\sigma}^{k + 1}, \norm{\lambda^{k + 1}}}`, then :math:`\sigma_{k + 1} = \nu_2 \max\set{\overline{\sigma}^{k + 1}, \norm{\lambda^{k + 1}}}`, where :math:`\nu_1 > 1` and :math:`\nu_2 > \nu_1` are constants (respectively set to :math:`1.5` and :math:`2`).
 Otherwise, :math:`\sigma_{k + 1} = \sigma_k`.
 

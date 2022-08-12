@@ -139,7 +139,7 @@ def cpqp(double[:] xopt, double[::1, :] aub, double[:] bub, double[::1, :] aeq, 
             resmax = 0.0
             for k in range(nact[0]):
                 resmax = fmax(resmax, resid[iact[k]])
-            if resmax > 0.0:
+            if resmax > 1e-4 * delta:
                 # Calculate the projection towards the boundaries of the active
                 # constraints. The length of this step is computed hereinafter.
                 for k in range(nact[0]):

@@ -334,18 +334,18 @@ class TrustRegion:
             if self.debug:
                 self.check_models()
 
-            # Determine the initial least-squares multipliers.
+            # Determine the optimal point so far.
             self._penalty = 0.0
             self._lmlub = np.zeros_like(bub)
             self._lmleq = np.zeros_like(beq)
             self._lmnlub = np.zeros(self.mnlub, dtype=float)
             self._lmnleq = np.zeros(self.mnleq, dtype=float)
-            self.update_multipliers()
-
-            # Determine the optimal point so far.
             self.kopt = self.get_best_point()
             if self.debug:
                 self.check_models()
+
+            # Determine the initial least-squares multipliers.
+            self.update_multipliers()
 
             # The attribute knew contains the index of the interpolation point
             # to be removed from the interpolation set. It is set only during
@@ -390,7 +390,17 @@ class TrustRegion:
             ]
             ax += self.penalty * np.linalg.norm(cx)
         if model:
-            mx = self.model_obj(x)
+            # The model of the l2-merit function includes the Hessian of the
+            # Lagrangian, not directly of the objective function. See Eq.
+            # (15.3.4) of "Trust Region Methods" by Conn, Gould, and Toint for
+            # details. In this equation, H must be the Hessian of the
+            # Lagrangian, because "Choosing ||.|| = ||.||_1 in (15.3.3) and
+            # (15.3.4) gives rise to what is commonly known as the Sl1QP
+            # method".
+            step = x - self.xopt
+            gopt = self.model_obj_grad(self.xopt)
+            hstep = self.model_lag_hessp(step)
+            mx = self.fopt + np.inner(gopt, step) + 0.5 * np.inner(step, hstep)
             if self.penalty > 0.0:
                 aub, bub = self.get_linear_ub()
                 aeq, beq = self.get_linear_eq()
@@ -2121,6 +2131,18 @@ class TrustRegion:
                 ratio = (mopt - mx) / (mopt - mmx)
             else:
                 ratio = -1.0
+
+            # Update the least-squares Lagrange multipliers.
+            # If we were solving the SQP subproblem as: (1) we find d, and (2)
+            # we find lambda, then the following code should be used. However,
+            # in practice, it worsen a lot the performance.
+            # TODO: Find why (where?).
+            # TODO: Which gradients should be used? Updated models?
+            # TODO: How to formulate the complementary slackness condition?
+            # if ratio >= 0.0:
+            #     self.update_multipliers(step)
+            # else:
+            #     self.update_multipliers(np.zeros_like(step))
             self.update_multipliers()
         else:
             mx = self(xnew, fx, cubx, ceqx)
@@ -2177,18 +2199,31 @@ class TrustRegion:
             ceq_jac = np.empty((self.mnleq, n), dtype=float)
             for i in range(self.mnleq):
                 ceq_jac[i, :] = self.model_ceq_grad(self.xopt, i)
-            A = np.r_[self.aub[ilub, :], cub_jac, self.aeq, ceq_jac].T
+            ixl = self.xl >= self.xopt
+            ixu = self.xu <= self.xopt
+            nxl = np.count_nonzero(ixl)
+            nxu = np.count_nonzero(ixu)
+            identity = np.eye(n)
+            A = np.r_[
+                -identity[ixl, :],
+                identity[ixu, :],
+                self.aub[ilub, :],
+                cub_jac,
+                self.aeq,
+                ceq_jac,
+            ].T
 
             # Determine the least-squares Lagrange multipliers that have not
             # been fixed by the complementary slackness conditions.
             gopt = self.model_obj_grad(self.xopt)
-            lm = nnls(A, -gopt, mlub + mnlub)
+            shift = nxl + nxu
+            lm = nnls(A, -gopt, shift + mlub + mnlub)
             self.lmlub.fill(0.0)
             self.lmnlub.fill(0.0)
-            self.lmlub[ilub] = lm[:mlub]
-            self.lmnlub[inlub] = lm[mlub:mlub + mnlub]
-            self._lmleq = lm[mlub + mnlub:mlub + mnlub + self.mleq]
-            self._lmnleq = lm[mlub + mnlub + self.mleq:]
+            self.lmlub[ilub] = lm[shift:shift + mlub]
+            self.lmnlub[inlub] = lm[shift + mlub:shift + mlub + mnlub]
+            self.lmleq[:] = lm[shift + mlub + mnlub:shift + mlub + mnlub + self.mleq]
+            self.lmnleq[:] = lm[shift + mlub + mnlub + self.mleq:]
 
     def increase_penalty(self, nstep, tstep, fx, cubx, ceqx, **kwargs):
         """
@@ -2776,9 +2811,9 @@ class Models:
         npt = options.get('npt')
         rhobeg = options.get('rhobeg')
         target = options.get('target')
-        cub_x0 = cub(x0)
+        cub_x0 = cub(x0, **kwargs)
         mnlub = cub_x0.size
-        ceq_x0 = ceq(x0)
+        ceq_x0 = ceq(x0, **kwargs)
         mnleq = ceq_x0.size
         self._xpt = np.zeros((npt, n), dtype=float)
         self._fval = np.empty(npt, dtype=float)
