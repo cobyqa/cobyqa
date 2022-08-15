@@ -380,6 +380,19 @@ class TestBoundConstrained(TestBase):
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['arwhead', 'power', 'rosen', 'rothyp',
                                      'sphere', 'stybtang', 'trid'])
+    def test_relax(self, fun, n, x0, xl, xu, x_sol, f_sol):
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl,
+            xu=xu,
+            options={'debug': True, 'respect_bounds': False},
+        )
+        self.assert_optimize(res, n, x_sol, f_sol, maxcv=True)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'rosen', 'rothyp',
+                                     'sphere', 'stybtang', 'trid'])
     def test_unstable(self, fun, n, x0, xl, xu, x_sol, f_sol):
         minimize(
             fun=getattr(self, fun + '_unstable'),
@@ -410,6 +423,18 @@ class TestBoundConstrained(TestBase):
             xl=xl2,
             xu=xu2,
             options={'debug': True},
+        )
+        self.assert_optimize(res, n, x_sol2, f_sol2, maxcv=True)
+
+    @pytest.mark.parametrize('n', [2, 5, 10])
+    @pytest.mark.parametrize('fun', ['arwhead', 'power', 'sphere'])
+    def test_restricted_relax(self, fun, n, x0, xl2, xu2, x_sol2, f_sol2):
+        res = minimize(
+            fun=getattr(self, fun),
+            x0=x0,
+            xl=xl2,
+            xu=xu2,
+            options={'debug': True, 'respect_bounds': False},
         )
         self.assert_optimize(res, n, x_sol2, f_sol2, maxcv=True)
 
