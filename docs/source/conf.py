@@ -57,7 +57,7 @@ add_function_parentheses = False
 
 # String to include at the end of every source file.
 rst_epilog = f'''
-.. |doc_url| replace:: https://cobyqa.readthedocs.io/
+.. |doc_url| replace:: https://www.cobyqa.com/
 .. |project| replace:: {project}
 .. |year| replace:: {datetime.now().year}
 '''
@@ -87,7 +87,7 @@ html_theme_options = {
     ],
     'collapse_navigation': True,
     'switcher': {
-        'json_url': 'https://cobyqa.readthedocs.io/en/latest/_static/switcher.json',
+        'json_url': 'https://www.cobyqa.com/en/latest/_static/switcher.json',
         'version_match': f'v{version}',
     },
     'navbar_end': ['version-switcher', 'navbar-icon-links'],
