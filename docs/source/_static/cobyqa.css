@@ -1,7 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
+:root {
+    --green-cyan: #009966;
+    --metallic-blue: #003366;
+    --yankees-blue: #1c2841;
+}
+
 body {
     font-family: 'Lato', sans-serif;
+}
+
+h1 {
+    color: var(--yankees-blue);
+}
+
+h2 {
+    color: var(--metallic-blue);
+}
+
+h3 {
+    color: var(--yankees-blue);
 }
 
 i.fa-github-square:before {
@@ -14,6 +32,6 @@ i.fa-python:before {
 
 #version_switcher_button {
     color: #fff;
-    background-color: var(--pst-color-primary);
-    border-color: var(--pst-color-primary);
+    background-color: var(--green-cyan);
+    border-color: var(--green-cyan);
 }

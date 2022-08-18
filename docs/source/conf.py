@@ -88,11 +88,11 @@ html_theme_options = {
     'collapse_navigation': True,
     'switcher': {
         'json_url': 'https://www.cobyqa.com/en/latest/_static/switcher.json',
-        'version_match': f'v{version}',
+        'version_match': f'{version}',
     },
     'navbar_end': ['version-switcher', 'navbar-icon-links'],
     'footer_items': ['copyright', 'last-updated', 'sphinx-version'],
-    'google_analytics_id': 'G-QTL4NYPHTV',
+    'google_analytics_id': 'G-FLMGY9B0N0',
 }
 
 html_context = {
