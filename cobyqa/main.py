@@ -1,5 +1,3 @@
-from contextlib import suppress
-
 import numpy as np
 
 from .optimize import TrustRegion
@@ -95,6 +93,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             disp : bool, optional
                 Whether to print pieces of information on the execution of the
                 solver (the default is False).
+            respect_bounds : bool, optional
+                Whether to respect the bounds through the iterations (the
+                default is True).
             debug : bool, optional
                 Whether to make debugging tests during the execution, which is
                 not recommended in production (the default is False).
@@ -136,9 +137,6 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     low_ratio_threshold: float, optional
         Threshold on the trust-region ratio used to decide whether an iteration
         performed poorly (the default is 0.1).
-    model_step_tcg : bool, optional
-        Whether to perform the model step using a truncated conjugate gradient
-        method (the default is False).
     normal_step_shrinkage_factor : float, optional
         Shrinkage factor on the trust-region radius for the normal subproblems
         (the default is 0.8).
@@ -294,13 +292,6 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
     n_alt_models = 0
     n_short_half = 0
     n_short_tenth = 0
-    if exit_status == 1:
-        # If the target value has been reached when building the initial
-        # interpolation set, then the models of the nonlinear functions are not
-        # built and an evaluation of the active set would then fail.
-        iact = np.array([])
-    else:
-        iact = struct.active_set(struct.xopt)
     while exit_status == 0:
         # Update the shift of the origin to manage computer rounding errors. The
         # computations are stopped beforehand if the maximum number of
@@ -328,12 +319,12 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
             nstep, tstep = struct.trust_region_step(delta, **kwargs)
             step = nstep + tstep
             snorm = np.linalg.norm(step)
+            iact = struct.active_set(struct.xopt)
             inew = struct.active_set(struct.xopt + step)
             if not np.array_equal(iact, inew):
                 test = kwargs.get('constraint_activation_factor') - 1e-4
                 if struct.type in 'LO':
                     test /= np.sqrt(2.0)
-                iact = inew
             evaluate_fun = snorm > test * delta
             if not evaluate_fun:
                 delta *= kwargs.get('radius_reduction_factor')
@@ -351,7 +342,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 reduce_rho = n_short_half >= 5 or n_short_tenth >= 3
                 reduce_rho = reduce_rho and delsav <= rho
                 if not reduce_rho:
-                    struct.prepare_model_step(delta)
+                    struct.prepare_model_step(max(delta, 2.0 * rho))
                 else:
                     n_short_half, n_short_tenth = 0, 0
             else:
@@ -514,7 +505,6 @@ def _set_default_constants(kwargs):
     kwargs.setdefault('large_radius_reduction_factor', 0.1)
     kwargs.setdefault('large_ratio_threshold', 0.7)
     kwargs.setdefault('low_ratio_threshold', 0.1)
-    kwargs.setdefault('model_step_tcg', False)
     kwargs.setdefault('normal_step_shrinkage_factor', 0.8)
     kwargs.setdefault('penalty_detection_factor', 1.5)
     kwargs.setdefault('penalty_growth_factor', 2.0)

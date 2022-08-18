@@ -221,6 +221,9 @@ class TrustRegion:
                 disp : bool, optional
                     Whether to print pieces of information on the execution of
                     the solver (the default is False).
+                respect_bounds : bool, optional
+                    Whether to respect the bounds through the iterations (the
+                    default is True).
                 debug : bool, optional
                     Whether to make debugging tests during the execution, which
                     is not recommended in production (the default is False).
@@ -296,6 +299,17 @@ class TrustRegion:
         n -= np.count_nonzero(self.ifix)
         self.set_default_options(n)
         self.check_options(n)
+
+        # Consider the bounds as linear constraints if it is not necessary to
+        # respect them.
+        if not self.respect_bounds:
+            ixl = xl > -np.inf
+            ixu = xu < np.inf
+            identity = np.eye(n)
+            Aub = np.r_[Aub, -identity[ixl, :], identity[ixu, :]]
+            bub = np.r_[bub, -xl[ixl], xu[ixu]]
+            xl = np.full_like(xl, -np.inf)
+            xu = np.full_like(xu, np.inf)
 
         # Project the initial guess onto the bound constraints.
         x0 = np.minimum(xu, np.maximum(xl, x0))
@@ -1906,6 +1920,7 @@ class TrustRegion:
         self.options.setdefault('xtol_abs', -1.0)
         self.options.setdefault('xtol_rel', -1.0)
         self.options.setdefault('disp', False)
+        self.options.setdefault('respect_bounds', True)
         self.options.setdefault('debug', False)
 
     def check_options(self, n, stack_level=2):
@@ -2474,9 +2489,6 @@ class TrustRegion:
         improve_tcg : bool, optional
             Whether to improve the truncated conjugate gradient step round the
             trust-region boundary (the default is True).
-        model_step_tcg : bool, optional
-            Whether to perform the model step using a truncated conjugate
-            gradient method (the default is False).
 
         Notes
         -----
@@ -2498,7 +2510,10 @@ class TrustRegion:
         """
         kwargs = dict(kwargs)
         kwargs['debug'] = self.debug
-        step = self._models.improve_geometry(self.knew, delta, **kwargs)
+        aub, bub = self.get_linear_ub()
+        aeq, beq = self.get_linear_eq()
+        step = self._models.improve_geometry(self.knew, delta, aub, bub ,aeq,
+                                             beq, **kwargs)
         if self.debug:
             tol = 10.0 * np.finfo(float).eps * self.xopt.size
             assert_array_less(self.xl - self.xopt - step,
@@ -2603,7 +2618,7 @@ class TrustRegion:
                     fun_hist = np.copy(self.fun_hist)
                     fun_hist[np.logical_not(iref)] = np.inf
                     imin = np.argmin(fun_hist)
-            xopt = self.x_hist[imin, :]
+            xopt = self.x_hist[imin, :] - self.xbase
             fopt = self.fun_hist[imin]
             maxcv = violmx[imin]
         else:
@@ -4462,7 +4477,7 @@ class Models:
         self._cub = copy.deepcopy(self._cub_alt)
         self._ceq = copy.deepcopy(self._ceq_alt)
 
-    def improve_geometry(self, klag, delta, **kwargs):
+    def improve_geometry(self, klag, delta, aub, bub, aeq, beq, **kwargs):
         """
         Estimate a step from `xopt` that aims at improving the geometry of the
         interpolation set.
@@ -4501,9 +4516,6 @@ class Models:
         improve_tcg : bool, optional
             Whether to improve the truncated conjugate gradient step round the
             trust-region boundary (the default is True).
-        model_step_tcg : bool, optional
-            Whether to perform the model step using a truncated conjugate
-            gradient method (the default is False).
         """
         # Define the tolerances to compare floating-point numbers with zero.
         npt = self.xpt.shape[0]
@@ -4520,35 +4532,26 @@ class Models:
         omega = implicit_hessian(self.zmat, self.idz, klag)
         alpha = omega[klag]
 
-        if not kwargs['model_step_tcg']:
-            # Determine a point on a line between xopt and another interpolation
-            # points, chosen to maximize the absolute value of the klag-th
-            # Lagrange polynomial, which is a lower bound on the denominator of
-            # the updating formula.
-            step = bvlag(self.xpt, self.kopt, klag, glag, self.xl, self.xu,
-                         delta, alpha, **kwargs)
-            beta, vlag = self._beta(step)
-            sigma = vlag[klag] ** 2.0 + alpha * beta
+        # Determine a point on a line between xopt and another interpolation
+        # points, chosen to maximize the absolute value of the klag-th
+        # Lagrange polynomial, which is a lower bound on the denominator of
+        # the updating formula.
+        step = bvlag(self.xpt, self.kopt, klag, glag, self.xl, self.xu,
+                     delta, alpha, **kwargs)
+        beta, vlag = self._beta(step)
+        sigma = vlag[klag] ** 2.0 + alpha * beta
 
-            # Evaluate the constrained Cauchy step from the optimal point of the
-            # absolute value of the klag-th Lagrange polynomial.
-            salt, cauchy = bvcs(self.xpt, self.kopt, glag, lag.curv, self.xl,
-                                self.xu, delta, self.xpt, **kwargs)
-            if sigma < cauchy and cauchy > tol * max(1.0, abs(sigma)):
-                step = salt
-        else:
-            # Estimate the maximum of the absolute value of the klag-th Lagrange
-            # polynomial using a truncated conjugate gradient method.
-            step = bvtcg(self.xopt, glag, lag.hessp, self.xl, self.xu, delta,
-                         self.xpt, **kwargs)
-            beta, vlag = self._beta(step)
-            sigma = vlag[klag] ** 2.0 + alpha * beta
-            salt = bvtcg(self.xopt, -glag, lambda x: -lag.hessp(x, self.xpt),
-                         self.xl, self.xu, delta, **kwargs)
-            beta, vlag = self._beta(salt)
-            sigalt = vlag[klag] ** 2.0 + alpha * beta
-            if abs(sigma) < abs(sigalt):
-                step = salt
+        # Evaluate the constrained Cauchy step from the optimal point of the
+        # absolute value of the klag-th Lagrange polynomial.
+        salt, cauchy = bvcs(self.xpt, self.kopt, glag, lag.curv, self.xl,
+                            self.xu, delta, self.xpt, **kwargs)
+        if sigma < cauchy and cauchy > tol * max(1.0, abs(sigma)):
+            step = salt
+            # sigma = cauchy
+
+        # Estimate the maximum of the absolute value of the klag-th Lagrange
+        # polynomial using a truncated conjugate gradient method.
+
         return step
 
     def resid(self, x, cubx=None, ceqx=None):

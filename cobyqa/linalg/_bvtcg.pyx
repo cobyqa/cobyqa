@@ -150,9 +150,7 @@ def bvtcg(double[:] xopt, double[:] gq, object hessp, double[:] xl, double[:] xu
                 alpha = temp
                 inew = i
 
-        # Make the actual conjugate gradient iteration. The max operator below
-        # is crucial as it prevents numerical difficulties engendered by
-        # computer rounding errors.
+        # Make the actual conjugate gradient iteration.
         if alpha > 0.0:
             stepsq = 0.0
             for i in range(n):
