@@ -26,7 +26,7 @@ constraint functions, if any. No derivative information is needed.
 The current release of COBYQA contains a Python implementation of the solver. It is 
 distributed under the BSD-3-Clause license.
 
-**Documentation:** https://cobyqa.com/
+**Documentation:** https://www.cobyqa.com/
 
 Installation
 ============
