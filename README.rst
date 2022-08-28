@@ -1,5 +1,5 @@
 #####################################################################
-COBYQA: derivative-free solver for nonlinear constrained optimization
+COBYQA: a derivative-free solver for nonlinear constrained optimization
 #####################################################################
 
 .. image:: https://readthedocs.org/projects/cobyqa/badge/?version=latest
