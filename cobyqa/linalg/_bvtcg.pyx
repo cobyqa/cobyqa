@@ -74,7 +74,7 @@ def bvtcg(double[:] xopt, double[:] gq, object hessp, double[:] xl, double[:] xu
     cdef double reduct = 0.0
     cdef int iterc = 0
     cdef int maxiter = n
-    cdef double alpha, alpht, sdgq, sdsq, sdstep, rhs, temp, tempa, tempb
+    cdef double alpha, alpht, sdgq, sdsq, sdstep, rhs, sdec, temp, tempa, tempb
     cdef double angt, cosv, gqsq, gqstep, sinv
     cdef double curv, sdhsd, ssq, sthsd, sthst
     cdef double redmax, redsav, rdnext, rdprev
@@ -151,13 +151,15 @@ def bvtcg(double[:] xopt, double[:] gq, object hessp, double[:] xl, double[:] xu
                 inew = i
 
         # Make the actual conjugate gradient iteration.
+        sdec = 0.0
         if alpha > 0.0:
             stepsq = 0.0
             for i in range(n):
                 step[i] += alpha * sd[i]
                 gq[i] += alpha * hsd[i]
                 stepsq += step[i] ** 2.0
-            reduct -= alpha * (sdgq + 0.5 * alpha * curv)
+            sdec = fmax(-alpha * (sdgq + 0.5 * alpha * curv), 0.0)
+            reduct += sdec
 
         # If the step reached the boundary of the trust region, the truncated
         # conjugate gradient method must be stopped.
@@ -181,6 +183,8 @@ def bvtcg(double[:] xopt, double[:] gq, object hessp, double[:] xl, double[:] xu
         # conjugate gradient iteration or return if the maximum number of
         # iterations is exceeded.
         if iterc >= maxiter:
+            break
+        if sdec <= 1e-2 * reduct:
             break
         beta = 0.0
         for i in range(n):

@@ -198,7 +198,7 @@ class TestNNLS:
         assert_(x.size == n)
 
         # Ensure that the KKT conditions approximately hold at the solution.
-        tol = 1e4 * np.finfo(float).eps * max(m, n)
+        tol = 1e5 * np.finfo(float).eps * max(m, n)
         grad = np.dot(A.T, np.dot(A, x) - b)
         assert_array_less_equal(np.abs(grad[k:]), tol)
         assert_array_less_equal(np.abs(grad[:k] * x[:k]), tol)
