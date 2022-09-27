@@ -511,8 +511,8 @@ def lctcg(xopt, gq, hessp, Aub, bub, Aeq, beq, xl, xu, delta, *args, **kwargs):
 
     debug = kwargs.get('debug', False)
     mu = kwargs.get('constraint_activation_factor', 0.2)
-    step = _lctcg(xopt, gq, hessp_safe, Aub, bub, Aeq, beq, xl, xu, delta, debug, mu)  # noqa
-    return np.array(step, dtype=float)
+    step, qhat, iact = _lctcg(xopt, gq, hessp_safe, Aub, bub, Aeq, beq, xl, xu, delta, debug, mu)  # noqa
+    return np.array(step, dtype=float), np.array(qhat, dtype=float), np.array(iact, dtype=int)
 
 
 def nnls(A, b, k=None, maxiter=None):

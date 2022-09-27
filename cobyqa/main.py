@@ -325,7 +325,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                 test = kwargs.get('constraint_activation_factor') - 1e-4
                 if struct.type in 'LO':
                     test /= np.sqrt(2.0)
-            evaluate_fun = snorm > test * delta
+            evaluate_fun = snorm > test * delta or kwargs.get('no_jump', False)
             if not evaluate_fun:
                 delta *= kwargs.get('radius_reduction_factor')
                 if delta <= kwargs.get('short_radius_detection_factor') * rho:
@@ -407,8 +407,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                     delta = rho
 
             # Attempt to replace the models by the alternative ones.
-            if is_trust_region_step and delta <= rho:
-                if ratio > kwargs.get('alternative_models_radius_threshold'):
+            if not kwargs.get('no_alt_models', False) and is_trust_region_step and delta <= rho:
+                if not kwargs.get('always_alt_models', False) and ratio > kwargs.get('alternative_models_radius_threshold'):
                     n_alt_models = 0
                 else:
                     n_alt_models += 1
@@ -416,7 +416,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, Aub=None, bub=None, Aeq=None,
                     gd_alt = struct.model_obj_alt_grad(struct.xopt)
                     if np.linalg.norm(gd) < 10.0 * np.linalg.norm(gd_alt):
                         n_alt_models = 0
-                    if n_alt_models >= 3:
+                    if kwargs.get('always_alt_models', False) or n_alt_models >= 3:
                         struct.reset_models()
                         n_alt_models = 0
 

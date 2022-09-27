@@ -299,10 +299,11 @@ def lctcg(double[:] xopt, double[:] gq, object hessp, double[::1, :] aub, double
         # Restart the calculations if a new constraint has been hit and either
         # it is a bound constraint or the distance from the current step to the
         # boundary of the trust region is larger than 0.2 * delta.
-        if inext >= 0:
-            if inext >= mlub or stepsq <= ((1.0 - mu) * delta) ** 2.0:
-                continue
-            break
+        if inext >= 0 and alpha < alpht:
+            # if inext >= mlub or stepsq <= ((1.0 - mu) * delta) ** 2.0:
+            #     continue
+            # break
+            continue
 
         # If the step reached the boundary of the trust region, the truncated
         # conjugate gradient method is stopped.
@@ -324,6 +325,8 @@ def lctcg(double[:] xopt, double[:] gq, object hessp, double[::1, :] aub, double
         for i in range(n):
             sd[i] = beta * sd[i] - work[i]
         alpbd = 0.0
+    cdef int nact_int = nact[0]
+    cdef int nact_final = mleq + nact[0]
     free(nact)
 
     # Ensure that the bound constraints are respected.
@@ -336,7 +339,7 @@ def lctcg(double[:] xopt, double[:] gq, object hessp, double[::1, :] aub, double
     reduct = -inner(gini, step) - 0.5 * inner(step, hsd)
     if reduct <= 0.0:
         step[:] = 0.0
-    return step
+    return step, qfac[:, nact_final:], iact[:nact_int]
 
 
 cdef double evalc(int i, double[:] x, tuple args):
