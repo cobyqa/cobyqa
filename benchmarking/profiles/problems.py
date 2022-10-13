@@ -9,7 +9,7 @@ from numpy import ma
 from scipy.linalg import lstsq
 from scipy.optimize import Bounds, LinearConstraint, minimize
 
-from .logging import get_logger
+from .utils import get_logger
 
 
 class Problems(list):
@@ -22,15 +22,7 @@ class Problems(list):
         self.n_max = n_max
         self.m_min = m_min
         self.m_max = m_max
-        names = pycutest.find_problems(
-            objective='constant linear quadratic sum of squares other',
-            constraints=constraints,
-            regular=True,
-            origin='academic modelling real-world',
-            n=[self.n_min, self.n_max],
-            m=[self.m_min, self.m_max],
-            userM=False,
-        )
+        names = pycutest.find_problems(objective='constant linear quadratic sum of squares other', constraints=constraints, regular=True, origin='academic modelling real-world', n=[self.n_min, self.n_max], m=[self.m_min, self.m_max], userM=False)
         attempts = Parallel(n_jobs=-1)(self.load(sorted(names), i) for i in range(len(names)))
         for problem in attempts:
             if problem is not None:
@@ -52,9 +44,9 @@ class Problems(list):
                     if sif_n_masked.size > 0:
                         sif_n_max = sif_n_masked.max()
                         if sif_n_max is not ma.masked:
-                            return Problem(names[i], sifParams={'N': sif_n_max}, drop_fixed_variables=False)
+                            return Problem(names[i], sifParams={'N': sif_n_max})
                 else:
-                    return Problem(names[i], drop_fixed_variables=False)
+                    return Problem(names[i])
         except (AttributeError, ModuleNotFoundError, RuntimeError) as err:
             logger.warning(err)
 
@@ -82,13 +74,32 @@ class Problems(list):
         return np.sort(sif_n)
 
 
-class Problem(pycutest.CUTEstProblem):
+class Problem:
 
     def __init__(self, *args, **kwargs):
-        super(Problem, self).__init__(*args, **kwargs)
+        problem = pycutest.import_problem(*args, **kwargs)
 
-        self._xl = None
-        self._xu = None
+        self.name = problem.name
+        self.n = problem.n
+        self.m = problem.m
+        self.x0 = np.array(problem.x0, copy=True)
+        self.sifParams = problem.sifParams
+        self.vartype = np.array(problem.vartype, copy=True)
+        self.xl = np.array(problem.bl, copy=True)
+        self.xl[self.xl <= -1e20] = -np.inf
+        self.xu = np.array(problem.bu, copy=True)
+        self.xu[self.xu >= 1e20] = np.inf
+        self.cl = problem.cl
+        self.cu = problem.cu
+        if self.m > 0:
+            self.cl[self.cl <= -1e20] = -np.inf
+            self.cu[self.cu >= 1e20] = np.inf
+        self.is_eq_cons = problem.is_eq_cons
+        self.is_linear_cons = problem.is_linear_cons
+
+        self.obj = problem.obj
+        self.cons = problem.cons
+
         self._a_inequality = None
         self._b_inequality = None
         self._a_equality = None
@@ -100,9 +111,6 @@ class Problem(pycutest.CUTEstProblem):
 
         self.project_x0()
 
-    def __new__(cls, *args, **kwargs):
-        return pycutest.import_problem(*args, **kwargs)
-
     def __getstate__(self):
         return self.__dict__
 
@@ -110,91 +118,71 @@ class Problem(pycutest.CUTEstProblem):
         self.__dict__.update(state)
 
     @property
-    def xl(self):
-        if self._xl is not None:
-            return self._xl
-        self._xl = np.array(self.bl, copy=True)
-        self._xl[self._xl <= -1e20] = -np.inf
-        return self._xl
-
-    @property
-    def xu(self):
-        if self._xu is not None:
-            return self._xu
-        self._xu = np.array(self.bu, copy=True)
-        self._xu[self._xu <= -1e20] = -np.inf
-        return self._xu
-
-    @property
     def a_inequality(self):
-        if self._a_inequality is not None:
-            return self._a_inequality
-        self._a_inequality, self._b_inequality = self.build_linear_inequality_constraints()
+        if self._a_inequality is None:
+            self._a_inequality, self._b_inequality = self.build_linear_inequality_constraints()
         return self._a_inequality
 
     @property
     def b_inequality(self):
-        if self._b_inequality is not None:
-            return self._b_inequality
-        self._a_inequality, self._b_inequality = self.build_linear_inequality_constraints()
+        if self._b_inequality is None:
+            self._a_inequality, self._b_inequality = self.build_linear_inequality_constraints()
         return self._b_inequality
 
     @property
     def a_equality(self):
-        if self._a_equality is not None:
-            return self._a_equality
-        self._a_equality, self._b_equality = self.build_linear_equality_constraints()
+        if self._a_equality is None:
+            self._a_equality, self._b_equality = self.build_linear_equality_constraints()
         return self._a_equality
 
     @property
     def b_equality(self):
-        if self._b_equality is not None:
-            return self._b_equality
-        self._a_equality, self._b_equality = self.build_linear_equality_constraints()
+        if self._b_equality is None:
+            self._a_equality, self._b_equality = self.build_linear_equality_constraints()
         return self._b_equality
 
     @property
     def m_linear_inequality(self):
-        if self.m == 0:
-            return 0
-        elif self._m_linear_inequality is not None:
-            return self._m_linear_inequality
-        iub = self.is_linear_cons & np.logical_not(self.is_eq_cons)
-        iub_cl = self.cl[iub] > -1e20
-        iub_cu = self.cu[iub] < 1e20
-        self._m_linear_inequality = np.count_nonzero(iub_cl) + np.count_nonzero(iub_cu)
+        if self._m_linear_inequality is None:
+            if self.m == 0:
+                self._m_linear_inequality = 0
+            else:
+                iub = self.is_linear_cons & np.logical_not(self.is_eq_cons)
+                iub_cl = self.cl[iub] >= -np.inf
+                iub_cu = self.cu[iub] < np.inf
+                self._m_linear_inequality = np.count_nonzero(iub_cl) + np.count_nonzero(iub_cu)
         return self._m_linear_inequality
 
     @property
     def m_linear_equality(self):
-        if self.m == 0:
-            return 0
-        elif self._m_linear_equality is not None:
-            return self._m_linear_equality
-        ieq = self.is_linear_cons & self.is_eq_cons
-        self._m_linear_equality = np.count_nonzero(ieq)
+        if self._m_linear_equality is None:
+            if self.m == 0:
+                self._m_linear_equality = 0
+            else:
+                ieq = self.is_linear_cons & self.is_eq_cons
+                self._m_linear_equality = np.count_nonzero(ieq)
         return self._m_linear_equality
 
     @property
     def m_nonlinear_inequality(self):
-        if self.m == 0:
-            return 0
-        elif self._m_nonlinear_inequality is not None:
-            return self._m_nonlinear_inequality
-        iub = np.logical_not(self.is_linear_cons | self.is_eq_cons)
-        iub_cl = self.cl[iub] > -1e20
-        iub_cu = self.cu[iub] < 1e20
-        self._m_nonlinear_inequality = np.count_nonzero(iub_cl) + np.count_nonzero(iub_cu)
+        if self._m_nonlinear_inequality is None:
+            if self.m == 0:
+                self._m_nonlinear_inequality = 0
+            else:
+                iub = np.logical_not(self.is_linear_cons | self.is_eq_cons)
+                iub_cl = self.cl[iub] > -np.inf
+                iub_cu = self.cu[iub] < np.inf
+                self._m_nonlinear_inequality = np.count_nonzero(iub_cl) + np.count_nonzero(iub_cu)
         return self._m_nonlinear_inequality
 
     @property
     def m_nonlinear_equality(self):
-        if self.m == 0:
-            return 0
-        elif self._m_nonlinear_equality is not None:
-            return self._m_nonlinear_equality
-        ieq = np.logical_not(self.is_linear_cons) & self.is_eq_cons
-        self._m_nonlinear_equality = np.count_nonzero(ieq)
+        if self._m_nonlinear_equality is None:
+            if self.m == 0:
+                self._m_nonlinear_equality = 0
+            else:
+                ieq = np.logical_not(self.is_linear_cons) & self.is_eq_cons
+                self._m_nonlinear_equality = np.count_nonzero(ieq)
         return self._m_nonlinear_equality
 
     @property
@@ -214,8 +202,8 @@ class Problem(pycutest.CUTEstProblem):
             return np.empty(0)
         x = np.asarray(x, dtype=float)
         iub = np.logical_not(self.is_linear_cons | self.is_eq_cons)
-        iub_cl = self.cl[iub] > -1e20
-        iub_cu = self.cu[iub] < 1e20
+        iub_cl = self.cl[iub] > -np.inf
+        iub_cu = self.cu[iub] < np.inf
         c = []
         for i, index in enumerate(np.flatnonzero(iub)):
             c_index = self.cons(x, index)
@@ -249,8 +237,8 @@ class Problem(pycutest.CUTEstProblem):
         if self.m == 0:
             return np.empty((0, self.n)), np.empty(0)
         iub = self.is_linear_cons & np.logical_not(self.is_eq_cons)
-        iub_cl = self.cl[iub] > -1e20
-        iub_cu = self.cu[iub] < 1e20
+        iub_cl = self.cl[iub] > -np.inf
+        iub_cu = self.cu[iub] < np.inf
         aub = []
         bub = []
         for i, index in enumerate(np.flatnonzero(iub)):
