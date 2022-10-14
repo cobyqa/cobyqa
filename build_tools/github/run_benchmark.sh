@@ -16,6 +16,7 @@ export ARCHDEFS
 export SIFDECODE
 export CUTEST
 export MASTSIF
+export MYARCH
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/jfowkes/pycutest/master/.install_cutest.sh)"
 
 # Install COBYQA and other requirements
