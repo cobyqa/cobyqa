@@ -28,7 +28,7 @@ jobs:
         uses: teatimeguest/setup-texlive-action@v2
         with:
           packages: |
-            scheme-basic
+            scheme-full
 
       - name: Run the benchmarking script
         run: bash build_tools/github/run_benchmark.sh
