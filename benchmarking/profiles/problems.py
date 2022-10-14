@@ -23,6 +23,12 @@ class Problems(list):
         self.m_min = m_min
         self.m_max = m_max
         names = pycutest.find_problems(objective='constant linear quadratic sum of squares other', constraints=constraints, regular=True, origin='academic modelling real-world', n=[self.n_min, self.n_max], m=[self.m_min, self.m_max], userM=False)
+
+        # The problem instances are not appended yet, because it cannot be
+        # Get all problem instances. If a failure occurred when loading a
+        # problem, the corresponding instance is replaced with None. They are
+        # not appended to the object as this cannot be done in a multiprocessing
+        # paradigm. They are appended below in a sequential paradigm.
         attempts = Parallel(n_jobs=-1)(self.load(sorted(names), i) for i in range(len(names)))
         for problem in attempts:
             if problem is not None:
@@ -37,9 +43,15 @@ class Problems(list):
         logger = get_logger(__name__)
         try:
             if names[i] not in self.EXCLUDED:
-                logger.info('Loading %s (%d/%d)', names[i], i + 1, len(names))
+                logger.info(f'Loading {names[i]} ({i + 1}/{len(names)})')
+
+                # If the problem's dimension is not fixed, we select the largest
+                # available dimension that matches the requirements.
                 if pycutest.problem_properties(names[i])['n'] == 'variable':
                     sif_n = self.get_sif_n(names[i])
+
+                    # Since PyCUTEst removes the fixed variables, the reduced
+                    # problem's dimension may not satisfy the requirements.
                     sif_n_masked = ma.masked_array(sif_n, mask=(sif_n < self.n_min) | (sif_n > self.n_max))
                     if sif_n_masked.size > 0:
                         sif_n_max = sif_n_masked.max()
@@ -47,8 +59,8 @@ class Problems(list):
                             return Problem(names[i], sifParams={'N': sif_n_max})
                 else:
                     return Problem(names[i])
-        except (AttributeError, ModuleNotFoundError, RuntimeError) as err:
-            logger.warning(err)
+        except (AttributeError, FileNotFoundError, ModuleNotFoundError, RuntimeError) as err:
+            logger.warning(f'{names[i]}: {err}')
 
     def validate(self, problem, callback=None):
         valid = np.all(problem.vartype == 0)
@@ -60,11 +72,13 @@ class Problems(list):
 
     @staticmethod
     def get_sif_n(name):
+        # Get all the available SIF parameters for all variables.
         cmd = [pycutest.get_sifdecoder_path(), '-show', name]
         sp = subprocess.Popen(cmd, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         sif_stdout = sp.stdout.read()
         sp.wait()
 
+        # Extract all the available SIF parameters for the problem's dimension.
         regex = re.compile(r'^N=(?P<param>\d+)')
         sif_n = []
         for stdout in sif_stdout.split('\n'):
@@ -86,8 +100,8 @@ class Problem:
         self.sifParams = problem.sifParams
         self.vartype = np.array(problem.vartype, copy=True)
         self.xl = np.array(problem.bl, copy=True)
-        self.xl[self.xl <= -1e20] = -np.inf
         self.xu = np.array(problem.bu, copy=True)
+        self.xl[self.xl <= -1e20] = -np.inf
         self.xu[self.xu >= 1e20] = np.inf
         self.cl = problem.cl
         self.cu = problem.cu
@@ -100,15 +114,20 @@ class Problem:
         self.obj = problem.obj
         self.cons = problem.cons
 
-        self._a_inequality = None
-        self._b_inequality = None
-        self._a_equality = None
-        self._b_equality = None
-        self._m_linear_inequality = None
-        self._m_linear_equality = None
-        self._m_nonlinear_inequality = None
-        self._m_nonlinear_equality = None
+        # The following attributes can be built from other attributes. However,
+        # they may be time-consuming to build. Therefore, we construct them only
+        # when they are accessed for the first time.
+        self._a_ineq = None
+        self._b_ineq = None
+        self._a_eq = None
+        self._b_eq = None
+        self._m_lin_ineq = None
+        self._m_lin_eq = None
+        self._m_nonlin_ineq = None
+        self._m_nonlin_eq = None
 
+        # Project the initial guess only the feasible polyhedron (including the
+        # bound and the linear constraints).
         self.project_x0()
 
     def __getstate__(self):
@@ -118,72 +137,72 @@ class Problem:
         self.__dict__.update(state)
 
     @property
-    def a_inequality(self):
-        if self._a_inequality is None:
-            self._a_inequality, self._b_inequality = self.build_linear_inequality_constraints()
-        return self._a_inequality
+    def a_ineq(self):
+        if self._a_ineq is None:
+            self._a_ineq, self._b_ineq = self.build_lin_ineq_cons()
+        return self._a_ineq
 
     @property
-    def b_inequality(self):
-        if self._b_inequality is None:
-            self._a_inequality, self._b_inequality = self.build_linear_inequality_constraints()
-        return self._b_inequality
+    def b_ineq(self):
+        if self._b_ineq is None:
+            self._a_ineq, self._b_ineq = self.build_lin_ineq_cons()
+        return self._b_ineq
 
     @property
-    def a_equality(self):
-        if self._a_equality is None:
-            self._a_equality, self._b_equality = self.build_linear_equality_constraints()
-        return self._a_equality
+    def a_eq(self):
+        if self._a_eq is None:
+            self._a_eq, self._b_eq = self.build_lin_eq_cons()
+        return self._a_eq
 
     @property
-    def b_equality(self):
-        if self._b_equality is None:
-            self._a_equality, self._b_equality = self.build_linear_equality_constraints()
-        return self._b_equality
+    def b_eq(self):
+        if self._b_eq is None:
+            self._a_eq, self._b_eq = self.build_lin_eq_cons()
+        return self._b_eq
 
     @property
-    def m_linear_inequality(self):
-        if self._m_linear_inequality is None:
+    def m_lin_ineq(self):
+        if self._m_lin_ineq is None:
             if self.m == 0:
-                self._m_linear_inequality = 0
+                self._m_lin_ineq = 0
             else:
                 iub = self.is_linear_cons & np.logical_not(self.is_eq_cons)
                 iub_cl = self.cl[iub] >= -np.inf
                 iub_cu = self.cu[iub] < np.inf
-                self._m_linear_inequality = np.count_nonzero(iub_cl) + np.count_nonzero(iub_cu)
-        return self._m_linear_inequality
+                self._m_lin_ineq = np.count_nonzero(iub_cl) + np.count_nonzero(iub_cu)
+        return self._m_lin_ineq
 
     @property
-    def m_linear_equality(self):
-        if self._m_linear_equality is None:
+    def m_lin_eq(self):
+        if self._m_lin_eq is None:
             if self.m == 0:
-                self._m_linear_equality = 0
+                self._m_lin_eq = 0
             else:
                 ieq = self.is_linear_cons & self.is_eq_cons
-                self._m_linear_equality = np.count_nonzero(ieq)
-        return self._m_linear_equality
+                self._m_lin_eq = np.count_nonzero(ieq)
+        return self._m_lin_eq
 
     @property
-    def m_nonlinear_inequality(self):
-        if self._m_nonlinear_inequality is None:
+    def m_nonlin_ineq(self):
+        if self._m_nonlin_ineq is None:
             if self.m == 0:
-                self._m_nonlinear_inequality = 0
+                self._m_nonlin_ineq = 0
             else:
                 iub = np.logical_not(self.is_linear_cons | self.is_eq_cons)
                 iub_cl = self.cl[iub] > -np.inf
                 iub_cu = self.cu[iub] < np.inf
-                self._m_nonlinear_inequality = np.count_nonzero(iub_cl) + np.count_nonzero(iub_cu)
-        return self._m_nonlinear_inequality
+                self._m_nonlin_ineq = np.count_nonzero(iub_cl) + np.count_nonzero(iub_cu)
+        return self._m_nonlin_ineq
 
     @property
-    def m_nonlinear_equality(self):
-        if self._m_nonlinear_equality is None:
+    def m_nonlin_eq(self):
+        if self._m_nonlin_eq is None:
             if self.m == 0:
-                self._m_nonlinear_equality = 0
+                self._m_nonlin_eq = 0
             else:
                 ieq = np.logical_not(self.is_linear_cons) & self.is_eq_cons
-                self._m_nonlinear_equality = np.count_nonzero(ieq)
-        return self._m_nonlinear_equality
+                self._m_nonlin_eq = np.count_nonzero(ieq)
+        return self._m_nonlin_eq
 
     @property
     def type(self):
@@ -193,11 +212,15 @@ class Problem:
     def fun(self, x, callback=None, *args, **kwargs):
         x = np.asarray(x, dtype=float)
         f = self.obj(x)
+
+        # If a noise function is supplied, return both the plain and the noisy
+        # function evaluations, the former being required for building the
+        # performance and data profiles.
         if callback is not None:
             return f, callback(x, f, *args, **kwargs)
         return f
 
-    def c_inequality(self, x):
+    def c_ineq(self, x):
         if self.m == 0:
             return np.empty(0)
         x = np.asarray(x, dtype=float)
@@ -213,7 +236,7 @@ class Problem:
                 c.append(c_index - self.cu[index])
         return np.array(c, dtype=float)
 
-    def c_equality(self, x):
+    def c_eq(self, x):
         if self.m == 0:
             return np.empty(0)
         x = np.asarray(x, dtype=float)
@@ -224,16 +247,16 @@ class Problem:
             c.append(c_index - 0.5 * (self.cl[index] + self.cu[index]))
         return np.array(c, dtype=float)
 
-    def constraint_violation(self, x):
-        maximum_violation = np.max(self.xl - x, initial=0.0)
-        maximum_violation = np.max(x - self.xu, initial=maximum_violation)
-        maximum_violation = np.max(np.dot(self.a_inequality, x) - self.b_inequality, initial=maximum_violation)
-        maximum_violation = np.max(np.abs(np.dot(self.a_equality, x) - self.b_equality), initial=maximum_violation)
-        maximum_violation = np.max(self.c_inequality(x), initial=maximum_violation)
-        maximum_violation = np.max(np.abs(self.c_equality(x)), initial=maximum_violation)
-        return maximum_violation
+    def maxcv(self, x):
+        maxcv = np.max(self.xl - x, initial=0.0)
+        maxcv = np.max(x - self.xu, initial=maxcv)
+        maxcv = np.max(np.dot(self.a_ineq, x) - self.b_ineq, initial=maxcv)
+        maxcv = np.max(np.abs(np.dot(self.a_eq, x) - self.b_eq), initial=maxcv)
+        maxcv = np.max(self.c_ineq(x), initial=maxcv)
+        maxcv = np.max(np.abs(self.c_eq(x)), initial=maxcv)
+        return maxcv
 
-    def build_linear_inequality_constraints(self):
+    def build_lin_ineq_cons(self):
         if self.m == 0:
             return np.empty((0, self.n)), np.empty(0)
         iub = self.is_linear_cons & np.logical_not(self.is_eq_cons)
@@ -251,7 +274,7 @@ class Problem:
                 bub.append(self.cu[index] - c_index)
         return np.reshape(aub, (-1, self.n)), np.array(bub)
 
-    def build_linear_equality_constraints(self):
+    def build_lin_eq_cons(self):
         if self.m == 0:
             return np.empty((0, self.n)), np.empty(0)
         ieq = self.is_linear_cons & self.is_eq_cons
@@ -266,15 +289,15 @@ class Problem:
     def project_x0(self):
         if self.m == 0:
             self.x0 = np.minimum(self.xu, np.maximum(self.xl, self.x0))
-        elif self.m_linear_inequality == 0 and self.m_linear_equality > 0 and np.all(self.xl == -np.inf) and np.all(self.xu == np.inf):
-            self.x0 += lstsq(self.a_equality, self.b_equality - np.dot(self.a_equality, self.x0))[0]
+        elif self.m_lin_ineq == 0 and self.m_lin_eq > 0 and np.all(self.xl == -np.inf) and np.all(self.xu == np.inf):
+            self.x0 += lstsq(self.a_eq, self.b_eq - np.dot(self.a_eq, self.x0))[0]
         else:
             bounds = Bounds(self.xl, self.xu, True)
             constraints = []
-            if self.m_linear_inequality > 0:
-                constraints.append(LinearConstraint(self.a_inequality, -np.inf, self.b_inequality))
-            if self.m_linear_equality > 0:
-                constraints.append(LinearConstraint(self.a_equality, self.b_equality, self.b_equality))
+            if self.m_lin_ineq > 0:
+                constraints.append(LinearConstraint(self.a_ineq, -np.inf, self.b_ineq))
+            if self.m_lin_eq > 0:
+                constraints.append(LinearConstraint(self.a_eq, self.b_eq, self.b_eq))
 
             def distance_square(x):
                 g = x - self.x0
