@@ -24,6 +24,7 @@ python -m pip install --progress-bar=off .
 
 # Install previous version of COBYQA as cobyqa_old
 sed -i 's/cobyqa/cobyqa_old/g' setup.py
+sed -i 's/cobyqa/cobyqa_old/g' cobyqa/setup.py
 mv cobyqa cobyqa_old
 python -m pip install --progress-bar=off .
 
