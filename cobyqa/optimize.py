@@ -341,6 +341,8 @@ class TrustRegion:
         self._ceq_hist = []
 
         # Set the initial models of the problem.
+        self.qhat = None
+        self.iact = None
         self._models = Models(self.fun, self.xbase, xl, xu, Aub, bub, Aeq, beq,
                               self.cub, self.ceq, self.options, **kwargs)
         self._target_reached = self._models.target_reached
@@ -2169,6 +2171,7 @@ class TrustRegion:
         self._knew = self._models.update(step, fx, cubx, ceqx, self.knew)
         if self.target_reached or self.less_merit(mx, rx, mopt, self.maxcv):
             self.kopt = self.knew
+            self.update_multipliers()
             mopt = mx
         elif is_trust_region_step and self.type == 'O':
             nssq = np.inner(nstep, nstep)
@@ -2191,6 +2194,7 @@ class TrustRegion:
                             self._knew = self._models.update(
                                 ssoc, fx, cubx, ceqx, self.knew)
                             self.kopt = self.knew
+                            self.update_multipliers()
         if not self.target_reached and self.debug:
             self.check_models()
         return fx, mopt, ratio
@@ -2294,27 +2298,28 @@ class TrustRegion:
         if self.type not in 'UB' and not self.is_model_step:
             gopt = self.model_obj_grad(self.xopt)
             hstep = self.model_lag_hessp(step)
-            reduct = np.inner(gopt, step) + 0.5 * np.inner(step, hstep)
+            reduct = -np.inner(gopt, step) - 0.5 * np.inner(step, hstep)
             aub, bub = self.get_linear_ub()
             aeq, beq = self.get_linear_eq()
             bub -= np.dot(aub, self.xopt)
             beq -= np.dot(aeq, self.xopt)
             resid = np.r_[np.maximum(0.0, -bub), beq]
-            violation = np.linalg.norm(resid)
+            viol_diff = np.linalg.norm(resid)
             resid = np.r_[
                 np.maximum(0.0, np.dot(aub, nstep) - bub),
                 np.dot(aeq, nstep) - beq,
             ]
-            violation -= np.linalg.norm(resid)
+            viol_diff -= np.linalg.norm(resid)
             lm = np.r_[self.lmlub, self.lmleq, self.lmnlub, self.lmnleq]
             thold = np.linalg.norm(lm)
-            if violation > tiny * abs(reduct):
-                thold = max(thold, reduct / violation)
+            if viol_diff > tiny * abs(reduct):
+                thold = max(thold, -reduct / viol_diff)
             if self.penalty < kwargs.get('penalty_detection_factor') * thold:
                 self._penalty = kwargs.get('penalty_growth_factor') * thold
                 mx, mmx = self(xnew, fx, cubx, ceqx, True)
                 self.kopt = self.get_best_point()
                 mopt = self(self.xopt, self.fopt, self.coptub, self.copteq)
+                self.update_multipliers()
         return mx, mmx, mopt
 
     def reduce_penalty(self):
@@ -2446,15 +2451,22 @@ class TrustRegion:
         # violation provided by the normal step.
         delta = np.sqrt(delta ** 2.0 - ssq)
         xopt = self.xopt + nstep
-        bub = np.maximum(bub, np.dot(aub, xopt))
+        if kwargs.get('our_byrd_omojokun', True):
+            bub = np.maximum(bub, np.dot(aub, xopt))
+        else:
+            bub = np.dot(aub, xopt)
         beq = np.dot(aeq, xopt)
-        gopt = self.model_obj_grad(self.xopt) + self.model_lag_hessp(nstep)
+        if kwargs.get('use_obj_hess', False):
+            hessian = self.model_obj_hessp
+        else:
+            hessian = self.model_lag_hessp
+        gopt = self.model_obj_grad(self.xopt) + hessian(nstep)
         if self.type in 'UB':
             tstep = bvtcg(xopt, gopt, self.model_obj_hessp, self.xl, self.xu,
                           delta, **kwargs)
         else:
-            tstep = lctcg(xopt, gopt, self.model_lag_hessp, aub, bub, aeq, beq,
-                          self.xl, self.xu, delta, **kwargs)
+            tstep, self.qhat, self.iact = lctcg(xopt, gopt, hessian, aub, bub,
+                                     aeq, beq, self.xl, self.xu, delta, **kwargs)
         if self.debug:
             tol = 10.0 * np.finfo(float).eps * self.xopt.size
             assert_array_less(self.xl - xopt - tstep,
@@ -2512,8 +2524,9 @@ class TrustRegion:
         kwargs['debug'] = self.debug
         aub, bub = self.get_linear_ub()
         aeq, beq = self.get_linear_eq()
-        step = self._models.improve_geometry(self.knew, delta, aub, bub ,aeq,
-                                             beq, **kwargs)
+        step = self._models.improve_geometry(self.knew, delta, aub, bub, aeq,
+                                             beq, self.qhat, self.iact,
+                                             self.lmnlub, self.lmnleq, **kwargs)
         if self.debug:
             tol = 10.0 * np.finfo(float).eps * self.xopt.size
             assert_array_less(self.xl - self.xopt - step,
@@ -4477,7 +4490,7 @@ class Models:
         self._cub = copy.deepcopy(self._cub_alt)
         self._ceq = copy.deepcopy(self._ceq_alt)
 
-    def improve_geometry(self, klag, delta, aub, bub, aeq, beq, **kwargs):
+    def improve_geometry(self, klag, delta, aub, bub, aeq, beq, qhat, iact, lmnlub, lmnleq, **kwargs):
         """
         Estimate a step from `xopt` that aims at improving the geometry of the
         interpolation set.
@@ -4547,10 +4560,48 @@ class Models:
                             self.xu, delta, self.xpt, **kwargs)
         if sigma < cauchy and cauchy > tol * max(1.0, abs(sigma)):
             step = salt
-            # sigma = cauchy
+            sigma = cauchy
 
         # Estimate the maximum of the absolute value of the klag-th Lagrange
         # polynomial using a truncated conjugate gradient method.
+        if self.type in 'LO':
+            pglag = glag
+            nact = 0
+            if qhat is not None:
+                pglag = np.dot(qhat, np.dot(qhat.T, glag))
+                nact = qhat.shape[1]
+            normg = np.linalg.norm(pglag)
+            mlub = aub.shape[0]
+            mleq = aeq.shape[0]
+            n = self.xpt.shape[1]
+            if 0 < nact < n and normg > 0:
+                pgstp = (delta / normg) * pglag
+                if np.inner(pgstp, self.lag_hessp(pgstp, lmnlub, lmnleq)) < 0:
+                    pgstp = -pgstp
+
+                # Decide whether to replace S with PGSTP and set FEASIBLE accordingly.
+                cub = np.r_[np.dot(aub, self.xopt + pgstp) - bub]
+                ceq = np.r_[np.dot(aeq, self.xopt + pgstp) - beq]
+                cbd = np.r_[self.xopt + pgstp - self.xu, self.xl - self.xopt + pgstp]
+                cstrv = np.max(np.r_[cub, np.abs(ceq), cbd], initial=0.0)
+                amatpg = np.empty(mleq + iact.size, dtype=float)
+                for j in range(iact.size):
+                    i = iact[j]
+                    if i < mlub:
+                        amatpg[j] = np.inner(aub[i, :], self.xopt + pgstp)
+                    elif i < mlub + n:
+                        amatpg[j] = -self.xopt[i - mlub] - pgstp[i - mlub]
+                    else:
+                        amatpg[j] = self.xopt[i - mlub - n] + pgstp[i - mlub - n]
+                amatpg[iact.size:] = np.dot(aeq, self.xopt + pgstp)
+                cvtol = min(1e-2 * np.linalg.norm(pgstp), 1e1 * np.linalg.norm(amatpg, np.inf))
+                take_pgstp = False
+                if cstrv <= cvtol:
+                    beta, vlag = self._beta(pgstp)
+                    sigmalt = vlag[klag] ** 2.0 + alpha * beta
+                    take_pgstp = abs(sigmalt) > 0.1 * abs(sigma)
+                if take_pgstp:
+                    step = pgstp
 
         return step
 

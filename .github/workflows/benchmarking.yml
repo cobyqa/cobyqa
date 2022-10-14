@@ -1,0 +1,41 @@
+# .github/workflows/benchmarking.yml
+# GitHub Actions configuration file for running the benchmarking
+
+name: benchmarking
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  run:
+    name: Generate the performance and data profile comparisons
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Run the benchmarking script
+        run: bash build_tools/github/run_benchmark.sh
+        env:
+          ARCHDEFS: /opt/archdefs
+          SIFDECODE: /opt/sifdecode
+          CUTEST: /opt/cutest
+          MASTSIF: /opt/mastsif
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            benchmarking/archives/data/
+            benchmarking/archives/perf/
+          if-no-files-found: error
