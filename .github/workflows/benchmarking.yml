@@ -31,6 +31,7 @@ jobs:
           SIFDECODE: /opt/sifdecode
           CUTEST: /opt/cutest
           MASTSIF: /opt/mastsif
+          MYARCH: pc64.lnx.gfo
 
       - name: Store artifacts
         uses: actions/upload-artifact@v3
