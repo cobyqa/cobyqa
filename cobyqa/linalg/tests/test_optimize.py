@@ -127,7 +127,7 @@ class TestLCTCG:
         bub = np.dot(Aub, x0) + rng.uniform(0.0, 1.0, mlub)
         beq = np.dot(Aeq, x0)
         delta = rng.uniform(0.1, 1.0)
-        step = lctcg(x0, gq, np.dot, Aub, bub, Aeq, beq, xl, xu, delta, Hq)
+        step = lctcg(x0, gq, np.dot, Aub, bub, Aeq, beq, xl, xu, delta, Hq)[0]
         assert_dtype_equal(step, float)
         assert_(step.ndim == 1)
         assert_(step.size == n)
