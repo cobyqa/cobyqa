@@ -24,6 +24,12 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Setup TeX Live
+        uses: teatimeguest/setup-texlive-action@v2
+        with:
+          packages: |
+            scheme-basic
+
       - name: Run the benchmarking script
         run: bash build_tools/github/run_benchmark.sh
         env:
