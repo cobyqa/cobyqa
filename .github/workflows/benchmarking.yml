@@ -28,7 +28,12 @@ jobs:
         uses: teatimeguest/setup-texlive-action@v2
         with:
           packages: |
-            scheme-full
+            scheme-basic
+            dvipng
+            dvips
+            ghostscript
+            psfrag
+            psnfss
 
       - name: Run the benchmarking script
         run: bash build_tools/github/run_benchmark.sh
@@ -42,6 +47,7 @@ jobs:
       - name: Store artifacts
         uses: actions/upload-artifact@v3
         with:
+          name: profiles
           path: |
             benchmarking/archives/data/
             benchmarking/archives/perf/

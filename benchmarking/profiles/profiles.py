@@ -110,8 +110,8 @@ class Profiles:
     def get_profiles_path(self, solvers):
         if not isinstance(solvers, str):
             solvers = '_'.join(sorted(solvers))
-        pdf_perf_path = Path(self.perf_dir, f'perf-{solvers}-{self.constraints}.pdf')
-        pdf_data_path = Path(self.data_dir, f'data-{solvers}-{self.constraints}.pdf')
+        pdf_perf_path = Path(self.perf_dir, f'perf-{solvers}-{self.constraints.replace(" ", "_")}.pdf')
+        pdf_data_path = Path(self.data_dir, f'data-{solvers}-{self.constraints.replace(" ", "_")}.pdf')
         return pdf_perf_path, pdf_data_path
 
     def get_storage_path(self, problem, solver, k):
