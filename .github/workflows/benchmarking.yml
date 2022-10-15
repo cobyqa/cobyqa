@@ -28,12 +28,7 @@ jobs:
         uses: teatimeguest/setup-texlive-action@v2
         with:
           packages: |
-            scheme-basic
-            dvipng
-            dvips
-            ghostscript
-            psfrag
-            psnfss
+            scheme-full
 
       - name: Run the benchmarking script
         run: bash build_tools/github/run_benchmark.sh
