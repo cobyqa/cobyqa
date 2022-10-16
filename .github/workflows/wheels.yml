@@ -104,7 +104,7 @@ jobs:
 
       - name: Setup Python
         if: ${{ matrix.platform != 'manylinux_aarch64' }}
-        uses: actions/setup-python@v4.2.0
+        uses: actions/setup-python@v4
 
       - name: Build wheels on manylinux_aarch64
         if: ${{ matrix.platform == 'manylinux_aarch64' }}
