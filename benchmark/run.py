@@ -8,25 +8,25 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     profiles = Profiles(1, 10, "unconstrained")
-    # profiles(["cobyqa", "newuoa", "cobyla"], load=False)
+    profiles(["cobyqa", "newuoa"], load=False)
     if args.cf_old:
         profiles(["cobyqa", "cobyqa-old"], load=False)
     del profiles
 
     profiles = Profiles(1, 10, "bound")
-    # profiles(["cobyqa", "bobyqa", "cobyla"], load=False)
+    profiles(["cobyqa", "bobyqa"], load=False)
     if args.cf_old:
         profiles(["cobyqa", "cobyqa-old"], load=False)
     del profiles
 
     profiles = Profiles(1, 10, "adjacency linear")
-    # profiles(["cobyqa", "lincoa", "cobyla"], load=False)
+    profiles(["cobyqa", "lincoa"], load=False)
     if args.cf_old:
         profiles(["cobyqa", "cobyqa-old"], load=False)
     del profiles
 
     profiles = Profiles(1, 10, "quadratic other")
-    # profiles(["cobyqa", "cobyla"], load=False)
+    profiles(["cobyqa", "cobyla"], load=False)
     if args.cf_old:
         profiles(["cobyqa", "cobyqa-old"], load=False)
     del profiles
