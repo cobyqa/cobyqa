@@ -108,7 +108,7 @@ html_context = {
     "github_user": "cobyqa",
     "github_repo": "cobyqa",
     "github_version": "main",
-    "doc_path": "doc",
+    "doc_path": "doc/source",
 }
 
 html_title = f"{project} v{version} Manual"
