@@ -1,8 +1,8 @@
 # .github/workflows/coverage.yml
-# GitHub Actions configuration file for Codecov
+# Codecov configuration file
 # See https://github.com/codecov/codecov-action for details
 
-name: coverage
+name: codecov
 
 on:
   push:
@@ -13,14 +13,14 @@ on:
 
 jobs:
   run:
-    name: Coverage report for Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    name: Generate coverage report for Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
 
     steps:
       - name: Checkout repository
@@ -32,10 +32,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Generate coverage reports
-        run: bash build_tools/github/build_coverage.sh
+        run: bash build_tools/github/generate_coverage.sh
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: true
-          verbose: true

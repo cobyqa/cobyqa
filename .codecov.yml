@@ -3,9 +3,9 @@
 # See https://docs.codecov.com/docs/codecov-yaml for details
 
 codecov:
-  require_ci_to_pass: no
+  require_ci_to_pass: false
   notify:
-    require_ci_to_pass: no
+    require_ci_to_pass: false
 
 coverage:
   status:
@@ -15,14 +15,11 @@ coverage:
     patch:
       default:
         target: 0
+        if_not_found: success
         if_ci_failed: error
 
 ignore:
-  - 'setup.py'
-  - '**/setup.py'
-  - 'cobyqa/_build_utils/*.py'
-  - 'cobyqa/utils/_min_dependencies.py'
   - 'cobyqa/utils/_show_versions.py'
-  - '**/tests/*.py'
 
-comment: false
+github_checks:
+    annotations: false

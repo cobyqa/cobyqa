@@ -2,8 +2,8 @@
 
 ## Supported Versions
 
-We release patches for security vulnerabilities. The following versions are
-currently being supported with security updates.
+We release patches for security vulnerabilities.
+The following versions are currently being supported with security updates.
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -11,8 +11,6 @@ currently being supported with security updates.
 
 ## Reporting a Vulnerability
 
-Please report suspected security vulnerabilities of the project by email to
-`cobyqa@python.org`.
+Please report suspected security vulnerabilities of the project by email to `cobyqa@python.org`.
 
-If the issue is confirmed, we will privately craft a dedicated patch as soon as
-possible, depending on the complexity of the bugfix.
+If the issue is confirmed, we will privately craft a dedicated patch as soon as possible, depending on the complexity of the bugfix.

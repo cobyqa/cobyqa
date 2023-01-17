@@ -8,15 +8,16 @@ formats: all
 
 python:
   install:
-    - requirements: docs/requirements.txt
     - method: pip
       path: .
+      extra_requirements:
+        - doc
 
 build:
-  os: ubuntu-20.04
+  os: ubuntu-22.04
   tools:
     python: '3.10'
 
 sphinx:
-  configuration: docs/source/conf.py
+  configuration: doc/source/conf.py
   fail_on_warning: true

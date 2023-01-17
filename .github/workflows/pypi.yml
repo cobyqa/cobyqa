@@ -1,5 +1,5 @@
 # .github/workflows/pypi.yml
-# GitHub Actions configuration file for uploading wheels to PyPI
+# Publish to PyPI
 # See https://github.com/pypa/gh-action-pypi-publish for details
 
 name: publish
@@ -11,7 +11,7 @@ on:
         description: 'Version upload to PyPI'
         required: true
       pypi_repo:
-        description: 'Repo to upload to (testpypi or pypi)'
+        description: 'Repository to upload to (testpypi or pypi)'
         default: 'testpypi'
         required: true
 
@@ -32,10 +32,11 @@ jobs:
       - name: Download distributions from staging
         run: bash build_tools/github/download_anaconda.sh
         env:
-          COBYQA_VERSION: ${{ github.event.inputs.version }}
+          VERSION: ${{ github.event.inputs.version }}
+          URL: https://pypi.anaconda.org/cobyqa/simple/cobyqa/
 
       - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@v1.5.1
+        uses: pypa/gh-action-pypi-publish@v1
         if: ${{ github.event.inputs.pypi_repo == 'testpypi' }}
         with:
           user: __token__
@@ -43,7 +44,7 @@ jobs:
           repository_url: https://test.pypi.org/legacy/
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.5.1
+        uses: pypa/gh-action-pypi-publish@v1
         if: ${{ github.event.inputs.pypi_repo == 'pypi' }}
         with:
           user: __token__

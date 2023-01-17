@@ -1,0 +1,26 @@
+# .github/workflows/license.yml
+# Update copyright years in license files
+# See https://github.com/FantasticFiasco/action-update-license-year for details
+
+name: license
+
+on:
+  schedule:
+    - cron: '0 0 1 1 *'
+  workflow_dispatch:
+
+jobs:
+  update_license:
+    name: Update license year
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Update license year
+        uses: FantasticFiasco/action-update-license-year@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

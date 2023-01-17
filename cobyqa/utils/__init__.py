@@ -1,12 +1,5 @@
-from .math import RestartRequiredException
-from .math import huge, implicit_hessian, normalize, absmax_arrays
 from ._show_versions import show_versions
+from .maths import huge, max_abs_arrays
+from .structs import OptimizeResult
 
-__all__ = [
-    'RestartRequiredException',
-    'huge',
-    'implicit_hessian',
-    'normalize',
-    'absmax_arrays',
-    'show_versions',
-]
+__all__ = ["OptimizeResult", "huge", "max_abs_arrays", "show_versions"]

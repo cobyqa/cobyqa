@@ -21,41 +21,41 @@ np.set_printoptions(
     suppress=True,
 )
 
-plt.rc('text', usetex=True)
-plt.rc('font', family='serif')
+plt.rc("text", usetex=True)
+plt.rc("font", family="serif")
 
 
 def fun(x):
-    fx = 0.0
+    f = 0.0
     for i in range(1, x.size // 2):
         for j in range(i):
             norm = np.hypot(x[2 * i] - x[2 * j], x[2 * i + 1] - x[2 * j + 1])
-            fx += min(1.0 / norm, 1e3) if norm > 1e-3 else 1e3
-    fx /= x.size ** 2.0
-    return fx
+            f += min(1.0 / norm, 1e3) if norm > 1e-3 else 1e3
+    f /= x.size ** 2.0
+    return f
 
 
 def _plot_points(x, title=None):
     fig, ax = plt.subplots(dpi=300.0)
-    ax.plot([0.0, 0.0, 2.0, 0.0], [0.0, 2.0, 0.0, 0.0], color='black')
-    ax.scatter(x[::2], x[1::2], s=25, color='black')
-    ax.set_aspect('equal', 'box')
+    ax.plot([0.0, 0.0, 2.0, 0.0], [0.0, 2.0, 0.0, 0.0], color="black")
+    ax.scatter(x[::2], x[1::2], s=25, color="black")
+    ax.set_aspect("equal", "box")
     if title is not None:
-        ax.set_title(f'{title.strip()} (n = {x.size})')
+        ax.set_title(f"{title.strip()} (n = {x.size})")
     fig.tight_layout()
     fig.show()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     rng = np.random.default_rng(0)
     n = 40  # must be even
 
     xl = np.zeros(n, dtype=float)
-    Aub = np.zeros((n // 2, n), dtype=float)
+    aub = np.zeros((n // 2, n), dtype=float)
     bub = 2.0 * np.ones(n // 2, dtype=float)
     x0 = np.empty(n, dtype=float)
     for i in range(n // 2):
-        Aub[i, [2 * i, 2 * i + 1]] = 1.0
+        aub[i, [2 * i, 2 * i + 1]] = 1.0
         x0_even = rng.uniform(0.0, 2.0)
         x0_odd = rng.uniform(0.0, 2.0)
         if x0_even + x0_odd > 2.0:
@@ -63,8 +63,8 @@ if __name__ == '__main__':
             x0_odd = 2.0 - x0_odd
         x0[2 * i] = x0_even
         x0[2 * i + 1] = x0_odd
-    _plot_points(x0, 'Initial points')
+    _plot_points(x0, "Initial points")
 
-    options = {'disp': True}
-    res = minimize(fun, x0, xl=xl, Aub=Aub, bub=bub, options=options)
-    _plot_points(res.x, 'Final points')
+    options = {"disp": True}
+    res = minimize(fun, x0, xl=xl, aub=aub, bub=bub, options=options)
+    _plot_points(res.x, "Final points")

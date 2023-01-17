@@ -1,0 +1,61 @@
+# .github/workflows/build.yml
+# Build and test the project
+
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build_package:
+    name: Build source and binary distributions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Build source and binary distributions
+        run: bash build_tools/github/build_package.sh
+
+      - name: Test source and binary distributions
+        run: bash build_tools/github/test_package.sh
+
+      - name: Store artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: dist/*
+
+  upload_anaconda:
+    name: Upload to Anaconda
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
+    needs: [build_package]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: dist
+
+      - name: Upload artifacts to Anaconda
+        run: bash build_tools/github/upload_anaconda.sh
+        env:
+          ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}

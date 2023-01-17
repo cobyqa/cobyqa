@@ -1,12 +1,1 @@
-include README.rst
-include LICENSE
-include MANIFEST.in
-include pyproject.toml
-include tox.ini
-recursive-include cobyqa *.pyx *.pxd
 recursive-include examples *.py
-
-# Add documentation to sdist-generated tarballs
-include docs/Makefile
-recursive-include docs/source *.bib *.css *.html *.ico *.png *.svg *.py *.rst
-prune docs/source/**/generated

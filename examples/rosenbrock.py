@@ -1,32 +1,34 @@
 #!/usr/bin/env python3
 """
-Minimize the chained Rosenbrock function subject to randomly generated linear
-inequality and equality constraints and simple bounds.
+Minimize the Rosenbrock function subject to simple bounds and randomly generated
+linear inequality and equality constraints.
 """
+import sys
+
 import numpy as np
 from scipy.optimize import rosen
 
 from cobyqa import minimize
 
-np.set_printoptions(precision=4, linewidth=np.inf, suppress=True)
+np.set_printoptions(precision=4, linewidth=sys.maxsize, suppress=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     rng = np.random.default_rng(0)
-    n, mlub, mleq = 10, 3, 0
+    n, mlub, mleq = 10, 3, 2
 
-    # Generate a initial guess satisfying the bound constraints.
+    # Generate an initial guess satisfying the bound constraints.
     xl = -2.048 * np.ones(n)
     xu = 2.048 * np.ones(n)
     x0 = rng.uniform(-3.0, 3.0, n)
     x0 = np.maximum(xl, np.minimum(xu, x0))
 
     # Generate feasible linear inequality and equality constraints.
-    x_alt = rng.uniform(xl, xu)
-    Aub = rng.standard_normal((mlub, n))
-    bub = np.dot(Aub, x_alt) + rng.uniform(0.0, 1.0, mlub)
-    Aeq = rng.standard_normal((mleq, n))
-    beq = np.dot(Aeq, x_alt)
+    x_rand = rng.uniform(xl, xu)
+    aub = rng.standard_normal((mlub, n))
+    bub = np.dot(aub, x_rand) + rng.uniform(0.0, 1.0, mlub)
+    aeq = rng.standard_normal((mleq, n))
+    beq = np.dot(aeq, x_rand)
 
-    res = minimize(rosen, x0, xl=xl, xu=xu, Aub=Aub, bub=bub, Aeq=Aeq, beq=beq)
+    res = minimize(rosen, x0, xl=xl, xu=xu, aub=aub, bub=bub, aeq=aeq, beq=beq)
     print(res)
