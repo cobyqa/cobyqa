@@ -1,14 +1,14 @@
 COBYQA: a derivative-free method for general nonlinear optimization
 ###################################################################
 
-.. image:: https://img.shields.io/github/actions/workflow/status/ragonneau/cobyqa/build.yml?logo=github&style=for-the-badge
-    :target: https://github.com/ragonneau/cobyqa/actions/workflows/build.yml
+.. image:: https://img.shields.io/github/actions/workflow/status/cobyqa/cobyqa/build.yml?logo=github&style=for-the-badge
+    :target: https://github.com/cobyqa/cobyqa/actions/workflows/build.yml
 
 .. image:: https://img.shields.io/readthedocs/cobyqa/latest?logo=readthedocs&style=for-the-badge
     :target: https://www.cobyqa.com/
 
-.. image:: https://img.shields.io/codecov/c/github/ragonneau/cobyqa?logo=codecov&style=for-the-badge
-    :target: https://codecov.io/gh/ragonneau/cobyqa/
+.. image:: https://img.shields.io/codecov/c/github/cobyqa/cobyqa?logo=codecov&style=for-the-badge
+    :target: https://codecov.io/gh/cobyqa/cobyqa/
 
 .. image:: https://img.shields.io/pypi/v/cobyqa?logo=pypi&style=for-the-badge
     :target: https://pypi.org/project/cobyqa/
@@ -20,7 +20,7 @@ COBYQA: a derivative-free method for general nonlinear optimization
     :target: https://pypi.org/project/cobyqa/
 
 .. image:: https://img.shields.io/pypi/l/cobyqa?style=for-the-badge
-    :target: https://github.com/ragonneau/cobyqa/blob/main/LICENSE
+    :target: https://github.com/cobyqa/cobyqa/blob/main/LICENSE
 
 COBYQA, named after *Constrained Optimization BY Quadratic Approximations*, is a derivative-free solver for general nonlinear optimization.
 It can handle unconstrained, bound-constrained, linearly constrained, and nonlinearly constrained problems.
