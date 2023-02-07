@@ -40,7 +40,7 @@ It does not use derivatives of the objective function or the nonlinear constrain
 Interpolation-based quadratic models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Recall that the basic trust-region SQO method models the objective and constraint functions based on their gradients and Hessian matrices.
+Recall that the basic trust-region SQP method models the objective and constraint functions based on their gradients and Hessian matrices.
 Since we do not have access to such information, we use interpolation-based quadratic models of these functions.
 Specifically, we use quadratic models obtained by underdetermined interpolation based on the derivative-free symmetric Broyden update.
 
@@ -55,7 +55,7 @@ The interpolation must satisfy
 
 .. math::
 
-    n + 1 \le \card (\mathcal{Y}_k) \le \frac{1}{2} (n + 1) (n + 2),
+    n + 2 \le \card (\mathcal{Y}_k) \le \frac{1}{2} (n + 1) (n + 2),
 
 so that the quadratic model :math:`\hat{f}_k` is well-defined (note that COBYQA ensures that :math:`\mathcal{Y}_k` is always sufficiently well-poised).
 The quadratic models :math:`\hat{g}_k` and :math:`\hat{h}_k` of  :math:`g` and :math:`h` are defined similarly.
