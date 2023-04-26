@@ -9,11 +9,11 @@ readme = "README.rst"
 requires-python = ">=3.8"
 license = {file = "LICENSE"}
 authors = [
-    {name = "Tom M. Ragonneau", email = "tom.ragonneau@polyu.edu.hk"},
-    {name = "Zaikun Zhang", email = "zaikun.zhang@polyu.edu.hk"}
+    {name = "Tom M. Ragonneau and Zaikun Zhang", email = "cobyqa@python.org"},
 ]
 maintainers = [
-    {name = "Tom M. Ragonneau", email = "tom.ragonneau@polyu.edu.hk"}
+    {name = "Tom M. Ragonneau", email = "tom.ragonneau@polyu.edu.hk"},
+    {name = "Zaikun Zhang", email = "zaikun.zhang@polyu.edu.hk"},
 ]
 keywords = [
     "blackbox-optimization",
@@ -27,7 +27,7 @@ keywords = [
     "optimization-methods",
     "optimization-tools",
     "simulation-based-optimization",
-    "unconstrained-optimization"
+    "unconstrained-optimization",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -45,12 +45,12 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Mathematics",
-    "Topic :: Software Development"
+    "Topic :: Software Development",
 ]
 dependencies = [
     "numpy>=1.17.0",
     "scipy>=1.1.0",
-    "toml"
+    "toml",
 ]
 dynamic = ["version"]
 
@@ -60,7 +60,7 @@ benchmark = [
     "joblib",
     "matplotlib",
     "pdfo",
-    "pycutest"
+    "pycutest",
 ]
 doc = [
     "numpydoc",
@@ -72,7 +72,7 @@ doc = [
 examples = ["matplotlib"]
 tests = [
     "pytest>=6.1.0",
-    "pytest-cov[all]"
+    "pytest-cov[all]",
 ]
 
 [project.urls]
@@ -87,3 +87,6 @@ include = ["cobyqa*"]
 
 [tool.setuptools.dynamic]
 version = {attr = "cobyqa.__version__"}
+
+[tool.pytest.ini_options]
+addopts = "-l"
