@@ -503,7 +503,6 @@ class Models:
     def shift_base(self, delta):
         if np.linalg.norm(self.manager.xpt[self.k, :]) >= 3.0 * delta:
             # Modify the interpolation set and the interpolation system.
-            _log.debug("Update the shift of the origin.")
             x_prev = np.copy(self.manager.xpt[self.k, :])
             self.manager.shift_base()
 
@@ -517,6 +516,7 @@ class Models:
                 model.shift_interpolation_points(self.manager, x_prev)
                 model_alt.shift_interpolation_points(self.manager, x_prev)
             self._check_models()
+            _log.debug(f"The base point has been shifted by {-x_prev}")
 
     def update_interpolation_set(self, k_new, step, fun_x, cub_x, ceq_x):
         self.manager.update_interpolation_system(k_new, step)
@@ -1211,6 +1211,9 @@ class OptimizationManager:
             if np.linalg.norm(normal_step + tangential_step) > 1.1 * delta_sav:
                 warnings.warn("the trial step does not respect the trust-region constraint")
 
+        _log.debug(f"Normal step: {normal_step}")
+        _log.debug(f"Tangential step: {tangential_step}")
+        _log.debug(f"Trial point: {self.base + self.x_opt + normal_step + tangential_step}")
         return normal_step, tangential_step
 
     def increase_penalty(self, step, **kwargs):
@@ -1224,7 +1227,10 @@ class OptimizationManager:
         k_sav = self.k_opt
         if self.penalty <= kwargs["upsilon1"] * threshold:
             self.penalty = kwargs["upsilon2"] * threshold
+            _log.debug(f"Increasing the penalty parameter to {self.penalty}")
             self._set_best_point()
+            if k_sav != self.k_opt:
+                _log.debug("The best point has been modified")
         return k_sav == self.k_opt
 
     def decrease_penalty(self):

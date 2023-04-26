@@ -290,13 +290,16 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
 
     # Set the default constants.
     _set_default_constants(kwargs)
+    _log.debug(f"Constants: {kwargs}")
 
     # Set the default options that must be set before building the nonlinear
     # optimization problem structure below.
     _set_early_default_options(options)
+    _log.debug(f"Options before building the problem structure: {options}")
 
     # Construct the nonlinear optimization problem structure.
     nlp = NonlinearProblem(fun, args, xl, xu, aub, bub, aeq, beq, cub, ceq, options, kwargs["store_hist"])
+    _log.debug(f"Known problem dimensions: n={nlp.n}, m_linear_ub={nlp.m_linear_ub}, m_linear_eq={nlp.m_linear_eq}")
 
     # Project the initial guess onto the bound constraints.
     x0 = x0[nlp.ibd_free]
@@ -305,12 +308,14 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
 
     # Set the default options.
     _set_default_options(options, nlp)
+    _log.debug(f"Options: {options}")
 
     # Start the computations.
     n_iter = 0
     result = OptimizeResult()
     if np.any(nlp.xu < nlp.xl):
         # The bound constraints are infeasible.
+        _log.debug("The bound constraints are infeasible")
         x_opt = x0
         g_opt = np.full_like(x_opt, np.nan)
         result.status = EXIT_BOUNDS_INFEASIBLE_ERROR
@@ -319,6 +324,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         result.maxcv = nlp.resid(x_opt, nlp.cub(x_opt), nlp.ceq(x_opt))
     elif nlp.n == 0:
         # All the variables have been fixed by the bounds.
+        _log.debug("All the variables have been fixed by the bounds")
         x_opt = np.empty(0)
         g_opt = np.empty(0)
         max_cv = nlp.resid(x_opt, nlp.cub(x_opt), nlp.ceq(x_opt))
@@ -327,9 +333,11 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         result.maxcv = max_cv
         result.success = max_cv <= 10.0 * np.finfo(float).eps
     else:
+        _log.debug("Building the initial models")
         models = Models(nlp, x0, options)
         if not models.are_built:
             # The target value has been reached by a nearly feasible point.
+            _log.debug("The target value has been reached by a nearly feasible point when building the initial models")
             x_opt = models.manager.base + models.manager.xpt[nlp.n_fev - 1, :]
             g_opt = np.full_like(x_opt, np.nan)
             result.status = EXIT_TARGET_SUCCESS
@@ -353,6 +361,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
             x_sav = manager.base + manager.x_opt
             while True:
                 if n_iter >= options["maxiter"]:
+                    _log.debug("The maximum number of iterations has been reached")
                     x_opt = manager.base + manager.x_opt
                     result.status = EXIT_MAXITER_WARNING
                     result.fun = manager.fun_opt
@@ -361,6 +370,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                         result.maxcv = nlp.resid(x_opt, manager.cub_opt, manager.ceq_opt)
                     break
                 n_iter += 1
+                _log.debug(f"Start iteration no. {n_iter}/{options['maxiter']}")
 
                 # Update the shift of the origin.
                 models.shift_base(delta)
@@ -377,14 +387,16 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 delta_sav = delta
                 normal_step, tangential_step = manager.get_trust_region_step(delta, options, **kwargs)
                 step = normal_step + tangential_step
-                _log.debug(f"Trial point: {manager.base + manager.x_opt + step}")
                 s_norm = np.linalg.norm(step)
+                _log.debug(f"Trial step norm: {s_norm} (delta={delta})")
                 attempt_eval_fun = s_norm > test_short_step * delta
 
                 if not attempt_eval_fun:
+                    _log.debug("The trial step is too short")
                     delta *= kwargs["theta1"]
                     if delta <= kwargs["theta2"] * rho:
                         delta = rho
+                    _log.debug(f"New delta: {delta} (rho={rho})")
                     if delta_sav > rho:
                         n_short_steps = 0
                         n_very_short_steps = 0
@@ -397,17 +409,18 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                             n_very_short_steps = 0
                     reduce_rho = delta_sav <= rho and (n_short_steps >= 5 or n_very_short_steps >= 3)
                     if reduce_rho:
+                        _log.debug("The lower-bound on the trust-region radius will be reduced")
                         n_short_steps = 0
                         n_very_short_steps = 0
                     else:
                         k_new, dist_new = models.manager.get_index_to_remove()
                         improve_geometry = dist_new > max(delta, 2.0 * rho)
+                        _log.debug(f"Attempt to improve the geometry: {improve_geometry}")
                 else:
                     # Increase the penalty parameter if necessary. The method
                     # `OptimizationManager.increase_penalty` returns True if and
                     # only if the index of the optimal point does not change.
                     same_opt_point = manager.increase_penalty(step, **kwargs)
-                    _log.debug(f"{manager.penalty=}")
                     if same_opt_point:
                         # Evaluate the objective and constraint functions.
                         if nlp.n_fev >= options["maxfev"]:
@@ -554,8 +567,6 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                         k_new, dist_new = models.manager.get_index_to_remove()
                         reduce_rho = delta_sav <= rho and ratio <= kwargs["eta1"] and dist_new <= max(delta, 2.0 * rho)
                         improve_geometry = ratio <= kwargs["eta1"] and dist_new > max(delta, 2.0 * rho)
-                    else:
-                        _log.debug("Increasing the penalty changed the optimal point")
 
                 if reduce_rho:
                     if rho <= options["rhoend"]:

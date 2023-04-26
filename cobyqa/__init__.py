@@ -16,7 +16,8 @@ def _ensure_handler():
     The handler is created and attached to the root logger only the first time
     this function is called (the first call is memoized).
     """
-    handler = logging.FileHandler(f"{__name__}_{datetime.now().isoformat()}.log")
+    # handler = logging.FileHandler(f"{__name__}_{datetime.now().isoformat()}.log")
+    handler = logging.StreamHandler()
     handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)-8s] %(message)s"))
     _log.addHandler(handler)
     return handler
