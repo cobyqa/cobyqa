@@ -942,10 +942,10 @@ class Models:
             lag_values[:self.npt] = np.dot(self._b[:self.npt, :], step) + np.dot(self._z, temp)
             lag_values[self.k] += 1.0
             lag_values[self.npt:] = np.dot(self._b[:self.npt, :].T, check)
-            bsp = np.inner(lag_values[self.npt:], step)
+            lag_values_step = np.inner(lag_values[self.npt:], step)
             lag_values[self.npt:] += np.dot(self._b[self.npt:, :], step)
-            bsp += np.inner(lag_values[self.npt:], step)
-            beta += step_x_opt ** 2.0 + step_sq * (x_opt_sq + 2.0 * step_x_opt + 0.5 * step_sq) - bsp
+            lag_values_step += np.inner(lag_values[self.npt:], step)
+            beta += step_x_opt ** 2.0 + step_sq * (x_opt_sq + 2.0 * step_x_opt + 0.5 * step_sq) - lag_values_step
             return lag_values[:self.npt], lag_values[self.npt:], beta
 
         def get_alpha(self, k=None):
