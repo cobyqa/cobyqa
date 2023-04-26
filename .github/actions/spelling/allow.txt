@@ -19,6 +19,7 @@ Broyden
 BUILDDIR
 bvls
 cauchy
+cbd
 ceq
 CHANDHEU
 CHARDIS
