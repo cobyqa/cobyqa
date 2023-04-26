@@ -4,6 +4,9 @@ COBYQA: a derivative-free method for general nonlinear optimization
 .. image:: https://img.shields.io/github/actions/workflow/status/cobyqa/cobyqa/build.yml?logo=github&style=for-the-badge
     :target: https://github.com/cobyqa/cobyqa/actions/workflows/build.yml
 
+.. image:: https://img.shields.io/github/license/cobyqa/cobyqa?logo=github&style=for-the-badge
+    :target: https://github.com/cobyqa/cobyqa/blob/main/LICENSE
+
 .. image:: https://img.shields.io/readthedocs/cobyqa/latest?logo=readthedocs&style=for-the-badge
     :target: https://www.cobyqa.com/
 
@@ -13,21 +16,22 @@ COBYQA: a derivative-free method for general nonlinear optimization
 .. image:: https://img.shields.io/pypi/v/cobyqa?logo=pypi&style=for-the-badge
     :target: https://pypi.org/project/cobyqa/
 
+.. image:: https://img.shields.io/pypi/pyversions/cobyqa?logo=pypi&style=for-the-badge
+    :target: https://pypi.org/project/cobyqa/
+
 .. image:: https://img.shields.io/pypi/dm/cobyqa?logo=pypi&style=for-the-badge
     :target: https://pypi.org/project/cobyqa/
 
-.. image:: https://img.shields.io/pypi/pyversions/cobyqa?logo=python&style=for-the-badge
+.. image:: https://img.shields.io/pypi/format/cobyqa?logo=pypi&style=for-the-badge
     :target: https://pypi.org/project/cobyqa/
 
-.. image:: https://img.shields.io/pypi/l/cobyqa?style=for-the-badge
-    :target: https://github.com/cobyqa/cobyqa/blob/main/LICENSE
+.. image:: https://img.shields.io/pypi/status/cobyqa?logo=pypi&style=for-the-badge
+    :target: https://pypi.org/project/cobyqa/
 
 COBYQA, named after *Constrained Optimization BY Quadratic Approximations*, is a derivative-free solver for general nonlinear optimization.
 It can handle unconstrained, bound-constrained, linearly constrained, and nonlinearly constrained problems.
-It uses only function values of the objective function and nonlinear constraint functions, if any.
+It uses only function values of the objective and constraint functions, if any.
 No derivative information is needed.
-
-The current release of COBYQA is distributed under the BSD-3-Clause license.
 
 **Documentation:** https://www.cobyqa.com/
 
@@ -47,22 +51,30 @@ The following Python packages are required by COBYQA:
 User installation
 -----------------
 
-The easiest way to install COBYQA is using ``pip`` ::
+The easiest way to install COBYQA is using ``pip``
+
+.. code:: bash
 
     python -m pip install cobyqa
 
-To check your installation, you can execute ::
+To check your installation, you can execute
+
+.. code:: bash
 
     python -c "import cobyqa; cobyqa.show_versions()"
 
 Testing
 -------
 
-To execute the test suite of COBYQA, you first need to install the package as ::
+To execute the test suite of COBYQA, you first need to install the package as
+
+.. code:: bash
 
     python -m pip install cobyqa[tests]
 
-You can then run the test suite by executing ::
+You can then run the test suite by executing
+
+.. code:: bash
 
     python -m pytest --pyargs cobyqa
 
@@ -70,7 +82,9 @@ Examples
 --------
 
 The folder ``examples`` contains a few examples of how to use COBYQA.
-To run ``powell2015.py``, you first need to install the package as ::
+To run ``powell2015.py``, you first need to install the package as
+
+.. code:: bash
 
     python -m pip install cobyqa[examples]
 
