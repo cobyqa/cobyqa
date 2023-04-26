@@ -1,4 +1,3 @@
-\norm
 ABCDEFGHIJ
 ABCDEFHIJ
 ABDEF
@@ -131,6 +130,7 @@ numpydoc
 objtype
 Omojokun
 operatorname
+orm
 OSBORNEA
 pdfo
 phdthesis
