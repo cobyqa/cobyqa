@@ -1,6 +1,4 @@
-# .github/workflows/license.yml
-# Update copyright years in license files
-# See https://github.com/FantasticFiasco/action-update-license-year for details
+# Update copyright years in license file
 
 name: license
 

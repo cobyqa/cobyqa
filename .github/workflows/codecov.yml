@@ -1,6 +1,4 @@
-# .github/workflows/coverage.yml
-# Codecov configuration file
-# See https://github.com/codecov/codecov-action for details
+# Generate code coverage
 
 name: codecov
 

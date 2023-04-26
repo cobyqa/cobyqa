@@ -1,6 +1,4 @@
-# .github/workflows/pypi.yml
 # Publish to PyPI
-# See https://github.com/pypa/gh-action-pypi-publish for details
 
 name: publish
 

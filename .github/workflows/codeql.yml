@@ -1,6 +1,4 @@
-# .github/workflows/codeql.yml
 # Security checks
-# See https://github.com/github/codeql-action for details
 
 name: codeql
 
