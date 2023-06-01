@@ -28,7 +28,7 @@ jobs:
           python-version: '3.10'
 
       - name: Download distributions from staging
-        run: bash build_tools/github/download_anaconda.sh
+        run: bash .github/actions/pypi/download_anaconda.sh
         env:
           VERSION: ${{ github.event.inputs.version }}
           URL: https://pypi.anaconda.org/cobyqa/simple/cobyqa/
