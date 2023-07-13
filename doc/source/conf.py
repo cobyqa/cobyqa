@@ -99,6 +99,8 @@ html_theme_options = {
     'navbar_end': ['version-switcher', 'theme-switcher', 'navbar-icon-links'],
     'navbar_persistent': ['search-button'],
     'navbar_align': 'left',
+    'footer_start': ['copyright', 'sphinx-version', 'theme-version'],
+    'footer_end': [],
     # 'announcement': '<p></p>',
 }
 

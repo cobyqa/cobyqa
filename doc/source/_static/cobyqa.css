@@ -1,11 +1,19 @@
 @import url("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&family=Open+Sans:ital,wght@0,400;0,600;1,400;1,600&display=swap");
 
+/* Fonts */
+
 body {
     font-family: "Open Sans", sans-serif;
 }
 
 h1 {
   font-family: "Lato", sans-serif;
+}
+
+/* Footers */
+
+.footer-items__start, .footer-items__end {
+    flex-direction: row !important;
 }
 
 /* Main page overview cards */
