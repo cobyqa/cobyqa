@@ -10,9 +10,9 @@ COBYQA documentation
     Algorithms <algorithms/index>
     API reference <reference/index>
 
-**Version**: |version|
-
-**Useful links**: `Issue tracker <https://github.com/cobyqa/cobyqa/issues>`_ | `Mailing list <https://mail.python.org/mailman3/lists/cobyqa.python.org/>`_
+:Version: |version|
+:Useful links: `Issue tracker <https://github.com/cobyqa/cobyqa/issues>`_ | `Mailing list <https://mail.python.org/mailman3/lists/cobyqa.python.org/>`_
+:Authors: `Tom M. Ragonneau <https://tomragonneau.com/>`_ | `Zaikun Zhang <https://www.zhangzk.net/>`_
 
 .. hint::
 
@@ -77,7 +77,7 @@ Citing COBYQA
 If you would like to acknowledge the significance of COBYQA in your research, we suggest citing the project as follows:
 
 - T.\  M.\  Ragonneau. "`Model-Based Derivative-Free Optimization Methods and Software <https://tomragonneau.com/documents/thesis.pdf>`_." Ph.D.\  thesis. Hong Kong: Department of Applied Mathematics, The Hong Kong Polytechnic University, 2022.
-- T.\  M.\  Ragonneau and Z.\  Zhang. COBYQA: Constrained Optimization BY Quadratic Approximations. Version |release|. |year|. URL: https://www.cobyqa.com/.
+- T.\  M.\  Ragonneau and Z.\  Zhang. COBYQA: Constrained Optimization BY Quadratic Approximations. Version |release|. |year|. URL: https://www.cobyqa.com.
 
 The corresponding BibLaTeX entries are given hereunder.
 
@@ -96,7 +96,7 @@ The corresponding BibLaTeX entries are given hereunder.
     @software{razh22,
         author       = {Ragonneau, T. M. and Zhang, Z.},
         title        = {{COBYQA}: Constrained Optimization BY Quadratic Approximations},
-        url          = {https://www.cobyqa.com/},
+        url          = {https://www.cobyqa.com},
         version      = {|release|},
         date         = {|year|},
     }
