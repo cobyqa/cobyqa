@@ -413,7 +413,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                         n_short_steps = 0
                         n_very_short_steps = 0
                     else:
-                        k_new, dist_new = models.manager.get_index_to_remove()
+                        k_new, dist_new = models.manager.get_index_to_remove(delta, rho)
                         improve_geometry = dist_new > max(delta, 2.0 * rho)
                         _log.debug(f"Attempt to improve the geometry: {improve_geometry}")
                 else:
@@ -507,7 +507,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                         manager.set_qp_multipliers()
 
                         # Choose an interpolation point to remove.
-                        k_new = models.manager.get_index_to_remove(step)[0]
+                        k_new = models.manager.get_index_to_remove(delta, rho, step)[0]
 
                         # Update the interpolation set.
                         try:
@@ -564,7 +564,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                                     n_alt_models = 0
 
                         # TODO
-                        k_new, dist_new = models.manager.get_index_to_remove()
+                        k_new, dist_new = models.manager.get_index_to_remove(delta, rho)
                         reduce_rho = delta_sav <= rho and ratio <= kwargs["eta1"] and dist_new <= max(delta, 2.0 * rho)
                         improve_geometry = ratio <= kwargs["eta1"] and dist_new > max(delta, 2.0 * rho)
 

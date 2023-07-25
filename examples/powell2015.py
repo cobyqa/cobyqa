@@ -7,7 +7,6 @@ References
 .. [1] M. J. D. Powell. "On fast trust region methods for quadratic models with
    linear constraints." In: Math. Program. Comput. 7 (2015), pp. 237--267.
 """
-
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -20,9 +19,6 @@ np.set_printoptions(
     linewidth=np.inf,
     suppress=True,
 )
-
-plt.rc("text", usetex=True)
-plt.rc("font", family="serif")
 
 
 def fun(x):

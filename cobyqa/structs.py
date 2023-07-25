@@ -840,7 +840,7 @@ class Models:
             self.base += self.xpt[self.k, :]
             self.xpt -= x_prev[np.newaxis, :]
 
-        def get_index_to_remove(self, step=None):
+        def get_index_to_remove(self, delta, rho, step=None):
             if step is not None:
                 alpha = self.get_alpha()
                 lag_values, _, beta = self.get_lag_values(step)
@@ -848,7 +848,9 @@ class Models:
             else:
                 sigma = 1.0
             dist_sq = np.sum(np.square((self.xpt - self.xpt[np.newaxis, self.k, :])), axis=1)
-            i_max = np.argmax(np.sqrt(np.abs(sigma)) * dist_sq)
+            # i_max = np.argmax(np.sqrt(np.abs(sigma)) * dist_sq)
+            weights = np.maximum(1.0, dist_sq / max(0.1 * delta, rho) ** 2) ** 3
+            i_max = np.argmax(weights * np.abs(sigma))
             return i_max, np.sqrt(dist_sq[i_max])
 
         def update_interpolation_system(self, k_new, step):
