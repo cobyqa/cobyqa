@@ -75,8 +75,8 @@ class Profiles:
         std_cycle += cycler(linestyle=["-", "--", ":", "-."])
         plt.rc("axes", prop_cycle=std_cycle)
         plt.rc("lines", linewidth=1)
-        plt.rc("text", usetex=True)
-        plt.rc("font", family="serif")
+        # plt.rc("text", usetex=True)
+        # plt.rc("font", family="serif")
 
     def __call__(self, solvers, names=None, options=None, load=True, **kwargs):
         if names is None:
@@ -253,7 +253,7 @@ class Profiles:
 
     def run_all(self, solvers, options, load, **kwargs):
         merits = np.empty((len(self.problems), len(solvers), self.feature_options["rerun"], self.max_eval))
-        result = Parallel(n_jobs=-1)(self.run_one(problem, solver, k, options[j], load, **kwargs) for problem, (j, solver), k in product(self.problems, enumerate(solvers), range(self.feature_options["rerun"])))
+        result = Parallel(n_jobs=1)(self.run_one(problem, solver, k, options[j], load, **kwargs) for problem, (j, solver), k in product(self.problems, enumerate(solvers), range(self.feature_options["rerun"])))
         for i in range(len(self.problems)):
             for j in range(len(solvers)):
                 for k in range(self.feature_options["rerun"]):

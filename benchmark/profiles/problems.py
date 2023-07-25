@@ -70,7 +70,7 @@ class Problems(list):
         # problem, the corresponding instance is replaced with None. They are
         # not appended to the object as this cannot be done in a multiprocessing
         # paradigm. They are appended below in a sequential paradigm.
-        attempts = Parallel(n_jobs=-1)(self.load(sorted(names), i) for i in range(len(names)))
+        attempts = Parallel(n_jobs=1)(self.load(sorted(names), i) for i in range(len(names)))
         for problem in attempts:
             if problem is not None:
                 self.append(problem, callback)

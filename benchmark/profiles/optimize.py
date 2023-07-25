@@ -2,7 +2,6 @@ import sys
 
 import numpy as np
 import pdfo
-import pybobyqa
 import scipy
 
 import cobyqa
@@ -68,6 +67,8 @@ class Minimizer:
             res = pdfo.pdfo(self.eval, x0, method=method, bounds=bounds, constraints=constraints, options=options)
             success = res.success
         elif self.solver.lower() == "py-bobyqa":
+            import pybobyqa
+
             # Py-BOBYQA does not accept infinite bounds.
             xl = self.problem.xl
             xl[xl == -np.inf] = -1e20
