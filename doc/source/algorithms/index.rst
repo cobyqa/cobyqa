@@ -110,7 +110,7 @@ We provide below a simplified framework of the COBYQA algorithm.
           \end{array} \right.
 
       - Pick a penalty parameter :math:`\gamma_k \ge \max \set[\big]{\gamma_{k - 1}, \sqrt{\norm{\lambda_k}^2 + \norm{\mu_k}^2}}` providing :math:`\hat{\varphi}_k(d_k) < \hat{\varphi}_k(0)`
-      - Evaluate the trust-region ratio
+      - Evaluate the reduction ratio
 
       .. math::
 

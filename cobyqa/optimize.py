@@ -117,10 +117,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         Whether to store the histories of the points at which the objective and
         constraint functions have been evaluated (default is False).
     eta1 : float, optional
-        If the trust-region ratio is smaller than or equal to `eta1`, then the
+        If the reduction ratio is smaller than or equal to `eta1`, then the
         trust-region radius is decreased (default is 0.1).
     eta2 : float, optional
-        If the trust-region ratio is larger than `eta2`, then the trust-region
+        If the reduction ratio is larger than `eta2`, then the trust-region
         radius is increased (default is 0.7).
     eta3 : float, optional
         The lower bound on the trust-region radius is considered small if it is
@@ -129,7 +129,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         The lower bound on the trust-region radius is considered large if it is
         larger than ``eta4 * options["rhoend"]`` (default is 250).
     eta5 : float, optional
-        If the trust-region ratio is larger than `eta5`, then it is considered
+        If the reduction ratio is larger than `eta5`, then it is considered
         too large for restarting the trust-region models (default is 0.01).
     upsilon1 : float, optional
         If the penalty parameter is smaller than or equal to `upsilon1` times
@@ -497,7 +497,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                                 merit_model_old = nlp.merit(manager.base + manager.x_opt, 0.0, models.cub_model(manager.x_opt), models.ceq_model(manager.x_opt), manager.penalty)
                                 merit_model_new = nlp.merit(manager.base + x_new, np.inner(step, models.fun_model_grad(manager.x_opt) + 0.5 * manager.lag_model_hess_prod(step)), models.cub_model(manager.x_opt) + np.dot(models.cub_model_grad(manager.x_opt), step), models.ceq_model(manager.x_opt) + np.dot(models.ceq_model_grad(manager.x_opt), step), manager.penalty)
 
-                        # Calculate the trust-region ratio.
+                        # Calculate the reduction ratio.
                         if abs(merit_model_old - merit_model_new) > np.finfo(float).tiny * abs(merit_old - merit_new):
                             ratio = (merit_old - merit_new) / abs(merit_model_old - merit_model_new)
                         else:
