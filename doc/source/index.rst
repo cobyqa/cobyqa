@@ -18,7 +18,7 @@ COBYQA documentation
 
     To install COBYQA for Python, simply run :code:`pip install cobyqa` in your terminal.
 
-COBYQA is a derivative-free solver for general nonlinear optimization.
+COBYQA is designed to succeed `COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_ as a derivative-free solver for general nonlinear optimization.
 It aims at solving problems of the form
 
 .. math::
