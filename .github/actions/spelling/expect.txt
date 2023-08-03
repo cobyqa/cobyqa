@@ -1,4 +1,3 @@
-ABCDEFGHI
 ABCDEFGHIJ
 ABCDEFHIJ
 ABDEF
@@ -8,7 +7,6 @@ atleast
 aub
 autoattribute
 autoclass
-autodoc
 automethod
 autoproperty
 autosummary
@@ -30,16 +28,12 @@ copybutton
 cov
 currentmodule
 curv
-dpi
-dsfont
+dsfontserif
 dtype
-efname
 endblock
 endfor
-etoolbox
 finfo
 flatnonzero
-fontenc
 footbibliography
 footcite
 hess
@@ -47,7 +41,6 @@ howpublished
 htmlhelp
 htmlzip
 idx
-img
 incollection
 intersphinx
 jac
@@ -60,7 +53,10 @@ linkcode
 linspace
 lsq
 lstsq
+lvert
+mathalpha
 mathbb
+mathsf
 matplotlib
 maxcv
 maxdepth
@@ -79,7 +75,6 @@ omojokun
 onstrained
 optim
 papersize
-patchcmd
 phdthesis
 plt
 powell
@@ -93,13 +88,11 @@ pyplot
 rago
 ragonneau
 razh
-rgba
 rosen
 rosenbrock
 rst
 scipy
 setcounter
-setuptools
 SOURCEDIR
 SPHINXBUILD
 sphinxcontrib
@@ -112,9 +105,7 @@ testsetup
 tocdepth
 toctree
 uadratic
-usepackage
 usr
-vec
 whl
 xnew
 xpt
