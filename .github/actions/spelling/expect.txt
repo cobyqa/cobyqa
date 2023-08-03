@@ -13,12 +13,18 @@ automethod
 autoproperty
 autosummary
 beq
+bibfiles
 booktitle
 BUILDDIR
 bvls
+byrd
+cauchy
 cbd
 ceq
+cobyqa
+codecov
 CODEOWNERS
+codeql
 Comput
 copybutton
 cov
@@ -47,6 +53,8 @@ intersphinx
 jac
 keyprefix
 labelprefix
+Lato
+LGR
 linalg
 linkcode
 linspace
@@ -67,6 +75,7 @@ nfev
 npt
 numpydoc
 objname
+omojokun
 onstrained
 optim
 papersize
@@ -81,9 +90,11 @@ pydata
 pypa
 pyplot
 rago
+ragonneau
 razh
 rgba
 rosen
+rosenbrock
 rst
 scipy
 setcounter
@@ -92,6 +103,7 @@ SOURCEDIR
 SPHINXBUILD
 sphinxcontrib
 SPHINXOPTS
+sqp
 subsolvers
 techreport
 testpypi

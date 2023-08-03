@@ -61,3 +61,6 @@ ignore$
 \.zip$
 ^\.github/actions/spelling/
 ^\Q.github/workflows/spelling.yml\E$
+^\Qcobyqa/subsolvers/tests/__init__.py\E$
+^\Qcobyqa/tests/__init__.py\E$
+^\Qcobyqa/utils/tests/__init__.py\E$
