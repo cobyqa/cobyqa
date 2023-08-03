@@ -4,9 +4,6 @@ COBYQA: Constrained Optimization BY Quadratic Approximations
 .. image:: https://img.shields.io/github/actions/workflow/status/cobyqa/cobyqa/build.yml?logo=github&style=for-the-badge
     :target: https://github.com/cobyqa/cobyqa/actions/workflows/build.yml
 
-.. image:: https://img.shields.io/github/license/cobyqa/cobyqa?logo=github&style=for-the-badge
-    :target: https://github.com/cobyqa/cobyqa/blob/main/LICENSE
-
 .. image:: https://img.shields.io/readthedocs/cobyqa/latest?logo=readthedocs&style=for-the-badge
     :target: https://www.cobyqa.com/
 

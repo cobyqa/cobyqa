@@ -1,0 +1,96 @@
+# Check spelling
+
+name: spelling
+
+on:
+  push:
+    branches: [main]
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, synchronize]
+  issue_comment:
+    types: [created]
+
+jobs:
+  spelling:
+    name: Check spelling
+    if: "contains(github.event_name, 'pull_request') || github.event_name == 'push'"
+    runs-on: ubuntu-latest
+    outputs:
+      followup: ${{ steps.spelling.outputs.followup }}
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
+      security-events: write
+    concurrency:
+      group: spelling-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+
+    steps:
+    - name: Check spelling
+      id: spelling
+      uses: check-spelling/check-spelling@main
+      with:
+        suppress_push_for_open_pull_request: 1
+        checkout: true
+        check_file_names: 1
+        spell_check_this: check-spelling/spell-check-this@prerelease
+        post_comment: 0
+        use_magic_file: 1
+        experimental_apply_changes_via_bot: 1
+        use_sarif: 1
+        extra_dictionary_limit: 10
+
+  comment-push:
+    name: Report (Push)
+    if: (success() || failure()) && needs.spelling.outputs.followup && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    needs: spelling
+    permissions:
+      contents: write
+
+    steps:
+    - name: Comment
+      uses: check-spelling/check-spelling@main
+      with:
+        checkout: true
+        spell_check_this: check-spelling/spell-check-this@prerelease
+        task: ${{ needs.spelling.outputs.followup }}
+
+  comment-pr:
+    name: Report (PR)
+    if: (success() || failure()) && needs.spelling.outputs.followup && contains(github.event_name, 'pull_request')
+    runs-on: ubuntu-latest
+    needs: spelling
+    permissions:
+      pull-requests: write
+
+    steps:
+    - name: Comment
+      uses: check-spelling/check-spelling@main
+      with:
+        checkout: true
+        spell_check_this: check-spelling/spell-check-this@prerelease
+        task: ${{ needs.spelling.outputs.followup }}
+        experimental_apply_changes_via_bot: 1
+
+  update:
+    name: Update PR
+    if: ${{ github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '@check-spelling-bot apply') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
+    concurrency:
+      group: spelling-update-${{ github.event.issue.number }}
+      cancel-in-progress: false
+
+    steps:
+    - name: Apply spelling updates
+      uses: check-spelling/check-spelling@main
+      with:
+        experimental_apply_changes_via_bot: 1
+        checkout: true
+        ssh_key: "${{ secrets.CHECK_SPELLING }}"
