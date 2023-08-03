@@ -1,6 +1,4 @@
-# codecov.yml
 # Codecov configuration file
-# See https://docs.codecov.com/docs/codecov-yaml for details
 
 codecov:
   require_ci_to_pass: false
@@ -19,7 +17,7 @@ coverage:
         if_ci_failed: error
 
 ignore:
-  - 'cobyqa/utils/_show_versions.py'
+  - 'cobyqa/utils/versions.py'
 
 github_checks:
     annotations: false

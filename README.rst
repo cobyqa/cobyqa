@@ -1,5 +1,5 @@
-COBYQA: a derivative-free method for general nonlinear optimization
-###################################################################
+COBYQA: Constrained Optimization BY Quadratic Approximations
+============================================================
 
 .. image:: https://img.shields.io/github/actions/workflow/status/cobyqa/cobyqa/build.yml?logo=github&style=for-the-badge
     :target: https://github.com/cobyqa/cobyqa/actions/workflows/build.yml
@@ -28,7 +28,7 @@ COBYQA: a derivative-free method for general nonlinear optimization
 .. image:: https://img.shields.io/pypi/status/cobyqa?logo=pypi&style=for-the-badge
     :target: https://pypi.org/project/cobyqa/
 
-COBYQA, named after *Constrained Optimization BY Quadratic Approximations*, is a derivative-free solver for general nonlinear optimization.
+COBYQA, an acronym for *Constrained Optimization BY Quadratic Approximations*, is designed to succeed `COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_ as a derivative-free solver for general nonlinear optimization.
 It can handle unconstrained, bound-constrained, linearly constrained, and nonlinearly constrained problems.
 It uses only function values of the objective and constraint functions, if any.
 No derivative information is needed.
@@ -36,12 +36,12 @@ No derivative information is needed.
 **Documentation:** https://www.cobyqa.com/
 
 Installation
-============
+------------
 
 COBYQA can be installed on `Python 3.8 or above <https://www.python.org>`_.
 
 Dependencies
-------------
+~~~~~~~~~~~~
 
 The following Python packages are required by COBYQA:
 
@@ -49,13 +49,13 @@ The following Python packages are required by COBYQA:
 * `SciPy <https://www.scipy.org>`_ 1.1.0 or higher.
 
 User installation
------------------
+~~~~~~~~~~~~~~~~~
 
 The easiest way to install COBYQA is using ``pip``
 
 .. code:: bash
 
-    python -m pip install cobyqa
+    pip install cobyqa
 
 To check your installation, you can execute
 
@@ -64,19 +64,19 @@ To check your installation, you can execute
     python -c "import cobyqa; cobyqa.show_versions()"
 
 Testing
--------
+~~~~~~~
 
 To execute the test suite of COBYQA, you first need to install the package as
 
 .. code:: bash
 
-    python -m pip install cobyqa[tests]
+    pip install cobyqa[tests]
 
 You can then run the test suite by executing
 
 .. code:: bash
 
-    python -m pytest --pyargs cobyqa
+    pytest --pyargs cobyqa
 
 Examples
 --------
@@ -86,11 +86,11 @@ To run ``powell2015.py``, you first need to install the package as
 
 .. code:: bash
 
-    python -m pip install cobyqa[examples]
+    pip install cobyqa[examples]
 
 This will install ``matplotlib`` alongside COBYQA.
 
 Support
-=======
+-------
 
 To report a bug or request a new feature, please open a new issue using the `issue tracker <https://github.com/cobyqa/cobyqa/issues>`_.

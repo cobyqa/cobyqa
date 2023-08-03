@@ -11,7 +11,6 @@ __pycache__/
 ## Distribution / packaging
 .Python
 build/
-!.github/actions/build/
 develop-eggs/
 dist/
 downloads/
@@ -72,7 +71,7 @@ instance/
 .scrapy
 
 ## Sphinx documentation
-doc/_build/
+docs/_build/
 doc/source/**/generated/
 
 ## PyBuilder
@@ -154,14 +153,7 @@ dmypy.json
 .pytype/
 
 ## Cython debug symbols
-cython_debug
-
-## PyCUTEst cache folder
-pycutest_cache_holder/
-
-## User-specific stuffs
-benchmark/archives/
-cobyqa_debug/
+cython_debug/
 
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
@@ -169,29 +161,29 @@ cobyqa_debug/
 ## User-specific stuff
 .idea/
 
-# Gradle and Maven with auto-import
+## Gradle and Maven with auto-import
 # When using Gradle or Maven with auto-import, you should exclude module files,
-# since they will be recreated, and may cause churn. Uncomment if using
+# since they will be recreated, and may cause churn.  Uncomment if using
 # auto-import.
 # *.iml
 # *.ipr
 
-# CMake
+## CMake
 cmake-build-*/
 
-# File-based project format
+## File-based project format
 *.iws
 
-# IntelliJ
+## IntelliJ
 out/
 
-# mpeltonen/sbt-idea plugin
+## mpeltonen/sbt-idea plugin
 .idea_modules/
 
-# JIRA plugin
+## JIRA plugin
 atlassian-ide-plugin.xml
 
-# Crashlytics plugin (for Android Studio and IntelliJ)
+## Crashlytics plugin (for Android Studio and IntelliJ)
 com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
@@ -220,9 +212,15 @@ Icon
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
 
-## Directories potentially created on remote AFP share
+# Directories potentially created on remote AFP share
 .AppleDB
 .AppleDesktop
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Editor-based Rest Client
+.idea/httpRequests
+
+# Android studio 3.1+ serialized cache file
+.idea/caches/build_file_checksums.ser

@@ -1,4 +1,2 @@
-# .github/CODEOWNERS
-# See https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners for details
-
+# Default owners for everything in the repository.
 *  @ragonneau @zaikunzhang

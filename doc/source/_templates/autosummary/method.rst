@@ -1,7 +1,8 @@
-{{ fullname | escape | underline}}
+:orphan:
+
+{{ fullname }}
+{{ underline }}
 
 .. currentmodule:: {{ module }}
 
-method
-
-.. auto{{ objtype }}:: {{ fullname | replace("cobyqa.", "cobyqa::") }}
+.. automethod:: {{ objname }}

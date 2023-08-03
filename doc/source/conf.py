@@ -27,7 +27,7 @@ version = re.sub(r'(\.dev\d+).*?$', r'\1', version)
 # Full version, including alpha/beta/rc tags.
 release = cobyqa.__version__
 
-# Download statistics.
+# Retrieve statistics.
 archive = urlopen('https://raw.githubusercontent.com/cobyqa/stats/main/archives/total.json')
 downloads = json.loads(archive.read())
 
@@ -35,21 +35,19 @@ downloads = json.loads(archive.read())
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.linkcode',
-    'sphinx.ext.mathjax',
     'numpydoc',
-    'sphinx_design',
+    'sphinx_copybutton',
     'sphinx_substitution_extensions',
+    'sphinxcontrib.bibtex',
 ]
 
 templates_path = ['_templates']
+
+exclude_patterns = []
 
 today_fmt = '%B %d, %Y'
 
@@ -60,10 +58,13 @@ default_role = 'autolink'
 add_function_parentheses = False
 
 # String to include at the beginning of every source file.
-rst_prolog = f'''
-.. |downloads_total| replace:: {sum(downloads.values())}
+rst_prolog = f"""
+.. |release| replace:: {release}
 .. |year| replace:: {datetime.now().year}
-'''
+.. |pypi_downloads| replace:: {downloads['pypi']:,}
+.. |github_downloads| replace:: {downloads['github']:,}
+.. |total_downloads| replace:: {sum(downloads.values()):,}
+"""
 
 # Suppress 'WARNING: unknown mimetype for ..., ignoring'.
 suppress_warnings = ['epub.unknown_project_files']
@@ -74,33 +75,36 @@ suppress_warnings = ['epub.unknown_project_files']
 
 html_theme = 'pydata_sphinx_theme'
 
+html_static_path = ['_static']
+
 html_css_files = ['cobyqa.css']
 
 html_theme_options = {
     'logo': {
         'text': project,
     },
+    'switcher': {
+        'json_url': 'https://www.cobyqa.com/en/latest/_static/switcher.json',
+        'version_match': release,
+    },
     'icon_links': [
         {
-            'name': f'GitHub ({downloads["github"]} downloads)',
+            'name': f'GitHub ({downloads["github"]:,} downloads)',
             'url': 'https://github.com/cobyqa/cobyqa',
             'icon': 'fa-brands fa-github',
         },
         {
-            'name': f'PyPI ({downloads["pypi"]} downloads)',
+            'name': f'PyPI ({downloads["pypi"]:,} downloads)',
             'url': 'https://pypi.org/project/cobyqa',
             'icon': 'fa-solid fa-box',
         },
     ],
-    'switcher': {
-        'json_url': 'https://www.cobyqa.com/en/latest/_static/switcher.json',
-        'version_match': version,
-    },
-    'navbar_end': ['version-switcher', 'theme-switcher', 'navbar-icon-links'],
     'navbar_persistent': ['search-button'],
+    'navbar_end': ['version-switcher', 'theme-switcher', 'navbar-icon-links'],
     'navbar_align': 'left',
     'footer_start': ['copyright', 'sphinx-version', 'theme-version'],
     'footer_end': [],
+    'navigation_depth': 1,
     # 'announcement': '<p></p>',
 }
 
@@ -113,74 +117,30 @@ html_context = {
 
 html_title = f'{project} v{version} Manual'
 
-html_static_path = ['_static']
-
-html_copy_source = False
-
-
-# -- Options for HTML help output ---------------------------------------------
-
 htmlhelp_basename = 'cobyqa'
-
-
-# -- Math support for HTML outputs --------------------------------------------
-
-mathjax3_config = {
-    'tex': {
-        'macros': {
-            # Extra mathematical functions.
-            'card': r'\operatorname{card}',
-            'abs': [r'#1\lvert#2#1\rvert', 2, ''],
-            'norm': [r'#1\lVert#2#1\rVert', 2, ''],
-            'set': [r'#1\{#2#1\}', 2, ''],
-
-            # Sets in blackboard-bold style font.
-            'R': r'{\mathbb{R}}',
-
-            # Mathematical operators in sans serif style font.
-            'T': r'{\mathsf{T}}',
-        }
-    }
-}
 
 
 # -- Options for LaTeX output -------------------------------------------------
 
 # Grouping the document tree into LaTeX files.
 latex_documents = [
-    # Read the Docs do not handle multiple PDF files yet.
-    # See https://github.com/readthedocs/readthedocs.org/issues/2045
-    # ('algorithms/index', 'cobyqa-user.tex', 'COBYQA Reference', author, 'manual'),
-    ('reference/index', 'cobyqa-ref.tex', 'COBYQA User Guide', author, 'manual'),
+    ('index', 'cobyqa-ref.tex', 'COBYQA Manual', author, 'manual'),
 ]
 
 latex_elements = {
     'papersize': 'a4paper',
     'fontenc': r'\usepackage[LGR,T1]{fontenc}',
-    'preamble': r'''
+    'preamble': r"""
 \usepackage{dsfont}
-
-% Extra mathematical functions.
-\DeclareMathOperator{\card}{card}
-\newcommand{\abs}[2][]{#1\lvert#2#1\rvert}
-\newcommand{\norm}[2][]{#1\lVert#2#1\rVert}
-\newcommand{\set}[2][]{#1\{#2#1\}}
-
-% Sets in blackboard-bold style font.
-\newcommand{\R}{\mathds{R}}
-
-% Mathematical operators in sans serif style font.
-\newcommand{\T}{\mathsf{T}}
 
 % Increase the default table of content depth.
 \setcounter{tocdepth}{2}
-    ''',
+
+% Remove the bibliography section title
+\usepackage{etoolbox}
+\patchcmd{\thebibliography}{\section*{\refname}}{}{}{}
+    """,
 }
-
-
-# -- Numpy’s Sphinx extension -------------------------------------------------
-
-numpydoc_use_plots = True
 
 
 # -- Generate autodoc summaries -----------------------------------------------
@@ -188,12 +148,34 @@ numpydoc_use_plots = True
 autosummary_generate = True
 
 
-# -- Link to other projects’ documentation ------------------------------------
+# -- Link to other projects' documentation ------------------------------------
 
 intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
-    'scipy': ('https://scipy.github.io/devdocs/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/', None),
 }
+
+
+# -- BibTeX citations ---------------------------------------------------------
+
+bibtex_bibfiles = ['_static/cobyqa.bib']
+
+bibtex_encoding = 'latin'
+
+bibtex_default_style = 'plain'
+
+bibtex_bibliography_header = '.. rubric:: References'
+
+bibtex_footbibliography_header = bibtex_bibliography_header
+
+bibtex_cite_id = 'cite-{bibliography_count}-{key}'
+
+bibtex_footcite_id = 'footcite-{key}'
+
+bibtex_bibliography_id = 'bibliography-{bibliography_count}'
+
+bibtex_footbibliography_id = 'footbibliography-{footbibliography_count}'
 
 
 # -- Add external links to source code ----------------------------------------
@@ -222,11 +204,11 @@ def linkcode_resolve(domain, info):
 
     # Get the relative path to the source of the object.
     try:
-        fn = Path(inspect.getsourcefile(obj)).resolve(strict=True)
+        fn = Path(inspect.getsourcefile(obj)).resolve(True)
     except TypeError:
         return None
     else:
-        fn = fn.relative_to(Path(cobyqa.__file__).resolve(strict=True).parent)
+        fn = fn.relative_to(Path(cobyqa.__file__).resolve(True).parent)
 
     # Ignore re-exports as their source files are not within the repository.
     module = inspect.getmodule(obj)
@@ -240,8 +222,8 @@ def linkcode_resolve(domain, info):
     except OSError:
         lines = ''
 
-    repository = f'https://github.com/cobyqa/cobyqa'
+    repository = f'https://github.com/{html_context["github_user"]}/{html_context["github_repo"]}'
     if 'dev' in release:
-        return f'{repository}/blob/main/cobyqa/{fn}{lines}'
+        return f'{repository}/blob/{html_context["github_version"]}/cobyqa/{fn}{lines}'
     else:
         return f'{repository}/blob/v{release}/cobyqa/{fn}{lines}'

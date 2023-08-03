@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cobyqa"
-description = "A derivative-free solver for general nonlinear optimization"
+description = "Constrained Optimization BY Quadratic Approximations"
 readme = "README.rst"
 requires-python = ">=3.8"
 license = {file = "LICENSE"}
@@ -50,24 +50,17 @@ classifiers = [
 dependencies = [
     "numpy>=1.17.0",
     "scipy>=1.1.0",
-    "toml",
 ]
 dynamic = ["version"]
 
 [project.optional-dependencies]
-benchmark = [
-    "argparse",
-    "joblib",
-    "matplotlib",
-    "pdfo",
-    "pycutest",
-]
 doc = [
-    "numpydoc",
-    "pydata-sphinx-theme",
-    "sphinx",
-    "sphinx_design",
-    "sphinx-substitution-extensions",
+    "numpydoc==1.5.0",
+    "pydata-sphinx-theme==0.13.3",
+    "Sphinx==7.1.1",
+    "sphinx_copybutton==0.5.2",
+    "Sphinx-Substitution-Extensions==2022.2.16",
+    "sphinxcontrib-bibtex==2.5.0",
 ]
 examples = ["matplotlib"]
 tests = [
@@ -76,17 +69,14 @@ tests = [
 ]
 
 [project.urls]
-homepage = "https://www.cobyqa.com/"
-documentation = "https://www.cobyqa.com/"
-source = "https://github.com/cobyqa/cobyqa/"
+homepage = "https://www.cobyqa.com"
+documentation = "https://www.cobyqa.com"
+source = "https://github.com/cobyqa/cobyqa"
 download = "https://pypi.org/project/cobyqa/#files"
-tracker = "https://github.com/cobyqa/cobyqa/issues/"
+tracker = "https://github.com/cobyqa/cobyqa/issues"
 
 [tool.setuptools.packages.find]
 include = ["cobyqa*"]
 
 [tool.setuptools.dynamic]
 version = {attr = "cobyqa.__version__"}
-
-[tool.pytest.ini_options]
-addopts = "-l"

@@ -1,5 +1,3 @@
-.. _cobyqa_docs_mainpage:
-
 COBYQA documentation
 ====================
 
@@ -7,103 +5,74 @@ COBYQA documentation
     :maxdepth: 1
     :hidden:
 
-    Algorithms <algorithms/index>
-    API reference <reference/index>
+    User guide <user/index>
+    API reference <ref/index>
+    Developer guide <dev/index>
 
 :Version: |version|
 :Useful links: `Issue tracker <https://github.com/cobyqa/cobyqa/issues>`_ | `Mailing list <https://mail.python.org/mailman3/lists/cobyqa.python.org/>`_
 :Authors: `Tom M. Ragonneau <https://tomragonneau.com/>`_ | `Zaikun Zhang <https://www.zhangzk.net/>`_
 
-.. hint::
-
-    To install COBYQA for Python, simply run :code:`pip install cobyqa` in your terminal.
-
 COBYQA is designed to succeed `COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_ as a derivative-free solver for general nonlinear optimization.
-It aims at solving problems of the form
+Using only functions values, and no derivatives, it aims at solving problems of the form
 
 .. math::
 
-    \min_{x \in \R^n} f(x) \quad \text{s.t.} \quad \left\{ \begin{array}{l}
+    \min_{x \in \mathbb{R}^n} \quad f(x) \quad \text{s.t.} \quad \left\{ \begin{array}{l}
         g(x) \le 0,\\
         h(x) = 0,\\
-        l \le x \le u,
+        l \le x \le u.
     \end{array} \right.
 
-where :math:`f` is a real-valued objective function, :math:`g` and :math:`h` are vector-valued constraint functions, and :math:`l` and :math:`u` are vectors of lower and upper bounds on the variables :math:`x`.
-COBYQA uses function values of :math:`f`, :math:`g`, and :math:`h`, but no derivatives.
-It also assumes that the bound constraints are inviolable and always respect them.
+COBYQA assumes that the bound constraints :math:`l \le x \le u` are unrelaxable, i.e., that the nonlinear functions :math:`f`, :math:`g`, and :math:`h` cannot be evaluated outside the bounds.
+Hence, COBYQA always respect the bound constraints throughout the optimization process.
+To install COBYQA, run in your terminal
 
-.. grid:: 1 1 2 2
+.. code-block:: bash
 
-    .. grid-item-card::
-        :img-top: ../source/_static/index/book.svg
+    pip install cobyqa
 
-        Algorithms
-        ^^^^^^^^^^
-
-        This section provides detailed mathematical descriptions of the algorithms underneath COBYQA.
-
-        .. button-ref:: algorithms
-            :expand:
-            :color: secondary
-            :click-parent:
-
-            To the algorithm descriptions
-
-    .. grid-item-card::
-        :img-top: ../source/_static/index/gears.svg
-
-        API reference
-        ^^^^^^^^^^^^^
-
-        This section references an exhaustive manual detailing the functions, modules, and objects included in COBYQA.
-
-        .. button-ref:: reference
-            :expand:
-            :color: secondary
-            :click-parent:
-
-            To the reference guide
-
-COBYQA aims at being a modern successor of the well-known solver COBYLA.
-
-.. note::
-
-    As of |today|, COBYQA has been downloaded |downloads_total| times (mirror downloads excluded).
+For more details, see the :ref:`user guide <user>`.
 
 Citing COBYQA
 -------------
 
-If you would like to acknowledge the significance of COBYQA in your research, we suggest citing the project as follows:
+If you would like to acknowledge the significance of COBYQA in your research, we suggest citing the project as follows.
 
-- T.\  M.\  Ragonneau. "`Model-Based Derivative-Free Optimization Methods and Software <https://tomragonneau.com/documents/thesis.pdf>`_." Ph.D.\  thesis. Hong Kong: Department of Applied Mathematics, The Hong Kong Polytechnic University, 2022.
-- T.\  M.\  Ragonneau and Z.\  Zhang. COBYQA: Constrained Optimization BY Quadratic Approximations. Version |release|. |year|. URL: https://www.cobyqa.com.
+- T.\  M.\  Ragonneau. `Model-Based Derivative-Free Optimization Methods and Software <https://tomragonneau.com/documents/thesis.pdf>`_. PhD thesis, Department of Applied Mathematics, The Hong Kong Polytechnic University, Hong Kong, China, 2022.
+- T.\  M.\  Ragonneau and Z.\  Zhang. COBYQA: Constrained Optimization BY Quadratic Approximations. Available at https://www.cobyqa.com, |year|. Version |release|.
 
-The corresponding BibLaTeX entries are given hereunder.
+The corresponding BibTeX entries are given hereunder.
 
 .. code-block:: bib
     :substitutions:
 
-    @thesis{rago22,
-        author      = {Ragonneau, T. M.},
-        title       = {Model-Based Derivative-Free Optimization Methods and Software},
-        type        = {phdthesis},
-        institution = {Department of Applied Mathematics, The Hong Kong Polytechnic University},
-        location    = {Hong Hong},
-        date        = {2022},
+    @phdthesis{rago22,
+        author          = {Ragonneau, T. M.},
+        title           = {Model-Based Derivative-Free Optimization Methods and Software},
+        school          = {Department of Applied Mathematics, The Hong Kong Polytechnic University},
+        address         = {Hong Kong, China},
+        year            = 2022,
     }
 
-    @software{razh22,
-        author       = {Ragonneau, T. M. and Zhang, Z.},
-        title        = {{COBYQA}: Constrained Optimization BY Quadratic Approximations},
-        url          = {https://www.cobyqa.com},
-        version      = {|release|},
-        date         = {|year|},
+    @misc{razh22,
+        author          = {Ragonneau, T. M. and Zhang, Z.},
+        title           = {{COBYQA}: {C}onstrained {O}ptimization {BY} {Q}uadratic {A}pproximations},
+        howpublished    = {Available at https://www.cobyqa.com},
+        note            = {Version |release|},
+        year            = |year|,
     }
 
+Statistics
+----------
+
+As of |today|, COBYQA has been downloaded |total_downloads| times, including
+
+- |github_downloads| times on `GitHub <https://hanadigital.github.io/grev/?user=cobyqa&repo=cobyqa>`_, and
+- |pypi_downloads| times on `PyPI <https://pypistats.org/packages/cobyqa>`_ (`mirror downloads <https://pypistats.org/faqs>`_ excluded).
 
 Acknowledgments
 ---------------
 
-The early development of COBYQA was funded by the `University Grants Committee <https://www.ugc.edu.hk/>`_ of Hong Kong, under the `Hong Kong Ph.D. Fellowship Scheme <https://cerg1.ugc.edu.hk/hkpfs/index.html>`_ (ref. PF18-24698).
+The early development of COBYQA was funded by the `University Grants Committee <https://www.ugc.edu.hk/>`_ of Hong Kong, under the `Hong Kong PhD Fellowship Scheme <https://cerg1.ugc.edu.hk/hkpfs/index.html>`_ (ref. PF18-24698).
 It is now supported by `The Hong Kong Polytechnic University <https://www.polyu.edu.hk/>`_.
