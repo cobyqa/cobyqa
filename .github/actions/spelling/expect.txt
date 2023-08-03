@@ -82,6 +82,7 @@ papersize
 patchcmd
 phdthesis
 plt
+powell
 pproximations
 printoptions
 ptimization

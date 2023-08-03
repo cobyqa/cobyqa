@@ -131,14 +131,10 @@ latex_elements = {
     'papersize': 'a4paper',
     'fontenc': r'\usepackage[LGR,T1]{fontenc}',
     'preamble': r"""
-\usepackage{dsfont}
+\usepackage[bb=dsfontserif]{mathalpha}
 
 % Increase the default table of content depth.
 \setcounter{tocdepth}{2}
-
-% Remove the bibliography section title
-\usepackage{etoolbox}
-\patchcmd{\thebibliography}{\section*{\refname}}{}{}{}
     """,
 }
 
@@ -165,7 +161,10 @@ bibtex_encoding = 'latin'
 
 bibtex_default_style = 'plain'
 
-bibtex_bibliography_header = '.. rubric:: References'
+bibtex_bibliography_header = """.. only:: html or text
+
+    .. rubric:: References
+"""
 
 bibtex_footbibliography_header = bibtex_bibliography_header
 

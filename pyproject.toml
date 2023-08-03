@@ -65,7 +65,7 @@ doc = [
 examples = ["matplotlib"]
 tests = [
     "pytest>=6.1.0",
-    "pytest-cov[all]",
+    "pytest-cov",
 ]
 
 [project.urls]

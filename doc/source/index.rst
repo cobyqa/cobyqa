@@ -18,7 +18,8 @@ Using only functions values, and no derivatives, it aims at solving problems of 
 
 .. math::
 
-    \min_{x \in \mathbb{R}^n} \quad f(x) \quad \text{s.t.} \quad \left\{ \begin{array}{l}
+    \min_{x \in \mathbb{R}^n} \quad f(x) \quad \text{s.t.} \quad
+    \left\{ \begin{array}{l}
         g(x) \le 0,\\
         h(x) = 0,\\
         l \le x \le u.

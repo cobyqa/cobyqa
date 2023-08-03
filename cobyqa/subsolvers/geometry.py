@@ -12,11 +12,11 @@ def cauchy_geometry(const, grad, hess_prod, xl, xu, delta, debug):
 
     .. math::
 
-        \begin{aligned}
-            \max_{d \in \R^n}   & \quad \abs[\bigg]{c + g^{\T}d + \frac{1}{2} d^{\T}Hd}\\
-            \text{s.t.}         & \quad l \le d \le u,\\
-                                & \quad \norm{d} \le \Delta,
-        \end{aligned}
+        \max_{s \in \mathbb{R}^n} \quad \bigg\lvert c + g^{\mathsf{T}} s + \frac{1}{2} s^{\mathsf{T}} H s \bigg\rvert \quad \text{s.t.} \quad
+        \left\{ \begin{array}{l}
+            l \le s \le u,\\
+            \lVert s \rVert \le \Delta,
+        \end{array} \right.
 
     by maximizing the objective function along the constrained Cauchy direction.
 
@@ -29,9 +29,9 @@ def cauchy_geometry(const, grad, hess_prod, xl, xu, delta, debug):
     hess_prod : callable
         Product of the Hessian matrix :math:`H` with any vector.
 
-            ``hess_prod(d) -> numpy.ndarray, shape (n,)``
+            ``hess_prod(s) -> numpy.ndarray, shape (n,)``
 
-        returns the product :math:`Hd`.
+        returns the product :math:`H s`.
     xl : numpy.ndarray, shape (n,)
         Lower bounds :math:`l` as shown above.
     xu : numpy.ndarray, shape (n,)
@@ -44,19 +44,19 @@ def cauchy_geometry(const, grad, hess_prod, xl, xu, delta, debug):
     Returns
     -------
     numpy.ndarray, shape (n,)
-        Approximate solution :math:`d`.
+        Approximate solution :math:`s`.
 
     Notes
     -----
-    This function is described as the first alternative in p. 115 of [1]_. It is
-    assumed that the origin is feasible with respect to the bound constraints
-    `xl` and `xu`, and that `delta` is finite and positive.
+    This function is described as the first alternative in Section 6.5 of [1]_.
+    It is assumed that the origin is feasible with respect to the bound
+    constraints and that `delta` is finite and positive.
 
     References
     ----------
-    .. [1] T. M. Ragonneau. "Model-Based Derivative-Free Optimization Methods
-       and Software." Ph.D. thesis. Hong Kong: Department of Applied
-       Mathematics, The Hong Kong Polytechnic University, 2022.
+    .. [1] T. M. Ragonneau. *Model-Based Derivative-Free Optimization Methods
+       and Software*. PhD thesis, The Hong Kong Polytechnic University, Hong
+       Kong, China, 2022.
     """
     # Check the feasibility of the subproblem.
     n = grad.size
@@ -85,20 +85,19 @@ def cauchy_geometry(const, grad, hess_prod, xl, xu, delta, debug):
 def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
     r"""
     Maximize approximately the absolute value of a quadratic function subject to
-    bound constraints in a trust region along specific straight lines.
+    bound constraints in a trust region.
 
     This function solves approximately
 
     .. math::
 
-        \begin{aligned}
-            \max_{d \in \R^n}   & \quad \abs[\bigg]{c + g^{\T}d + \frac{1}{2} d^{\T}Hd}\\
-            \text{s.t.}         & \quad l \le d \le u,\\
-                                & \quad \norm{d} \le \Delta,
-        \end{aligned}
+        \max_{s \in \mathbb{R}^n} \quad \bigg\lvert c + g^{\mathsf{T}} s + \frac{1}{2} s^{\mathsf{T}} H s \bigg\rvert \quad \text{s.t.} \quad
+        \left\{ \begin{array}{l}
+            l \le s \le u,\\
+            \lVert s \rVert \le \Delta,
+        \end{array} \right.
 
-    by maximizing the objective function along the straight lines through the
-    origin and the rows in `xpt`.
+    by maximizing the objective function along given straight lines.
 
     Parameters
     ----------
@@ -109,11 +108,12 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
     hess_prod : callable
         Product of the Hessian matrix :math:`H` with any vector.
 
-            ``hess_prod(d) -> numpy.ndarray, shape (n,)``
+            ``hess_prod(s) -> numpy.ndarray, shape (n,)``
 
-        returns the product :math:`Hd`.
+        returns the product :math:`H s`.
     xpt : numpy.ndarray, shape (npt, n)
-        Points defining the straight lines as shown above.
+        Points defining the straight lines. The straight lines considered are
+        the ones passing through the origin and the points in `xpt`.
     xl : numpy.ndarray, shape (n,)
         Lower bounds :math:`l` as shown above.
     xu : numpy.ndarray, shape (n,)
@@ -126,19 +126,19 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
     Returns
     -------
     numpy.ndarray, shape (n,)
-        Approximate solution :math:`d`.
+        Approximate solution :math:`s`.
 
     Notes
     -----
-    This function is described as the second alternative in p. 115 of [1]_. It
-    is assumed that the origin is feasible with respect to the bound constraints
-    `xl` and `xu`, and that `delta` is finite and positive.
+    This function is described as the second alternative in Section 6.5 of [1]_.
+    It is assumed that the origin is feasible with respect to the bound
+    constraints and that `delta` is finite and positive.
 
     References
     ----------
-    .. [1] T. M. Ragonneau. "Model-Based Derivative-Free Optimization Methods
-       and Software." Ph.D. thesis. Hong Kong: Department of Applied
-       Mathematics, The Hong Kong Polytechnic University, 2022.
+    .. [1] T. M. Ragonneau. *Model-Based Derivative-Free Optimization Methods
+       and Software*. PhD thesis, The Hong Kong Polytechnic University, Hong
+       Kong, China, 2022.
     """
     # Check the feasibility of the subproblem.
     npt, n = xpt.shape

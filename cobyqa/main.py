@@ -31,6 +31,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     r"""
     Minimize a scalar function using the COBYQA method.
 
+    The COBYQA method is a derivative-free optimization method for general
+    nonlinear optimization described in [3]_.
+
     Parameters
     ----------
     fun : callable
@@ -128,6 +131,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
        and J. P. Hennart, editors, *Advances in Optimization and Numerical
        Analysis*, volume 275 of *Mathematics and Its Applications*, pages 51–67.
        Springer, Dordrecht, The Netherlands, 1994.
+    .. [3] T. M. Ragonneau. *Model-Based Derivative-Free Optimization Methods
+       and Software*. PhD thesis, The Hong Kong Polytechnic University, Hong
+       Kong, China, 2022.
 
     Examples
     --------
