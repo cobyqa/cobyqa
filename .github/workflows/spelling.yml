@@ -42,10 +42,13 @@ jobs:
         use_sarif: 1
         extra_dictionary_limit: 10
         extra_dictionaries:
-          cspell:python/src/python/python-lib.txt
-          cspell:python/src/python/python.txt
-          cspell:software-terms/src/software-terms.txt
+          cspell:css/css.txt
           cspell:filetypes/filetypes.txt
+          cspell:latex/latex.txt
+          cspell:python/src/common/extra.txt
+          cspell:python/src/python/python.txt
+          cspell:python/src/python/python-lib.txt
+          cspell:software-terms/src/software-terms.txt
 
   comment-push:
     name: Report (Push)
