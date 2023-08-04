@@ -66,6 +66,15 @@ class TestObjectiveFunction:
         assert np.isfinite(fun)
         assert obj.n_eval == 1
 
+    def test_store(self):
+        obj = ObjectiveFunction(rosen, False, True)
+        x = np.zeros(5)
+        obj(x)
+        assert len(obj.f_hist) == 1
+        assert len(obj.x_hist) == 1
+        assert obj.f_hist[0] == rosen(x)
+        assert np.all(obj.x_hist[0] == x)
+
 
 class TestBoundConstraints:
 
@@ -90,6 +99,7 @@ class TestLinearConstraints:
         assert not linear.is_equality
         assert np.all(linear.a == 1.0)
         assert np.all(linear.b == 1.0)
+        assert linear.resid(np.zeros(5)) == 0.0
 
     def test_exceptions(self):
         with pytest.raises(ValueError):
@@ -110,6 +120,8 @@ class TestNonlinearConstraints:
         assert np.all(fun == np.sin(x))
         assert nonlinear.n_eval == 1
         assert captured.out == ''
+        assert nonlinear.resid(x) < 50.0 * np.finfo(float).eps
+        assert nonlinear.resid(x, np.zeros(5)) == 0.0
 
         # Check a constraint function with verbose=True.
         nonlinear = NonlinearConstraints(np.sin, False, True, False)
@@ -144,20 +156,29 @@ class TestNonlinearConstraints:
 
     def test_barrier(self):
         # Check an objective function with an infinite value.
-        obj = ObjectiveFunction(lambda x: np.inf, False, False)
+        nonlinear = NonlinearConstraints(lambda x: [0, np.inf], False, False, False)
         x = np.zeros(5)
-        fun = obj(x)
-        assert obj.name == '<lambda>'
-        assert np.isfinite(fun)
-        assert obj.n_eval == 1
+        fun = nonlinear(x)
+        assert nonlinear.name == '<lambda>'
+        assert np.all(np.isfinite(fun))
+        assert nonlinear.n_eval == 1
 
         # Check an objective function with a NaN value.
-        obj = ObjectiveFunction(lambda x: np.nan, False, False)
+        nonlinear = NonlinearConstraints(lambda x: [0, np.nan], False, False, False)
         x = np.zeros(5)
-        fun = obj(x)
-        assert obj.name == '<lambda>'
-        assert np.isfinite(fun)
-        assert obj.n_eval == 1
+        fun = nonlinear(x)
+        assert nonlinear.name == '<lambda>'
+        assert np.all(np.isfinite(fun))
+        assert nonlinear.n_eval == 1
+
+    def test_store(self):
+        nonlinear = NonlinearConstraints(np.sin, False, False, True)
+        x = np.zeros(5)
+        nonlinear(x)
+        assert len(nonlinear.f_hist) == 1
+        assert len(nonlinear.x_hist) == 1
+        assert np.all(nonlinear.f_hist[0] == np.sin(x))
+        assert np.all(nonlinear.x_hist[0] == x)
 
 
 class TestProblem:
@@ -183,6 +204,9 @@ class TestProblem:
         assert pb.m_nonlinear_ub == 5
         assert pb.m_nonlinear_eq == 5
         assert pb.type == 'nonlinearly constrained'
+        assert pb.fun_name == 'rosen'
+        assert not pb.is_feasibility
+        assert pb.resid(pb.x0, cub_x0, ceq_x0) < 1.0 + 50.0 * np.finfo(float).eps
         assert fun_x0 == rosen(x0)
         assert np.all(cub_x0 == np.sin(x0))
         assert np.all(ceq_x0 == np.sin(x0))
