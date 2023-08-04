@@ -537,7 +537,7 @@ class TrustRegion:
         # the denominator of the updating formula.
         xpt = self.models.interpolation.xpt - self.models.interpolation.xpt[:, self.best_index, np.newaxis]
         xpt[:, [0, self.best_index]] = xpt[:, [self.best_index, 0]]
-        step_alt = spider_geometry(0.0, g_lag, lambda v: lag.hess_prod(v, self.models.interpolation), xpt[:, 1:].T, xl, xu, self.radius, options['debug'])
+        step_alt = spider_geometry(0.0, g_lag, lambda v: lag.hess_prod(v, self.models.interpolation), xpt[:, 1:], xl, xu, self.radius, options['debug'])
         sigma_alt = self.models.denominators(self.x_best + step_alt, k_new)
         if abs(sigma_alt) >= abs(sigma):
             step = step_alt

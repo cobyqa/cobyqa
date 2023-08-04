@@ -59,12 +59,13 @@ def cauchy_geometry(const, grad, hess_prod, xl, xu, delta, debug):
        Kong, China, 2022.
     """
     # Check the feasibility of the subproblem.
-    n = grad.size
     tol = get_arrays_tol(xl, xu)
-    if debug:
-        assert np.max(xl) <= tol
-        assert np.min(xu) >= -tol
-        assert np.isfinite(delta) and delta > 0.0
+    if np.max(xl) > tol:
+        raise ValueError('The lower bounds must be nonpositive.')
+    if np.min(xu) < -tol:
+        raise ValueError('The upper bounds must be nonnegative.')
+    if not np.isfinite(delta) or delta <= 0.0:
+        raise ValueError('The trust-region radius must be finite and positive.')
     xl = np.minimum(xl, 0.0)
     xu = np.maximum(xu, 0.0)
 
@@ -73,7 +74,7 @@ def cauchy_geometry(const, grad, hess_prod, xl, xu, delta, debug):
     # the largest function value.
     step1, q_val1 = _cauchy_geom(const, grad, hess_prod, xl, xu, delta, debug)
     step2, q_val2 = _cauchy_geom(-const, -grad, lambda x: -hess_prod(x), xl, xu, delta, debug)
-    step = step1 if q_val1 > q_val2 else step2
+    step = step1 if abs(q_val1) >= abs(q_val2) else step2
 
     if debug:
         assert np.all(xl <= step)
@@ -111,7 +112,7 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
             ``hess_prod(s) -> numpy.ndarray, shape (n,)``
 
         returns the product :math:`H s`.
-    xpt : numpy.ndarray, shape (npt, n)
+    xpt : numpy.ndarray, shape (n, npt)
         Points defining the straight lines. The straight lines considered are
         the ones passing through the origin and the points in `xpt`.
     xl : numpy.ndarray, shape (n,)
@@ -141,7 +142,7 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
        Kong, China, 2022.
     """
     # Check the feasibility of the subproblem.
-    npt, n = xpt.shape
+    n, npt = xpt.shape
     if debug:
         tol = get_arrays_tol(xl, xu)
         assert np.max(xl) <= tol
@@ -155,7 +156,7 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
     q_val = const
     for k in range(npt):
         # Set alpha_tr to the step size for the trust-region constraint.
-        s_norm = np.linalg.norm(xpt[k, :])
+        s_norm = np.linalg.norm(xpt[:, k])
         if s_norm > np.finfo(float).tiny * delta:
             alpha_tr = max(delta / s_norm, 0.0)
         else:
@@ -163,23 +164,23 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
 
         # Set alpha_xl to the step size for the lower-bound constraint and
         # alpha_xu to the step size for the upper-bound constraint.
-        i_xl_pos = (xl > -np.inf) & (xpt[k, :] > -np.finfo(float).tiny * xl)
-        i_xl_neg = (xl > -np.inf) & (xpt[k, :] < np.finfo(float).tiny * xl)
-        i_xu_pos = (xu < np.inf) & (xpt[k, :] > np.finfo(float).tiny * xu)
-        i_xu_neg = (xu < np.inf) & (xpt[k, :] < -np.finfo(float).tiny * xu)
-        alpha_xl_pos = np.max(xl[i_xl_pos] / xpt[k, i_xl_pos], initial=-np.inf)
-        alpha_xl_neg = np.max(xu[i_xu_neg] / xpt[k, i_xu_neg], initial=-np.inf)
-        alpha_xu_pos = np.min(xu[i_xu_pos] / xpt[k, i_xu_pos], initial=np.inf)
-        alpha_xu_neg = np.min(xl[i_xl_neg] / xpt[k, i_xl_neg], initial=np.inf)
+        i_xl_pos = (xl > -np.inf) & (xpt[:, k] > -np.finfo(float).tiny * xl)
+        i_xl_neg = (xl > -np.inf) & (xpt[:, k] < np.finfo(float).tiny * xl)
+        i_xu_pos = (xu < np.inf) & (xpt[:, k] > np.finfo(float).tiny * xu)
+        i_xu_neg = (xu < np.inf) & (xpt[:, k] < -np.finfo(float).tiny * xu)
+        alpha_xl_pos = np.max(xl[i_xl_pos] / xpt[i_xl_pos, k], initial=-np.inf)
+        alpha_xl_neg = np.max(xu[i_xu_neg] / xpt[i_xu_neg, k], initial=-np.inf)
+        alpha_xu_pos = np.min(xu[i_xu_pos] / xpt[i_xu_pos, k], initial=np.inf)
+        alpha_xu_neg = np.min(xl[i_xl_neg] / xpt[i_xl_neg, k], initial=np.inf)
         alpha_xl = max(alpha_xl_pos, alpha_xl_neg)
         alpha_xu = min(alpha_xu_pos, alpha_xu_neg)
 
         # Set alpha_pos to the step size for the maximization problem without
         # any constraint along the positive direction, and alpha_neg to the step
         # size for the maximization problem along the negative direction.
-        grad_step = np.inner(grad, xpt[k, :])
-        hess_step = hess_prod(xpt[k, :])
-        curv_step = np.inner(xpt[k, :], hess_step)
+        grad_step = np.inner(grad, xpt[:, k])
+        hess_step = hess_prod(xpt[:, k])
+        curv_step = np.inner(xpt[:, k], hess_step)
         if grad_step >= 0.0 and curv_step < -np.finfo(float).tiny * grad_step or grad_step <= 0.0 and curv_step > -np.finfo(float).tiny * grad_step:
             alpha_pos = max(-grad_step / curv_step, 0.0)
         else:
@@ -197,10 +198,10 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
         q_val_pos = const + alpha_pos * grad_step + 0.5 * alpha_pos ** 2.0 * curv_step
         q_val_neg = const + alpha_neg * grad_step + 0.5 * alpha_neg ** 2.0 * curv_step
         if abs(q_val_pos) >= abs(q_val_neg) and abs(q_val_pos) > abs(q_val):
-            step = np.maximum(xl, np.minimum(alpha_pos * xpt[k, :], xu))
+            step = np.maximum(xl, np.minimum(alpha_pos * xpt[:, k], xu))
             q_val = q_val_pos
         elif abs(q_val_neg) > abs(q_val_pos) and abs(q_val_neg) > abs(q_val):
-            step = np.maximum(xl, np.minimum(alpha_neg * xpt[k, :], xu))
+            step = np.maximum(xl, np.minimum(alpha_neg * xpt[:, k], xu))
             q_val = q_val_neg
 
     if debug:
