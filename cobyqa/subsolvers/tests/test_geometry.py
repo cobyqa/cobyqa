@@ -85,6 +85,32 @@ class TestSpiderGeometry:
                 if np.linalg.norm(xpt[:, k]) < delta + tol and np.all(xl <= xpt[:, k]) and np.all(xpt[:, k] <= xu):
                     assert abs(q_val) >= abs(const + xpt[:, k] @ grad + 0.5 * xpt[:, k] @ hess @ xpt[:, k])
 
+    def test_exception(self):
+        # Construct a random subproblem.
+        rng = np.random.default_rng(0)
+        const, grad, hess, xl, xu, delta = _subproblem(rng, 5)
+        xpt = rng.standard_normal((5, 11))
+
+        # We must have xl <= 0.
+        with pytest.raises(ValueError):
+            xl_wrong = np.copy(xl)
+            xl_wrong[0] = 0.1
+            spider_geometry(const, grad, lambda s: hess @ s, xpt, xl_wrong, xu, delta, True)
+
+        # We must have 0 <= xu.
+        with pytest.raises(ValueError):
+            xu_wrong = np.copy(xu)
+            xu_wrong[0] = -0.1
+            spider_geometry(const, grad, lambda s: hess @ s, xpt, xl, xu_wrong, delta, True)
+
+        # We must have delta < inf.
+        with pytest.raises(ValueError):
+            spider_geometry(const, grad, lambda s: hess @ s, xpt, xl, xu, np.inf, True)
+
+        # We must have delta > 0.
+        with pytest.raises(ValueError):
+            spider_geometry(const, grad, lambda s: hess @ s, xpt, xl, xu, -1.0, True)
+
 
 def _subproblem(rng, n):
     const = rng.standard_normal()

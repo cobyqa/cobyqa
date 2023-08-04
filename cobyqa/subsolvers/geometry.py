@@ -143,11 +143,13 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
     """
     # Check the feasibility of the subproblem.
     n, npt = xpt.shape
-    if debug:
-        tol = get_arrays_tol(xl, xu)
-        assert np.max(xl) <= tol
-        assert np.min(xu) >= -tol
-        assert np.isfinite(delta) and delta > 0.0
+    tol = get_arrays_tol(xl, xu)
+    if np.max(xl) > tol:
+        raise ValueError('The lower bounds must be nonpositive.')
+    if np.min(xu) < -tol:
+        raise ValueError('The upper bounds must be nonnegative.')
+    if not np.isfinite(delta) or delta <= 0.0:
+        raise ValueError('The trust-region radius must be finite and positive.')
     xl = np.minimum(xl, 0.0)
     xu = np.maximum(xu, 0.0)
 
@@ -178,9 +180,9 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
         # Set alpha_pos to the step size for the maximization problem without
         # any constraint along the positive direction, and alpha_neg to the step
         # size for the maximization problem along the negative direction.
-        grad_step = np.inner(grad, xpt[:, k])
+        grad_step = grad @ xpt[:, k]
         hess_step = hess_prod(xpt[:, k])
-        curv_step = np.inner(xpt[:, k], hess_step)
+        curv_step = xpt[:, k] @ hess_step
         if grad_step >= 0.0 and curv_step < -np.finfo(float).tiny * grad_step or grad_step <= 0.0 and curv_step > -np.finfo(float).tiny * grad_step:
             alpha_pos = max(-grad_step / curv_step, 0.0)
         else:
@@ -228,7 +230,7 @@ def _cauchy_geom(const, grad, hess_prod, xl, xu, delta, debug):
         while True:
             # Calculate the Cauchy step for the directions in the working set.
             g_norm = np.linalg.norm(grad[working])
-            delta_reduced = np.sqrt(delta ** 2.0 - np.inner(cauchy_step[~working], cauchy_step[~working]))
+            delta_reduced = np.sqrt(delta ** 2.0 - cauchy_step[~working] @ cauchy_step[~working])
             if g_norm > np.finfo(float).tiny * abs(delta_reduced):
                 mu = max(delta_reduced / g_norm, 0.0)
             else:
@@ -246,7 +248,7 @@ def _cauchy_geom(const, grad, hess_prod, xl, xu, delta, debug):
             working = working & ~(fixed_xl | fixed_xu)
 
     # Calculate the step that maximizes the quadratic along the Cauchy step.
-    grad_step = np.inner(grad, cauchy_step)
+    grad_step = grad @ cauchy_step
     if grad_step >= 0.0:
         # Set alpha_tr to the step size for the trust-region constraint.
         s_norm = np.linalg.norm(cauchy_step)
@@ -258,7 +260,7 @@ def _cauchy_geom(const, grad, hess_prod, xl, xu, delta, debug):
 
         # Set alpha_quad to the step size for the maximization problem.
         hess_step = hess_prod(cauchy_step)
-        curv_step = np.inner(cauchy_step, hess_step)
+        curv_step = cauchy_step @ hess_step
         if curv_step < -np.finfo(float).tiny * grad_step:
             alpha_quad = max(-grad_step / curv_step, 0.0)
         else:
