@@ -1,24 +1,5 @@
 # Codecov configuration file
 
-codecov:
-  require_ci_to_pass: false
-  notify:
-    require_ci_to_pass: false
-
-coverage:
-  status:
-    project:
-      default:
-        target: 1
-    patch:
-      default:
-        target: 0
-        if_not_found: success
-        if_ci_failed: error
-
 ignore:
   - '**/tests/*.py'
   - 'cobyqa/utils/versions.py'
-
-github_checks:
-    annotations: false
