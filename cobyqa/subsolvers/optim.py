@@ -73,9 +73,9 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
 
     # Check the feasibility of the subproblem.
     tol = get_arrays_tol(xl, xu)
-    if np.max(xl) > tol:
+    if np.any(xl > tol):
         raise ValueError('The lower bounds must be nonpositive.')
-    if np.min(xu) < -tol:
+    if np.any(xu < -tol):
         raise ValueError('The upper bounds must be nonnegative.')
     if not np.isfinite(delta) or delta <= 0.0:
         raise ValueError('The trust-region radius must be finite and positive.')
@@ -259,7 +259,7 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
             else:
                 break
 
-        # Ensure that tne alternative iteration improves the objective function.
+        # Ensure that the alternative iteration improves the objective function.
         if grad_orig @ step + 0.5 * step @ hess_prod(step) > grad_orig @ step_base + 0.5 * step_base @ hess_prod(step_base):
             step = step_base
 
@@ -347,11 +347,11 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
 
     # Check the feasibility of the subproblem.
     tol = get_arrays_tol(xl, xu)
-    if np.max(xl) > tol:
+    if np.any(xl > tol):
         raise ValueError('The lower bounds must be nonpositive.')
-    if np.min(xu) < -tol:
+    if np.any(xu < -tol):
         raise ValueError('The upper bounds must be nonnegative.')
-    if np.min(bub) < -tol:
+    if np.any(bub < -tol):
         raise ValueError('The linear inequality constraints must be feasible at the origin.')
     if not np.isfinite(delta) or delta <= 0.0:
         raise ValueError('The trust-region radius must be finite and positive.')
@@ -573,7 +573,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
             else:
                 break
 
-        # Ensure that tne alternative iteration improves the objective function.
+        # Ensure that the alternative iteration improves the objective function.
         if grad_orig @ step + 0.5 * step @ hess_prod(step) > grad_orig @ step_base + 0.5 * step_base @ hess_prod(step_base):
             step = step_base
 
@@ -651,9 +651,9 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
     # Check the feasibility of the subproblem.
     m_linear_ub, n = aub.shape
     tol = get_arrays_tol(xl, xu)
-    if np.max(xl) > tol:
+    if np.any(xl > tol):
         raise ValueError('The lower bounds must be nonpositive.')
-    if np.min(xu) < -tol:
+    if np.any(xu < -tol):
         raise ValueError('The upper bounds must be nonnegative.')
     if not np.isfinite(delta) or delta <= 0.0:
         raise ValueError('The trust-region radius must be finite and positive.')
@@ -879,7 +879,7 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
             else:
                 break
 
-        # Ensure that tne alternative iteration improves the objective function.
+        # Ensure that the alternative iteration improves the objective function.
         resid_ub = np.maximum(aub @ step - bub, 0.0)
         resid_ub_base = np.maximum(aub @ step_base - bub, 0.0)
         resid_eq = aeq @ step - beq

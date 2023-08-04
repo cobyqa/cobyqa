@@ -36,7 +36,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
 
     Parameters
     ----------
-    fun : callable
+    fun : {callable, None}
         Objective function to be minimized.
 
             ``fun(x, *args) -> float``

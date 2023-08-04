@@ -60,9 +60,9 @@ def cauchy_geometry(const, grad, hess_prod, xl, xu, delta, debug):
     """
     # Check the feasibility of the subproblem.
     tol = get_arrays_tol(xl, xu)
-    if np.max(xl) > tol:
+    if np.any(xl > tol):
         raise ValueError('The lower bounds must be nonpositive.')
-    if np.min(xu) < -tol:
+    if np.any(xu < -tol):
         raise ValueError('The upper bounds must be nonnegative.')
     if not np.isfinite(delta) or delta <= 0.0:
         raise ValueError('The trust-region radius must be finite and positive.')
@@ -144,9 +144,9 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
     # Check the feasibility of the subproblem.
     n, npt = xpt.shape
     tol = get_arrays_tol(xl, xu)
-    if np.max(xl) > tol:
+    if np.any(xl > tol):
         raise ValueError('The lower bounds must be nonpositive.')
-    if np.min(xu) < -tol:
+    if np.any(xu < -tol):
         raise ValueError('The upper bounds must be nonnegative.')
     if not np.isfinite(delta) or delta <= 0.0:
         raise ValueError('The trust-region radius must be finite and positive.')

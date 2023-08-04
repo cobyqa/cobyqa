@@ -16,7 +16,7 @@ class Function(ABC):
 
         Parameters
         ----------
-        fun : callable
+        fun : {callable, None}
             Function to evaluate, or None.
 
                 ``fun(x, *args) -> {float, array_like}``
@@ -77,7 +77,7 @@ class Function(ABC):
         str
             Name of the function.
         """
-        return self._fun.__name__
+        return self._fun.__name__ if self._fun is not None else ''
 
     @property
     def n_eval(self):
@@ -213,7 +213,7 @@ class ObjectiveFunction(Function):
 
         Parameters
         ----------
-        fun : callable
+        fun : {callable, None}
             Function to evaluate, or None.
 
                 ``fun(x, *args) -> float``
@@ -484,7 +484,7 @@ class NonlinearConstraints(Function, Constraints):
 
         Parameters
         ----------
-        fun : callable
+        fun : {callable, None}
             Function to evaluate, or None.
 
                 ``fun(x, *args) -> array_like``
