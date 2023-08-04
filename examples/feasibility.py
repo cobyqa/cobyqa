@@ -13,4 +13,4 @@ def ceq(x):
 
 if __name__ == '__main__':
     options = {'verbose': True}
-    res = minimize(None, np.zeros(5), ceq=ceq, options=options)
+    minimize(None, np.zeros(5), ceq=ceq, options=options)

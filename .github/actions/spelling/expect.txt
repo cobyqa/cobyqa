@@ -16,6 +16,7 @@ booktitle
 BUILDDIR
 bvls
 byrd
+capsys
 cauchy
 cbd
 ceq

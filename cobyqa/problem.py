@@ -700,14 +700,14 @@ class Problem:
     @property
     def n_eval(self):
         """
-        Number of objective function evaluations.
+        Number of function evaluations.
 
         Returns
         -------
         int
-            Number of objective function evaluations.
+            Number of function evaluations.
         """
-        return self._obj.n_eval
+        return max(self._obj.n_eval, self._nonlinear_ub.n_eval, self._nonlinear_eq.n_eval)
 
     @property
     def bounds(self):
@@ -844,6 +844,18 @@ class Problem:
             # is not known before the first call to the function, we assume that
             # the problem is nonlinearly constrained.
             return 'nonlinearly constrained'
+
+    @property
+    def is_feasibility(self):
+        """
+        Whether the problem is a feasibility problem.
+
+        Returns
+        -------
+        bool
+            Whether the problem is a feasibility problem.
+        """
+        return self.fun_name == ''
 
     def build_x(self, x):
         """

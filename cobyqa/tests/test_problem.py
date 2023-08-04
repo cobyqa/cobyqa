@@ -83,7 +83,9 @@ class TestBoundConstraints:
 
 
 class TestLinearConstraints:
-    pass
+
+    def test_simple(self):
+        linear = LinearConstraints(np.ones((2, 5)), np.ones(2))
 
 
 class TestNonlinearConstraints:

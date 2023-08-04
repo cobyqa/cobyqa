@@ -17,7 +17,7 @@ coverage:
         if_ci_failed: error
 
 ignore:
-  - 'cobyqa/**/tests/*.py'
+  - '**/tests/*.py'
   - 'cobyqa/utils/versions.py'
 
 github_checks:
