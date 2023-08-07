@@ -26,7 +26,7 @@ Let us first minimize the Rosenbrock function implemented in `scipy.optimize`, d
 
     f(x) = \sum_{i = 1}^{n - 1} 100 (x_{i + 1} - x_i^2)^2 + (x_i - 1)^2
 
-for :math:`x \in \mathbb{R}^n`.
+for :math:`x \in \R^n`.
 To solve the problem using COBYQA, run:
 
 .. code-block:: python
@@ -45,12 +45,12 @@ To see how bound and linear constraints are handled using `minimize`, let us sol
 .. math::
 
     \begin{aligned}
-        \min_{x \in \mathbb{R}^2}   & \quad (x_1 - 1)^2 + (x_2 - 2.5)^2\\
-        \text{s.t.}                 & \quad -x_1 + 2x_2 \le 2,\\
-                                    & \quad x_1 + 2x_2 \le 6,\\
-                                    & \quad x_1 - 2x_2 \le 2,\\
-                                    & \quad x_1 \ge 0,\\
-                                    & \quad x_2 \ge 0.
+        \min_{x \in \R^2}   & \quad (x_1 - 1)^2 + (x_2 - 2.5)^2\\
+        \text{s.t.}         & \quad -x_1 + 2x_2 \le 2,\\
+                            & \quad x_1 + 2x_2 \le 6,\\
+                            & \quad x_1 - 2x_2 \le 2,\\
+                            & \quad x_1 \ge 0,\\
+                            & \quad x_2 \ge 0.
     \end{aligned}
 
 To solve the problem using COBYQA, run:
@@ -76,9 +76,9 @@ Finally, to see how nonlinear constraints are handled, we solve Problem (F) of :
     .. math::
 
         \begin{aligned}
-            \min_{x \in \mathbb{R}^2}   & \quad -x_1 - x_2\\
-            \text{s.t.}                 & \quad x_1^2 - x_2 \le 0,\\
-                                        & \quad x_1^2 + x_2^2 \le 1.
+            \min_{x \in \R^2}   & \quad -x_1 - x_2\\
+            \text{s.t.}         & \quad x_1^2 - x_2 \le 0,\\
+                                & \quad x_1^2 + x_2^2 \le 1.
         \end{aligned}
 
 To solve the problem using COBYQA, run:

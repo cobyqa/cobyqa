@@ -18,14 +18,14 @@ Using only functions values, and no derivatives, it aims at solving problems of 
 
 .. math::
 
-    \min_{x \in \mathbb{R}^n} \quad f ( x ) \quad \text{s.t.} \quad
+    \min_{x \in \R^n} \quad \obj ( x ) \quad \text{s.t.} \quad
     \left\{ \begin{array}{l}
-        l \le x \le u,\\
-        A_{\scriptscriptstyle \text{I}} x \le b_{\scriptscriptstyle \text{I}}, ~ A_{\scriptscriptstyle \text{E}} x = b_{\scriptscriptstyle \text{E}},\\
-        c_{\scriptscriptstyle \text{I}} ( x ) \le 0, ~ c_{\scriptscriptstyle \text{E}} ( x ) = 0.
+        \xl \le x \le \xu,\\
+        \aub x \le \bub, ~ \aeq x = \beq,\\
+        \cub ( x ) \le 0, ~ \ceq ( x ) = 0.
     \end{array} \right.
 
-COBYQA assumes that the bound constraints :math:`l \le x \le u` are unrelaxable, i.e., that the nonlinear functions :math:`f`, :math:`c_{\scriptscriptstyle \text{I}}`, and :math:`c_{\scriptscriptstyle \text{E}}` cannot be evaluated outside the bounds.
+COBYQA assumes that the bound constraints :math:`l \le x \le u` are unrelaxable, i.e., that the nonlinear functions :math:`\obj`, :math:`\cub`, and :math:`\ceq` cannot be evaluated outside the bounds.
 Hence, COBYQA always respect the bound constraints throughout the optimization process.
 To install COBYQA, run in your terminal
 

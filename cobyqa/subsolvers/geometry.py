@@ -12,9 +12,9 @@ def cauchy_geometry(const, grad, hess_prod, xl, xu, delta, debug):
 
     .. math::
 
-        \max_{s \in \mathbb{R}^n} \quad \bigg\lvert c + g^{\mathsf{T}} s + \frac{1}{2} s^{\mathsf{T}} H s \bigg\rvert \quad \text{s.t.} \quad
+        \max_{s \in \R^n} \quad \bigg\lvert c + \transpose{g} s + \frac{1}{2} \transpose{s} H s \bigg\rvert \quad \text{s.t.} \quad
         \left\{ \begin{array}{l}
-            l \le s \le u,\\
+            \xl \le s \le \xu,\\
             \lVert s \rVert \le \Delta,
         \end{array} \right.
 
@@ -33,9 +33,9 @@ def cauchy_geometry(const, grad, hess_prod, xl, xu, delta, debug):
 
         returns the product :math:`H s`.
     xl : numpy.ndarray, shape (n,)
-        Lower bounds :math:`l` as shown above.
+        Lower bounds :math:`\xl` as shown above.
     xu : numpy.ndarray, shape (n,)
-        Upper bounds :math:`u` as shown above.
+        Upper bounds :math:`\xu` as shown above.
     delta : float
         Trust-region radius :math:`\Delta` as shown above.
     debug : bool
@@ -92,9 +92,9 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
 
     .. math::
 
-        \max_{s \in \mathbb{R}^n} \quad \bigg\lvert c + g^{\mathsf{T}} s + \frac{1}{2} s^{\mathsf{T}} H s \bigg\rvert \quad \text{s.t.} \quad
+        \max_{s \in \R^n} \quad \bigg\lvert c + \transpose{g} s + \frac{1}{2} \transpose{s} H s \bigg\rvert \quad \text{s.t.} \quad
         \left\{ \begin{array}{l}
-            l \le s \le u,\\
+            \xl \le s \le \xu,\\
             \lVert s \rVert \le \Delta,
         \end{array} \right.
 
@@ -116,9 +116,9 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
         Points defining the straight lines. The straight lines considered are
         the ones passing through the origin and the points in `xpt`.
     xl : numpy.ndarray, shape (n,)
-        Lower bounds :math:`l` as shown above.
+        Lower bounds :math:`\xl` as shown above.
     xu : numpy.ndarray, shape (n,)
-        Upper bounds :math:`u` as shown above.
+        Upper bounds :math:`\xu` as shown above.
     delta : float
         Trust-region radius :math:`\Delta` as shown above.
     debug : bool

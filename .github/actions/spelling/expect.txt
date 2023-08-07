@@ -93,6 +93,7 @@ rosen
 rosenbrock
 rst
 scipy
+scriptscriptstyle
 setcounter
 SOURCEDIR
 SPHINXBUILD
