@@ -1,9 +1,12 @@
 ABCDEFGHIJ
 ABCDEFHIJ
 ABDEF
+allclose
+arange
 asarray
 astype
 atleast
+atol
 aub
 autoattribute
 autoclass
@@ -27,6 +30,7 @@ codeql
 Comput
 copybutton
 cov
+cumsum
 currentmodule
 curv
 dsfontserif
@@ -57,6 +61,7 @@ lstsq
 lvert
 mathalpha
 mathbb
+mathjax
 mathsf
 matplotlib
 maxcv
@@ -92,6 +97,7 @@ razh
 rosen
 rosenbrock
 rst
+rothyp
 scipy
 scriptscriptstyle
 setcounter
@@ -101,6 +107,8 @@ sphinxcontrib
 SPHINXOPTS
 sqp
 subsolvers
+sumpow
+sumsqu
 techreport
 testpypi
 testsetup

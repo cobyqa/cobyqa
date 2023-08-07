@@ -63,11 +63,12 @@ To check your installation, you can execute
 Testing
 ~~~~~~~
 
-To execute the test suite of COBYQA, you first need to install the package as
+To execute the test suite of COBYQA, you first need to install ``pytest``.
+For example, using ``pip``
 
 .. code:: bash
 
-    pip install cobyqa[tests]
+    pip install pytest
 
 You can then run the test suite by executing
 
@@ -79,13 +80,12 @@ Examples
 --------
 
 The folder ``examples`` contains a few examples of how to use COBYQA.
-To run ``powell2015.py``, you first need to install the package as
+To run ``powell2015.py``, you first need to install ``matplotlib``.
+For example, using ``pip``
 
 .. code:: bash
 
-    pip install cobyqa[examples]
-
-This will install ``matplotlib`` alongside COBYQA.
+    pip install matplotlib
 
 Support
 -------
