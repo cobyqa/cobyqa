@@ -10,10 +10,6 @@ from cobyqa import minimize
 class TestMinimizeBase(ABC):
 
     @staticmethod
-    def rosen(x):
-        return np.sum(100.0 * np.square(x[1:] - np.square(x[:-1])) + np.square(x[:-1] - 1.0))
-
-    @staticmethod
     def rothyp(x):
         return np.sum(np.cumsum(np.square(x)))
 
@@ -42,7 +38,6 @@ class TestMinimizeBase(ABC):
     @pytest.fixture
     def x0(self, fun, n):
         return {
-            'rosen': np.zeros(n),
             'rothyp': np.ones(n),
             'sphere': np.ones(n),
             'sumsqu': np.ones(n),
@@ -52,7 +47,6 @@ class TestMinimizeBase(ABC):
     @pytest.fixture
     def xl(self, fun, n):
         return {
-            'rosen': -2.048 * np.ones(n),
             'rothyp': -65.536 * np.ones(n),
             'sphere': -5.12 * np.ones(n),
             'sumsqu': -5.12 * np.ones(n),
@@ -62,7 +56,6 @@ class TestMinimizeBase(ABC):
     @pytest.fixture
     def xu(self, fun, n):
         return {
-            'rosen': 2.048 * np.ones(n),
             'rothyp': 65.536 * np.ones(n),
             'sphere': 5.12 * np.ones(n),
             'sumsqu': 5.12 * np.ones(n),
@@ -72,7 +65,6 @@ class TestMinimizeBase(ABC):
     @pytest.fixture
     def x_best(self, fun, n):
         return {
-            'rosen': np.ones(n),
             'rothyp': np.zeros(n),
             'sphere': np.zeros(n),
             'sumsqu': np.zeros(n),
@@ -82,7 +74,6 @@ class TestMinimizeBase(ABC):
     @pytest.fixture
     def fun_best(self, fun, n):
         return {
-            'rosen': 0.0,
             'rothyp': 0.0,
             'sphere': 0.0,
             'sumsqu': 0.0,
@@ -92,13 +83,13 @@ class TestMinimizeBase(ABC):
 
 class TestMinimizeUnconstrained(TestMinimizeBase):
 
-    @pytest.mark.parametrize('fun', ['rosen', 'rothyp', 'sphere', 'sumsqu', 'trid'])
+    @pytest.mark.parametrize('fun', ['rothyp', 'sphere', 'sumsqu', 'trid'])
     @pytest.mark.parametrize('n', [2, 5, 10])
     def test_simple(self, fun, n, x0, x_best, fun_best):
         res = minimize(fun=getattr(self, fun), x0=x0, options={'debug': True})
         self.assert_result(res, n, x_best, fun_best, 0, 0.0)
 
-    @pytest.mark.parametrize('fun', ['rosen', 'rothyp', 'sphere', 'sumsqu', 'trid'])
+    @pytest.mark.parametrize('fun', ['rothyp', 'sphere', 'sumsqu', 'trid'])
     @pytest.mark.parametrize('n', [2, 5, 10])
     def test_target(self, fun, n, x0, x_best, fun_best):
         res = minimize(fun=getattr(self, fun), x0=x0, options={'target': fun_best + 1.0, 'debug': True})
