@@ -37,7 +37,8 @@ class Optimizer:
                 constraints.append(NonlinearConstraint(self.ceq, np.zeros(self.m_nonlinear_eq), np.zeros(self.m_nonlinear_eq)))
             options['maxfev'] = self.max_eval
             options['eliminate_lin_eq'] = False
-            res = pdfo(self.fun, self.problem.x0, (fun_values, resid_values), bounds=bounds, constraints=constraints, options=options)
+            method = None if self.solver.lower() == 'pdfo' else self.solver
+            res = pdfo(self.fun, self.problem.x0, (fun_values, resid_values), method, bounds, constraints, options)
             success = res.success
         else:
             from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, minimize

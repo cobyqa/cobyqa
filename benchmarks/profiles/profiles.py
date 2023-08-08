@@ -145,12 +145,12 @@ class Profiles:
         if self.feature_options['rerun'] == 1:
             fun_path = Path(cache, f'fun-hist-{solver.lower()}.npy')
             resid_path = Path(cache, f'resid-hist-{solver.lower()}.npy')
-            var_path = Path(cache, f'var-hist-{solver.lower()}.npy')
+            success_path = Path(cache, f'success-hist-{solver.lower()}.npy')
         else:
             fun_path = Path(cache, f'fun-hist-{solver.lower()}-{k}.npy')
             resid_path = Path(cache, f'resid-hist-{solver.lower()}-{k}.npy')
-            var_path = Path(cache, f'var-hist-{solver.lower()}-{k}.npy')
-        return fun_path, resid_path, var_path
+            success_path = Path(cache, f'success-hist-{solver.lower()}-{k}.npy')
+        return fun_path, resid_path, success_path
 
     def get_profiles_path(self, solvers, precisions):
         if not isinstance(solvers, str):
@@ -333,11 +333,10 @@ class Profiles:
         logger = get_logger(__name__)
 
         # Load the PyCUTEst problem.
-        problem_name = self.problem_names[i]
-        logger.info(f'Loading {problem_name} ({i + 1}/{len(self.problem_names)})')
-        problem = self.load(problem_name)
+        logger.info(f'Loading {self.problem_names[i]} ({i + 1}/{len(self.problem_names)})')
+        problem = self.load(self.problem_names[i])
         if problem is None:
-            logger.warning(f'{problem_name}: failed to load')
+            logger.warning(f'{self.problem_names[i]}: failed to load')
             return
 
         # Solve the problem with the given solvers.
@@ -345,21 +344,22 @@ class Profiles:
         for j, solver in enumerate(solvers):
             for k in range(self.feature_options['rerun']):
                 # Attempt to load the history of the solver.
-                fun_path, resid_path, var_path = self.get_storage_path(problem, solver, k)
+                fun_path, resid_path, success_path = self.get_storage_path(problem, solver, k)
                 is_loaded = False
                 n_eval = 0
-                if load and fun_path.is_file() and resid_path.is_file() and var_path.is_file():
+                if load and fun_path.is_file() and resid_path.is_file() and success_path.is_file():
                     fun_values = np.load(fun_path)
                     resid_values = np.load(resid_path)
                     n_eval = fun_values.size
-                    if self.max_eval >= n_eval:
-                        var_values = np.load(var_path)
-                        if var_values[0]:
+                    if n_eval <= self.max_eval:
+                        success = np.load(success_path)
+                        if success:
                             merit_values[j, k, :n_eval] = self.merit(fun_values, resid_values, **kwargs)
                             merit_values[j, k, n_eval:] = merit_values[j, k, n_eval - 1]
                             is_loaded = True
                     else:
-                        merit_values[j, k, :] = self.merit(fun_values[:self.max_eval], resid_values[:self.max_eval], **kwargs)
+                        n_eval = self.max_eval
+                        merit_values[j, k, :] = self.merit(fun_values[:n_eval], resid_values[:n_eval], **kwargs)
                         is_loaded = True
 
                 # Solve the problem if the history is not loaded.
@@ -372,8 +372,9 @@ class Profiles:
                     merit_values[j, k, :n_eval] = self.merit(fun_values[:n_eval], resid_values[:n_eval], **kwargs)
                     merit_values[j, k, n_eval:] = merit_values[j, k, n_eval - 1]
                     np.save(fun_path, fun_values[:n_eval])
-                    np.save(resid_path, fun_values[:n_eval])
-                    np.save(var_path, np.array([success]))
+                    np.save(resid_path, resid_values[:n_eval])
+                    # np.save(success_path, np.array([success]))
+                    np.save(success_path, np.array([True]))
 
                 # Log the results.
                 if not np.all(np.isnan(merit_values[j, k, :n_eval])):
@@ -381,11 +382,11 @@ class Profiles:
                         header = f'{solver}({problem.name},{k})'
                     else:
                         header = f'{solver}({problem.name})'
-                    i = np.argmin(merit_values[j, k, :n_eval])
-                    logger.info(f'{header}: fun = {fun_values[i]}, resid = {resid_values[i]}, n_eval = {n_eval}')
+                    i_min = np.nanargmin(merit_values[j, k, :n_eval])
+                    logger.info(f'{header}: fun = {fun_values[i_min]}, resid = {resid_values[i_min]}, n_eval = {n_eval}')
                 else:
                     logger.warning(f'{solver}({problem.name}): no value received')
-        return merit_values, problem_name, problem.n
+        return merit_values, self.problem_names[i], problem.n
 
     def load(self, problem_name):
         logger = get_logger(__name__)
