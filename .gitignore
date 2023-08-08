@@ -146,6 +146,9 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+## PyCUTEst
+pycutest_cache_holder/
+
 ## Pyre type checker
 .pyre/
 
@@ -212,15 +215,12 @@ Icon
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
 
-# Directories potentially created on remote AFP share
+## Directories potentially created on remote AFP share
 .AppleDB
 .AppleDesktop
 Network Trash Folder
 Temporary Items
 .apdisk
 
-# Editor-based Rest Client
-.idea/httpRequests
-
-# Android studio 3.1+ serialized cache file
-.idea/caches/build_file_checksums.ser
+# COBYQA
+benchmarks/archives/
