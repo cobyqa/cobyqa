@@ -30,7 +30,7 @@ jobs:
     steps:
     - name: Check spelling
       id: spelling
-      uses: check-spelling/check-spelling@main
+      uses: check-spelling/check-spelling@prerelease
       with:
         suppress_push_for_open_pull_request: 1
         checkout: true
@@ -60,7 +60,7 @@ jobs:
 
     steps:
     - name: Comment
-      uses: check-spelling/check-spelling@main
+      uses: check-spelling/check-spelling@prerelease
       with:
         checkout: true
         spell_check_this: check-spelling/spell-check-this@prerelease
@@ -76,7 +76,7 @@ jobs:
 
     steps:
     - name: Comment
-      uses: check-spelling/check-spelling@main
+      uses: check-spelling/check-spelling@prerelease
       with:
         checkout: true
         spell_check_this: check-spelling/spell-check-this@prerelease
@@ -97,7 +97,7 @@ jobs:
 
     steps:
     - name: Apply spelling updates
-      uses: check-spelling/check-spelling@main
+      uses: check-spelling/check-spelling@prerelease
       with:
         experimental_apply_changes_via_bot: 1
         checkout: true
