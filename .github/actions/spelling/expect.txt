@@ -39,6 +39,7 @@ endblock
 endfor
 finfo
 flatnonzero
+fontenc
 footbibliography
 footcite
 hess
@@ -98,6 +99,7 @@ rosen
 rosenbrock
 rst
 rothyp
+rvert
 scipy
 scriptscriptstyle
 setcounter
@@ -107,7 +109,6 @@ sphinxcontrib
 SPHINXOPTS
 sqp
 subsolvers
-sumpow
 sumsqu
 techreport
 testpypi
@@ -115,7 +116,9 @@ testsetup
 tocdepth
 toctree
 uadratic
+usepackage
 usr
+vec
 whl
 xnew
 xpt

@@ -11,12 +11,15 @@ Codecov
 CodeQL
 conda
 DAMTP
+dpi
 epub
 github
 Hennart
 https
+img
 KKT
 linearizations
+Linux
 NEWUOA
 Nocedal
 nonconvex
@@ -24,6 +27,7 @@ Omojokun
 Pillo
 Powell
 Ragonneau
+rgba
 Rosenbrock
 SQP
 ssh
