@@ -21,6 +21,24 @@ class Optimizer:
             options['max_eval'] = self.max_eval
             res = minimize(lambda x: self.fun(x, fun_values, resid_values), self.problem.x0, xl=self.xl, xu=self.xu, aub=self.aub, bub=self.bub, aeq=self.aeq, beq=self.beq, cub=self.cub, ceq=self.ceq, options=options)
             success = res.success
+        elif self.solver.lower() in ['pdfo', 'uobyqa', 'newuoa', 'bobyqa', 'lincoa', 'cobyla']:
+            from pdfo import Bounds, LinearConstraint, NonlinearConstraint, pdfo
+            bounds = Bounds(self.xl, self.xu)
+            constraints = []
+            if self.m_linear_ub > 0:
+                constraints.append(
+                    LinearConstraint(self.aub, -np.inf, self.bub))
+            if self.m_linear_eq > 0:
+                constraints.append(
+                    LinearConstraint(self.aeq, self.beq, self.beq))
+            if self.m_nonlinear_ub > 0:
+                constraints.append(NonlinearConstraint(self.cub, -np.inf, np.zeros(self.m_nonlinear_ub)))
+            if self.m_nonlinear_eq > 0:
+                constraints.append(NonlinearConstraint(self.ceq, np.zeros(self.m_nonlinear_eq), np.zeros(self.m_nonlinear_eq)))
+            options['maxfev'] = self.max_eval
+            options['eliminate_lin_eq'] = False
+            res = pdfo(self.fun, self.problem.x0, (fun_values, resid_values), bounds=bounds, constraints=constraints, options=options)
+            success = res.success
         else:
             from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, minimize
             bounds = Bounds(self.xl, self.xu)
@@ -104,11 +122,11 @@ class Optimizer:
         iub_cu = self.cu[iub] < np.inf
         aub = []
         for i, index in enumerate(np.flatnonzero(iub)):
-            _, g_index = self.problem.cons(np.zeros(self.problem.n), index, True)
+            _, g_val = self.problem.cons(np.zeros(self.problem.n), index, True)
             if iub_cl[i]:
-                aub.append(-g_index)
+                aub.append(-g_val)
             if iub_cu[i]:
-                aub.append(g_index)
+                aub.append(g_val)
         return np.reshape(aub, (-1, self.problem.n))
 
     @property
@@ -120,11 +138,11 @@ class Optimizer:
         iub_cu = self.cu[iub] < np.inf
         bub = []
         for i, index in enumerate(np.flatnonzero(iub)):
-            c_index = self.problem.cons(np.zeros(self.problem.n), index)
+            c_val = self.problem.cons(np.zeros(self.problem.n), index)
             if iub_cl[i]:
-                bub.append(c_index - self.cl[index])
+                bub.append(c_val - self.cl[index])
             if iub_cu[i]:
-                bub.append(self.cu[index] - c_index)
+                bub.append(self.cu[index] - c_val)
         return np.array(bub)
 
     @property
@@ -134,8 +152,8 @@ class Optimizer:
         ieq = self.problem.is_linear_cons & self.problem.is_eq_cons
         aeq = []
         for index in np.flatnonzero(ieq):
-            _, g_index = self.problem.cons(np.zeros(self.problem.n), index, True)
-            aeq.append(g_index)
+            _, g_val = self.problem.cons(np.zeros(self.problem.n), index, True)
+            aeq.append(g_val)
         return np.reshape(aeq, (-1, self.problem.n))
 
     @property
@@ -145,8 +163,8 @@ class Optimizer:
         ieq = self.problem.is_linear_cons & self.problem.is_eq_cons
         beq = []
         for index in np.flatnonzero(ieq):
-            c_index = self.problem.cons(np.zeros(self.problem.n), index)
-            beq.append(c_index - 0.5 * (self.cl[index] + self.cu[index]))
+            c_val = self.problem.cons(np.zeros(self.problem.n), index)
+            beq.append(c_val - 0.5 * (self.cl[index] + self.cu[index]))
         return np.array(beq)
 
     def fun(self, x, fun_values, resid_values):
@@ -168,11 +186,11 @@ class Optimizer:
         iub_cu = self.cu[iub] < np.inf
         c = []
         for i, index in enumerate(np.flatnonzero(iub)):
-            c_index = self.problem.cons(x, index)
+            c_val = self.problem.cons(x, index)
             if iub_cl[i]:
-                c.append(self.cl[index] - c_index)
+                c.append(self.cl[index] - c_val)
             if iub_cu[i]:
-                c.append(c_index - self.cu[index])
+                c.append(c_val - self.cu[index])
         return np.array(c, dtype=float)
 
     def ceq(self, x):
@@ -182,8 +200,8 @@ class Optimizer:
         ieq = np.logical_not(self.problem.is_linear_cons) & self.problem.is_eq_cons
         c = []
         for index in np.flatnonzero(ieq):
-            c_index = self.problem.cons(x, index)
-            c.append(c_index - 0.5 * (self.cl[index] + self.cu[index]))
+            c_val = self.problem.cons(x, index)
+            c.append(c_val - 0.5 * (self.cl[index] + self.cu[index]))
         return np.array(c, dtype=float)
 
     def resid(self, x):

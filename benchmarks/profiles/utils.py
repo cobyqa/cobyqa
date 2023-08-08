@@ -2,6 +2,21 @@ import logging
 
 
 def get_logger(name=None, level=logging.DEBUG):
+    """
+    Get a logger with the given name.
+
+    Parameters
+    ----------
+    name : str
+        Name of the logger. If None, the root logger is returned.
+    level : int
+        Logging level.
+
+    Returns
+    -------
+    logging.Logger
+        Logger with the given name.
+    """
     logger = logging.getLogger(name)
 
     # Multiple calls to get_logger with the same name will return a reference

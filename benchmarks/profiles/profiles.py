@@ -1,7 +1,6 @@
 import re
 import subprocess
 import warnings
-from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -21,6 +20,7 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 prop_cycle += cycler(linestyle=[(0, ()), (0, (5, 3)), (0, (1, 1)), (0, (5, 3, 1, 3)), (0, (5, 6)), (0, (1, 3)), (0, (5, 6, 1, 6))])
 plt.rc('axes', prop_cycle=prop_cycle)
 plt.rc('lines', linewidth=1)
+plt.rc('font', size=14)
 
 
 class Profiles:
@@ -77,7 +77,6 @@ class Profiles:
         self.feature_options = self.get_feature_options(**kwargs)
 
         # Determinate the paths of storage.
-        timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
         self.perf_dir = Path(self.ARCH_DIR, 'perf', self.feature, f'n{self.n_min}-{self.n_max}')
         self.data_dir = Path(self.ARCH_DIR, 'data', self.feature, f'n{self.n_min}-{self.n_max}')
         self.cache_dir = Path(self.ARCH_DIR, 'cache', self.feature)
@@ -86,7 +85,7 @@ class Profiles:
             # feature's options. We exclude the options that are redundant with
             # the feature (e.g., if feature='Lq', then p=0.25).
             options_suffix = dict(self.feature_options)
-            if self.feature != 'noisy':
+            if self.feature not in ['noisy', 'nan', 'digits']:
                 del options_suffix['rerun']
             if self.feature in ['Lq', 'Lh', 'L1']:
                 del options_suffix['p']
@@ -94,8 +93,6 @@ class Profiles:
             self.perf_dir = Path(self.perf_dir, options_details)
             self.data_dir = Path(self.data_dir, options_details)
             self.cache_dir = Path(self.cache_dir, options_details)
-        self.perf_dir = Path(self.perf_dir, timestamp)
-        self.data_dir = Path(self.data_dir, timestamp)
 
         # Fetch the names of the CUTEst problems that match the requirements.
         logger = get_logger(__name__)
@@ -119,16 +116,19 @@ class Profiles:
         options = {'rerun': 1}
         if self.feature in ['Lq', 'Lh', 'L1']:
             options['p'] = {'Lq': 0.25, 'Lh': 0.5, 'L1': 1.0}.get(self.feature)
-            options['level'] = kwargs.get('regularization', 1.0)
+            options['level'] = float(kwargs.get('regularization', 1.0))
         elif self.feature == 'noisy':
             options['type'] = kwargs.get('noise_type', 'relative')
-            options['level'] = kwargs.get('noise_level', 1e-3)
+            options['level'] = float(kwargs.get('noise_level', 1e-3))
+            options['rerun'] = int(kwargs.get('rerun', 10))
+        elif self.feature == 'nan':
+            options['rate'] = float(kwargs.get('nan_rate', 0.1))
             options['rerun'] = int(kwargs.get('rerun', 10))
         elif significant_digits:
             self.feature = 'digits'
             options['digits'] = int(significant_digits.group(1))
         elif self.feature != 'plain':
-            raise NotImplementedError
+            raise NotImplementedError(f'Unknown feature "{self.feature}"')
         return options
 
     def get_problem_names(self):
@@ -179,16 +179,16 @@ class Profiles:
 
         # Determine the least merit function values obtained on each problem.
         merit_min = np.nanmin(merit_values, (1, 2, 3))
-        if self.feature in ['digits', 'noisy']:
-            logger.info(f'Starting the computations with feature="plain"')
-            feature_save = self.feature
+        if self.feature in ['digits', 'noisy', 'nan']:
+            logger.info('Starting the computations with feature="plain"')
+            feature = self.feature
             self.feature_options['rerun'] = 1
             self.feature = 'plain'
             merits_plain, _, _ = self.solve_all(solvers, options, load, **kwargs)
             merit_min_plain = np.nanmin(merits_plain, (1, 2, 3))
             merit_min = np.minimum(merit_min, merit_min_plain)
             self.feature_options['rerun'] = n_run
-            self.feature = feature_save
+            self.feature = feature
 
         # Compute and save the performance and data profiles.
         precisions = np.arange(1, 10)
@@ -413,6 +413,10 @@ class Profiles:
                 f += noise
             else:
                 f *= 1.0 + noise
+        elif self.feature == 'nan':
+            rng = np.random.default_rng(int(1e8 * abs(np.sin(k) + np.sin(self.feature_options['rate']) + np.sum(np.sin(np.abs(np.sin(1e8 * x)))))))
+            if rng.uniform() <= self.feature_options['rate']:
+                f = np.nan
         elif self.feature == 'digits' and np.isfinite(f):
             if f == 0.0:
                 fx_rounded = 0.0
