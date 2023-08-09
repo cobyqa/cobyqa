@@ -2,27 +2,31 @@ import numpy as np
 
 
 class Optimizer:
+    """
+    A wrapper class for the optimization solvers.
+    """
 
-    def __init__(self, problem, solver, max_eval, options, callback, *args, **kwargs):
+    def __init__(self, problem, solver_name, max_eval_factor, options, callback, *args):
         self.problem = problem
-        self.solver = solver
-        self.max_eval = max_eval
+        self.solver_name = solver_name
+        self.max_eval = max_eval_factor * problem.n
         self.options = options
         self.callback = callback
         self.args = args
-        self.kwargs = kwargs
 
     def __call__(self):
         options = dict(self.options)
         fun_values = []
         resid_values = []
-        if self.solver.lower() == 'cobyqa':
+        if self.solver_name.lower() == 'cobyqa':
             from cobyqa import minimize
+
             options['max_eval'] = self.max_eval
             res = minimize(lambda x: self.fun(x, fun_values, resid_values), self.problem.x0, xl=self.xl, xu=self.xu, aub=self.aub, bub=self.bub, aeq=self.aeq, beq=self.beq, cub=self.cub, ceq=self.ceq, options=options)
             success = res.success
-        elif self.solver.lower() in ['pdfo', 'uobyqa', 'newuoa', 'bobyqa', 'lincoa', 'cobyla']:
+        elif self.solver_name.lower() in ['pdfo', 'uobyqa', 'newuoa', 'bobyqa', 'lincoa', 'cobyla']:
             from pdfo import Bounds, LinearConstraint, NonlinearConstraint, pdfo
+
             bounds = Bounds(self.xl, self.xu)
             constraints = []
             if self.m_linear_ub > 0:
@@ -37,11 +41,12 @@ class Optimizer:
                 constraints.append(NonlinearConstraint(self.ceq, np.zeros(self.m_nonlinear_eq), np.zeros(self.m_nonlinear_eq)))
             options['maxfev'] = self.max_eval
             options['eliminate_lin_eq'] = False
-            method = None if self.solver.lower() == 'pdfo' else self.solver
+            method = None if self.solver_name.lower() == 'pdfo' else self.solver_name
             res = pdfo(self.fun, self.problem.x0, (fun_values, resid_values), method, bounds, constraints, options)
             success = res.success
         else:
             from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, minimize
+
             bounds = Bounds(self.xl, self.xu)
             constraints = []
             if self.m_linear_ub > 0:
@@ -52,13 +57,13 @@ class Optimizer:
                 constraints.append(NonlinearConstraint(self.cub, -np.inf, np.zeros(self.m_nonlinear_ub)))
             if self.m_nonlinear_eq > 0:
                 constraints.append(NonlinearConstraint(self.ceq, np.zeros(self.m_nonlinear_eq), np.zeros(self.m_nonlinear_eq)))
-            if self.solver.lower() in ['cg', 'bfgs', 'newton-cg', 'cobyla', 'slsqp', 'trust-constr', 'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']:
+            if self.solver_name.lower() in ['cg', 'bfgs', 'newton-cg', 'cobyla', 'slsqp', 'trust-constr', 'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']:
                 options['maxiter'] = self.max_eval
-            elif self.solver.lower() in ['l-bfgs-b', 'tnc']:
+            elif self.solver_name.lower() in ['l-bfgs-b', 'tnc']:
                 options['maxfun'] = self.max_eval
             else:
                 options['maxfev'] = self.max_eval
-            res = minimize(self.fun, self.problem.x0, (fun_values, resid_values), method=self.solver, bounds=bounds, constraints=constraints, options=options)
+            res = minimize(self.fun, self.problem.x0, (fun_values, resid_values), method=self.solver_name, bounds=bounds, constraints=constraints, options=options)
             success = res.success
         return success, np.array(fun_values), np.array(resid_values)
 
@@ -67,7 +72,7 @@ class Optimizer:
         if self.problem.m == 0:
             return 0
         else:
-            return np.count_nonzero(self.problem.is_linear_cons & np.logical_not(self.problem.is_eq_cons))
+            return np.count_nonzero(self.problem.is_linear_cons & ~self.problem.is_eq_cons)
 
     @property
     def m_linear_eq(self):
@@ -81,14 +86,14 @@ class Optimizer:
         if self.problem.m == 0:
             return 0
         else:
-            return np.count_nonzero(np.logical_not(self.problem.is_linear_cons | self.problem.is_eq_cons))
+            return np.count_nonzero(~(self.problem.is_linear_cons | self.problem.is_eq_cons))
 
     @property
     def m_nonlinear_eq(self):
         if self.problem.m == 0:
             return 0
         else:
-            return np.count_nonzero(np.logical_not(self.problem.is_linear_cons) & self.problem.is_eq_cons)
+            return np.count_nonzero(~self.problem.is_linear_cons & self.problem.is_eq_cons)
 
     @property
     def xl(self):
@@ -118,7 +123,7 @@ class Optimizer:
     def aub(self):
         if self.problem.m == 0:
             return np.empty((0, self.problem.n))
-        iub = self.problem.is_linear_cons & np.logical_not(self.problem.is_eq_cons)
+        iub = self.problem.is_linear_cons & ~self.problem.is_eq_cons
         iub_cl = self.cl[iub] > -np.inf
         iub_cu = self.cu[iub] < np.inf
         aub = []
@@ -134,7 +139,7 @@ class Optimizer:
     def bub(self):
         if self.problem.m == 0:
             return np.empty(0)
-        iub = self.problem.is_linear_cons & np.logical_not(self.problem.is_eq_cons)
+        iub = self.problem.is_linear_cons & ~self.problem.is_eq_cons
         iub_cl = self.cl[iub] > -np.inf
         iub_cu = self.cu[iub] < np.inf
         bub = []
@@ -175,14 +180,14 @@ class Optimizer:
         resid_values.append(self.resid(x))
         if self.callback is not None:
             # Add noise to the function value.
-            f = self.callback(x, f, *self.args, **self.kwargs)
+            f = self.callback(x, f, *self.args)
         return f
 
     def cub(self, x):
         if self.problem.m == 0:
             return np.empty(0)
         x = np.asarray(x, dtype=float)
-        iub = np.logical_not(self.problem.is_linear_cons | self.problem.is_eq_cons)
+        iub = ~(self.problem.is_linear_cons | self.problem.is_eq_cons)
         iub_cl = self.cl[iub] > -np.inf
         iub_cu = self.cu[iub] < np.inf
         c = []
@@ -198,7 +203,7 @@ class Optimizer:
         if self.problem.m == 0:
             return np.empty(0)
         x = np.asarray(x, dtype=float)
-        ieq = np.logical_not(self.problem.is_linear_cons) & self.problem.is_eq_cons
+        ieq = ~self.problem.is_linear_cons & self.problem.is_eq_cons
         c = []
         for index in np.flatnonzero(ieq):
             c_val = self.problem.cons(x, index)

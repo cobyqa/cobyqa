@@ -1,4 +1,5 @@
 import re
+import shutil
 import subprocess
 import warnings
 from pathlib import Path
@@ -20,10 +21,14 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 prop_cycle += cycler(linestyle=[(0, ()), (0, (5, 3)), (0, (1, 1)), (0, (5, 3, 1, 3)), (0, (5, 6)), (0, (1, 3)), (0, (5, 6, 1, 6))])
 plt.rc('axes', prop_cycle=prop_cycle)
 plt.rc('lines', linewidth=1)
-plt.rc('font', size=14)
+plt.rc('font', family='serif', size=14)
+plt.rc('text', usetex=True if shutil.which('latex') else False)
 
 
 class Profiles:
+    """
+    Performance and data profiles on CUTEst problems.
+    """
 
     BASE_DIR = Path(__file__).resolve(True).parent.parent
     ARCH_DIR = Path(BASE_DIR, 'archives')
@@ -50,7 +55,73 @@ class Profiles:
         'DANWOODLS', 'KOEBHELB',
     }
 
-    def __init__(self, n_min, n_max, constraints, m_min=0, m_max=1000, feature='plain', callback=None, **kwargs):
+    def __init__(self, n_min, n_max, constraints, m_min=0, m_max=1000, feature='plain', **kwargs):
+        """
+        Build a benchmarking profile.
+
+        Parameters
+        ----------
+        n_min : int
+            Minimum number of variables of the problems to be used.
+        n_max : int
+            Maximum number of variables of the problems to be used.
+        constraints : str
+            Type of constraints to be considered. It is a string containing one
+            or more substrings from {'unconstrained', 'fixed', 'bound',
+            'adjacency', 'linear', 'quadratic', 'other'}.
+        m_min : int
+            Minimum number of constraints of the problems to be used.
+        m_max : int
+            Maximum number of constraints of the problems to be used.
+        feature : str
+            Feature to be used. Possible values are:
+            
+                ``'plain'``
+                    The problems are left unmodified.
+                ``'Lq'``, ``'Lh'``, ``'L1'``
+                    A ``p``-regularization term is added to the objective
+                    functions of all problems, with ``p = 0.25``, ``0.5``, and
+                    ``1.0``, respectively.
+                ``'noisy'``
+                    A Gaussian noise is included in the objective functions of
+                    all problems. It can be relative or absolute.
+                ``'nan'``
+                    The objective function evaluations sometimes fail.
+                ``'digits[0-9]+'``
+                    Only the first digits of the objective function values
+                    are significant (the other are randomized). For example,
+                    ``'digits3'`` means that only the first three digits after
+                    the decimal point are significant.
+
+        Other Parameters
+        ----------------
+        regularization : float, optional
+            Regularization parameter for the ``'Lq'``, ``'Lh'``, and ``'L1'``
+            features. The default value is 1.0.
+        noise_type : str, optional
+            Type of the noise for the ``'noisy'`` feature. The default value is
+            ``'relative'`` (other accepted entry: ``'absolute'``).
+        noise_level : float, optional
+            Standard deviation of the noise for the ``'noisy'`` feature. The
+            default value is 1e-3.
+        rerun : int, optional
+            Number of experiment runs for the ``'noisy'`` and ``'nan'``
+            features. The default is 10.
+        nan_rate : float, optional
+            Rate of NaN values returned by the objective function for the
+            ``'nan'`` feature. The default value is 0.1.
+        barrier : bool, optional
+            If ``True``, the merit function is set to infinity when the residual
+            value is above `high_resid`. The default value is ``False``.
+        low_resid : float, optional
+            Residual value below which the merit function is equal to the
+            objective function value. The default value is 1e-12.
+        high_resid : float, optional
+            Residual value above which the merit function is set to infinity
+            if `barrier` is ``True``. The default value is 1e-6.
+        penalty : float, optional
+            Penalty parameter. The default value is 1e8.
+        """
         # All features:
         # 1. plain: the problems are left unmodified.
         # 2. Lq, Lh, L1: n p-regularization term is added to the objective
@@ -64,21 +135,21 @@ class Profiles:
         #   3.3. rerun: number of experiment runs (default is 10).
         # 4. digits[0-9]+: only the first digits of the objective function
         #   values are significant (the other are randomized).
+        # 5. nan
         self.n_min = n_min
         self.n_max = n_max
         self.m_min = m_min
         self.m_max = m_max
-        self.max_eval = 500 * self.n_max
+        self.max_eval_factor = 500
         self.constraints = constraints
         self.feature = feature
-        self.callback = callback
 
         # Extract from the keyword arguments the feature options.
         self.feature_options = self.get_feature_options(**kwargs)
 
         # Determinate the paths of storage.
-        self.perf_dir = Path(self.ARCH_DIR, 'perf', self.feature, f'n{self.n_min}-{self.n_max}')
-        self.data_dir = Path(self.ARCH_DIR, 'data', self.feature, f'n{self.n_min}-{self.n_max}')
+        self.perf_dir = Path(self.ARCH_DIR, 'perf', self.feature, f'n{self.n_min}-{self.n_max}_m{self.m_min}-{self.m_max}')
+        self.data_dir = Path(self.ARCH_DIR, 'data', self.feature, f'n{self.n_min}-{self.n_max}_m{self.m_min}-{self.m_max}')
         self.cache_dir = Path(self.ARCH_DIR, 'cache', self.feature)
         if self.feature != 'plain':
             # Suffix the feature's directory name with the corresponding
@@ -89,29 +160,84 @@ class Profiles:
                 del options_suffix['rerun']
             if self.feature in ['Lq', 'Lh', 'L1']:
                 del options_suffix['p']
-            options_details = '_'.join(f'{k}-{v}' for k, v in options_suffix.items())
+            options_details = '_'.join(f'{key}{val}' for key, val in options_suffix.items())
             self.perf_dir = Path(self.perf_dir, options_details)
             self.data_dir = Path(self.data_dir, options_details)
             self.cache_dir = Path(self.cache_dir, options_details)
 
         # Fetch the names of the CUTEst problems that match the requirements.
-        logger = get_logger(__name__)
         self.problem_names = self.get_problem_names()
+        logger = get_logger(__name__)
         logger.info(f'Number of problems: {len(self.problem_names)}')
 
-    def __call__(self, solvers, labels=None, options=None, load=True, **kwargs):
+    def __call__(self, solver_names, labels=None, options=None, load=True, **kwargs):
+        """
+        Generate performance and data profiles for the given solvers.
+
+        Parameters
+        ----------
+        solver_names : list
+            Solvers to be profiled.
+        labels : list
+            Labels of the solvers to be profiled.
+        options : list
+            Options to use for the solvers. The elements of `options` are
+            dictionaries of options for each solver.
+        load : bool
+            Whether to load the histories of the solvers if they exist.
+
+        Other Parameters
+        ----------------
+        barrier : bool, optional
+            If ``True``, the merit function is set to infinity when the residual
+            value is above `high_resid`. The default value is ``False``.
+        low_resid : float, optional
+            Residual value below which the merit function is equal to the
+            objective function value. The default value is 1e-12.
+        high_resid : float, optional
+            Residual value above which the merit function is set to infinity
+            if `barrier` is ``True``. The default value is 1e-6.
+        penalty : float, optional
+            Penalty parameter. The default value is 1e8.
+        """
         if labels is None:
-            labels = list(solvers)
-        solvers = list(map(str.lower, solvers))
+            labels = list(solver_names)
+        solver_names = list(map(str.lower, solver_names))
         if options is None:
-            options = [{} for _ in range(len(solvers))]
+            options = [{} for _ in solver_names]
 
         self.perf_dir.mkdir(parents=True, exist_ok=True)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.generate_profiles(solvers, labels, options, load, **kwargs)
+        self.generate_profiles(solver_names, labels, options, load, **kwargs)
 
     def get_feature_options(self, **kwargs):
+        """
+        Get the feature options from the keyword arguments.
+
+        Returns
+        -------
+        dict
+            Feature options.
+
+        Other Parameters
+        ----------------
+        regularization : float, optional
+            Regularization parameter for the ``'Lq'``, ``'Lh'``, and ``'L1'``
+            features. The default value is 1.0.
+        noise_type : str, optional
+            Type of the noise for the ``'noisy'`` feature. The default value is
+            ``'relative'`` (other accepted entry: ``'absolute'``).
+        noise_level : float, optional
+            Standard deviation of the noise for the ``'noisy'`` feature. The
+            default value is 1e-3.
+        rerun : int, optional
+            Number of experiment runs for the ``'noisy'`` and ``'nan'``
+            features. The default is 10.
+        nan_rate : float, optional
+            Rate of NaN values returned by the objective function for the
+            ``'nan'`` feature. The default value is 0.1.
+        """
         significant_digits = re.match(r'digits(\d+)', self.feature)
         options = {'rerun': 1}
         if self.feature in ['Lq', 'Lh', 'L1']:
@@ -132,46 +258,131 @@ class Profiles:
         return options
 
     def get_problem_names(self):
+        """
+        Get the names of the CUTEst problems that match the requirements.
+
+        Returns
+        -------
+        list
+            Sorted list of the names of the CUTEst problems that match the
+            requirements. Note that not all the problems returned by this
+            method can necessarily be successfully loaded.
+        """
         problem_names = pycutest.find_problems(objective='constant linear quadratic sum of squares other', constraints=self.constraints, regular=True, origin='academic modelling real-world', n=[self.n_min, self.n_max], m=[self.m_min, self.m_max], userM=False)
         return sorted(set(problem_names).difference(self.EXCLUDED_PROBLEMS))
 
-    def get_storage_path(self, problem, solver, k):
+    def get_storage_path(self, problem, solver_name, k):
+        """
+        Get the paths of the storage files.
+
+        Parameters
+        ----------
+        problem : pycutest.CUTEstProblem
+            Problem that is being solved.
+        solver_name : str
+            Solver that is being used.
+        k : int
+            Index of the run.
+
+        Returns
+        -------
+        pathlib.Path
+            Path of the file that stores the objective function values.
+        pathlib.Path
+            Path of the file that stores the residual values.
+        pathlib.Path
+            Path of the file that stores the success values.
+        """
         if problem.sifParams is None:
             cache = Path(self.cache_dir, problem.name)
         else:
-            sif = '_'.join(f'{k}{v}' for k, v in problem.sifParams.items())
+            sif = '_'.join(f'{key}{val}' for key, val in problem.sifParams.items())
             cache = Path(self.cache_dir, f'{problem.name}_{sif}')
         cache.mkdir(exist_ok=True)
         if self.feature_options['rerun'] == 1:
-            fun_path = Path(cache, f'fun-hist-{solver.lower()}.npy')
-            resid_path = Path(cache, f'resid-hist-{solver.lower()}.npy')
-            success_path = Path(cache, f'success-hist-{solver.lower()}.npy')
+            fun_path = Path(cache, f'fun-hist-{solver_name}.npy')
+            resid_path = Path(cache, f'resid-hist-{solver_name}.npy')
+            success_path = Path(cache, f'success-hist-{solver_name}.npy')
         else:
-            fun_path = Path(cache, f'fun-hist-{solver.lower()}-{k}.npy')
-            resid_path = Path(cache, f'resid-hist-{solver.lower()}-{k}.npy')
-            success_path = Path(cache, f'success-hist-{solver.lower()}-{k}.npy')
+            fun_path = Path(cache, f'fun-hist-{solver_name}-{k}.npy')
+            resid_path = Path(cache, f'resid-hist-{solver_name}-{k}.npy')
+            success_path = Path(cache, f'success-hist-{solver_name}-{k}.npy')
         return fun_path, resid_path, success_path
 
-    def get_profiles_path(self, solvers, precisions):
-        if not isinstance(solvers, str):
-            solvers = '_'.join(sorted(solvers))
+    def get_profiles_path(self, solver_names, precisions):
+        """
+        Get the paths to the performance and data profiles.
+
+        Parameters
+        ----------
+        solver_names : list
+            List of the solvers to be compared.
+        precisions : numpy.ndarray
+            Array of the precisions to be employed.
+
+        Returns
+        -------
+        pathlib.Path
+            Path to the PDF aggregation of the performance profiles.
+        list
+            List of the paths to the performance profiles in EPS format.
+        pathlib.Path
+            Path to the TXT file for the performance profiles.
+        pathlib.Path
+            Path to the PDF aggregation of the data profiles.
+        list
+            List of the paths to the data profiles in EPS format.
+        pathlib.Path
+            Path to the TXT file for the data profiles.
+        """
+        if not isinstance(solver_names, str):
+            solver_names = '_'.join(sorted(solver_names))
         constraints = self.constraints.replace(' ', '_')
-        pdf_perf_path = Path(self.perf_dir, f'perf-{solvers}-{constraints}.pdf')
-        pdf_data_path = Path(self.data_dir, f'data-{solvers}-{constraints}.pdf')
-        txt_perf_path = Path(self.perf_dir, f'perf-{solvers}-{constraints}.txt')
-        txt_data_path = Path(self.data_dir, f'data-{solvers}-{constraints}.txt')
+        pdf_perf_path = Path(self.perf_dir, f'perf-{solver_names}-{constraints}.pdf')
+        pdf_data_path = Path(self.data_dir, f'data-{solver_names}-{constraints}.pdf')
+        txt_perf_path = Path(self.perf_dir, f'perf-{solver_names}-{constraints}.txt')
+        txt_data_path = Path(self.data_dir, f'data-{solver_names}-{constraints}.txt')
         eps_perf_path = []
         eps_data_path = []
         for precision in precisions:
-            eps_perf_path.append(Path(self.perf_dir, f'perf-{solvers}-{constraints}-{precision}.eps'))
-            eps_data_path.append(Path(self.data_dir, f'data-{solvers}-{constraints}-{precision}.eps'))
+            eps_perf_path.append(Path(self.perf_dir, f'perf-{solver_names}-{constraints}-{precision}.eps'))
+            eps_data_path.append(Path(self.data_dir, f'data-{solver_names}-{constraints}-{precision}.eps'))
         return pdf_perf_path, eps_perf_path, txt_perf_path, pdf_data_path, eps_data_path, txt_data_path
 
-    def generate_profiles(self, solvers, labels, options, load, **kwargs):
+    def generate_profiles(self, solver_names, labels, options, load, **kwargs):
+        """
+        Generate the performance and data profiles.
+
+        Parameters
+        ----------
+        solver_names : list
+            List of the solvers to use.
+        labels : list
+            List of the labels to display for the solvers.
+        options : list
+            Options to use for the solvers. The elements of `options` are
+            dictionaries of options for each solver.
+        load : bool
+            Whether to load the histories of the solvers if they exist.
+
+        Other Parameters
+        ----------------
+        barrier : bool, optional
+            If ``True``, the merit function is set to infinity when the residual
+            value is above `high_resid`. The default value is ``False``.
+        low_resid : float, optional
+            Residual value below which the merit function is equal to the
+            objective function value. The default value is 1e-12.
+        high_resid : float, optional
+            Residual value above which the merit function is set to infinity
+            if `barrier` is ``True``. The default value is 1e-6.
+        penalty : float, optional
+            Penalty parameter. The default value is 1e8.
+        """
         # Solve the problems with the given solvers.
         logger = get_logger(__name__)
         logger.info(f'Starting the computations with feature="{self.feature}"')
-        merit_values, problem_names, problem_dimensions = self.solve_all(solvers, options, load, **kwargs)
+        merit_values, problem_names, problem_dimensions = self.solve_all(solver_names, options, load, **kwargs)
         n_problems, n_solvers, n_run, _ = merit_values.shape
 
         # Get the merit function values at x0.
@@ -184,7 +395,7 @@ class Profiles:
             feature = self.feature
             self.feature_options['rerun'] = 1
             self.feature = 'plain'
-            merits_plain, _, _ = self.solve_all(solvers, options, load, **kwargs)
+            merits_plain, _, _ = self.solve_all(solver_names, options, load, **kwargs)
             merit_min_plain = np.nanmin(merits_plain, (1, 2, 3))
             merit_min = np.minimum(merit_min, merit_min_plain)
             self.feature_options['rerun'] = n_run
@@ -192,7 +403,7 @@ class Profiles:
 
         # Compute and save the performance and data profiles.
         precisions = np.arange(1, 10)
-        pdf_perf_path, eps_perf_path, txt_perf_path, pdf_data_path, eps_data_path, txt_data_path = self.get_profiles_path(solvers, precisions)
+        pdf_perf_path, eps_perf_path, txt_perf_path, pdf_data_path, eps_data_path, txt_data_path = self.get_profiles_path(solver_names, precisions)
         pdf_perf = backend_pdf.PdfPages(pdf_perf_path)
         pdf_data = backend_pdf.PdfPages(pdf_data_path)
         for i_precision, precision in enumerate(precisions):
@@ -271,7 +482,7 @@ class Profiles:
             ax.yaxis.set_major_locator(MaxNLocator(5, prune='lower'))
             ax.yaxis.set_minor_locator(MaxNLocator(10))
             ax.tick_params(direction='in', which='both')
-            for j in range(len(solvers)):
+            for j in range(n_solvers):
                 x = np.repeat(x_perf[:, j], 2)[1:]
                 x = np.r_[0.0, x[0], x, 2.0 * perf_ratio_max]
                 y = np.repeat(y_perf[:, j], 2)[:-1]
@@ -281,7 +492,7 @@ class Profiles:
             plt.ylim(0.0, 1.0)
             plt.xlabel('Performance ratio')
             plt.ylabel(fr'Performance profiles ($\tau=10^{{{int(np.log10(tau))}}}$)')
-            plt.legend(handlelength=1.3, handletextpad=0.3, labelspacing=0.3, loc='lower right')
+            plt.legend(handlelength=1.5, handletextpad=0.5, labelspacing=0.3, loc='lower right')
             fig.savefig(eps_perf_path[i_precision], bbox_inches='tight', format='eps')
             pdf_perf.savefig(fig, bbox_inches='tight')
             plt.close()
@@ -293,17 +504,17 @@ class Profiles:
             ax.yaxis.set_major_locator(MaxNLocator(5, prune='lower'))
             ax.yaxis.set_minor_locator(MaxNLocator(10))
             ax.tick_params(direction='in', which='both')
-            for j in range(len(solvers)):
+            for j in range(n_solvers):
                 x = np.repeat(x_data[:, j], 2)[1:]
                 x = np.r_[0.0, x[0], x, 2.0 * data_ratio_max]
                 y = np.repeat(y_data[:, j], 2)[:-1]
                 y = np.r_[0.0, 0.0, y, y[-1]]
                 plt.plot(x, y, label=labels[j])
-            plt.xlim(0.0, 1.1 * data_ratio_max)
+            plt.xlim(0.0, min(data_ratio_max, self.max_eval_factor * self.n_max))
             plt.ylim(0.0, 1.0)
             plt.xlabel('Number of simplex gradients')
             plt.ylabel(fr'Data profiles ($\tau=10^{{{int(np.log10(tau))}}}$)')
-            plt.legend(handlelength=1.3, handletextpad=0.3, labelspacing=0.3, loc='lower right')
+            plt.legend(handlelength=1.5, handletextpad=0.5, labelspacing=0.3, loc='lower right')
             fig.savefig(eps_data_path[i_precision], bbox_inches='tight', format='eps')
             pdf_data.savefig(fig, bbox_inches='tight')
             plt.close()
@@ -316,80 +527,167 @@ class Profiles:
         with open(txt_data_path, 'w') as f:
             f.write('\n'.join(problem_names))
 
-    def solve_all(self, solvers, options, load, **kwargs):
+    def solve_all(self, solver_names, options, load, **kwargs):
+        """
+        Solve all the problems with all the given solvers.
+
+        The computations are done in parallel.
+
+        Parameters
+        ----------
+        solver_names : list
+            Names of the solvers to use.
+        options : list
+            Options to use for the solvers. The elements of `options` are
+            dictionaries of options for each solver.
+        load : bool
+            Whether to load the histories of the solvers if they exist.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n_problems, n_solvers, n_run, max_eval)
+            The merit function values obtained on each problem, by each solver,
+            during each run, and at each evaluation.
+
+        Other Parameters
+        ----------------
+        barrier : bool, optional
+            If ``True``, the merit function is set to infinity when the residual
+            value is above `high_resid`. The default value is ``False``.
+        low_resid : float, optional
+            Residual value below which the merit function is equal to the
+            objective function value. The default value is 1e-12.
+        high_resid : float, optional
+            Residual value above which the merit function is set to infinity
+            if `barrier` is ``True``. The default value is 1e-6.
+        penalty : float, optional
+            Penalty parameter. The default value is 1e8.
+        """
         merit_values = []
         problem_names = []
         problem_dimensions = []
-        histories = Parallel(n_jobs=-1)(self.solve(i, solvers, options, load, **kwargs) for i in range(len(self.problem_names)))
-        for history in histories:
+        histories = Parallel(n_jobs=-1)(self.solve(problem_name, solver_names, options, load, **kwargs) for problem_name in self.problem_names)
+        for i, history in enumerate(histories):
             if history is not None:
                 merit_values.append(history[0])
-                problem_names.append(history[1])
-                problem_dimensions.append(history[2])
+                problem_names.append(self.problem_names[i])
+                problem_dimensions.append(history[1])
         return np.array(merit_values), problem_names, problem_dimensions
 
     @delayed
-    def solve(self, i, solvers, options, load, **kwargs):
+    def solve(self, problem_name, solver_names, options, load, **kwargs):
+        """
+        Solve a problem with all the given solvers.
+
+        Parameters
+        ----------
+        problem_name : str
+            Name of the problem to solve.
+        solver_names : list
+            Names of the solvers to use.
+        options : list
+            Options to use for the solvers. The elements of `options` are
+            dictionaries of options for each solver.
+        load : bool
+            Whether to load the histories of the solvers if they exist.
+
+        Returns
+        -------
+        tuple
+            If the problem could not be loaded, returns `None`. Otherwise,
+            returns two elements. The first element is a ``numpy.ndarray``
+            containing the merit function values obtained by each solver,
+            during each run, and at each evaluation. The second element is the
+            dimension of the problem.
+
+        Other Parameters
+        ----------------
+        barrier : bool, optional
+            If ``True``, the merit function is set to infinity when the residual
+            value is above `high_resid`. The default value is ``False``.
+        low_resid : float, optional
+            Residual value below which the merit function is equal to the
+            objective function value. The default value is 1e-12.
+        high_resid : float, optional
+            Residual value above which the merit function is set to infinity
+            if `barrier` is ``True``. The default value is 1e-6.
+        penalty : float, optional
+            Penalty parameter. The default value is 1e8.
+        """
         logger = get_logger(__name__)
 
         # Load the PyCUTEst problem.
-        logger.info(f'Loading {self.problem_names[i]} ({i + 1}/{len(self.problem_names)})')
-        problem = self.load(self.problem_names[i])
+        logger.info(f'Loading {problem_name}')
+        problem = self.load(problem_name)
         if problem is None:
-            logger.warning(f'{self.problem_names[i]}: failed to load')
+            logger.warning(f'{problem_name}: failed to load')
             return
 
         # Solve the problem with the given solvers.
-        merit_values = np.full((len(solvers), self.feature_options['rerun'], self.max_eval), np.nan)
-        for j, solver in enumerate(solvers):
+        merit_values = np.full((len(solver_names), self.feature_options['rerun'], self.max_eval_factor * self.n_max), np.nan)
+        for j, solver_name in enumerate(solver_names):
             for k in range(self.feature_options['rerun']):
                 # Attempt to load the history of the solver.
-                fun_path, resid_path, success_path = self.get_storage_path(problem, solver, k)
+                fun_path, resid_path, success_path = self.get_storage_path(problem, solver_name, k)
                 is_loaded = False
                 n_eval = 0
                 if load and fun_path.is_file() and resid_path.is_file() and success_path.is_file():
                     fun_values = np.load(fun_path)
                     resid_values = np.load(resid_path)
                     n_eval = fun_values.size
-                    if n_eval <= self.max_eval:
+                    if n_eval < self.max_eval_factor * problem.n:
                         success = np.load(success_path)
                         if success:
                             merit_values[j, k, :n_eval] = self.merit(fun_values, resid_values, **kwargs)
                             merit_values[j, k, n_eval:] = merit_values[j, k, n_eval - 1]
                             is_loaded = True
                     else:
-                        n_eval = self.max_eval
-                        merit_values[j, k, :] = self.merit(fun_values[:n_eval], resid_values[:n_eval], **kwargs)
+                        n_eval = self.max_eval_factor * problem.n
+                        merit_values[j, k, :n_eval] = self.merit(fun_values[:n_eval], resid_values[:n_eval], **kwargs)
+                        merit_values[j, k, n_eval:] = merit_values[j, k, n_eval - 1]
                         is_loaded = True
 
                 # Solve the problem if the history is not loaded.
                 if not is_loaded:
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore')
-                        optimizer = Optimizer(problem, solver, self.max_eval, options[j], self.noise, k)
+                        optimizer = Optimizer(problem, solver_name, self.max_eval_factor, options[j], self.noise, k)
                         success, fun_values, resid_values = optimizer()
-                    n_eval = min(fun_values.size, self.max_eval)
+                    n_eval = min(fun_values.size, self.max_eval_factor * problem.n)
                     merit_values[j, k, :n_eval] = self.merit(fun_values[:n_eval], resid_values[:n_eval], **kwargs)
                     merit_values[j, k, n_eval:] = merit_values[j, k, n_eval - 1]
                     np.save(fun_path, fun_values[:n_eval])
                     np.save(resid_path, resid_values[:n_eval])
-                    # np.save(success_path, np.array([success]))
-                    np.save(success_path, np.array([True]))
+                    np.save(success_path, np.array([success]))
 
                 # Log the results.
                 if not np.all(np.isnan(merit_values[j, k, :n_eval])):
                     if self.feature_options['rerun'] > 1:
-                        header = f'{solver}({problem.name},{k})'
+                        header = f'{solver_name}({problem.name},{k})'
                     else:
-                        header = f'{solver}({problem.name})'
+                        header = f'{solver_name}({problem.name})'
                     i_min = np.nanargmin(merit_values[j, k, :n_eval])
                     logger.info(f'{header}: fun = {fun_values[i_min]}, resid = {resid_values[i_min]}, n_eval = {n_eval}')
                 else:
-                    logger.warning(f'{solver}({problem.name}): no value received')
-        return merit_values, self.problem_names[i], problem.n
+                    logger.warning(f'{solver_name}({problem.name}): no value received')
+        return merit_values, problem.n
 
     def load(self, problem_name):
+        """
+        Load a PyCUTEst problem.
+
+        Parameters
+        ----------
+        problem_name : str
+            Name of the problem to load.
+
+        Returns
+        -------
+        pycutest.CUTEstProblem
+            PyCUTEst problem or ``None`` if the problem could not be loaded.
+        """
         logger = get_logger(__name__)
+        problem = None
         try:
             # If the dimension of the problem is not fixed, we select the
             # largest possible dimension that matches the requirements. PyCUTEst
@@ -398,13 +696,51 @@ class Profiles:
             if pycutest.problem_properties(problem_name)['n'] == 'variable':
                 sif_n = [n for n in self.get_sif_n(problem_name) if self.n_min <= n <= self.n_max]
                 if len(sif_n) > 0:
-                    return pycutest.import_problem(problem_name, sifParams={'N': sif_n[-1]})
+                    problem = pycutest.import_problem(problem_name, sifParams={'N': sif_n[-1]})
             else:
-                return pycutest.import_problem(problem_name)
+                problem = pycutest.import_problem(problem_name)
         except Exception as err:
             logger.warning(f'{problem_name}: {err}')
 
+        # Discard the problem if something went wrong during the import.
+        if problem is not None and not self.is_valid(problem):
+            problem = None
+        return problem
+
+    def is_valid(self, problem):
+        """
+        Check if a problem satisfies the requirements.
+
+        Parameters
+        ----------
+        problem : pycutest.CUTEstProblem
+            Problem to check.
+
+        Returns
+        -------
+        bool
+            Whether the problem satisfies the requirements.
+        """
+        return self.n_min <= problem.n <= self.n_max and self.m_min <= problem.m <= self.m_max and np.all(problem.vartype == 0)
+
     def noise(self, x, f, k=0):
+        """
+        Compute a perturbed objective function value.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the objective function is evaluated.
+        f : float
+            Objective function value.
+        k : int, optional
+            Index of the run.
+
+        Returns
+        -------
+        float
+            Perturbed objective function value.
+        """
         if self.feature in ['Lq', 'Lh', 'L1']:
             f += self.feature_options['level'] * np.linalg.norm(x, self.feature_options['p'])
         elif self.feature == 'noisy':
@@ -427,9 +763,23 @@ class Profiles:
         return f
 
     @staticmethod
-    def get_sif_n(name):
+    def get_sif_n(problem_name):
+        """
+        Get all the available SIF parameters for the dimension of a problem.
+
+        Parameters
+        ----------
+        problem_name : str
+            Name of the problem.
+
+        Returns
+        -------
+        list
+            Sorted list of the available SIF parameters for the dimension of
+            the given problem.
+        """
         # Get all the available SIF parameters for all variables.
-        command = [pycutest.get_sifdecoder_path(), '-show', name]
+        command = [pycutest.get_sifdecoder_path(), '-show', problem_name]
         process = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         sif_stdout = process.stdout.read()
         process.wait()
@@ -445,6 +795,35 @@ class Profiles:
 
     @staticmethod
     def merit(fun_values, resid_values, **kwargs):
+        """
+        Evaluate the merit function values.
+
+        Parameters
+        ----------
+        fun_values : numpy.ndarray, shape (n_eval,)
+            Objective function values.
+        resid_values : numpy.ndarray, shape (n_eval,)
+            Residual values.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n_eval,)
+            Merit function values.
+
+        Other Parameters
+        ----------------
+        barrier : bool, optional
+            If ``True``, the merit function is set to infinity when the residual
+            value is above `high_resid`. The default value is ``False``.
+        low_resid : float, optional
+            Residual value below which the merit function is equal to the
+            objective function value. The default value is 1e-12.
+        high_resid : float, optional
+            Residual value above which the merit function is set to infinity
+            if `barrier` is ``True``. The default value is 1e-6.
+        penalty : float, optional
+            Penalty parameter. The default value is 1e8.
+        """
         merit_values = np.empty_like(fun_values)
         for i in range(merit_values.size):
             if resid_values[i] <= kwargs.get('low_resid', 1e-12):
