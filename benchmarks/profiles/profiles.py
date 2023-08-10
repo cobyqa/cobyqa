@@ -23,6 +23,7 @@ plt.rc('axes', prop_cycle=prop_cycle)
 plt.rc('lines', linewidth=1)
 plt.rc('font', family='serif', size=14)
 plt.rc('text', usetex=True if shutil.which('latex') else False)
+plt.rc('legend', framealpha=1.0, handlelength=1.5, handletextpad=0.5, labelspacing=0.3)
 
 
 class Profiles:
@@ -87,6 +88,8 @@ class Profiles:
                     all problems. It can be relative or absolute.
                 ``'nan'``
                     The objective function evaluations sometimes fail.
+                ``'randomize_x0'``
+                    The starting points are randomized.
                 ``'digits[0-9]+'``
                     Only the first digits of the objective function values
                     are significant (the other are randomized). For example,
@@ -99,14 +102,15 @@ class Profiles:
             Regularization parameter for the ``'Lq'``, ``'Lh'``, and ``'L1'``
             features. The default value is 1.0.
         noise_type : str, optional
-            Type of the noise for the ``'noisy'`` feature. The default value is
-            ``'relative'`` (other accepted entry: ``'absolute'``).
+            Type of the noise for the ``'noisy'`` and ``'randomize_x0'``
+            features. The default value is ``'relative'`` (the only other
+            accepted entry is ``'absolute'``).
         noise_level : float, optional
-            Standard deviation of the noise for the ``'noisy'`` feature. The
-            default value is 1e-3.
+            Standard deviation of the noise for the ``'noisy'`` and
+            ``'randomize_x0`` features. The default value is 1e-3.
         rerun : int, optional
-            Number of experiment runs for the ``'noisy'`` and ``'nan'``
-            features. The default is 10.
+            Number of experiment runs for the ``'noisy'``, ``'nan'``, and
+            ``'randomize_x0`` features. The default is 10.
         nan_rate : float, optional
             Rate of NaN values returned by the objective function for the
             ``'nan'`` feature. The default value is 0.1.
@@ -122,20 +126,6 @@ class Profiles:
         penalty : float, optional
             Penalty parameter. The default value is 1e8.
         """
-        # All features:
-        # 1. plain: the problems are left unmodified.
-        # 2. Lq, Lh, L1: n p-regularization term is added to the objective
-        #   functions of all problems, with p = 0.25, 0.5, and 1, respectively.
-        #   The following keyword arguments may be supplied:
-        #   2.1. regularization: corresponding parameter (default is 1.0).
-        # 3. noisy: a Gaussian noise is included in the objective functions of
-        #   all problems. The following keyword arguments may be supplied:
-        #   3.1. noise_type: noise type (default is relative).
-        #   3.2. noise_level: standard deviation of the noise (default is 1e-3).
-        #   3.3. rerun: number of experiment runs (default is 10).
-        # 4. digits[0-9]+: only the first digits of the objective function
-        #   values are significant (the other are randomized).
-        # 5. nan
         self.n_min = n_min
         self.n_max = n_max
         self.m_min = m_min
@@ -156,7 +146,7 @@ class Profiles:
             # feature's options. We exclude the options that are redundant with
             # the feature (e.g., if feature='Lq', then p=0.25).
             options_suffix = dict(self.feature_options)
-            if self.feature not in ['noisy', 'nan', 'digits']:
+            if self.feature not in ['noisy', 'nan', 'randomize_x0', 'digits']:
                 del options_suffix['rerun']
             if self.feature in ['Lq', 'Lh', 'L1']:
                 del options_suffix['p']
@@ -226,14 +216,15 @@ class Profiles:
             Regularization parameter for the ``'Lq'``, ``'Lh'``, and ``'L1'``
             features. The default value is 1.0.
         noise_type : str, optional
-            Type of the noise for the ``'noisy'`` feature. The default value is
-            ``'relative'`` (other accepted entry: ``'absolute'``).
+            Type of the noise for the ``'noisy'`` and ``'randomize_x0'``
+            features. The default value is ``'relative'`` (the only other
+            accepted entry is ``'absolute'``).
         noise_level : float, optional
-            Standard deviation of the noise for the ``'noisy'`` feature. The
-            default value is 1e-3.
+            Standard deviation of the noise for the ``'noisy'`` and
+            ``'randomize_x0`` features. The default value is 1e-3.
         rerun : int, optional
-            Number of experiment runs for the ``'noisy'`` and ``'nan'``
-            features. The default is 10.
+            Number of experiment runs for the ``'noisy'``, ``'nan'``, and
+            ``'randomize_x0`` features. The default is 10.
         nan_rate : float, optional
             Rate of NaN values returned by the objective function for the
             ``'nan'`` feature. The default value is 0.1.
@@ -243,7 +234,7 @@ class Profiles:
         if self.feature in ['Lq', 'Lh', 'L1']:
             options['p'] = {'Lq': 0.25, 'Lh': 0.5, 'L1': 1.0}.get(self.feature)
             options['level'] = float(kwargs.get('regularization', 1.0))
-        elif self.feature == 'noisy':
+        elif self.feature in ['noisy', 'randomize_x0']:
             options['type'] = kwargs.get('noise_type', 'relative')
             options['level'] = float(kwargs.get('noise_level', 1e-3))
             options['rerun'] = int(kwargs.get('rerun', 10))
@@ -390,7 +381,7 @@ class Profiles:
 
         # Determine the least merit function values obtained on each problem.
         merit_min = np.nanmin(merit_values, (1, 2, 3))
-        if self.feature in ['digits', 'noisy', 'nan']:
+        if self.feature in ['digits', 'noisy', 'nan', 'randomize_x0']:
             logger.info('Starting the computations with feature="plain"')
             feature = self.feature
             self.feature_options['rerun'] = 1
@@ -492,8 +483,8 @@ class Profiles:
             plt.ylim(0.0, 1.0)
             plt.xlabel('Performance ratio')
             plt.ylabel(fr'Performance profiles ($\tau=10^{{{int(np.log10(tau))}}}$)')
-            plt.legend(handlelength=1.5, handletextpad=0.5, labelspacing=0.3, loc='lower right')
-            fig.savefig(eps_perf_path[i_precision], bbox_inches='tight', format='eps')
+            plt.legend(loc='lower right')
+            fig.savefig(eps_perf_path[i_precision], format='eps', bbox_inches='tight', transparent=False)
             pdf_perf.savefig(fig, bbox_inches='tight')
             plt.close()
 
@@ -514,8 +505,8 @@ class Profiles:
             plt.ylim(0.0, 1.0)
             plt.xlabel('Number of simplex gradients')
             plt.ylabel(fr'Data profiles ($\tau=10^{{{int(np.log10(tau))}}}$)')
-            plt.legend(handlelength=1.5, handletextpad=0.5, labelspacing=0.3, loc='lower right')
-            fig.savefig(eps_data_path[i_precision], bbox_inches='tight', format='eps')
+            plt.legend(loc='lower right')
+            fig.savefig(eps_data_path[i_precision], format='eps', bbox_inches='tight')
             pdf_data.savefig(fig, bbox_inches='tight')
             plt.close()
 
@@ -651,6 +642,18 @@ class Profiles:
 
                 # Solve the problem if the history is not loaded.
                 if not is_loaded:
+                    # Randomize the initial point if necessary.
+                    if self.feature == 'randomize_x0':
+                        x0 = np.copy(problem.x0)
+                        rng = np.random.default_rng(int(1e8 * abs(np.sin(k) + np.sin(self.feature_options['level']) + np.sin(float(''.join(str(ord(c)) for c in problem.name))))))
+                        noise = self.feature_options['level'] * rng.standard_normal(problem.n)
+                        if self.feature_options['type'] == 'absolute':
+                            x0 += noise
+                        else:
+                            x0 *= 1.0 + noise
+                        np.copyto(x0, problem.x0)
+
+                    # Solve the problem.
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore')
                         optimizer = Optimizer(problem, solver_name, self.max_eval_factor, options[j], self.noise, k)
@@ -746,14 +749,14 @@ class Profiles:
         if self.feature in ['Lq', 'Lh', 'L1']:
             f += self.feature_options['level'] * np.linalg.norm(x, self.feature_options['p'])
         elif self.feature == 'noisy':
-            rng = np.random.default_rng(int(1e8 * abs(np.sin(k) + np.sin(self.feature_options['level']) + np.sum(np.sin(np.abs(np.sin(1e8 * x)))))))
+            rng = np.random.default_rng(int(1e8 * abs(np.sin(k) + np.sin(self.feature_options['level']) + np.sin(1e12 * f) + np.sum(np.sin(np.abs(np.sin(1e8 * x)))))))
             noise = self.feature_options['level'] * rng.standard_normal()
             if self.feature_options['type'] == 'absolute':
                 f += noise
             else:
                 f *= 1.0 + noise
         elif self.feature == 'nan':
-            rng = np.random.default_rng(int(1e8 * abs(np.sin(k) + np.sin(self.feature_options['rate']) + np.sum(np.sin(np.abs(np.sin(1e8 * x)))))))
+            rng = np.random.default_rng(int(1e8 * abs(np.sin(k) + np.sin(self.feature_options['rate']) + np.sin(1e12 * f) + np.sum(np.sin(np.abs(np.sin(1e8 * x)))))))
             if rng.uniform() <= self.feature_options['rate']:
                 f = np.nan
         elif self.feature == 'digits' and np.isfinite(f):

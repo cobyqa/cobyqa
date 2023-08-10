@@ -35,6 +35,7 @@ PDFs
 Pillo
 Powell
 Ragonneau
+ranspose
 rgba
 Rosenbrock
 sif
