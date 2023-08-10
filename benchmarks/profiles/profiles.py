@@ -75,7 +75,7 @@ class Profiles:
             Maximum number of constraints of the problems to be used.
         feature : str
             Feature to be used. Possible values are:
-            
+
                 ``'plain'``
                     The problems are left unmodified.
                 ``'Lq'``, ``'Lh'``, ``'L1'``
@@ -168,7 +168,7 @@ class Profiles:
         # Fetch the names of the CUTEst problems that match the requirements.
         self.problem_names = self.get_problem_names()
         logger = get_logger(__name__)
-        logger.info(f'Number of problems: {len(self.problem_names)}')
+        logger.info(f'Number of problems matching the requirements: {len(self.problem_names)}')
 
     def __call__(self, solver_names, labels=None, options=None, load=True, **kwargs):
         """
@@ -407,7 +407,7 @@ class Profiles:
         pdf_perf = backend_pdf.PdfPages(pdf_perf_path)
         pdf_data = backend_pdf.PdfPages(pdf_data_path)
         for i_precision, precision in enumerate(precisions):
-            logger.info(f"Creating performance and data profiles with tau = 1e-{precision}")
+            logger.info(f'Creating the performance and data profiles with tau = 1e-{precision}')
             tau = 10.0 ** (-precision)
 
             # Determine the number of function evaluations employed by each
@@ -510,7 +510,7 @@ class Profiles:
                 y = np.repeat(y_data[:, j], 2)[:-1]
                 y = np.r_[0.0, 0.0, y, y[-1]]
                 plt.plot(x, y, label=labels[j])
-            plt.xlim(0.0, min(data_ratio_max, self.max_eval_factor * self.n_max))
+            plt.xlim(0.0, min(1.1 * data_ratio_max, self.max_eval_factor * self.n_max))
             plt.ylim(0.0, 1.0)
             plt.xlabel('Number of simplex gradients')
             plt.ylabel(fr'Data profiles ($\tau=10^{{{int(np.log10(tau))}}}$)')
@@ -520,7 +520,9 @@ class Profiles:
             plt.close()
 
         # Save the PDFs and TXTs files.
+        logger.info(f'Saving the performance profiles in {pdf_perf_path.parent}')
         pdf_perf.close()
+        logger.info(f'Saving the data profiles in {pdf_data_path.parent}')
         pdf_data.close()
         with open(txt_perf_path, 'w') as f:
             f.write('\n'.join(problem_names))
@@ -617,10 +619,10 @@ class Profiles:
         logger = get_logger(__name__)
 
         # Load the PyCUTEst problem.
-        logger.info(f'Loading {problem_name}')
+        logger.info(f'Attempting to loading {problem_name}')
         problem = self.load(problem_name)
         if problem is None:
-            logger.warning(f'{problem_name}: failed to load')
+            logger.warning(f'{problem_name} could not be loaded')
             return
 
         # Solve the problem with the given solvers.
@@ -667,9 +669,9 @@ class Profiles:
                     else:
                         header = f'{solver_name}({problem.name})'
                     i_min = np.nanargmin(merit_values[j, k, :n_eval])
-                    logger.info(f'{header}: fun = {fun_values[i_min]}, resid = {resid_values[i_min]}, n_eval = {n_eval}')
+                    logger.info(f'Results for {header}: fun = {fun_values[i_min]:.4e}, resid = {resid_values[i_min]:.4e}, n_eval = {n_eval}')
                 else:
-                    logger.warning(f'{solver_name}({problem.name}): no value received')
+                    logger.warning(f'{solver_name}({problem.name}): no value received (the problem was successfully loaded)')
         return merit_values, problem.n
 
     def load(self, problem_name):

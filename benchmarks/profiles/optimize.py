@@ -7,6 +7,31 @@ class Optimizer:
     """
 
     def __init__(self, problem, solver_name, max_eval_factor, options, callback, *args):
+        """
+        Initialize the optimization procedure.
+
+        Parameters
+        ----------
+        problem : pycutest.CUTEstProblem
+            Problem to be solved.
+        solver_name : str
+            Solver to be used.
+        max_eval_factor : float
+            Factor for the maximum number of function evaluations. The maximum
+            number of function evaluations is ``max_eval_factor * problem.n``.
+        options : dict
+            Options for the solver.
+        callback : callable
+            Perturbation function.
+
+                ``callback(x, f, *args) -> float``
+
+            where ``x`` is the point at which the objective function is
+            evaluated, ``f`` is the objective function value at ``x``, and
+            ``args`` is a tuple of additional arguments.
+        *args : tuple
+            Additional arguments for the perturbation function.
+        """
         self.problem = problem
         self.solver_name = solver_name
         self.max_eval = max_eval_factor * problem.n
@@ -15,6 +40,18 @@ class Optimizer:
         self.args = args
 
     def __call__(self):
+        """
+        Run the optimization procedure.
+
+        Returns
+        -------
+        bool
+            Whether the optimization is successful.
+        numpy.ndarray, shape (n_eval,)
+            History of the objective function values.
+        numpy.ndarray, shape (n_eval,)
+            History of the residual values.
+        """
         options = dict(self.options)
         fun_values = []
         resid_values = []
@@ -69,6 +106,14 @@ class Optimizer:
 
     @property
     def m_linear_ub(self):
+        """
+        Number of linear inequality constraints.
+
+        Returns
+        -------
+        int
+            Number of linear inequality constraints.
+        """
         if self.problem.m == 0:
             return 0
         else:
@@ -76,6 +121,14 @@ class Optimizer:
 
     @property
     def m_linear_eq(self):
+        """
+        Number of linear equality constraints.
+
+        Returns
+        -------
+        int
+            Number of linear equality constraints.
+        """
         if self.problem.m == 0:
             return 0
         else:
@@ -83,6 +136,14 @@ class Optimizer:
 
     @property
     def m_nonlinear_ub(self):
+        """
+        Number of nonlinear inequality constraints.
+
+        Returns
+        -------
+        int
+            Number of nonlinear inequality constraints.
+        """
         if self.problem.m == 0:
             return 0
         else:
@@ -90,6 +151,14 @@ class Optimizer:
 
     @property
     def m_nonlinear_eq(self):
+        """
+        Number of nonlinear equality constraints.
+
+        Returns
+        -------
+        int
+            Number of nonlinear equality constraints.
+        """
         if self.problem.m == 0:
             return 0
         else:
@@ -97,30 +166,70 @@ class Optimizer:
 
     @property
     def xl(self):
+        """
+        Lower bounds of the variables.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            Lower bounds of the variables.
+        """
         xl = np.array(self.problem.bl)
         xl[xl <= -1e20] = -np.inf
         return xl
 
     @property
     def xu(self):
+        """
+        Upper bounds of the variables.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            Upper bounds of the variables.
+        """
         xu = np.array(self.problem.bu)
         xu[xu >= 1e20] = np.inf
         return xu
 
     @property
     def cl(self):
+        """
+        Lower bounds of the constraints.
+
+        Returns
+        -------
+        numpy.ndarray, shape (m,)
+            Lower bounds of the constraints.
+        """
         cl = np.array(self.problem.cl)
         cl[cl <= -1e20] = -np.inf
         return cl
 
     @property
     def cu(self):
+        """
+        Upper bounds of the constraints.
+
+        Returns
+        -------
+        numpy.ndarray, shape (m,)
+            Upper bounds of the constraints.
+        """
         cu = np.array(self.problem.cu)
         cu[cu >= 1e20] = np.inf
         return cu
 
     @property
     def aub(self):
+        """
+        Left-hand side of the linear inequality constraints ``aub @ x <= bub``.
+
+        Returns
+        -------
+        numpy.ndarray, shape (m_linear_ub, n)
+            Left-hand side of the linear inequality constraints.
+        """
         if self.problem.m == 0:
             return np.empty((0, self.problem.n))
         iub = self.problem.is_linear_cons & ~self.problem.is_eq_cons
@@ -137,6 +246,14 @@ class Optimizer:
 
     @property
     def bub(self):
+        """
+        Right-hand side of the linear inequality constraints ``aub @ x <= bub``.
+
+        Returns
+        -------
+        numpy.ndarray, shape (m_linear_ub,)
+            Right-hand side of the linear inequality constraints.
+        """
         if self.problem.m == 0:
             return np.empty(0)
         iub = self.problem.is_linear_cons & ~self.problem.is_eq_cons
@@ -153,6 +270,14 @@ class Optimizer:
 
     @property
     def aeq(self):
+        """
+        Left-hand side of the linear equality constraints ``aeq @ x = beq``.
+
+        Returns
+        -------
+        numpy.ndarray, shape (m_linear_eq, n)
+            Left-hand side of the linear equality constraints.
+        """
         if self.problem.m == 0:
             return np.empty((0, self.problem.n))
         ieq = self.problem.is_linear_cons & self.problem.is_eq_cons
@@ -164,6 +289,14 @@ class Optimizer:
 
     @property
     def beq(self):
+        """
+        Right-hand side of the linear equality constraints ``aeq @ x = beq``.
+
+        Returns
+        -------
+        numpy.ndarray, shape (m_linear_eq, n)
+            Right-hand side of the linear equality constraints.
+        """
         if self.problem.m == 0:
             return np.empty(0)
         ieq = self.problem.is_linear_cons & self.problem.is_eq_cons
@@ -174,16 +307,48 @@ class Optimizer:
         return np.array(beq)
 
     def fun(self, x, fun_values, resid_values):
+        """
+        Evaluate the objective function at ``x``.
+
+        This method also applies a perturbation function if provided.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the objective function is evaluated.
+        fun_values : list
+            History of the objective function values.
+        resid_values : list
+            History of the residual values.
+
+        Returns
+        -------
+        float
+            Objective function value at ``x``.
+        """
         x = np.asarray(x, dtype=float)
         f = self.problem.obj(x)
         fun_values.append(f)
         resid_values.append(self.resid(x))
         if self.callback is not None:
-            # Add noise to the function value.
+            # Add perturbation to the function value.
             f = self.callback(x, f, *self.args)
         return f
 
     def cub(self, x):
+        """
+        Evaluate the nonlinear inequality constraints at ``x``.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the nonlinear inequality constraints are evaluated.
+
+        Returns
+        -------
+        numpy.ndarray, shape (m_nonlinear_ub,)
+            Values of the nonlinear inequality constraints at ``x``.
+        """
         if self.problem.m == 0:
             return np.empty(0)
         x = np.asarray(x, dtype=float)
@@ -200,6 +365,19 @@ class Optimizer:
         return np.array(c, dtype=float)
 
     def ceq(self, x):
+        """
+        Evaluate the nonlinear equality constraints at ``x``.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the nonlinear equality constraints are evaluated.
+
+        Returns
+        -------
+        numpy.ndarray, shape (m_nonlinear_eq,)
+            Values of the nonlinear equality constraints at ``x``.
+        """
         if self.problem.m == 0:
             return np.empty(0)
         x = np.asarray(x, dtype=float)
@@ -211,6 +389,19 @@ class Optimizer:
         return np.array(c, dtype=float)
 
     def resid(self, x):
+        """
+        Evaluate the residuals of the constraints at ``x``.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the residuals are evaluated.
+
+        Returns
+        -------
+        float
+            Maximum residual value at ``x``.
+        """
         maxcv = np.max(self.xl - x, initial=0.0)
         maxcv = np.max(x - self.xu, initial=maxcv)
         maxcv = np.max(self.aub @ x - self.bub, initial=maxcv)

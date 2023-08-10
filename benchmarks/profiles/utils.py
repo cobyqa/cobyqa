@@ -1,7 +1,7 @@
 import logging
 
 
-def get_logger(name=None, level=logging.DEBUG):
+def get_logger(name=None, level=logging.INFO):
     """
     Get a logger with the given name.
 
@@ -9,8 +9,8 @@ def get_logger(name=None, level=logging.DEBUG):
     ----------
     name : str
         Name of the logger. If None, the root logger is returned.
-    level : int
-        Logging level.
+    level : int, optional
+        Logging level. Default is ``logging.INFO``.
 
     Returns
     -------
