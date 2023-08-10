@@ -36,6 +36,7 @@ CODEOWNERS
 codeql
 Comput
 copybutton
+copyto
 cov
 cumsum
 currentmodule
@@ -50,6 +51,7 @@ finfo
 flatnonzero
 footbibliography
 footcite
+framealpha
 GPP
 handlelength
 handletextpad
