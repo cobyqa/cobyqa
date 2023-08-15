@@ -67,11 +67,9 @@ class Optimizer:
             bounds = Bounds(self.xl, self.xu)
             constraints = []
             if self.m_linear_ub > 0:
-                constraints.append(
-                    LinearConstraint(self.aub, -np.inf, self.bub))
+                constraints.append(LinearConstraint(self.aub, -np.inf, self.bub))
             if self.m_linear_eq > 0:
-                constraints.append(
-                    LinearConstraint(self.aeq, self.beq, self.beq))
+                constraints.append(LinearConstraint(self.aeq, self.beq, self.beq))
             if self.m_nonlinear_ub > 0:
                 constraints.append(NonlinearConstraint(self.cub, -np.inf, np.zeros(self.m_nonlinear_ub)))
             if self.m_nonlinear_eq > 0:
@@ -117,7 +115,10 @@ class Optimizer:
         if self.problem.m == 0:
             return 0
         else:
-            return np.count_nonzero(self.problem.is_linear_cons & ~self.problem.is_eq_cons)
+            iub = self.problem.is_linear_cons & ~self.problem.is_eq_cons
+            iub_cl = self.cl[iub] > -np.inf
+            iub_cu = self.cu[iub] < np.inf
+            return np.count_nonzero(iub_cl) + np.count_nonzero(iub_cu)
 
     @property
     def m_linear_eq(self):
@@ -147,7 +148,10 @@ class Optimizer:
         if self.problem.m == 0:
             return 0
         else:
-            return np.count_nonzero(~(self.problem.is_linear_cons | self.problem.is_eq_cons))
+            iub = ~(self.problem.is_linear_cons | self.problem.is_eq_cons)
+            iub_cl = self.cl[iub] > -np.inf
+            iub_cu = self.cu[iub] < np.inf
+            return np.count_nonzero(iub_cl) + np.count_nonzero(iub_cu)
 
     @property
     def m_nonlinear_eq(self):

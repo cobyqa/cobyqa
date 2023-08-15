@@ -249,7 +249,7 @@ class TrustRegion:
         float
             Value of the Lagrangian model at `x`.
         """
-        return self.models.fun(x) + self._lm_linear_ub @ (self._pb.linear_ub.a @ x - self._pb.linear_ub.b) + + self._lm_linear_eq @ (self._pb.linear_eq.a @ x - self._pb.linear_eq.b) + self._lm_nonlinear_ub @ self.models.cub(x) + self._lm_nonlinear_eq @ self.models.ceq(x)
+        return self.models.fun(x) + self._lm_linear_ub @ (self._pb.linear_ub.a @ x - self._pb.linear_ub.b) + self._lm_linear_eq @ (self._pb.linear_eq.a @ x - self._pb.linear_eq.b) + self._lm_nonlinear_ub @ self.models.cub(x) + self._lm_nonlinear_eq @ self.models.ceq(x)
 
     def lag_model_grad(self, x):
         """
@@ -430,11 +430,9 @@ class TrustRegion:
         numpy.ndarray, shape (m_linear_eq + m_nonlinear_eq,)
             Right-hand side vector of the linearized equality constraints.
         """
-        cub_grad = self.models.cub_grad(x)
-        aub = np.block([[self._pb.linear_ub.a], [cub_grad]])
+        aub = np.block([[self._pb.linear_ub.a], [self.models.cub_grad(x)]])
         bub = np.block([self._pb.linear_ub.b - self._pb.linear_ub.a @ x, -self.models.cub(x)])
-        ceq_grad = self.models.ceq_grad(x)
-        aeq = np.block([[self._pb.linear_eq.a], [ceq_grad]])
+        aeq = np.block([[self._pb.linear_eq.a], [self.models.ceq_grad(x)]])
         beq = np.block([self._pb.linear_eq.b - self._pb.linear_eq.a @ x, -self.models.ceq(x)])
         return aub, bub, aeq, beq
 
@@ -521,6 +519,8 @@ class TrustRegion:
            Methods and Software*. PhD thesis, The Hong Kong Polytechnic
            University, Hong Kong, China, 2022.
         """
+        assert k_new != self.best_index, 'The index `k_new` must be different from the best index so far.'
+
         # Build the k_new-th Lagrange polynomial.
         coord_vec = np.squeeze(np.eye(1, self.models.npt, k_new))
         lag = Quadratic(self.models.interpolation, coord_vec)
@@ -539,7 +539,7 @@ class TrustRegion:
         xpt[:, [0, self.best_index]] = xpt[:, [self.best_index, 0]]
         step_alt = spider_geometry(0.0, g_lag, lambda v: lag.hess_prod(v, self.models.interpolation), xpt[:, 1:], xl, xu, self.radius, options['debug'])
         sigma_alt = self.models.denominators(self.x_best + step_alt, k_new)
-        if abs(sigma_alt) >= abs(sigma):
+        if abs(sigma_alt) > abs(sigma):
             step = step_alt
             sigma = sigma_alt
 
@@ -562,16 +562,16 @@ class TrustRegion:
                     step_alt = -step_alt
 
                 # Evaluate the constraint violation at the Cauchy step.
+                cbd = np.block([xl - step_alt, step_alt - xu])
                 cub = aub @ step_alt - bub
                 ceq = aeq @ step_alt - beq
-                cbd = np.block([step_alt - xu, xl - step_alt])
-                resid = max(np.max(array, initial=0.0) for array in [cub, np.abs(ceq), cbd])
+                resid = max(np.max(array, initial=0.0) for array in [cbd, cub, np.abs(ceq)])
 
                 # Accept the new step if it is nearly feasible and do not
                 # drastically worsen the denominator of the updating formula.
                 tol = np.max(np.abs(step_alt[~free_xl]), initial=0.0)
                 tol = np.max(np.abs(step_alt[~free_xu]), initial=tol)
-                tol = np.max(np.abs(np.dot(aub[~free_ub, :], step_alt)), initial=tol)
+                tol = np.max(np.abs(aub[~free_ub, :] @ step_alt), initial=tol)
                 tol = min(10.0 * tol, 1e-2 * np.linalg.norm(step_alt))
                 if resid <= tol:
                     sigma_alt = self.models.denominators(self.x_best + step_alt, k_new)
@@ -606,7 +606,7 @@ class TrustRegion:
         aub, bub, aeq, beq = self.get_constraint_linearizations(self.x_best)
         xl = self._pb.bounds.xl - self.x_best
         xu = self._pb.bounds.xu - self.x_best
-        radius = step @ step
+        radius = np.linalg.norm(step)
         soc_step = normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, radius, options['debug'])
         if options['debug']:
             tol = get_arrays_tol(xl, xu)
@@ -641,7 +641,7 @@ class TrustRegion:
         merit_model_old = self.merit(self.x_best, 0.0, self.models.cub(self.x_best), self.models.ceq(self.x_best))
         merit_model_new = self.merit(self.x_best + step, self.sqp_fun(step), self.sqp_cub(step), self.sqp_ceq(step))
         if abs(merit_model_old - merit_model_new) > np.finfo(float).tiny * abs(merit_old - merit_new):
-            return (merit_old - merit_new) / abs(merit_model_old - merit_model_new)
+            return (merit_old - merit_new) / (merit_model_old - merit_model_new)
         else:
             return -1.0
 
@@ -655,12 +655,12 @@ class TrustRegion:
             Trust-region step.
         """
         aub, bub, aeq, beq = self.get_constraint_linearizations(self.x_best)
-        viol_diff = np.linalg.norm(np.block([np.maximum(0.0, -bub), beq])) - np.linalg.norm(np.block([np.maximum(0.0, aub @ step - bub), aeq @ step - beq]))
-        sqp_var = step @ (self.models.fun_grad(self.x_best) + 0.5 * self.lag_model_hess_prod(step))
+        viol_diff = max(np.linalg.norm(np.block([np.maximum(0.0, -bub), beq])) - np.linalg.norm(np.block([np.maximum(0.0, aub @ step - bub), aeq @ step - beq])), 0.0)
+        sqp_val = self.sqp_fun(step)
 
         threshold = np.linalg.norm(np.r_[self._lm_linear_ub, self._lm_linear_eq, self._lm_nonlinear_ub, self._lm_nonlinear_eq])
-        if abs(viol_diff) > np.finfo(float).tiny * abs(sqp_var):
-            threshold = max(threshold, sqp_var / viol_diff)
+        if abs(viol_diff) > np.finfo(float).tiny * abs(sqp_val):
+            threshold = max(threshold, sqp_val / viol_diff)
         best_index_save = self.best_index
         if self._penalty <= 1.5 * threshold:
             self._penalty = 2.0 * threshold
@@ -680,7 +680,7 @@ class TrustRegion:
         best_index = self.best_index
         m_best = self.merit(self.x_best, self.models.fun_val[best_index], self.models.cub_val[best_index, :], self.models.ceq_val[best_index, :])
         r_best = self._pb.resid(self.x_best, self.models.cub_val[best_index, :], self.models.ceq_val[best_index, :])
-        tol = 10.0 * np.finfo(float).eps * max(self.models.interpolation.xpt.shape) * max(abs(m_best), 1.0)
+        tol = 10.0 * np.finfo(float).eps * max(self.models.n, self.models.npt) * max(abs(m_best), 1.0)
         for k in range(self.models.npt):
             if k != self.best_index:
                 x_val = self.models.interpolation.point(k)
@@ -801,6 +801,8 @@ class TrustRegion:
         This method computes and set the Lagrange multipliers of the linear and
         nonlinear constraints to be the QP multipliers.
         """
+        # TODO: Is it normal that the multipliers are often zero?
+        # TODO: Should we use the least-squares multipliers instead?
         # Build the constraints of the least-squares problem.
         incl_linear = self._pb.linear_ub.a @ self.x_best >= self._pb.linear_ub.b
         incl_nonlinear = self.cub_best >= 0.0

@@ -242,7 +242,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     nonlinear_ub = NonlinearConstraints(cub, False, verbose, store_hist, *args)
     nonlinear_eq = NonlinearConstraints(ceq, True, verbose, store_hist, *args)
 
-    # Initialize the problem (remove the fixed variables).
+    # Initialize the problem (and remove the fixed variables).
     pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq)
 
     # Set the default options.
@@ -284,7 +284,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         n_iter += 1
 
         # Update the point around which the quadratic models are built.
-        if np.linalg.norm(framework.x_best - framework.models.interpolation.x_base) >= 0.0 * framework.radius:
+        if np.linalg.norm(framework.x_best - framework.models.interpolation.x_base) >= 10.0 * framework.radius:
             framework.shift_x_base(options)
 
         # Evaluate the trial step.
@@ -433,8 +433,10 @@ def _set_default_options(options, n):
         options['radius_final'] = DEFAULT_OPTIONS['radius_final']
     options['radius_init'] = float(options['radius_init'])
     options['radius_final'] = float(options['radius_final'])
-    if 'npt' in options and options['npt'] > (n + 1) * (n + 2) // 2:
-        raise ValueError(f'The number of interpolation points must be at most {(n + 1) * (n + 2) // 2}.')
+    if 'npt' in options and options['npt'] <= 0:
+        raise ValueError('The number of interpolation points must be positive.')
+    if 'npt' in options and options['npt'] > ((n + 1) * (n + 2)) // 2:
+        raise ValueError(f'The number of interpolation points must be at most {((n + 1) * (n + 2)) // 2}.')
     options.setdefault('npt', DEFAULT_OPTIONS['npt_f'](n))
     options['npt'] = int(options['npt'])
     if 'max_eval' in options and options['max_eval'] <= 0:

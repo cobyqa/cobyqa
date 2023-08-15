@@ -1,7 +1,7 @@
 import warnings
 
 import numpy as np
-from scipy.linalg import lstsq
+from scipy.linalg import LinAlgWarning, lstsq, solve
 
 
 class Interpolation:
@@ -186,7 +186,7 @@ class Quadratic:
         assert values.shape == (interpolation.npt,), 'The shape of `values` is not valid.'
         if interpolation.npt < interpolation.n + 1:
             raise ValueError(f'The number of interpolation points must be at least {interpolation.n + 1}.')
-        self._const, self._grad, self._i_hess = self._mnh(interpolation, values)
+        self._const, self._grad, self._i_hess = self._get_model(interpolation, values)
         self._e_hess = np.zeros((self.n, self.n))
 
     def __call__(self, x, interpolation):
@@ -343,7 +343,7 @@ class Quadratic:
         self._i_hess[k_new] = 0.0
 
         # Update the quadratic model.
-        const, grad, i_hess = self._mnh(interpolation, values_diff)
+        const, grad, i_hess = self._get_model(interpolation, values_diff)
         self._const += const
         self._grad += grad
         self._i_hess += i_hess
@@ -367,31 +367,47 @@ class Quadratic:
         self._e_hess += update + update.T
 
     @staticmethod
-    def mnh_matrix(interpolation):
-        """
-        Build the left-hand side matrix of the interpolation system.
-
-        Parameters
-        ----------
-        interpolation : Interpolation
-            Interpolation set.
-
-        Returns
-        -------
-        numpy.ndarray, shape (npt + n + 1, npt + n + 1)
-            Left-hand side matrix of the interpolation system.
-        """
+    def solve_system(interpolation, rhs):
         n, npt = interpolation.xpt.shape
+        assert rhs.shape == (npt + n + 1,), 'The shape of `rhs` is not valid.'
+
+        # Compute the scaled directions from the base point to the interpolation
+        # points. We scale the directions to avoid numerical difficulties.
+        scale = np.max([np.linalg.norm(interpolation.xpt[:, k]) for k in range(npt)])
+        xpt_scale = interpolation.xpt / scale
+
+        # Build the left-hand side matrix of the interpolation system. The
+        # matrix below stores diag(left_scaling) * W * diag(right_scaling),
+        # where W is the theoretical matrix of the interpolation system. The
+        # left and right scaling matrices are chosen to keep the elements in the
+        # matrix well-balanced.
         a = np.zeros((npt + n + 1, npt + n + 1))
-        a[:npt, :npt] = 0.5 * np.square(interpolation.xpt.T @ interpolation.xpt)
+        a[:npt, :npt] = 0.5 * np.square(xpt_scale.T @ xpt_scale)
         a[:npt, npt] = 1.0
-        a[:npt, npt + 1:] = interpolation.xpt.T
+        a[:npt, npt + 1:] = xpt_scale.T
         a[npt, :npt] = 1.0
-        a[npt + 1:, :npt] = interpolation.xpt
-        return a
+        a[npt + 1:, :npt] = xpt_scale
+
+        # Build the left and right scaling diagonal matrices.
+        left_scaling = np.empty(npt + n + 1)
+        right_scaling = np.empty(npt + n + 1)
+        left_scaling[:npt] = 1.0 / scale ** 2.0
+        left_scaling[npt] = scale ** 2.0
+        left_scaling[npt + 1:] = scale
+        right_scaling[:npt] = 1.0 / scale ** 2.0
+        right_scaling[npt] = scale ** 2.0
+        right_scaling[npt + 1:] = scale
+
+        # Build the solution.
+        try:
+            left_scaled_solution = solve(a, np.multiply(left_scaling, rhs), assume_a='sym')
+        except np.linalg.LinAlgError:
+            warnings.warn('The interpolation system is ill-conditioned.', LinAlgWarning)
+            left_scaled_solution = lstsq(a, np.multiply(left_scaling, rhs))[0]
+        return np.multiply(left_scaled_solution, right_scaling)
 
     @staticmethod
-    def _mnh(interpolation, values):
+    def _get_model(interpolation, values):
         """
         Solve the interpolation system.
 
@@ -413,9 +429,7 @@ class Quadratic:
         """
         assert values.shape == (interpolation.npt,), 'The shape of `values` is not valid.'
         n, npt = interpolation.xpt.shape
-        a = Quadratic.mnh_matrix(interpolation)
-        b = np.block([values, np.zeros(n + 1)])
-        x = lstsq(a, b)[0]
+        x = Quadratic.solve_system(interpolation, np.block([values, np.zeros(n + 1)]))
         return x[npt], x[npt + 1:], x[:npt]
 
 
@@ -1025,19 +1039,18 @@ class Models:
         assert k is None or 0 <= k < self.npt, 'The index `k` is not valid.'
 
         # Compute the values independent of k.
-        a = Quadratic.mnh_matrix(self.interpolation)
         shift = x_new - self.interpolation.x_base
         new_col = np.empty(self.npt + self.n + 1)
         new_col[:self.npt] = 0.5 * np.square(self.interpolation.xpt.T @ shift)
         new_col[self.npt] = 1.0
         new_col[self.npt + 1:] = shift
-        inv_new_col = lstsq(a, new_col)[0]
+        inv_new_col = Quadratic.solve_system(self.interpolation, new_col)
         beta = 0.5 * (shift @ shift) ** 2.0 - new_col @ inv_new_col
 
         # Define a function to compute the value of alpha.
         def get_alpha(k_idx):
             coord_vec = np.squeeze(np.eye(1, self.npt + self.n + 1, k_idx))
-            return lstsq(a, coord_vec)[0][k_idx]
+            return Quadratic.solve_system(self.interpolation, coord_vec)[k_idx]
 
         # Compute the values that depend on k.
         alpha = np.array([get_alpha(k_idx) for k_idx in range(self.npt)]) if k is None else get_alpha(k)
