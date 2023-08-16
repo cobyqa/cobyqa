@@ -373,7 +373,7 @@ class Quadratic:
 
         # Compute the scaled directions from the base point to the interpolation
         # points. We scale the directions to avoid numerical difficulties.
-        scale = np.max([np.linalg.norm(interpolation.xpt[:, k]) for k in range(npt)])
+        scale = min(np.max([np.linalg.norm(interpolation.xpt[:, k]) for k in range(npt)]), 1.0)
         xpt_scale = interpolation.xpt / scale
 
         # Build the left-hand side matrix of the interpolation system. The
@@ -400,8 +400,10 @@ class Quadratic:
 
         # Build the solution.
         try:
-            left_scaled_solution = solve(a, np.multiply(left_scaling, rhs), assume_a='sym')
-        except np.linalg.LinAlgError:
+            with warnings.catch_warnings():
+                warnings.simplefilter('error', LinAlgWarning)
+                left_scaled_solution = solve(a, np.multiply(left_scaling, rhs), assume_a='sym')
+        except (np.linalg.LinAlgError, LinAlgWarning):
             warnings.warn('The interpolation system is ill-conditioned.', LinAlgWarning)
             left_scaled_solution = lstsq(a, np.multiply(left_scaling, rhs))[0]
         return np.multiply(left_scaled_solution, right_scaling)
