@@ -10,7 +10,7 @@ class Function(ABC):
     Base class for objective and constraints functions.
     """
 
-    def __init__(self, fun, verbose, store_hist, *args):
+    def __init__(self, fun, verbose, store_f_hist, store_x_hist, hist_size, *args):
         """
         Initialize the function.
 
@@ -24,14 +24,20 @@ class Function(ABC):
             where ``x`` is an array with shape (n,) and `args` is a tuple.
         verbose : bool
             Whether to print the function evaluations.
-        store_hist : bool
+        store_f_hist : bool
             Whether to store the function evaluations.
+        store_x_hist : bool
+            Whether to store the visited points.
+        hist_size : int
+            Maximum number of function evaluations to store.
         *args : tuple
             Additional arguments to be passed to the function.
         """
         self._fun = fun
         self._verbose = verbose
-        self._store_hist = store_hist
+        self._store_f_hist = store_f_hist
+        self._store_x_hist = store_x_hist
+        self._hist_size = hist_size
         self._args = args
         self._n_eval = 0
         self._f_hist = []
@@ -54,17 +60,23 @@ class Function(ABC):
         {float, numpy.ndarray}
             Function value at `x`.
         """
-        if self._fun is None:
-            return self.apply_barrier()
         x = np.array(x, dtype=float)
-        val = self._fun(x, *self._args)
-        val = self.apply_barrier(val)
-        self._n_eval += 1
-        if self._verbose:
-            print(f'{self.name}({x}) = {val}')
-        if self._store_hist:
-            self.f_hist.append(val)
-            self.x_hist.append(x)
+        if self._fun is None:
+            val = self.apply_barrier()
+        else:
+            val = self._fun(x, *self._args)
+            val = self.apply_barrier(val)
+            self._n_eval += 1
+            if self._verbose:
+                print(f'{self.name}({x}) = {val}')
+        if self._store_f_hist:
+            if len(self._f_hist) >= self._hist_size:
+                self._f_hist.pop(0)
+            self._f_hist.append(val)
+        if self._store_x_hist:
+            if len(self._x_hist) >= self._hist_size:
+                self._x_hist.pop(0)
+            self._x_hist.append(x)
         return val
 
     @property
@@ -101,10 +113,10 @@ class Function(ABC):
 
         Returns
         -------
-        list
+        numpy.ndarray
             History of function evaluations.
         """
-        return self._f_hist
+        return np.array(self._f_hist, dtype=float)
 
     @property
     def x_hist(self):
@@ -116,10 +128,10 @@ class Function(ABC):
 
         Returns
         -------
-        list
+        numpy.ndarray
             History of variables.
         """
-        return self._x_hist
+        return np.array(self._x_hist, dtype=float)
 
     def apply_barrier(self, val=None):
         """
@@ -207,7 +219,7 @@ class ObjectiveFunction(Function):
     Real-valued objective function.
     """
 
-    def __init__(self, fun, verbose, store_hist, *args):
+    def __init__(self, fun, verbose, store_hist, hist_size, *args):
         """
         Initialize the objective function.
 
@@ -223,10 +235,12 @@ class ObjectiveFunction(Function):
             Whether to print the function evaluations.
         store_hist : bool
             Whether to store the function evaluations.
+        hist_size : int
+            Maximum number of function evaluations to store.
         *args : tuple
             Additional arguments to be passed to the function.
         """
-        super().__init__(fun, verbose, store_hist, *args)
+        super().__init__(fun, verbose, store_hist, store_hist, hist_size, *args)
 
     def apply_barrier(self, val=None):
         """
@@ -478,7 +492,7 @@ class NonlinearConstraints(Function, Constraints):
     Nonlinear constraints ``fun(x) <= 0`` or ``fun(x) == 0``.
     """
 
-    def __init__(self, fun, is_equality, verbose, store_hist, *args):
+    def __init__(self, fun, is_equality, verbose, store_hist, hist_size, *args):
         """
         Initialize the nonlinear constraints.
 
@@ -496,10 +510,12 @@ class NonlinearConstraints(Function, Constraints):
             Whether to print the function evaluations.
         store_hist : bool
             Whether to store the function evaluations.
+        hist_size : int
+            Maximum number of function evaluations to store.
         *args : tuple
             Additional arguments passed to the function.
         """
-        super().__init__(fun, verbose, store_hist, *args)
+        super().__init__(fun, verbose, store_hist, False, hist_size, *args)
         self._is_equality = is_equality
         self._m = 0 if fun is None else None
 
@@ -948,6 +964,86 @@ class Problem:
         resid_linear = max(self.linear_ub.resid(x), self.linear_eq.resid(x))
         resid_nonlinear = max(self._nonlinear_ub.resid(x, cub_val), self._nonlinear_eq.resid(x, ceq_val))
         return max(resid_bounds, resid_linear, resid_nonlinear)
+
+    def best_eval(self, penalty, x, fun_val=None, cub_val=None, ceq_val=None):
+        """
+        Return the best point and the corresponding function evaluations.
+
+        If the history of function evaluations is not recorded, the points and
+        values in arguments are returned. Otherwise, we check whether the
+        history contains a better point.
+
+        Parameters
+        ----------
+        penalty : float
+            Penalty parameter
+        x : numpy.ndarray, shape (n,)
+            Estimated best point.
+        fun_val : float, optional
+            Value of the objective function at `x`. If not provided, the
+            objective function is evaluated at `x`.
+        cub_val : numpy.ndarray, shape (m_nonlinear_ub,), optional
+            Values of the nonlinear inequality constraints. If not provided,
+            the nonlinear inequality constraints are evaluated at `x`.
+        ceq_val : numpy.ndarray, shape (m_nonlinear_eq,), optional
+            Values of the nonlinear equality constraints. If not provided,
+            the nonlinear equality constraints are evaluated at `x`.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            Best point.
+        float
+            Best objective function value.
+        numpy.ndarray, shape (m_nonlinear_ub,)
+            Best nonlinear inequality constraint function values.
+        numpy.ndarray, shape (m_nonlinear_eq,)
+            Best nonlinear equality constraint function values.
+        """
+        # Evaluate the objective and constraint function is necessary.
+        if fun_val is None:
+            fun_val = self.fun(x)
+        if cub_val is None:
+            cub_val = self.cub(x)
+        if ceq_val is None:
+            ceq_val = self.ceq(x)
+
+        # Check whether a point in the history is better than x.
+        x_hist = self._obj.x_hist
+        fun_hist = self._obj.f_hist
+        cub_hist = self._nonlinear_ub.f_hist
+        ceq_hist = self._nonlinear_eq.f_hist
+        if fun_hist.size > 0:
+            resid_hist = np.array([self.resid(x_hist[k, :], cub_hist[k, :], ceq_hist[k, :]) for k in range(fun_hist.size)])
+            feasible_idx = resid_hist < get_arrays_tol(self.bounds.xl, self.bounds.xu)
+            if np.any(feasible_idx):
+                # At least one point is nearly feasible. we select the one with
+                # the least objective function value. If there is still a tie,
+                # we select the point with the least residual. If there is still
+                # a tie, we select the most recent point.
+                fun_min_idx = feasible_idx & (fun_hist <= np.min(fun_hist[feasible_idx]))
+                if np.count_nonzero(fun_min_idx) == 1:
+                    i = np.flatnonzero(fun_min_idx)[0]
+                else:
+                    fun_min_idx &= (resid_hist <= np.min(resid_hist))
+                    i = np.flatnonzero(fun_min_idx)[-1]
+            else:
+                # No feasible point is found. We select the one with the least
+                # merit function value. If there is still a tie, we select the
+                # point with the least residual. If there is still a tie, we
+                # select the most recent point.
+                merit_hist = fun_hist + penalty * resid_hist
+                merit_min_idx = merit_hist <= np.min(merit_hist)
+                if np.count_nonzero(merit_min_idx) == 1:
+                    i = np.flatnonzero(merit_min_idx)[0]
+                else:
+                    merit_min_idx &= (resid_hist <= np.min(resid_hist))
+                    i = np.flatnonzero(merit_min_idx)[-1]
+            x = x_hist[i, :]
+            fun_val = fun_hist[i]
+            cub_val = cub_hist[i, :]
+            ceq_val = ceq_hist[i, :]
+        return x, fun_val, cub_val, ceq_val
 
 
 def _1d_array(x, message):

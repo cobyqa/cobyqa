@@ -30,12 +30,13 @@ def fun(x):
 
 
 def _plot_points(x, title=None):
-    fig, ax = plt.subplots(dpi=300.0)
+    fig, ax = plt.subplots(dpi=300)
     ax.plot([0.0, 0.0, 2.0, 0.0], [0.0, 2.0, 0.0, 0.0], color='black')
     ax.scatter(x[::2], x[1::2], s=25, color='black')
     ax.set_aspect('equal', 'box')
+    ax.axis('off')
     if title is not None:
-        ax.set_title(f'{title.strip()} (n = {x.size})')
+        ax.set_title(f'{title.strip()} ($n = {x.size}$)', fontsize=20)
     fig.tight_layout()
     fig.show()
 

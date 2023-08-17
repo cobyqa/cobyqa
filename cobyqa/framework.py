@@ -162,6 +162,18 @@ class TrustRegion:
         self._resolution = resolution
 
     @property
+    def penalty(self):
+        """
+        Penalty parameter.
+
+        Returns
+        -------
+        float
+            Penalty parameter.
+        """
+        return self._penalty
+
+    @property
     def models(self):
         """
         Models of the objective function and constraints.

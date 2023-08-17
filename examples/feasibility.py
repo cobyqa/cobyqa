@@ -7,10 +7,10 @@ import numpy as np
 from cobyqa import minimize
 
 
-def ceq(x):
+def sum_trig(x):
     return [np.sum(np.sin(x)), np.sum(np.cos(x))]
 
 
 if __name__ == '__main__':
     options = {'verbose': True}
-    minimize(None, np.zeros(5), ceq=ceq, options=options)
+    minimize(None, np.zeros(5), ceq=sum_trig, options=options)

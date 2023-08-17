@@ -11,7 +11,7 @@ References
 from cobyqa import minimize
 
 
-def fun(x):
+def quad(x):
     return (x[0] - 1.0) ** 2.0 + (x[1] - 2.5) ** 2.0
 
 
@@ -21,5 +21,5 @@ if __name__ == '__main__':
     aub = [[-1.0, 2.0], [1.0, 2.0], [1.0, -2.0]]
     bub = [2.0, 6.0, 2.0]
 
-    res = minimize(fun, x0, xl=xl, aub=aub, bub=bub)
+    res = minimize(quad, x0, xl=xl, aub=aub, bub=bub)
     print(res)

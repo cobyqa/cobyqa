@@ -30,7 +30,7 @@ It can handle unconstrained, bound-constrained, linearly constrained, and nonlin
 It uses only function values of the objective and constraint functions, if any.
 No derivative information is needed.
 
-**Documentation:** https://www.cobyqa.com/
+**Documentation:** https://www.cobyqa.com.
 
 Installation
 ------------
@@ -45,10 +45,15 @@ The following Python packages are required by COBYQA:
 * `NumPy <https://www.numpy.org>`_ 1.17.0 or higher, and
 * `SciPy <https://www.scipy.org>`_ 1.1.0 or higher.
 
+If you install COBYQA using ``pip`` (see below), these dependencies will be installed automatically.
+More dependencies are required to run the test suite and some examples given in the folder ``examples``.
+See the relevant sections below for more details.
+
 User installation
 ~~~~~~~~~~~~~~~~~
 
-The easiest way to install COBYQA is using ``pip``
+The easiest way to install COBYQA is using ``pip``.
+In a terminal or command window type
 
 .. code:: bash
 
@@ -60,16 +65,13 @@ To check your installation, you can execute
 
     python -c "import cobyqa; cobyqa.show_versions()"
 
+If your python launcher is not ``python``, you can replace it with the appropriate command (similarly for ``pip``).
+For example, you may need to use ``python3`` instead of ``python`` and ``pip3`` instead of ``pip``.
+
 Testing
 ~~~~~~~
 
 To execute the test suite of COBYQA, you first need to install ``pytest``.
-For example, using ``pip``
-
-.. code:: bash
-
-    pip install pytest
-
 You can then run the test suite by executing
 
 .. code:: bash
@@ -81,11 +83,7 @@ Examples
 
 The folder ``examples`` contains a few examples of how to use COBYQA.
 To run ``powell2015.py``, you first need to install ``matplotlib``.
-For example, using ``pip``
-
-.. code:: bash
-
-    pip install matplotlib
+These files contains headers explaining what problems they solve.
 
 Support
 -------
