@@ -49,6 +49,7 @@ endblock
 endfor
 finfo
 flatnonzero
+fontsize
 footbibliography
 footcite
 framealpha

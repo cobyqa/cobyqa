@@ -219,8 +219,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         options = {}
     verbose = options.get('verbose', DEFAULT_OPTIONS['verbose'])
     store_hist = options.get('store_hist', DEFAULT_OPTIONS['store_hist'])
-    if 'hist_size' in options and options['hist_size'] < 0:
-        raise ValueError('The size of the history must be nonnegative.')
+    if 'hist_size' in options and options['hist_size'] <= 0:
+        raise ValueError('The size of the history must be positive.')
     hist_size = options.get('hist_size', DEFAULT_OPTIONS['hist_size'])
     hist_size = int(hist_size)
 

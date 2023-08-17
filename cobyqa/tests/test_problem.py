@@ -9,7 +9,7 @@ class TestObjectiveFunction:
 
     def test_simple(self, capsys):
         # Check an objective function with verbose=False.
-        obj = ObjectiveFunction(rosen, False, False)
+        obj = ObjectiveFunction(rosen, False, False, 0)
         x = np.zeros(5)
         fun = obj(x)
         captured = capsys.readouterr()
@@ -19,7 +19,7 @@ class TestObjectiveFunction:
         assert captured.out == ''
 
         # Check an objective function with verbose=True.
-        obj = ObjectiveFunction(rosen, True, False)
+        obj = ObjectiveFunction(rosen, True, False, 0)
         fun = obj(x)
         captured = capsys.readouterr()
         assert fun == rosen(x)
@@ -27,12 +27,12 @@ class TestObjectiveFunction:
         assert captured.out == f'rosen({x}) = {rosen(x)}\n'
 
         # Check that no storage is performed.
-        assert obj.f_hist == []
-        assert obj.x_hist == []
+        assert obj.f_hist.size == 0
+        assert obj.x_hist.size == 0
 
     def test_none(self, capsys):
         # Check an objective function with no function and verbose=False.
-        obj = ObjectiveFunction(None, False, False)
+        obj = ObjectiveFunction(None, False, False, 0)
         x = np.zeros(5)
         fun = obj(x)
         captured = capsys.readouterr()
@@ -42,7 +42,7 @@ class TestObjectiveFunction:
         assert captured.out == ''
 
         # Check an objective function with no function and verbose=True.
-        obj = ObjectiveFunction(None, True, False)
+        obj = ObjectiveFunction(None, True, False, 0)
         fun = obj(x)
         captured = capsys.readouterr()
         assert fun == 0.0
@@ -51,7 +51,7 @@ class TestObjectiveFunction:
 
     def test_barrier(self):
         # Check an objective function with an infinite value.
-        obj = ObjectiveFunction(lambda x: np.inf, False, False)
+        obj = ObjectiveFunction(lambda x: np.inf, False, False, 0)
         x = np.zeros(5)
         fun = obj(x)
         assert obj.name == '<lambda>'
@@ -59,7 +59,7 @@ class TestObjectiveFunction:
         assert obj.n_eval == 1
 
         # Check an objective function with a NaN value.
-        obj = ObjectiveFunction(lambda x: np.nan, False, False)
+        obj = ObjectiveFunction(lambda x: np.nan, False, False, 0)
         x = np.zeros(5)
         fun = obj(x)
         assert obj.name == '<lambda>'
@@ -67,13 +67,13 @@ class TestObjectiveFunction:
         assert obj.n_eval == 1
 
     def test_store(self):
-        obj = ObjectiveFunction(rosen, False, True)
+        obj = ObjectiveFunction(rosen, False, True, 1)
         x = np.zeros(5)
         obj(x)
-        assert len(obj.f_hist) == 1
-        assert len(obj.x_hist) == 1
+        assert obj.f_hist.size == 1
+        assert obj.x_hist.shape[0] == 1
         assert obj.f_hist[0] == rosen(x)
-        assert np.all(obj.x_hist[0] == x)
+        assert np.all(obj.x_hist[0, :] == x)
 
 
 class TestBoundConstraints:
@@ -110,7 +110,7 @@ class TestNonlinearConstraints:
 
     def test_simple(self, capsys):
         # Check a constraint function with verbose=False.
-        nonlinear = NonlinearConstraints(np.sin, False, False, False)
+        nonlinear = NonlinearConstraints(np.sin, False, False, False, 0)
         x = np.zeros(5)
         fun = nonlinear(x)
         captured = capsys.readouterr()
@@ -124,7 +124,7 @@ class TestNonlinearConstraints:
         assert nonlinear.resid(x, np.zeros(5)) == 0.0
 
         # Check a constraint function with verbose=True.
-        nonlinear = NonlinearConstraints(np.sin, False, True, False)
+        nonlinear = NonlinearConstraints(np.sin, False, True, False, 0)
         fun = nonlinear(x)
         captured = capsys.readouterr()
         assert np.all(fun == np.sin(x))
@@ -132,12 +132,12 @@ class TestNonlinearConstraints:
         assert captured.out == f'sin({x}) = {np.sin(x)}\n'
 
         # Check that no storage is performed.
-        assert nonlinear.f_hist == []
-        assert nonlinear.x_hist == []
+        assert nonlinear.f_hist.size == 0
+        assert nonlinear.x_hist.size == 0
 
     def test_none(self, capsys):
         # Check a constraint function with no function and verbose=False.
-        nonlinear = NonlinearConstraints(None, False, False, False)
+        nonlinear = NonlinearConstraints(None, False, False, False, 0)
         x = np.zeros(5)
         fun = nonlinear(x)
         captured = capsys.readouterr()
@@ -147,7 +147,7 @@ class TestNonlinearConstraints:
         assert captured.out == ''
 
         # Check an objective function with no function and verbose=True.
-        nonlinear = NonlinearConstraints(None, False, True, False)
+        nonlinear = NonlinearConstraints(None, False, True, False, 0)
         fun = nonlinear(x)
         captured = capsys.readouterr()
         assert fun.size == 0
@@ -156,7 +156,7 @@ class TestNonlinearConstraints:
 
     def test_barrier(self):
         # Check an objective function with an infinite value.
-        nonlinear = NonlinearConstraints(lambda x: [0, np.inf], False, False, False)
+        nonlinear = NonlinearConstraints(lambda x: [0, np.inf], False, False, False, 0)
         x = np.zeros(5)
         fun = nonlinear(x)
         assert nonlinear.name == '<lambda>'
@@ -164,7 +164,7 @@ class TestNonlinearConstraints:
         assert nonlinear.n_eval == 1
 
         # Check an objective function with a NaN value.
-        nonlinear = NonlinearConstraints(lambda x: [0, np.nan], False, False, False)
+        nonlinear = NonlinearConstraints(lambda x: [0, np.nan], False, False, False, 0)
         x = np.zeros(5)
         fun = nonlinear(x)
         assert nonlinear.name == '<lambda>'
@@ -172,25 +172,24 @@ class TestNonlinearConstraints:
         assert nonlinear.n_eval == 1
 
     def test_store(self):
-        nonlinear = NonlinearConstraints(np.sin, False, False, True)
+        nonlinear = NonlinearConstraints(np.sin, False, False, True, 1)
         x = np.zeros(5)
         nonlinear(x)
-        assert len(nonlinear.f_hist) == 1
-        assert len(nonlinear.x_hist) == 1
-        assert np.all(nonlinear.f_hist[0] == np.sin(x))
-        assert np.all(nonlinear.x_hist[0] == x)
+        assert nonlinear.f_hist.shape[0] == 1
+        assert nonlinear.x_hist.size == 0
+        assert np.all(nonlinear.f_hist[0, :] == np.sin(x))
 
 
 class TestProblem:
 
     def test_simple(self):
-        obj = ObjectiveFunction(rosen, False, False)
+        obj = ObjectiveFunction(rosen, False, False, 0)
         x0 = np.zeros(5)
         bounds = BoundConstraints(np.zeros(5), np.ones(5))
         linear_ub = LinearConstraints(np.ones((2, 5)), np.ones(2), False)
         linear_eq = LinearConstraints(np.ones((2, 5)), np.ones(2), True)
-        nonlinear_ub = NonlinearConstraints(np.sin, False, False, False)
-        nonlinear_eq = NonlinearConstraints(np.sin, True, False, False)
+        nonlinear_ub = NonlinearConstraints(np.sin, False, False, False, 0)
+        nonlinear_eq = NonlinearConstraints(np.sin, True, False, False, 0)
         pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq)
         fun_x0 = pb.fun(pb.x0)
         cub_x0 = pb.cub(pb.x0)
@@ -212,13 +211,13 @@ class TestProblem:
         assert np.all(ceq_x0 == np.sin(x0))
 
     def test_fixed(self):
-        obj = ObjectiveFunction(rosen, False, False)
+        obj = ObjectiveFunction(rosen, False, False, 0)
         x0 = np.zeros(5)
         bounds = BoundConstraints(np.block([np.zeros(4), 1.0]), np.ones(5))
         linear_ub = LinearConstraints(np.ones((2, 5)), np.ones(2), False)
         linear_eq = LinearConstraints(np.ones((2, 5)), np.ones(2), True)
-        nonlinear_ub = NonlinearConstraints(None, False, False, False)
-        nonlinear_eq = NonlinearConstraints(None, True, False, False)
+        nonlinear_ub = NonlinearConstraints(None, False, False, False, 0)
+        nonlinear_eq = NonlinearConstraints(None, True, False, False, 0)
         pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq)
         pb.cub(pb.x0)
         pb.ceq(pb.x0)
