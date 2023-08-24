@@ -536,12 +536,12 @@ class TrustRegion:
         # Build the k_new-th Lagrange polynomial.
         coord_vec = np.squeeze(np.eye(1, self.models.npt, k_new))
         lag = Quadratic(self.models.interpolation, coord_vec)
-        g_lag = lag.grad(self.models.interpolation.point(k_new), self.models.interpolation)
+        g_lag = lag.grad(self.x_best, self.models.interpolation)
 
         # Compute a simple constrained Cauchy step.
         xl = self._pb.bounds.xl - self.x_best
         xu = self._pb.bounds.xu - self.x_best
-        step = cauchy_geometry(0.0, g_lag, lambda v: lag.hess_prod(v, self.models.interpolation), xl, xu, self.radius, options['debug'])
+        step = cauchy_geometry(0.0, g_lag, lambda v: lag.curv(v, self.models.interpolation), xl, xu, self.radius, options['debug'])
         sigma = self.models.denominators(self.x_best + step, k_new)
 
         # Compute the solution on the straight lines joining the interpolation
@@ -549,7 +549,7 @@ class TrustRegion:
         # the denominator of the updating formula.
         xpt = self.models.interpolation.xpt - self.models.interpolation.xpt[:, self.best_index, np.newaxis]
         xpt[:, [0, self.best_index]] = xpt[:, [self.best_index, 0]]
-        step_alt = spider_geometry(0.0, g_lag, lambda v: lag.hess_prod(v, self.models.interpolation), xpt[:, 1:], xl, xu, self.radius, options['debug'])
+        step_alt = spider_geometry(0.0, g_lag, lambda v: lag.curv(v, self.models.interpolation), xpt[:, 1:], xl, xu, self.radius, options['debug'])
         sigma_alt = self.models.denominators(self.x_best + step_alt, k_new)
         if abs(sigma_alt) > abs(sigma):
             step = step_alt

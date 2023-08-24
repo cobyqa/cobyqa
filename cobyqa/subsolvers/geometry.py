@@ -3,7 +3,7 @@ import numpy as np
 from cobyqa.utils import get_arrays_tol
 
 
-def cauchy_geometry(const, grad, hess_prod, xl, xu, delta, debug):
+def cauchy_geometry(const, grad, curv, xl, xu, delta, debug):
     r"""
     Maximize approximately the absolute value of a quadratic function subject to
     bound constraints in a trust region.
@@ -26,12 +26,12 @@ def cauchy_geometry(const, grad, hess_prod, xl, xu, delta, debug):
         Constant :math:`c` as shown above.
     grad : numpy.ndarray, shape (n,)
         Gradient :math:`g` as shown above.
-    hess_prod : callable
-        Product of the Hessian matrix :math:`H` with any vector.
+    curv : callable
+        Curvature of :math:`H` along any vector.
 
-            ``hess_prod(s) -> numpy.ndarray, shape (n,)``
+            ``curv(s) -> float``
 
-        returns the product :math:`H s`.
+        returns :math:`\transpose{s} H s`.
     xl : numpy.ndarray, shape (n,)
         Lower bounds :math:`\xl` as shown above.
     xu : numpy.ndarray, shape (n,)
@@ -72,8 +72,8 @@ def cauchy_geometry(const, grad, hess_prod, xl, xu, delta, debug):
     # To maximize the absolute value of a quadratic function, we maximize the
     # function itself or its negative, and we choose the solution that provides
     # the largest function value.
-    step1, q_val1 = _cauchy_geom(const, grad, hess_prod, xl, xu, delta, debug)
-    step2, q_val2 = _cauchy_geom(-const, -grad, lambda x: -hess_prod(x), xl, xu, delta, debug)
+    step1, q_val1 = _cauchy_geom(const, grad, curv, xl, xu, delta, debug)
+    step2, q_val2 = _cauchy_geom(-const, -grad, lambda x: -curv(x), xl, xu, delta, debug)
     step = step1 if abs(q_val1) >= abs(q_val2) else step2
 
     if debug:
@@ -83,7 +83,7 @@ def cauchy_geometry(const, grad, hess_prod, xl, xu, delta, debug):
     return step
 
 
-def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
+def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
     r"""
     Maximize approximately the absolute value of a quadratic function subject to
     bound constraints in a trust region.
@@ -106,12 +106,12 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
         Constant :math:`c` as shown above.
     grad : numpy.ndarray, shape (n,)
         Gradient :math:`g` as shown above.
-    hess_prod : callable
-        Product of the Hessian matrix :math:`H` with any vector.
+    curv : callable
+        Curvature of :math:`H` along any vector.
 
-            ``hess_prod(s) -> numpy.ndarray, shape (n,)``
+            ``curv(s) -> float``
 
-        returns the product :math:`H s`.
+        returns :math:`\transpose{s} H s`.
     xpt : numpy.ndarray, shape (n, npt)
         Points defining the straight lines. The straight lines considered are
         the ones passing through the origin and the points in `xpt`.
@@ -171,34 +171,48 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
         i_xu_pos = (xu < np.inf) & (xpt[:, k] > np.finfo(float).tiny * xu)
         i_xu_neg = (xu < np.inf) & (xpt[:, k] < -np.finfo(float).tiny * xu)
         alpha_xl_pos = np.max(xl[i_xl_pos] / xpt[i_xl_pos, k], initial=-np.inf)
-        alpha_xl_neg = np.max(xu[i_xu_neg] / xpt[i_xu_neg, k], initial=-np.inf)
+        alpha_xl_neg = np.min(xl[i_xl_neg] / xpt[i_xl_neg, k], initial=np.inf)
+        alpha_xu_neg = np.max(xu[i_xu_neg] / xpt[i_xu_neg, k], initial=-np.inf)
         alpha_xu_pos = np.min(xu[i_xu_pos] / xpt[i_xu_pos, k], initial=np.inf)
-        alpha_xu_neg = np.min(xl[i_xl_neg] / xpt[i_xl_neg, k], initial=np.inf)
-        alpha_xl = max(alpha_xl_pos, alpha_xl_neg)
-        alpha_xu = min(alpha_xu_pos, alpha_xu_neg)
+        alpha_bd_pos = min(alpha_xu_pos, alpha_xl_neg)
+        alpha_bd_neg = max(alpha_xl_pos, alpha_xu_neg)
 
-        # Set alpha_pos to the step size for the maximization problem without
-        # any constraint along the positive direction, and alpha_neg to the step
-        # size for the maximization problem along the negative direction.
+        # Set alpha_quad_pos and alpha_quad_neg to the step size to the extrema
+        # of the quadratic function along the positive and negative directions.
         grad_step = grad @ xpt[:, k]
-        hess_step = hess_prod(xpt[:, k])
-        curv_step = xpt[:, k] @ hess_step
+        curv_step = curv(xpt[:, k])
         if grad_step >= 0.0 and curv_step < -np.finfo(float).tiny * grad_step or grad_step <= 0.0 and curv_step > -np.finfo(float).tiny * grad_step:
-            alpha_pos = max(-grad_step / curv_step, 0.0)
+            alpha_quad_pos = max(-grad_step / curv_step, 0.0)
         else:
-            alpha_pos = np.inf
+            alpha_quad_pos = np.inf
         if grad_step >= 0.0 and curv_step > np.finfo(float).tiny * grad_step or grad_step <= 0.0 and curv_step < np.finfo(float).tiny * grad_step:
-            alpha_neg = min(-grad_step / curv_step, 0.0)
+            alpha_quad_neg = min(-grad_step / curv_step, 0.0)
         else:
-            alpha_neg = -np.inf
+            alpha_quad_neg = -np.inf
 
-        # Compute the constrained counterparts of alpha_pos and alpha_neg, and
-        # accept the one that provides the largest absolute value of the
-        # objective function if it improves the current best.
-        alpha_pos = min(alpha_pos, alpha_tr, alpha_xu)
-        alpha_neg = max(alpha_neg, -alpha_tr, alpha_xl)
+        # Select the step that provides the largest value of the objective
+        # function if it improves the current best. The best positive step is
+        # either the one that reaches the constraints or the one that reaches
+        # the extremum of the objective function along the current direction
+        # (only possible if the resulting step is feasible). We test both, and
+        # we perform similar calculations along the negative step.
+        # N.B.: we select the largest possible step among all the ones that
+        # maximize the objective function. This is to avoid returning the zero
+        # step in some extreme cases.
+        alpha_pos = min(alpha_tr, alpha_bd_pos)
+        alpha_neg = max(-alpha_tr, alpha_bd_neg)
         q_val_pos = const + alpha_pos * grad_step + 0.5 * alpha_pos ** 2.0 * curv_step
         q_val_neg = const + alpha_neg * grad_step + 0.5 * alpha_neg ** 2.0 * curv_step
+        if alpha_quad_pos < alpha_pos:
+            q_val_quad_pos = const + alpha_quad_pos * grad_step + 0.5 * alpha_quad_pos ** 2.0 * curv_step
+            if abs(q_val_quad_pos) > abs(q_val_pos):
+                alpha_pos = alpha_quad_pos
+                q_val_pos = q_val_quad_pos
+        if alpha_quad_neg > alpha_neg:
+            q_val_quad_neg = const + alpha_quad_neg * grad_step + 0.5 * alpha_quad_neg ** 2.0 * curv_step
+            if abs(q_val_quad_neg) > abs(q_val_neg):
+                alpha_neg = alpha_quad_neg
+                q_val_neg = q_val_quad_neg
         if abs(q_val_pos) >= abs(q_val_neg) and abs(q_val_pos) > abs(q_val):
             step = np.maximum(xl, np.minimum(alpha_pos * xpt[:, k], xu))
             q_val = q_val_pos
@@ -213,7 +227,7 @@ def spider_geometry(const, grad, hess_prod, xpt, xl, xu, delta, debug):
     return step
 
 
-def _cauchy_geom(const, grad, hess_prod, xl, xu, delta, debug):
+def _cauchy_geom(const, grad, curv, xl, xu, delta, debug):
     """
     Same as `bound_constrained_cauchy_step` without the absolute value.
     """
@@ -259,8 +273,7 @@ def _cauchy_geom(const, grad, hess_prod, xl, xu, delta, debug):
             alpha_tr = 0.0
 
         # Set alpha_quad to the step size for the maximization problem.
-        hess_step = hess_prod(cauchy_step)
-        curv_step = cauchy_step @ hess_step
+        curv_step = curv(cauchy_step)
         if curv_step < -np.finfo(float).tiny * grad_step:
             alpha_quad = max(-grad_step / curv_step, 0.0)
         else:
