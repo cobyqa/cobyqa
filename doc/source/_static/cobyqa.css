@@ -8,11 +8,6 @@ h1 {
   font-family: "Lato", sans-serif;
 }
 
-a:visited {
-    /* Likely, the line below can be removed when pydata-sphinx-theme is updated */
-    color: var(--pst-color-link);
-}
-
 /* Footers */
 
 .footer-items__start, .footer-items__end {
