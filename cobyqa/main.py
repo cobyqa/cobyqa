@@ -490,7 +490,7 @@ def _build_result(pb, penalty, x, success, status, n_iter, verbose, fun_val=None
     # Build the result.
     result = OptimizeResult()
     result.x, result.fun, result.cub, result.ceq = pb.best_eval(penalty, x, fun_val, cub_val, ceq_val)
-    result.maxcv = pb.resid(x, cub_val, ceq_val)
+    result.maxcv = pb.resid(result.x, cub_val, ceq_val)
     result.nfev = pb.n_eval
     result.nit = n_iter
     result.success = success and (result.maxcv < 10.0 * np.finfo(float).eps * np.max(np.abs(result.x), initial=1.0))

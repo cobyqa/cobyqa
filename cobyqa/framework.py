@@ -653,7 +653,7 @@ class TrustRegion:
         merit_model_old = self.merit(self.x_best, 0.0, self.models.cub(self.x_best), self.models.ceq(self.x_best))
         merit_model_new = self.merit(self.x_best + step, self.sqp_fun(step), self.sqp_cub(step), self.sqp_ceq(step))
         if abs(merit_model_old - merit_model_new) > np.finfo(float).tiny * abs(merit_old - merit_new):
-            return (merit_old - merit_new) / (merit_model_old - merit_model_new)
+            return (merit_old - merit_new) / abs(merit_model_old - merit_model_new)
         else:
             return -1.0
 
@@ -731,6 +731,7 @@ class TrustRegion:
         else:
             sigma = self.models.denominators(x_new)
             weights = np.maximum(1.0, dist_sq / max(0.1 * self.radius, self.resolution) ** 2.0) ** 3.0
+            weights[self.best_index] = 0.0  # The best point should not be removed.
         k_max = np.argmax(weights * np.abs(sigma))
         return k_max, np.sqrt(dist_sq[k_max])
 

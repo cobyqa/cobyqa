@@ -1043,7 +1043,7 @@ class Problem:
             fun_val = fun_hist[i]
             cub_val = cub_hist[i, :]
             ceq_val = ceq_hist[i, :]
-        return x, fun_val, cub_val, ceq_val
+        return self.bounds.project(x), fun_val, cub_val, ceq_val
 
 
 def _1d_array(x, message):

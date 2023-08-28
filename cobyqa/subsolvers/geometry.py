@@ -162,6 +162,7 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
         if s_norm > np.finfo(float).tiny * delta:
             alpha_tr = max(delta / s_norm, 0.0)
         else:
+            # The current straight line is basically zero.
             continue
 
         # Set alpha_xl to the step size for the lower-bound constraint and
@@ -174,8 +175,8 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
         alpha_xl_neg = np.min(xl[i_xl_neg] / xpt[i_xl_neg, k], initial=np.inf)
         alpha_xu_neg = np.max(xu[i_xu_neg] / xpt[i_xu_neg, k], initial=-np.inf)
         alpha_xu_pos = np.min(xu[i_xu_pos] / xpt[i_xu_pos, k], initial=np.inf)
-        alpha_bd_pos = min(alpha_xu_pos, alpha_xl_neg)
-        alpha_bd_neg = max(alpha_xl_pos, alpha_xu_neg)
+        alpha_bd_pos = max(min(alpha_xu_pos, alpha_xl_neg), 0.0)
+        alpha_bd_neg = min(max(alpha_xl_pos, alpha_xu_neg), 0.0)
 
         # Set alpha_quad_pos and alpha_quad_neg to the step size to the extrema
         # of the quadratic function along the positive and negative directions.
