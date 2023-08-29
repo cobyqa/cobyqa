@@ -199,8 +199,8 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
             # step = cos(theta) * step + sin(theta) * sd.
             temp_xl = np.zeros(n)
             temp_xu = np.zeros(n)
-            temp_xl[free_bd] = np.square(step[free_bd]) + np.square(sd[free_bd]) - np.square(xl[free_bd])
-            temp_xu[free_bd] = np.square(step[free_bd]) + np.square(sd[free_bd]) - np.square(xu[free_bd])
+            temp_xl[free_bd] = step[free_bd] ** 2.0 + sd[free_bd] ** 2.0 - xl[free_bd] ** 2.0
+            temp_xu[free_bd] = step[free_bd] ** 2.0 + sd[free_bd] ** 2.0 - xu[free_bd] ** 2.0
             temp_xl[temp_xl > 0.0] = np.sqrt(temp_xl[temp_xl > 0.0]) - sd[temp_xl > 0.0]
             temp_xu[temp_xu > 0.0] = np.sqrt(temp_xu[temp_xu > 0.0]) + sd[temp_xu > 0.0]
             dist_xl = np.maximum(step - xl, 0.0)
@@ -228,7 +228,7 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
             n_samples = 20
             n_samples = int((n_samples - 3) * t_bd + 3)
             t_samples = np.linspace(t_bd / n_samples, t_bd, n_samples)
-            sin_values = 2.0 * t_samples / (1.0 + np.square(t_samples))
+            sin_values = 2.0 * t_samples / (1.0 + t_samples ** 2.0)
             all_reduct = sin_values * (grad_step * t_samples - grad_sd - t_samples * curv_step + sin_values * (t_samples * curv_step_sd - 0.5 * (curv_sd - curv_step)))
             if np.all(all_reduct <= 0.0):
                 # No reduction in the objective function is obtained.
@@ -498,8 +498,8 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
             temp_xu = np.zeros(n)
             dist_xl = np.maximum(step - xl, 0.0)
             dist_xu = np.maximum(xu - step, 0.0)
-            temp_xl[free_xl] = np.square(sd[free_xl]) - dist_xl[free_xl] * (dist_xl[free_xl] - 2.0 * step_proj[free_xl])
-            temp_xu[free_xu] = np.square(sd[free_xu]) - dist_xu[free_xu] * (dist_xu[free_xu] + 2.0 * step_proj[free_xu])
+            temp_xl[free_xl] = sd[free_xl] ** 2.0 - dist_xl[free_xl] * (dist_xl[free_xl] - 2.0 * step_proj[free_xl])
+            temp_xu[free_xu] = sd[free_xu] ** 2.0 - dist_xu[free_xu] * (dist_xu[free_xu] + 2.0 * step_proj[free_xu])
             temp_xl[temp_xl > 0.0] = np.sqrt(temp_xl[temp_xl > 0.0]) - sd[temp_xl > 0.0]
             temp_xu[temp_xu > 0.0] = np.sqrt(temp_xu[temp_xu > 0.0]) + sd[temp_xu > 0.0]
             i_xl = temp_xl > np.finfo(float).tiny * dist_xl
@@ -517,7 +517,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
             temp_ub = np.zeros_like(resid)
             aub_step = aub @ step_proj
             aub_sd = aub @ sd
-            temp_ub[free_ub] = np.square(aub_sd[free_ub]) - resid[free_ub] * (resid[free_ub] + 2.0 * aub_step[free_ub])
+            temp_ub[free_ub] = aub_sd[free_ub] ** 2.0 - resid[free_ub] * (resid[free_ub] + 2.0 * aub_step[free_ub])
             temp_ub[temp_ub > 0.0] = np.sqrt(temp_ub[temp_ub > 0.0]) + aub_sd[temp_ub > 0.0]
             i_ub = temp_ub > np.finfo(float).tiny * resid
             all_t_ub = np.ones_like(resid)
@@ -538,8 +538,8 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
             n_samples = 20
             n_samples = int((n_samples - 3) * t_min + 3)
             t_samples = np.linspace(t_min / n_samples, t_min, n_samples)
-            sin_values = 2.0 * t_samples / (1.0 + np.square(t_samples))
-            all_reduct = sin_values * (grad_step * t_samples - grad_sd - sin_values * (0.5 * np.square(t_samples) * curv_step - 2.0 * t_samples * curv_step_sd + 0.5 * curv_sd))
+            sin_values = 2.0 * t_samples / (1.0 + t_samples ** 2.0)
+            all_reduct = sin_values * (grad_step * t_samples - grad_sd - sin_values * (0.5 * t_samples ** 2.0 * curv_step - 2.0 * t_samples * curv_step_sd + 0.5 * curv_sd))
             if np.all(all_reduct <= 0.0):
                 # No reduction in the objective function is obtained.
                 break
@@ -815,8 +815,8 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
             # step = cos(theta) * step + sin(theta) * sd.
             temp_xl = np.zeros(n)
             temp_xu = np.zeros(n)
-            temp_xl[free_bd] = np.square(step[free_bd]) + np.square(sd[free_bd]) - np.square(xl[free_bd])
-            temp_xu[free_bd] = np.square(step[free_bd]) + np.square(sd[free_bd]) - np.square(xu[free_bd])
+            temp_xl[free_bd] = step[free_bd] ** 2.0 + sd[free_bd] ** 2.0 - xl[free_bd] ** 2.0
+            temp_xu[free_bd] = step[free_bd] ** 2.0 + sd[free_bd] ** 2.0 - xu[free_bd] ** 2.0
             temp_xl[temp_xl > 0.0] = np.sqrt(temp_xl[temp_xl > 0.0]) - sd[temp_xl > 0.0]
             temp_xu[temp_xu > 0.0] = np.sqrt(temp_xu[temp_xu > 0.0]) + sd[temp_xu > 0.0]
             dist_xl = np.maximum(step - xl, 0.0)

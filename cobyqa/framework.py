@@ -724,14 +724,14 @@ class TrustRegion:
         float
             Distance between `x_best` and the removed point.
         """
-        dist_sq = np.sum(np.square(self.models.interpolation.xpt - self.models.interpolation.xpt[:, self.best_index, np.newaxis]), axis=0)
+        dist_sq = np.sum((self.models.interpolation.xpt - self.models.interpolation.xpt[:, self.best_index, np.newaxis]) ** 2.0, axis=0)
         if x_new is None:
             sigma = 1.0
             weights = dist_sq
         else:
             sigma = self.models.denominators(x_new)
             weights = np.maximum(1.0, dist_sq / max(0.1 * self.radius, self.resolution) ** 2.0) ** 3.0
-            weights[self.best_index] = 0.0  # The best point should not be removed.
+            weights[self.best_index] = -1.0  # The best point should never be removed.
         k_max = np.argmax(weights * np.abs(sigma))
         return k_max, np.sqrt(dist_sq[k_max])
 

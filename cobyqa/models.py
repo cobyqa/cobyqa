@@ -207,7 +207,7 @@ class Quadratic:
         """
         assert x.shape == (self.n,), 'The shape of `x` is not valid.'
         x_diff = x - interpolation.x_base
-        return self._const + self._grad @ x_diff + 0.5 * (self._i_hess @ np.square(interpolation.xpt.T @ x_diff) + x_diff @ self._e_hess @ x_diff)
+        return self._const + self._grad @ x_diff + 0.5 * (self._i_hess @ (interpolation.xpt.T @ x_diff) ** 2.0 + x_diff @ self._e_hess @ x_diff)
 
     @property
     def n(self):
@@ -308,7 +308,7 @@ class Quadratic:
             Curvature of the quadratic model along `v`.
         """
         assert v.shape == (self.n,), 'The shape of `v` is not valid.'
-        return v @ self._e_hess @ v + self._i_hess @ np.square(interpolation.xpt.T @ v)
+        return v @ self._e_hess @ v + self._i_hess @ (interpolation.xpt.T @ v) ** 2.0
 
     def update(self, interpolation, k_new, dir_old, values_diff):
         """
@@ -382,7 +382,7 @@ class Quadratic:
         # left and right scaling matrices are chosen to keep the elements in the
         # matrix well-balanced.
         a = np.zeros((npt + n + 1, npt + n + 1))
-        a[:npt, :npt] = 0.5 * np.square(xpt_scale.T @ xpt_scale)
+        a[:npt, :npt] = 0.5 * (xpt_scale.T @ xpt_scale) ** 2.0
         a[:npt, npt] = 1.0
         a[:npt, npt + 1:] = xpt_scale.T
         a[npt, :npt] = 1.0
@@ -1043,7 +1043,7 @@ class Models:
         # Compute the values independent of k.
         shift = x_new - self.interpolation.x_base
         new_col = np.empty(self.npt + self.n + 1)
-        new_col[:self.npt] = 0.5 * np.square(self.interpolation.xpt.T @ shift)
+        new_col[:self.npt] = 0.5 * (self.interpolation.xpt.T @ shift) ** 2.0
         new_col[self.npt] = 1.0
         new_col[self.npt + 1:] = shift
         inv_new_col = Quadratic.solve_system(self.interpolation, new_col)
@@ -1057,7 +1057,7 @@ class Models:
         # Compute the values that depend on k.
         alpha = np.array([get_alpha(k_idx) for k_idx in range(self.npt)]) if k is None else get_alpha(k)
         tau = inv_new_col[:self.npt] if k is None else inv_new_col[k]
-        return alpha * beta + np.square(tau)
+        return alpha * beta + tau ** 2.0
 
     def shift_x_base(self, new_x_base, options):
         """

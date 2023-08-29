@@ -225,6 +225,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     hist_size = int(hist_size)
 
     # Initialize the objective function.
+    if not isinstance(args, tuple):
+        args = (args,)
     obj = ObjectiveFunction(fun, verbose, store_hist, hist_size, *args)
 
     # Initialize the bound constraints.
