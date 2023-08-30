@@ -39,11 +39,11 @@ class TrustRegion:
         self.set_best_index()
 
         # Set the initial Lagrange multipliers.
-        self._lm_linear_ub = np.empty(self.m_linear_ub)
-        self._lm_linear_eq = np.empty(self.m_linear_eq)
-        self._lm_nonlinear_ub = np.empty(self.m_nonlinear_ub)
-        self._lm_nonlinear_eq = np.empty(self.m_nonlinear_eq)
-        self.set_multipliers()
+        self._lm_linear_ub = np.zeros(self.m_linear_ub)
+        self._lm_linear_eq = np.zeros(self.m_linear_eq)
+        self._lm_nonlinear_ub = np.zeros(self.m_nonlinear_ub)
+        self._lm_nonlinear_eq = np.zeros(self.m_nonlinear_eq)
+        self.set_multipliers(self.x_best)
 
         # Set the initial trust-region radius and the resolution.
         self._resolution = options['radius_init']
@@ -786,6 +786,55 @@ class TrustRegion:
         """
         self.models.shift_x_base(np.copy(self.x_best), options)
 
+    def set_multipliers(self, x):
+        """
+        Set the Lagrange multipliers.
+
+        This method computes and set the Lagrange multipliers of the linear and
+        nonlinear constraints to be the QP multipliers.
+
+        Parameters
+        ----------
+        x : numpy.ndarray, shape (n,)
+            Point at which the Lagrange multipliers are computed.
+        """
+        # TODO: Is it normal that the multipliers are often zero?
+        # TODO: Should we use the least-squares multipliers instead?
+        # Build the constraints of the least-squares problem.
+        incl_linear_ub = self._pb.linear_ub.a @ x >= self._pb.linear_ub.b
+        incl_nonlinear_ub = self.cub_best >= 0.0
+        incl_xl = self._pb.bounds.xl >= x
+        incl_xu = self._pb.bounds.xu <= x
+        m_linear_ub = np.count_nonzero(incl_linear_ub)
+        m_nonlinear_ub = np.count_nonzero(incl_nonlinear_ub)
+        m_xl = np.count_nonzero(incl_xl)
+        m_xu = np.count_nonzero(incl_xu)
+
+        if m_linear_ub + m_nonlinear_ub + self.m_linear_eq + self.m_nonlinear_eq > 0:
+            identity = np.eye(self._pb.n)
+            c_jac = np.r_[
+                -identity[incl_xl, :],
+                identity[incl_xu, :],
+                self._pb.linear_ub.a[incl_linear_ub, :],
+                self.models.cub_grad(x, incl_nonlinear_ub),
+                self._pb.linear_eq.a,
+                self.models.ceq_grad(x),
+            ]
+
+            # Solve the least-squares problem.
+            g_best = self.models.fun_grad(x)
+            xl_lm = np.full(c_jac.shape[0], -np.inf)
+            xl_lm[:m_xl + m_xu + m_linear_ub + m_nonlinear_ub] = 0.0
+            res = lsq_linear(c_jac.T, -g_best, bounds=(xl_lm, np.inf), method='bvls')
+
+            # Extract the Lagrange multipliers.
+            self._lm_linear_ub[incl_linear_ub] = res.x[m_xl + m_xu:m_xl + m_xu + m_linear_ub]
+            self._lm_linear_ub[~incl_linear_ub] = 0.0
+            self._lm_nonlinear_ub[incl_nonlinear_ub] = res.x[m_xl + m_xu + m_linear_ub:m_xl + m_xu + m_linear_ub + m_nonlinear_ub]
+            self._lm_nonlinear_ub[~incl_nonlinear_ub] = 0.0
+            self._lm_linear_eq[:] = res.x[m_xl + m_xu + m_linear_ub + m_nonlinear_ub:m_xl + m_xu + m_linear_ub + m_nonlinear_ub + self.m_linear_eq]
+            self._lm_nonlinear_eq[:] = res.x[m_xl + m_xu + m_linear_ub + m_nonlinear_ub + self.m_linear_eq:]
+
     def _get_low_penalty(self):
         r_val_ub = np.c_[(self.models.interpolation.x_base[np.newaxis, :] + self.models.interpolation.xpt.T) @ self._pb.linear_ub.a.T - self._pb.linear_ub.b[np.newaxis, :], self.models.cub_val]
         r_val_eq = (self.models.interpolation.x_base[np.newaxis, :] + self.models.interpolation.xpt.T) @ self._pb.linear_eq.a.T - self._pb.linear_eq.b[np.newaxis, :]
@@ -806,47 +855,3 @@ class TrustRegion:
         else:
             penalty = 0.0
         return penalty
-
-    def set_multipliers(self):
-        """
-        Set the Lagrange multipliers.
-
-        This method computes and set the Lagrange multipliers of the linear and
-        nonlinear constraints to be the QP multipliers.
-        """
-        # TODO: Is it normal that the multipliers are often zero?
-        # TODO: Should we use the least-squares multipliers instead?
-        # Build the constraints of the least-squares problem.
-        incl_linear = self._pb.linear_ub.a @ self.x_best >= self._pb.linear_ub.b
-        incl_nonlinear = self.cub_best >= 0.0
-        incl_xl = self._pb.bounds.xl >= self.x_best
-        incl_xu = self._pb.bounds.xu <= self.x_best
-        m_linear = np.count_nonzero(incl_linear)
-        m_nonlinear = np.count_nonzero(incl_nonlinear)
-        m_xl = np.count_nonzero(incl_xl)
-        m_xu = np.count_nonzero(incl_xu)
-        identity = np.eye(self._pb.n)
-        c_jac = np.r_[
-            -identity[incl_xl, :],
-            identity[incl_xu, :],
-            self._pb.linear_ub.a[incl_linear, :],
-            self.models.cub_grad(self.x_best, incl_nonlinear),
-            self._pb.linear_eq.a,
-            self.models.ceq_grad(self.x_best),
-        ]
-
-        # Solve the least-squares problem.
-        if c_jac.size > 0:
-            # Solve the linear system.
-            g_best = self.models.fun_grad(self.x_best)
-            xl_lm = np.full(c_jac.shape[0], -np.inf)
-            xl_lm[:m_xl + m_xu + m_linear + m_nonlinear] = 0.0
-            res = lsq_linear(c_jac.T, -g_best, bounds=(xl_lm, np.inf), method='bvls')
-
-            # Extract the Lagrange multipliers.
-            self._lm_linear_ub.fill(0.0)
-            self._lm_linear_ub[incl_linear] = res.x[m_xl + m_xu:m_xl + m_xu + m_linear]
-            self._lm_nonlinear_ub.fill(0.0)
-            self._lm_nonlinear_ub[incl_nonlinear] = res.x[m_xl + m_xu + m_linear:m_xl + m_xu + m_linear + m_nonlinear]
-            self._lm_linear_eq[:] = res.x[m_xl + m_xu + m_linear + m_nonlinear:m_xl + m_xu + m_linear + m_nonlinear + self.m_linear_eq]
-            self._lm_nonlinear_eq[:] = res.x[m_xl + m_xu + m_linear + m_nonlinear + self.m_linear_eq:]
