@@ -283,13 +283,15 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         return _build_result(pb, framework.penalty, framework.x_best, False, EXIT_MAX_ITER_WARNING, 0, verbose, framework.fun_best, framework.cub_best, framework.ceq_best)
 
     # Start the optimization procedure.
-    k_new = None
     success = False
-    n_iter = 0
     n_short_steps = 0
     n_very_short_steps = 0
     n_alt_models = 0
+    n_iter = 0
     while True:
+        # Stop the optimization procedure if the maximum number of iterations
+        # has been exceeded. We do not write the main loop as a for loop because
+        # we want to access the number of iterations outside the loop.
         if n_iter >= options['max_iter']:
             status = EXIT_MAX_ITER_WARNING
             break
@@ -305,11 +307,13 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         step = normal_step + tangential_step
         s_norm = np.linalg.norm(step)
 
-        reduce_resolution = False
-        improve_geometry = False
-        eval_functions = s_norm > 0.5 * framework.radius
-
-        if not eval_functions:
+        # If the trial step is too short, we do not attempt to evaluate the
+        # objective and constraint functions. Instead, we reduce the
+        # trust-region radius and check whether the resolution should be
+        # reduced and whether the geometry of the interpolation set should be
+        # improved. Otherwise, we entertain a classical iteration.
+        k_new = None
+        if s_norm <= 0.5 * framework.radius:
             framework.radius *= 0.5
             if radius_save > framework.resolution:
                 n_short_steps = 0
@@ -325,6 +329,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
             if reduce_resolution:
                 n_short_steps = 0
                 n_very_short_steps = 0
+                improve_geometry = False
             else:
                 k_new, dist_new = framework.get_index_to_remove()
                 improve_geometry = dist_new > max(framework.radius, 2.0 * framework.resolution)
@@ -362,7 +367,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 ratio = framework.get_reduction_ratio(step, fun_val, cub_val, ceq_val)
 
                 # Update the Lagrange multipliers.
-                framework.set_multipliers()
+                framework.set_multipliers(framework.x_best)
+                # framework.set_multipliers(framework.x_best + step)
 
                 # Choose an interpolation point to remove.
                 k_new = framework.get_index_to_remove(framework.x_best + step)[0]
@@ -392,7 +398,13 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 k_new, dist_new = framework.get_index_to_remove()
                 reduce_resolution = radius_save <= framework.resolution and ratio <= 0.1 and dist_new <= max(framework.radius, 2.0 * framework.resolution)
                 improve_geometry = ratio <= 0.1 and dist_new > max(framework.radius, 2.0 * framework.resolution)
+            else:
+                # When increasing the penalty parameter, the best point so far
+                # may change. In this case, we restart the iteration.
+                reduce_resolution = False
+                improve_geometry = False
 
+        # Reduce the resolution if necessary.
         if reduce_resolution:
             if framework.resolution <= options['radius_final']:
                 success = True
@@ -406,6 +418,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 _print_step(f'New trust-region radius: {framework.resolution}', pb, pb.build_x(framework.x_best), framework.fun_best, resid, pb.n_eval, n_iter)
                 print()
 
+        # Improve the geometry of the interpolation set if necessary.
         if improve_geometry:
             step = framework.get_geometry_step(k_new, options)
 
