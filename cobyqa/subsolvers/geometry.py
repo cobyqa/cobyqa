@@ -1,3 +1,5 @@
+import inspect
+
 import numpy as np
 
 from cobyqa.utils import get_arrays_tol
@@ -58,14 +60,18 @@ def cauchy_geometry(const, grad, curv, xl, xu, delta, debug):
        and Software*. PhD thesis, The Hong Kong Polytechnic University, Hong
        Kong, China, 2022.
     """
-    # Check the feasibility of the subproblem.
-    tol = get_arrays_tol(xl, xu)
-    if np.any(xl > tol):
-        raise ValueError('The lower bounds must be nonpositive.')
-    if np.any(xu < -tol):
-        raise ValueError('The upper bounds must be nonnegative.')
-    if not np.isfinite(delta) or delta <= 0.0:
-        raise ValueError('The trust-region radius must be finite and positive.')
+    if debug:
+        assert isinstance(const, float)
+        assert isinstance(grad, np.ndarray) and grad.ndim == 1
+        assert inspect.signature(curv).bind(grad)
+        assert isinstance(xl, np.ndarray) and xl.shape == grad.shape
+        assert isinstance(xu, np.ndarray) and xu.shape == grad.shape
+        assert isinstance(delta, float)
+        assert isinstance(debug, bool)
+        tol = get_arrays_tol(xl, xu)
+        assert np.all(xl <= tol)
+        assert np.all(xu >= -tol)
+        assert np.isfinite(delta) and delta > 0.0
     xl = np.minimum(xl, 0.0)
     xu = np.maximum(xu, 0.0)
 
@@ -141,22 +147,26 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
        and Software*. PhD thesis, The Hong Kong Polytechnic University, Hong
        Kong, China, 2022.
     """
-    # Check the feasibility of the subproblem.
-    n, npt = xpt.shape
-    tol = get_arrays_tol(xl, xu)
-    if np.any(xl > tol):
-        raise ValueError('The lower bounds must be nonpositive.')
-    if np.any(xu < -tol):
-        raise ValueError('The upper bounds must be nonnegative.')
-    if not np.isfinite(delta) or delta <= 0.0:
-        raise ValueError('The trust-region radius must be finite and positive.')
+    if debug:
+        assert isinstance(const, float)
+        assert isinstance(grad, np.ndarray) and grad.ndim == 1
+        assert inspect.signature(curv).bind(grad)
+        assert isinstance(xpt, np.ndarray) and xpt.ndim == 2 and xpt.shape[0] == grad.size
+        assert isinstance(xl, np.ndarray) and xl.shape == grad.shape
+        assert isinstance(xu, np.ndarray) and xu.shape == grad.shape
+        assert isinstance(delta, float)
+        assert isinstance(debug, bool)
+        tol = get_arrays_tol(xl, xu)
+        assert np.all(xl <= tol)
+        assert np.all(xu >= -tol)
+        assert np.isfinite(delta) and delta > 0.0
     xl = np.minimum(xl, 0.0)
     xu = np.maximum(xu, 0.0)
 
     # Iterate through the straight lines.
     step = np.zeros_like(grad)
     q_val = const
-    for k in range(npt):
+    for k in range(xpt.shape[1]):
         # Set alpha_tr to the step size for the trust-region constraint.
         s_norm = np.linalg.norm(xpt[:, k])
         if s_norm > np.finfo(float).tiny * delta:

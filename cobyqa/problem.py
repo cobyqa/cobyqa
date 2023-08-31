@@ -1,3 +1,4 @@
+import inspect
 from abc import ABC
 
 import numpy as np
@@ -10,7 +11,7 @@ class Function(ABC):
     Base class for objective and constraints functions.
     """
 
-    def __init__(self, fun, verbose, store_f_hist, store_x_hist, hist_size, *args):
+    def __init__(self, fun, verbose, store_f_hist, store_x_hist, hist_size, debug, *args):
         """
         Initialize the function.
 
@@ -30,9 +31,19 @@ class Function(ABC):
             Whether to store the visited points.
         hist_size : int
             Maximum number of function evaluations to store.
+        debug : bool
+            Whether to make debugging tests during the execution.
         *args : tuple
             Additional arguments to be passed to the function.
         """
+        if debug:
+            assert fun is None or callable(fun)
+            assert isinstance(verbose, bool)
+            assert isinstance(store_f_hist, bool)
+            assert isinstance(store_x_hist, bool)
+            assert isinstance(hist_size, int) and hist_size > 0
+            assert isinstance(debug, bool)
+
         self._fun = fun
         self._verbose = verbose
         self._store_f_hist = store_f_hist
@@ -219,7 +230,7 @@ class ObjectiveFunction(Function):
     Real-valued objective function.
     """
 
-    def __init__(self, fun, verbose, store_hist, hist_size, *args):
+    def __init__(self, fun, verbose, store_hist, hist_size, debug, *args):
         """
         Initialize the objective function.
 
@@ -237,10 +248,12 @@ class ObjectiveFunction(Function):
             Whether to store the function evaluations.
         hist_size : int
             Maximum number of function evaluations to store.
+        debug : bool
+            Whether to make debugging tests during the execution.
         *args : tuple
             Additional arguments to be passed to the function.
         """
-        super().__init__(fun, verbose, store_hist, store_hist, hist_size, *args)
+        super().__init__(fun, verbose, store_hist, store_hist, hist_size, debug, *args)
 
     def apply_barrier(self, val=None):
         """
@@ -383,7 +396,7 @@ class LinearConstraints(Constraints):
     Linear constraints ``a @ x <= b`` or ``a @ x == b``.
     """
 
-    def __init__(self, a, b, is_equality):
+    def __init__(self, a, b, is_equality, debug):
         """
         Initialize the linear constraints.
 
@@ -397,7 +410,12 @@ class LinearConstraints(Constraints):
             Whether the linear constraints are equality constraints. If True,
             the linear constraints are ``a @ x == b``. Otherwise, the linear
             constraints are ``a @ x <= b``.
+        debug : bool
+            Whether to make debugging tests during the execution.
         """
+        if debug:
+            assert isinstance(is_equality, bool)
+
         c_type = 'equality' if is_equality else 'inequality'
         self._a = _2d_array(a, f'The left-hand side of the linear {c_type} constraints must be a matrix.')
         self._b = _1d_array(b, f'The right-hand side of the linear {c_type} constraints must be a vector.')
@@ -492,7 +510,7 @@ class NonlinearConstraints(Function, Constraints):
     Nonlinear constraints ``fun(x) <= 0`` or ``fun(x) == 0``.
     """
 
-    def __init__(self, fun, is_equality, verbose, store_hist, hist_size, *args):
+    def __init__(self, fun, is_equality, verbose, store_hist, hist_size, debug, *args):
         """
         Initialize the nonlinear constraints.
 
@@ -512,10 +530,15 @@ class NonlinearConstraints(Function, Constraints):
             Whether to store the function evaluations.
         hist_size : int
             Maximum number of function evaluations to store.
+        debug : bool
+            Whether to make debugging tests during the execution.
         *args : tuple
             Additional arguments passed to the function.
         """
-        super().__init__(fun, verbose, store_hist, False, hist_size, *args)
+        if debug:
+            assert isinstance(is_equality, bool)
+
+        super().__init__(fun, verbose, store_hist, False, hist_size, debug, *args)
         self._is_equality = is_equality
         self._m = 0 if fun is None else None
 
@@ -611,7 +634,7 @@ class Problem:
     Optimization problem.
     """
 
-    def __init__(self, obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq):
+    def __init__(self, obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, debug):
         """
         Initialize the nonlinear problem.
 
@@ -634,6 +657,8 @@ class Problem:
             Nonlinear inequality constraints.
         nonlinear_eq : NonlinearConstraints
             Nonlinear equality constraints.
+        debug : bool
+            Whether to make debugging tests during the execution.
         """
         self._obj = obj
         self._nonlinear_ub = nonlinear_ub
@@ -659,8 +684,8 @@ class Problem:
 
         # Set the bound and linear constraints.
         self._bounds = BoundConstraints(bounds.xl[~self._fixed_idx], bounds.xu[~self._fixed_idx])
-        self._linear_ub = LinearConstraints(linear_ub.a[:, ~self._fixed_idx], linear_ub.b - linear_ub.a[:, self._fixed_idx] @ self._fixed_val, False)
-        self._linear_eq = LinearConstraints(linear_eq.a[:, ~self._fixed_idx], linear_eq.b - linear_eq.a[:, self._fixed_idx] @ self._fixed_val, True)
+        self._linear_ub = LinearConstraints(linear_ub.a[:, ~self._fixed_idx], linear_ub.b - linear_ub.a[:, self._fixed_idx] @ self._fixed_val, False, debug)
+        self._linear_eq = LinearConstraints(linear_eq.a[:, ~self._fixed_idx], linear_eq.b - linear_eq.a[:, self._fixed_idx] @ self._fixed_val, True, debug)
 
         # Set the initial guess.
         self._x0 = self._bounds.project(x0[~self._fixed_idx])

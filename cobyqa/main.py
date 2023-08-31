@@ -223,11 +223,12 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         raise ValueError('The size of the history must be positive.')
     hist_size = options.get('hist_size', DEFAULT_OPTIONS['hist_size'])
     hist_size = int(hist_size)
+    debug = options.get('debug', DEFAULT_OPTIONS['debug'])
 
     # Initialize the objective function.
     if not isinstance(args, tuple):
         args = (args,)
-    obj = ObjectiveFunction(fun, verbose, store_hist, hist_size, *args)
+    obj = ObjectiveFunction(fun, verbose, store_hist, hist_size, debug, *args)
 
     # Initialize the bound constraints.
     n_orig = len(x0)
@@ -242,19 +243,19 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         aub = np.empty((0, n_orig))
     if bub is None:
         bub = np.empty(0)
-    linear_ub = LinearConstraints(aub, bub, False)
+    linear_ub = LinearConstraints(aub, bub, False, debug)
     if aeq is None:
         aeq = np.empty((0, n_orig))
     if beq is None:
         beq = np.empty(0)
-    linear_eq = LinearConstraints(aeq, beq, True)
+    linear_eq = LinearConstraints(aeq, beq, True, debug)
 
     # Initialize the nonlinear constraints.
-    nonlinear_ub = NonlinearConstraints(cub, False, verbose, store_hist, hist_size, *args)
-    nonlinear_eq = NonlinearConstraints(ceq, True, verbose, store_hist, hist_size, *args)
+    nonlinear_ub = NonlinearConstraints(cub, False, verbose, store_hist, hist_size, debug, *args)
+    nonlinear_eq = NonlinearConstraints(ceq, True, verbose, store_hist, hist_size, debug, *args)
 
     # Initialize the problem (and remove the fixed variables).
-    pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq)
+    pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, debug)
 
     # Set the default options.
     _set_default_options(options, pb.n)

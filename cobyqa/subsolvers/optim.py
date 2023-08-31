@@ -1,3 +1,5 @@
+import inspect
+
 import numpy as np
 from scipy.linalg import qr
 
@@ -66,21 +68,24 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
        and Software*. PhD thesis, The Hong Kong Polytechnic University, Hong
        Kong, China, 2022.
     """
+    if debug:
+        assert isinstance(grad, np.ndarray) and grad.ndim == 1
+        assert inspect.signature(hess_prod).bind(grad)
+        assert isinstance(xl, np.ndarray) and xl.shape == grad.shape
+        assert isinstance(xu, np.ndarray) and xu.shape == grad.shape
+        assert isinstance(delta, float)
+        assert isinstance(debug, bool)
+        tol = get_arrays_tol(xl, xu)
+        assert np.all(xl <= tol)
+        assert np.all(xu >= -tol)
+        assert np.isfinite(delta) and delta > 0.0
+    xl = np.minimum(xl, 0.0)
+    xu = np.maximum(xu, 0.0)
+
     # Copy the arrays that may be modified by the code below.
     n = grad.size
     grad = np.copy(grad)
     grad_orig = np.copy(grad)
-
-    # Check the feasibility of the subproblem.
-    tol = get_arrays_tol(xl, xu)
-    if np.any(xl > tol):
-        raise ValueError('The lower bounds must be nonpositive.')
-    if np.any(xu < -tol):
-        raise ValueError('The upper bounds must be nonnegative.')
-    if not np.isfinite(delta) or delta <= 0.0:
-        raise ValueError('The trust-region radius must be finite and positive.')
-    xl = np.minimum(xl, 0.0)
-    xu = np.maximum(xu, 0.0)
 
     # Calculate the initial active set.
     free_bd = ((xl < 0.0) | (grad < 0.0)) & ((xu > 0.0) | (grad > 0.0))
@@ -339,24 +344,29 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
        and Software*. PhD thesis, The Hong Kong Polytechnic University, Hong
        Kong, China, 2022.
     """
+    if debug:
+        assert isinstance(grad, np.ndarray) and grad.ndim == 1
+        assert inspect.signature(hess_prod).bind(grad)
+        assert isinstance(xl, np.ndarray) and xl.shape == grad.shape
+        assert isinstance(xu, np.ndarray) and xu.shape == grad.shape
+        assert isinstance(aub, np.ndarray) and aub.ndim == 2 and aub.shape[1] == grad.size
+        assert isinstance(bub, np.ndarray) and bub.ndim == 1 and bub.size == aub.shape[0]
+        assert isinstance(aeq, np.ndarray) and aeq.ndim == 2 and aeq.shape[1] == grad.size
+        assert isinstance(delta, float)
+        assert isinstance(debug, bool)
+        tol = get_arrays_tol(xl, xu)
+        assert np.all(xl <= tol)
+        assert np.all(xu >= -tol)
+        assert np.all(bub >= -tol)
+        assert np.isfinite(delta) and delta > 0.0
+    xl = np.minimum(xl, 0.0)
+    xu = np.maximum(xu, 0.0)
+    bub = np.maximum(bub, 0.0)
+
     # Copy the arrays that may be modified by the code below.
     n = grad.size
     grad = np.copy(grad)
     grad_orig = np.copy(grad)
-
-    # Check the feasibility of the subproblem.
-    tol = get_arrays_tol(xl, xu)
-    if np.any(xl > tol):
-        raise ValueError('The lower bounds must be nonpositive.')
-    if np.any(xu < -tol):
-        raise ValueError('The upper bounds must be nonnegative.')
-    if np.any(bub < -tol):
-        raise ValueError('The linear inequality constraints must be feasible at the origin.')
-    if not np.isfinite(delta) or delta <= 0.0:
-        raise ValueError('The trust-region radius must be finite and positive.')
-    xl = np.minimum(xl, 0.0)
-    xu = np.maximum(xu, 0.0)
-    bub = np.maximum(bub, 0.0)
 
     # Calculate the initial active set.
     free_xl = (xl < 0.0) | (grad < 0.0)
@@ -577,6 +587,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
             step = step_base
 
     if debug:
+        tol = get_arrays_tol(xl, xu)
         assert np.all(xl <= step)
         assert np.all(step <= xu)
         assert np.all(aub @ step <= bub + tol)
@@ -647,19 +658,24 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
        and Software*. PhD thesis, The Hong Kong Polytechnic University, Hong
        Kong, China, 2022.
     """
-    # Check the feasibility of the subproblem.
-    m_linear_ub, n = aub.shape
-    tol = get_arrays_tol(xl, xu)
-    if np.any(xl > tol):
-        raise ValueError('The lower bounds must be nonpositive.')
-    if np.any(xu < -tol):
-        raise ValueError('The upper bounds must be nonnegative.')
-    if not np.isfinite(delta) or delta <= 0.0:
-        raise ValueError('The trust-region radius must be finite and positive.')
+    if debug:
+        assert isinstance(aub, np.ndarray) and aub.ndim == 2
+        assert isinstance(bub, np.ndarray) and bub.ndim == 1 and bub.size == aub.shape[0]
+        assert isinstance(aeq, np.ndarray) and aeq.ndim == 2 and aeq.shape[1] == aub.shape[1]
+        assert isinstance(beq, np.ndarray) and beq.ndim == 1 and beq.size == aeq.shape[0]
+        assert isinstance(xl, np.ndarray) and xl.shape == (aub.shape[1],)
+        assert isinstance(xu, np.ndarray) and xu.shape == (aub.shape[1],)
+        assert isinstance(delta, float)
+        assert isinstance(debug, bool)
+        tol = get_arrays_tol(xl, xu)
+        assert np.all(xl <= tol)
+        assert np.all(xu >= -tol)
+        assert np.isfinite(delta) and delta > 0.0
     xl = np.minimum(xl, 0.0)
     xu = np.maximum(xu, 0.0)
 
     # Calculate the initial active set.
+    m_linear_ub, n = aub.shape
     grad = np.r_[aeq.T @ -beq, np.maximum(0.0, -bub)]
     free_xl = (xl < 0.0) | (grad[:n] < 0.0)
     free_xu = (xu > 0.0) | (grad[:n] > 0.0)
