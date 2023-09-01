@@ -41,7 +41,9 @@ class Function(ABC):
             assert isinstance(verbose, bool)
             assert isinstance(store_f_hist, bool)
             assert isinstance(store_x_hist, bool)
-            assert isinstance(hist_size, int) and hist_size > 0
+            assert isinstance(hist_size, int)
+            if store_f_hist or store_x_hist:
+                assert hist_size > 0
             assert isinstance(debug, bool)
 
         self._fun = fun

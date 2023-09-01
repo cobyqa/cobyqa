@@ -31,23 +31,23 @@ class TestCauchyGeometry:
         const, grad, hess, xl, xu, delta = _subproblem(rng, 5)
 
         # We must have xl <= 0.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             xl_wrong = np.copy(xl)
             xl_wrong[0] = 0.1
             cauchy_geometry(const, grad, lambda s: s @ hess @ s, xl_wrong, xu, delta, True)
 
         # We must have 0 <= xu.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             xu_wrong = np.copy(xu)
             xu_wrong[0] = -0.1
             cauchy_geometry(const, grad, lambda s: s @ hess @ s, xl, xu_wrong, delta, True)
 
         # We must have delta < inf.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             cauchy_geometry(const, grad, lambda s: s @ hess @ s, xl, xu, np.inf, True)
 
         # We must have delta > 0.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             cauchy_geometry(const, grad, lambda s: s @ hess @ s, xl, xu, -1.0, True)
 
 
@@ -92,23 +92,23 @@ class TestSpiderGeometry:
         xpt = rng.standard_normal((5, 11))
 
         # We must have xl <= 0.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             xl_wrong = np.copy(xl)
             xl_wrong[0] = 0.1
             spider_geometry(const, grad, lambda s: s @ hess @ s, xpt, xl_wrong, xu, delta, True)
 
         # We must have 0 <= xu.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             xu_wrong = np.copy(xu)
             xu_wrong[0] = -0.1
             spider_geometry(const, grad, lambda s: s @ hess @ s, xpt, xl, xu_wrong, delta, True)
 
         # We must have delta < inf.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             spider_geometry(const, grad, lambda s: s @ hess @ s, xpt, xl, xu, np.inf, True)
 
         # We must have delta > 0.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             spider_geometry(const, grad, lambda s: s @ hess @ s, xpt, xl, xu, -1.0, True)
 
 

@@ -531,11 +531,12 @@ class TrustRegion:
            Methods and Software*. PhD thesis, The Hong Kong Polytechnic
            University, Hong Kong, China, 2022.
         """
-        assert k_new != self.best_index, 'The index `k_new` must be different from the best index so far.'
+        if options['debug']:
+            assert k_new != self.best_index, 'The index `k_new` must be different from the best index so far.'
 
         # Build the k_new-th Lagrange polynomial.
         coord_vec = np.squeeze(np.eye(1, self.models.npt, k_new))
-        lag = Quadratic(self.models.interpolation, coord_vec)
+        lag = Quadratic(self.models.interpolation, coord_vec, options['debug'])
         g_lag = lag.grad(self.x_best, self.models.interpolation)
 
         # Compute a simple constrained Cauchy step.

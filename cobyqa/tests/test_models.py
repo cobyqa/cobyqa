@@ -13,7 +13,7 @@ class TestInterpolation:
     def test_simple(self, n):
         x0 = 0.5 * np.ones(n)
         pb = _problem(x0)
-        options = {'radius_init': 0.5, 'radius_final': 1e-6, 'npt': (n + 1) * (n + 2) // 2}
+        options = {'radius_init': 0.5, 'radius_final': 1e-6, 'npt': (n + 1) * (n + 2) // 2, 'debug': True}
         interpolation = Interpolation(pb, options)
         assert_allclose(interpolation.x_base, 0.5)
         for k in range(options['npt']):
@@ -28,7 +28,7 @@ class TestInterpolation:
         if n > 1:
             x0[1] = 0.6
         pb = _problem(x0)
-        options = {'radius_init': 0.5, 'radius_final': 1e-6, 'npt': (n + 1) * (n + 2) // 2}
+        options = {'radius_init': 0.5, 'radius_final': 1e-6, 'npt': (n + 1) * (n + 2) // 2, 'debug': True}
         interpolation = Interpolation(pb, options)
         assert_allclose(interpolation.x_base, 0.5)
         for k in range(options['npt']):
@@ -43,7 +43,7 @@ class TestInterpolation:
         if n > 1:
             x0[1] = 0.9
         pb = _problem(x0)
-        options = {'radius_init': 0.5, 'radius_final': 1e-6, 'npt': (n + 1) * (n + 2) // 2}
+        options = {'radius_init': 0.5, 'radius_final': 1e-6, 'npt': (n + 1) * (n + 2) // 2, 'debug': True}
         interpolation = Interpolation(pb, options)
         assert_allclose(interpolation.x_base[0], 0.0)
         if n > 1:
@@ -58,7 +58,7 @@ class TestInterpolation:
     def test_reduce_radius(self, n):
         x0 = 0.5 * np.ones(n)
         pb = _problem(x0)
-        options = {'radius_init': 1.0, 'radius_final': 1e-6, 'npt': (n + 1) * (n + 2) // 2}
+        options = {'radius_init': 1.0, 'radius_final': 1e-6, 'npt': (n + 1) * (n + 2) // 2, 'debug': True}
         interpolation = Interpolation(pb, options)
         assert_allclose(interpolation.x_base, 0.5)
         for k in range(options['npt']):
@@ -79,12 +79,12 @@ class TestQuadratic:
     def test_simple(self, n, npt_f):
         x0 = 0.5 * np.ones(n)
         pb = _problem(x0)
-        options = {'radius_init': 1.0, 'radius_final': 1e-6, 'npt': npt_f(n)}
+        options = {'radius_init': 1.0, 'radius_final': 1e-6, 'npt': npt_f(n), 'debug': True}
         interpolation = Interpolation(pb, options)
         for seed in range(100):
             rng = np.random.default_rng(seed)
             values = rng.standard_normal(options['npt'])
-            quadratic = Quadratic(interpolation, values)
+            quadratic = Quadratic(interpolation, values, True)
 
             # Check basic properties.
             assert quadratic.n == n
@@ -107,10 +107,10 @@ class TestQuadratic:
 
 
 def _problem(x0):
-    obj = ObjectiveFunction(rosen, False, False, 0)
+    obj = ObjectiveFunction(rosen, False, False, 0, True)
     bounds = BoundConstraints(np.zeros(x0.size), np.ones(x0.size))
-    linear_ub = LinearConstraints(np.ones((2, x0.size)), np.ones(2), False)
-    linear_eq = LinearConstraints(np.ones((2, x0.size)), np.ones(2), True)
-    nonlinear_ub = NonlinearConstraints(None, False, False, False, 0)
-    nonlinear_eq = NonlinearConstraints(None, True, False, False, 0)
-    return Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq)
+    linear_ub = LinearConstraints(np.ones((2, x0.size)), np.ones(2), False, True)
+    linear_eq = LinearConstraints(np.ones((2, x0.size)), np.ones(2), True, True)
+    nonlinear_ub = NonlinearConstraints(None, False, False, False, 0, True)
+    nonlinear_eq = NonlinearConstraints(None, True, False, False, 0, True)
+    return Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, True)

@@ -53,23 +53,23 @@ class TestTangentialByrdOmojokun:
         grad, hess, xl, xu, delta = _tangential_subproblem(rng, 5)
 
         # We must have xl <= 0.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             xl_wrong = np.copy(xl)
             xl_wrong[0] = 0.1
             tangential_byrd_omojokun(grad, lambda s: hess @ s, xl_wrong, xu, delta, True)
 
         # We must have 0 <= xu.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             xu_wrong = np.copy(xu)
             xu_wrong[0] = -0.1
             tangential_byrd_omojokun(grad, lambda s: hess @ s, xl, xu_wrong, delta, True)
 
         # We must have delta < inf.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             tangential_byrd_omojokun(grad, lambda s: hess @ s, xl, xu, np.inf, True)
 
         # We must have delta > 0.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             tangential_byrd_omojokun(grad, lambda s: hess @ s, xl, xu, -1.0, True)
 
 
@@ -139,29 +139,29 @@ class TestConstrainedTangentialByrdOmojokun:
         bub = rng.random(1)
 
         # We must have xl <= 0.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             xl_wrong = np.copy(xl)
             xl_wrong[0] = 0.1
             constrained_tangential_byrd_omojokun(grad, lambda s: hess @ s, xl_wrong, xu, aub, bub, aeq, delta, True)
 
         # We must have 0 <= xu.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             xu_wrong = np.copy(xu)
             xu_wrong[0] = -0.1
             constrained_tangential_byrd_omojokun(grad, lambda s: hess @ s, xl, xu_wrong, aub, bub, aeq, delta, True)
 
         # We must have 0 <= bub.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             bub_wrong = np.copy(bub)
             bub_wrong[0] = -0.1
             constrained_tangential_byrd_omojokun(grad, lambda s: hess @ s, xl, xu, aub, bub_wrong, aeq, delta, True)
 
         # We must have delta < inf.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             constrained_tangential_byrd_omojokun(grad, lambda s: hess @ s, xl, xu, aub, bub, aeq, np.inf, True)
 
         # We must have delta > 0.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             constrained_tangential_byrd_omojokun(grad, lambda s: hess @ s, xl, xu, aub, bub, aeq, -1.0, True)
 
 
@@ -225,23 +225,23 @@ class TestNormalByrdOmojokun:
         aub, bub, aeq, beq, xl, xu, delta = _normal_subproblem(rng, 5, 1, 1)
 
         # We must have xl <= 0.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             xl_wrong = np.copy(xl)
             xl_wrong[0] = 0.1
             normal_byrd_omojokun(aub, bub, aeq, beq, xl_wrong, xu, delta, True)
 
         # We must have 0 <= xu.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             xu_wrong = np.copy(xu)
             xu_wrong[0] = -0.1
             normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu_wrong, delta, True)
 
         # We must have delta < inf.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, np.inf, True)
 
         # We must have delta > 0.
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, -1.0, True)
 
 
