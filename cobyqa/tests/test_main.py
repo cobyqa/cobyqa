@@ -286,11 +286,11 @@ class TestMinimizeLinearEqualityConstrained(TestMinimizeBase):
 
     @pytest.fixture
     def x_best(self, fun, n):
-        nrg = np.arange(1, n + 1)
+        n_range = np.arange(1, n + 1)
         return {
             'arwhead': np.r_[(1.0 / (n - 1.0)) * np.ones(n - 1), 0.0],
             'sphere': (1.0 / n) * np.ones(n),
-            'sumsqu': (1.0 / np.sum(1.0 / nrg)) / nrg,
+            'sumsqu': (1.0 / np.sum(1.0 / n_range)) / n_range,
         }.get(fun)
 
     @pytest.fixture
@@ -404,10 +404,10 @@ class TestMinimizeNonlinearEqualityConstrained(TestMinimizeBase):
 
     @pytest.fixture
     def x_best(self, fun, n):
-        nrg = np.arange(1, n + 1)
+        n_range = np.arange(1, n + 1)
         return {
             'sphere': (1.0 / n) * np.ones(n),
-            'sumsqu': (1.0 / np.sum(1.0 / nrg)) / nrg,
+            'sumsqu': (1.0 / np.sum(1.0 / n_range)) / n_range,
         }.get(fun)
 
     @pytest.fixture
