@@ -61,3 +61,4 @@ ignore$
 \.zip$
 ^\.github/actions/spelling/
 ^\Q.github/workflows/spelling.yml\E$
+/tests/__init__.py$

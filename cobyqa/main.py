@@ -374,7 +374,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 k_new = framework.get_index_to_remove(framework.x_best + step)[0]
 
                 # Update the interpolation set.
-                framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
+                ill_conditioned = framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
                 framework.set_best_index()
 
                 # Update the trust-region radius.
@@ -397,7 +397,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 # Update reduce_resolution and improve_geometry.
                 k_new, dist_new = framework.get_index_to_remove()
                 reduce_resolution = radius_save <= framework.resolution and ratio <= 0.1 and dist_new <= max(framework.radius, 2.0 * framework.resolution)
-                improve_geometry = ratio <= 0.1 and dist_new > max(framework.radius, 2.0 * framework.resolution)
+                improve_geometry = ill_conditioned or ratio <= 0.1 and dist_new > max(framework.radius, 2.0 * framework.resolution)
             else:
                 # When increasing the penalty parameter, the best point so far
                 # may change. In this case, we restart the iteration.
@@ -509,7 +509,9 @@ def _build_result(pb, penalty, x, success, status, n_iter, verbose, fun_val=None
     result.maxcv = pb.resid(result.x, cub_val, ceq_val)
     result.nfev = pb.n_eval
     result.nit = n_iter
-    result.success = success and (result.maxcv < 10.0 * np.finfo(float).eps * np.max(np.abs(result.x), initial=1.0))
+    result.success = success
+    if status != EXIT_TARGET_SUCCESS:
+        result.success = result.success and (result.maxcv < 10.0 * np.finfo(float).eps * np.max(np.abs(result.x), initial=1.0))
     result.status = status
     result.message = {
         EXIT_RADIUS_SUCCESS: 'The lower bound for the trust-region radius has been reached',

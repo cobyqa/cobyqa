@@ -194,7 +194,7 @@ class Quadratic:
             assert values.shape == (interpolation.npt,), 'The shape of `values` is not valid.'
         if interpolation.npt < interpolation.n + 1:
             raise ValueError(f'The number of interpolation points must be at least {interpolation.n + 1}.')
-        self._const, self._grad, self._i_hess = self._get_model(interpolation, values)
+        self._const, self._grad, self._i_hess, _ = self._get_model(interpolation, values)
         self._e_hess = np.zeros((self.n, self.n))
 
     def __call__(self, x, interpolation):
@@ -356,10 +356,11 @@ class Quadratic:
         self._i_hess[k_new] = 0.0
 
         # Update the quadratic model.
-        const, grad, i_hess = self._get_model(interpolation, values_diff)
+        const, grad, i_hess, ill_conditioned = self._get_model(interpolation, values_diff)
         self._const += const
         self._grad += grad
         self._i_hess += i_hess
+        return ill_conditioned
 
     def shift_x_base(self, interpolation, new_x_base):
         """
@@ -413,14 +414,15 @@ class Quadratic:
         right_scaling[npt + 1:] = scale
 
         # Build the solution.
+        ill_conditioned = False
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter('error', LinAlgWarning)
                 left_scaled_solution = solve(a, np.multiply(left_scaling, rhs), assume_a='sym')
         except (np.linalg.LinAlgError, LinAlgWarning):
-            warnings.warn('The interpolation system is ill-conditioned.', LinAlgWarning)
             left_scaled_solution = lstsq(a, np.multiply(left_scaling, rhs))[0]
-        return np.multiply(left_scaled_solution, right_scaling)
+            ill_conditioned = True
+        return np.multiply(left_scaled_solution, right_scaling), ill_conditioned
 
     @staticmethod
     def _get_model(interpolation, values):
@@ -445,8 +447,8 @@ class Quadratic:
         """
         assert values.shape == (interpolation.npt,), 'The shape of `values` is not valid.'
         n, npt = interpolation.xpt.shape
-        x = Quadratic.solve_system(interpolation, np.block([values, np.zeros(n + 1)]))
-        return x[npt], x[npt + 1:], x[:npt]
+        x, ill_conditioned = Quadratic.solve_system(interpolation, np.block([values, np.zeros(n + 1)]))
+        return x[npt], x[npt + 1:], x[:npt], ill_conditioned
 
 
 class Models:
@@ -1032,13 +1034,14 @@ class Models:
         self.interpolation.xpt[:, k_new] = x_new - self.interpolation.x_base
 
         # Update the quadratic models.
-        self._fun.update(self.interpolation, k_new, dir_old, fun_diff)
+        ill_conditioned = self._fun.update(self.interpolation, k_new, dir_old, fun_diff)
         for i in range(self.m_nonlinear_ub):
-            self._cub[i].update(self.interpolation, k_new, dir_old, cub_diff[:, i])
+            ill_conditioned = ill_conditioned or self._cub[i].update(self.interpolation, k_new, dir_old, cub_diff[:, i])
         for i in range(self.m_nonlinear_eq):
-            self._ceq[i].update(self.interpolation, k_new, dir_old, ceq_diff[:, i])
+            ill_conditioned = ill_conditioned or self._ceq[i].update(self.interpolation, k_new, dir_old, ceq_diff[:, i])
         if self._debug:
             self._check_interpolation_conditions()
+        return ill_conditioned
 
     def denominators(self, x_new, k=None):
         """
@@ -1077,13 +1080,13 @@ class Models:
         new_col[:self.npt] = 0.5 * (self.interpolation.xpt.T @ shift) ** 2.0
         new_col[self.npt] = 1.0
         new_col[self.npt + 1:] = shift
-        inv_new_col = Quadratic.solve_system(self.interpolation, new_col)
+        inv_new_col = Quadratic.solve_system(self.interpolation, new_col)[0]
         beta = 0.5 * (shift @ shift) ** 2.0 - new_col @ inv_new_col
 
         # Define a function to compute the value of alpha.
         def get_alpha(k_idx):
             coord_vec = np.squeeze(np.eye(1, self.npt + self.n + 1, k_idx))
-            return Quadratic.solve_system(self.interpolation, coord_vec)[k_idx]
+            return Quadratic.solve_system(self.interpolation, coord_vec)[0][k_idx]
 
         # Compute the values that depend on k.
         alpha = np.array([get_alpha(k_idx) for k_idx in range(self.npt)]) if k is None else get_alpha(k)

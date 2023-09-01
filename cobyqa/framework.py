@@ -31,7 +31,7 @@ class TrustRegion:
 
         # Set the initial penalty parameter.
         self._penalty = self._get_low_penalty()
-        if self._penalty == np.inf:
+        if not np.isfinite(self._penalty):
             self._penalty = 0.0
 
         # Set the index of the best interpolation point.
@@ -43,7 +43,8 @@ class TrustRegion:
         self._lm_linear_eq = np.zeros(self.m_linear_eq)
         self._lm_nonlinear_ub = np.zeros(self.m_nonlinear_ub)
         self._lm_nonlinear_eq = np.zeros(self.m_nonlinear_eq)
-        self.set_multipliers(self.x_best)
+        if not self._models.target_init:
+            self.set_multipliers(self.x_best)
 
         # Set the initial trust-region radius and the resolution.
         self._resolution = options['radius_init']
@@ -841,12 +842,12 @@ class TrustRegion:
         r_val_eq = (self.models.interpolation.x_base[np.newaxis, :] + self.models.interpolation.xpt.T) @ self._pb.linear_eq.a.T - self._pb.linear_eq.b[np.newaxis, :]
         r_val_eq = np.c_[r_val_eq, -r_val_eq, self.models.ceq_val, -self.models.ceq_val]
         r_val = np.c_[r_val_ub, r_val_eq]
-        c_min = np.min(r_val, axis=0)
-        c_max = np.max(r_val, axis=0)
+        c_min = np.nanmin(r_val, axis=0)
+        c_max = np.nanmax(r_val, axis=0)
         indices = c_min < 2.0 * c_max
         if np.any(indices):
-            f_min = np.min(self.models.fun_val)
-            f_max = np.max(self.models.fun_val)
+            f_min = np.nanmin(self.models.fun_val)
+            f_max = np.nanmax(self.models.fun_val)
             c_min_neg = np.minimum(0.0, c_min[indices])
             c_diff = np.min(c_max[indices] - c_min_neg)
             if c_diff > np.finfo(float).tiny * (f_max - f_min):
