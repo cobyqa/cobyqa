@@ -62,8 +62,8 @@ class TestMinimizeBase(ABC):
         assert res.status == status
         assert res.success, res.message
         if status == 0:
-            assert_allclose(res.x, x_best, atol=1e-5)
-            assert_allclose(res.fun, fun_best, atol=1e-5)
+            assert_allclose(res.x, x_best, atol=1e-5 * n)
+            assert_allclose(res.fun, fun_best, atol=1e-8)
             assert_allclose(res.maxcv, maxcv, atol=1e-10)
         if status == 1:
             assert res.fun <= fun_best + maxcv

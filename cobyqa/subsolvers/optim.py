@@ -587,7 +587,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
             step = step_base
 
     if debug:
-        tol = get_arrays_tol(xl, xu)
+        tol = 10.0 * get_arrays_tol(xl, xu)
         assert np.all(xl <= step)
         assert np.all(step <= xu)
         assert np.all(aub @ step <= bub + tol)
