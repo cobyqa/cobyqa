@@ -591,7 +591,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
         assert np.all(xl <= step)
         assert np.all(step <= xu)
         assert np.all(aub @ step <= bub + tol)
-        assert np.all(np.abs(aeq @ step) <= tol)
+        assert np.all(np.abs(aeq @ step) <= tol), f'Residuals: {np.abs(aeq @ step)}'
         assert np.linalg.norm(step) < 1.1 * delta
     return step
 
