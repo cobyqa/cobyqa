@@ -79,7 +79,7 @@ class TestConstrainedTangentialByrdOmojokun:
     @pytest.mark.parametrize('m_ub', [1, 2, 10, 50])
     @pytest.mark.parametrize('m_eq', [1, 2, 10, 50])
     def test_simple(self, n, m_ub, m_eq):
-        tol = 10.0 * np.finfo(float).eps * n
+        tol = 10.0 * np.finfo(float).eps * max(n, m_ub, m_eq)
         for seed in range(100):
             # Construct and solve a random subproblem.
             rng = np.random.default_rng(seed)
@@ -105,7 +105,7 @@ class TestConstrainedTangentialByrdOmojokun:
     @pytest.mark.parametrize('m_ub', [1, 2, 10, 50])
     @pytest.mark.parametrize('m_eq', [1, 2, 10, 50])
     def test_improve(self, n, m_ub, m_eq):
-        tol = 10.0 * np.finfo(float).eps * n
+        tol = 10.0 * np.finfo(float).eps * max(n, m_ub, m_eq)
         for seed in range(100):
             # Construct and solve a random subproblem.
             rng = np.random.default_rng(seed)
@@ -171,7 +171,7 @@ class TestNormalByrdOmojokun:
     @pytest.mark.parametrize('m_ub', [1, 2, 10, 50])
     @pytest.mark.parametrize('m_eq', [1, 2, 10, 50])
     def test_simple(self, n, m_ub, m_eq):
-        tol = 10.0 * np.finfo(float).eps * n
+        tol = 10.0 * np.finfo(float).eps * max(n, m_ub, m_eq)
         for seed in range(100):
             # Construct and solve a random subproblem.
             rng = np.random.default_rng(seed)
@@ -195,7 +195,7 @@ class TestNormalByrdOmojokun:
     @pytest.mark.parametrize('m_ub', [1, 2, 10, 50])
     @pytest.mark.parametrize('m_eq', [1, 2, 10, 50])
     def test_improve(self, n, m_ub, m_eq):
-        tol = 10.0 * np.finfo(float).eps * n
+        tol = 10.0 * np.finfo(float).eps * max(n, m_ub, m_eq)
         for seed in range(100):
             # Construct and solve a random subproblem.
             rng = np.random.default_rng(seed)

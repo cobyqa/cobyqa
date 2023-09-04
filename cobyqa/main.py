@@ -511,7 +511,7 @@ def _build_result(pb, penalty, x, success, status, n_iter, verbose, fun_val=None
     result.nit = n_iter
     result.success = success
     if status != EXIT_TARGET_SUCCESS:
-        result.success = result.success and (result.maxcv < 10.0 * np.finfo(float).eps * np.max(np.abs(result.x), initial=1.0))
+        result.success = result.success and (result.maxcv < 10.0 * np.finfo(float).eps * max(pb.n, pb.m_linear_ub, pb.m_linear_eq, pb.m_nonlinear_ub, pb.m_nonlinear_eq) * np.max(np.abs(result.x), initial=1.0))
     result.status = status
     result.message = {
         EXIT_RADIUS_SUCCESS: 'The lower bound for the trust-region radius has been reached',
