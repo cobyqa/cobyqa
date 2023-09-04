@@ -378,6 +378,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
     step = np.zeros_like(grad)
     sd = -q[:, n_act:] @ (q[:, n_act:].T @ grad)
     resid = np.copy(bub)
+    print(-1, np.abs(aeq @ step))
 
     k = 0
     reduct = 0.0
@@ -438,6 +439,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
             grad += alpha * hess_sd
             resid = np.maximum(0.0, resid - alpha * aub_sd)
             reduct -= alpha * (grad_sd + 0.5 * alpha * curv_sd)
+            print(k, np.abs(aeq @ step))
 
         if alpha < min(alpha_tr, alpha_bd, alpha_ub):
             # The current iteration is a conjugate gradient iteration. Update
@@ -484,7 +486,6 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
             break
 
     # Attempt to improve the solution on the trust-region boundary.
-    print(np.abs(aeq @ step))
     if kwargs.get('improve', True) and boundary_reached and n_act < n:
         step_base = np.copy(step)
         while n_act < n:
@@ -587,7 +588,6 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
         if grad_orig @ step + 0.5 * step @ hess_prod(step) > grad_orig @ step_base + 0.5 * step_base @ hess_prod(step_base):
             step = step_base
 
-    print(np.abs(aeq @ step))
     if debug:
         tol = get_arrays_tol(xl, xu)
         assert np.all(xl <= step)
