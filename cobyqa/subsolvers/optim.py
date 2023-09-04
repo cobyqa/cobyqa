@@ -484,6 +484,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
             break
 
     # Attempt to improve the solution on the trust-region boundary.
+    print(np.abs(aeq @ step))
     if kwargs.get('improve', True) and boundary_reached and n_act < n:
         step_base = np.copy(step)
         while n_act < n:
@@ -586,6 +587,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
         if grad_orig @ step + 0.5 * step @ hess_prod(step) > grad_orig @ step_base + 0.5 * step_base @ hess_prod(step_base):
             step = step_base
 
+    print(np.abs(aeq @ step))
     if debug:
         tol = get_arrays_tol(xl, xu)
         assert np.all(xl <= step)
