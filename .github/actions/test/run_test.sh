@@ -4,4 +4,4 @@ set -e
 set -x
 
 python -m pip install --progress-bar=off .
-python ./test.py
+python .github/actions/test/test.py
