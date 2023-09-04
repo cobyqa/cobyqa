@@ -397,6 +397,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
 
         # Stop the computations if a step along sd is expected to give a
         # relatively small reduction in the objective function.
+        print(alpha_tr, grad_sd, reduct)
         if -alpha_tr * grad_sd <= 1e-2 * reduct:
             break
 
