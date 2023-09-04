@@ -26,5 +26,5 @@ if __name__ == '__main__':
     aeq = rng.standard_normal((m_linear_eq, n))
     beq = np.dot(aeq, x_rand)
 
-    res = minimize(rosen, x0, xl=xl, xu=xu, aeq=aeq, beq=beq)  # , aub=aub, bub=bub
+    res = minimize(rosen, x0, xl=xl, xu=xu, aeq=aeq, beq=beq, aub=aub, bub=bub)
     print(res)

@@ -101,7 +101,7 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
     while k < np.count_nonzero(free_bd):
         # Stop the computations if sd is not a descent direction.
         grad_sd = grad @ sd
-        if grad_sd >= 0.0:
+        if grad_sd >= -10.0 * np.finfo(float).eps * n * max(1.0, np.linalg.norm(grad)):
             break
 
         # Set alpha_tr to the step size for the trust-region constraint.
@@ -385,7 +385,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
     while k < n - n_act:
         # Stop the computations if sd is not a descent direction.
         grad_sd = grad @ sd
-        if grad_sd >= 0.0:
+        if grad_sd >= -10.0 * np.finfo(float).eps * n * max(1.0, np.linalg.norm(grad)):
             break
 
         # Set alpha_tr to the step size for the trust-region constraint.
@@ -699,7 +699,7 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
     while k < n + m_linear_ub - n_act:
         # Stop the computations if sd is not a descent direction.
         grad_sd = grad @ sd
-        if grad_sd >= 0.0:
+        if grad_sd >= -10.0 * np.finfo(float).eps * n * max(1.0, np.linalg.norm(grad)):
             break
 
         # Set alpha_tr to the step size for the trust-region constraint.
