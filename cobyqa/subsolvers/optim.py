@@ -101,7 +101,7 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
     while k < np.count_nonzero(free_bd):
         # Stop the computations if sd is not a descent direction.
         grad_sd = grad @ sd
-        if grad_sd >= 0.0:
+        if grad_sd >= -10.0 * np.finfo(float).eps * n * max(1.0, np.linalg.norm(grad)):
             break
 
         # Set alpha_tr to the step size for the trust-region constraint.
@@ -378,7 +378,6 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
     step = np.zeros_like(grad)
     sd = -q[:, n_act:] @ (q[:, n_act:].T @ grad)
     resid = np.copy(bub)
-    print(-1, np.abs(aeq @ step))
 
     k = 0
     reduct = 0.0
@@ -386,7 +385,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
     while k < n - n_act:
         # Stop the computations if sd is not a descent direction.
         grad_sd = grad @ sd
-        if grad_sd >= 0.0:
+        if grad_sd >= -10.0 * np.finfo(float).eps * n * max(1.0, np.linalg.norm(grad)):
             break
 
         # Set alpha_tr to the step size for the trust-region constraint.
@@ -397,7 +396,6 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
 
         # Stop the computations if a step along sd is expected to give a
         # relatively small reduction in the objective function.
-        print(alpha_tr, grad_sd, reduct)
         if -alpha_tr * grad_sd <= 1e-2 * reduct:
             break
 
@@ -440,7 +438,6 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
             grad += alpha * hess_sd
             resid = np.maximum(0.0, resid - alpha * aub_sd)
             reduct -= alpha * (grad_sd + 0.5 * alpha * curv_sd)
-            print(k, np.abs(aeq @ step))
 
         if alpha < min(alpha_tr, alpha_bd, alpha_ub):
             # The current iteration is a conjugate gradient iteration. Update
@@ -702,7 +699,7 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
     while k < n + m_linear_ub - n_act:
         # Stop the computations if sd is not a descent direction.
         grad_sd = grad @ sd
-        if grad_sd >= 0.0:
+        if grad_sd >= -10.0 * np.finfo(float).eps * n * max(1.0, np.linalg.norm(grad)):
             break
 
         # Set alpha_tr to the step size for the trust-region constraint.
