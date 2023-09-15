@@ -677,7 +677,7 @@ class TrustRegion:
             threshold = max(threshold, sqp_val / viol_diff)
         best_index_save = self.best_index
         if self._penalty <= 1.5 * threshold:
-            self._penalty = 2.0 * threshold
+            self._penalty = max(2.0 * threshold, 1.0)
             self.set_best_index()
         return best_index_save == self.best_index
 
@@ -686,6 +686,7 @@ class TrustRegion:
         Decrease the penalty parameter.
         """
         self._penalty = min(self._penalty, self._get_low_penalty())
+        self.set_best_index()
 
     def set_best_index(self):
         """
