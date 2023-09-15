@@ -3,6 +3,8 @@ import warnings
 import numpy as np
 from scipy.linalg import LinAlgWarning, lstsq, solve
 
+from .settings import Options
+
 
 class Interpolation:
     """
@@ -25,38 +27,38 @@ class Interpolation:
             Options of the solver.
         """
         # Reduce the initial trust-region radius if necessary.
-        self._debug = options['debug']
+        self._debug = options[Options.DEBUG]
         max_radius = 0.5 * np.min(pb.bounds.xu - pb.bounds.xl)
-        if options['radius_init'] > max_radius:
-            options['radius_init'] = max_radius
-            options['radius_final'] = min(options['radius_final'], max_radius)
+        if options[Options.RADIUS_INIT] > max_radius:
+            options[Options.RADIUS_INIT.value] = max_radius
+            options[Options.RADIUS_FINAL.value] = min(options[Options.RADIUS_FINAL], max_radius)
 
         # Set the initial point around which the models are expanded.
         self._x_base = np.copy(pb.x0)
-        very_close_xl_idx = (self.x_base <= pb.bounds.xl + 0.5 * options['radius_init'])
+        very_close_xl_idx = (self.x_base <= pb.bounds.xl + 0.5 * options[Options.RADIUS_INIT])
         self.x_base[very_close_xl_idx] = pb.bounds.xl[very_close_xl_idx]
-        close_xl_idx = (pb.bounds.xl + 0.5 * options['radius_init'] < self.x_base) & (self.x_base <= pb.bounds.xl + options['radius_init'])
-        self.x_base[close_xl_idx] = np.minimum(pb.bounds.xl[close_xl_idx] + options['radius_init'], pb.bounds.xu[close_xl_idx])
-        very_close_xu_idx = (self.x_base >= pb.bounds.xu - 0.5 * options['radius_init'])
+        close_xl_idx = (pb.bounds.xl + 0.5 * options[Options.RADIUS_INIT] < self.x_base) & (self.x_base <= pb.bounds.xl + options[Options.RADIUS_INIT])
+        self.x_base[close_xl_idx] = np.minimum(pb.bounds.xl[close_xl_idx] + options[Options.RADIUS_INIT], pb.bounds.xu[close_xl_idx])
+        very_close_xu_idx = (self.x_base >= pb.bounds.xu - 0.5 * options[Options.RADIUS_INIT])
         self.x_base[very_close_xu_idx] = pb.bounds.xu[very_close_xu_idx]
-        close_xu_idx = (self.x_base < pb.bounds.xu - 0.5 * options['radius_init']) & (pb.bounds.xu - options['radius_init'] <= self.x_base)
-        self.x_base[close_xu_idx] = np.maximum(pb.bounds.xu[close_xu_idx] - options['radius_init'], pb.bounds.xl[close_xu_idx])
+        close_xu_idx = (self.x_base < pb.bounds.xu - 0.5 * options[Options.RADIUS_INIT]) & (pb.bounds.xu - options[Options.RADIUS_INIT] <= self.x_base)
+        self.x_base[close_xu_idx] = np.maximum(pb.bounds.xu[close_xu_idx] - options[Options.RADIUS_INIT], pb.bounds.xl[close_xu_idx])
 
         # Set the initial interpolation set.
-        self._xpt = np.zeros((pb.n, options['npt']))
-        for k in range(1, options['npt']):
+        self._xpt = np.zeros((pb.n, options[Options.NPT]))
+        for k in range(1, options[Options.NPT]):
             if k <= pb.n:
                 if very_close_xu_idx[k - 1]:
-                    self.xpt[k - 1, k] = -options['radius_init']
+                    self.xpt[k - 1, k] = -options[Options.RADIUS_INIT]
                 else:
-                    self.xpt[k - 1, k] = options['radius_init']
+                    self.xpt[k - 1, k] = options[Options.RADIUS_INIT]
             elif k <= 2 * pb.n:
                 if very_close_xl_idx[k - pb.n - 1]:
-                    self.xpt[k - pb.n - 1, k] = 2.0 * options['radius_init']
+                    self.xpt[k - pb.n - 1, k] = 2.0 * options[Options.RADIUS_INIT]
                 elif very_close_xu_idx[k - pb.n - 1]:
-                    self.xpt[k - pb.n - 1, k] = -2.0 * options['radius_init']
+                    self.xpt[k - pb.n - 1, k] = -2.0 * options[Options.RADIUS_INIT]
                 else:
-                    self.xpt[k - pb.n - 1, k] = -options['radius_init']
+                    self.xpt[k - pb.n - 1, k] = -options[Options.RADIUS_INIT]
             else:
                 spread = (k - pb.n - 1) // pb.n
                 k1 = k - (1 + spread) * pb.n - 1
@@ -468,7 +470,7 @@ class Models:
             Options of the solver.
         """
         # Set the initial interpolation set.
-        self._debug = options['debug']
+        self._debug = options[Options.DEBUG]
         self._interpolation = Interpolation(pb, options)
 
         # Evaluate the nonlinear functions at the initial interpolation points.
@@ -476,12 +478,12 @@ class Models:
         fun_init = pb.fun(x_eval)
         cub_init = pb.cub(x_eval)
         ceq_init = pb.ceq(x_eval)
-        self._fun_val = np.full(options['npt'], np.nan)
-        self._cub_val = np.full((options['npt'], cub_init.size), np.nan)
-        self._ceq_val = np.full((options['npt'], ceq_init.size), np.nan)
+        self._fun_val = np.full(options[Options.NPT], np.nan)
+        self._cub_val = np.full((options[Options.NPT], cub_init.size), np.nan)
+        self._ceq_val = np.full((options[Options.NPT], ceq_init.size), np.nan)
         tol = 10.0 * np.finfo(float).eps * max(self.n, self.npt) * np.max(np.abs(self.interpolation.x_base), initial=1.0)
         self._target_init = False
-        for k in range(min(options['npt'], options['max_eval'])):
+        for k in range(min(options[Options.NPT], options[Options.MAX_EVAL])):
             if k == 0:
                 self.fun_val[k] = fun_init
                 self.cub_val[k, :] = cub_init
@@ -494,20 +496,20 @@ class Models:
 
             # Stop the iterations if the current interpolation point is nearly
             # feasible and has an objective function value below the target.
-            if self._fun_val[k] < options['target']:
+            if self._fun_val[k] < options[Options.TARGET]:
                 if pb.resid(self.interpolation.point(k), self.cub_val[k, :], self.ceq_val[k, :]) < tol:
                     self._target_init = True
                     break
 
         # Build the initial quadratic models.
-        if options['max_eval'] > options['npt'] and not self.target_init:
-            self._fun = Quadratic(self.interpolation, self._fun_val, options['debug'])
+        if options[Options.MAX_EVAL] > options[Options.NPT] and not self.target_init:
+            self._fun = Quadratic(self.interpolation, self._fun_val, options[Options.DEBUG])
             self._cub = np.empty(self.m_nonlinear_ub, dtype=Quadratic)
             self._ceq = np.empty(self.m_nonlinear_eq, dtype=Quadratic)
             for i in range(self.m_nonlinear_ub):
-                self._cub[i] = Quadratic(self.interpolation, self.cub_val[:, i], options['debug'])
+                self._cub[i] = Quadratic(self.interpolation, self.cub_val[:, i], options[Options.DEBUG])
             for i in range(self.m_nonlinear_eq):
-                self._ceq[i] = Quadratic(self.interpolation, self.ceq_val[:, i], options['debug'])
+                self._ceq[i] = Quadratic(self.interpolation, self.ceq_val[:, i], options[Options.DEBUG])
             if self._debug:
                 self._check_interpolation_conditions()
 
@@ -1118,7 +1120,7 @@ class Models:
         shift = new_x_base - self.interpolation.x_base
         self.interpolation.x_base += shift
         self.interpolation.xpt -= shift[:, np.newaxis]
-        if options['debug']:
+        if options[Options.DEBUG]:
             self._check_interpolation_conditions()
 
     def _get_cub(self, mask=None):

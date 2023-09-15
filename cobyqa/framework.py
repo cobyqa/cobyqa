@@ -4,6 +4,7 @@ import numpy as np
 from scipy.optimize import lsq_linear
 
 from .models import Models, Quadratic
+from .settings import Options
 from .subsolvers import cauchy_geometry, spider_geometry, normal_byrd_omojokun, tangential_byrd_omojokun, constrained_tangential_byrd_omojokun
 from .subsolvers.optim import qr_tangential_byrd_omojokun
 from .utils import get_arrays_tol
@@ -47,7 +48,7 @@ class TrustRegion:
             self.set_multipliers(self.x_best)
 
         # Set the initial trust-region radius and the resolution.
-        self._resolution = options['radius_init']
+        self._resolution = options[Options.RADIUS_INIT]
         self._radius = self.resolution
 
     @property
@@ -481,8 +482,8 @@ class TrustRegion:
         xu = self._pb.bounds.xu - self.x_best
 
         # Evaluate the normal step.
-        normal_step = normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, 0.8 * self.radius, options['debug'])
-        if options['debug']:
+        normal_step = normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, 0.8 * self.radius, options[Options.DEBUG])
+        if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(normal_step + tol < xl) or np.any(xu < normal_step - tol):
                 warnings.warn('the normal step does not respect the bound constraint.')
@@ -496,10 +497,10 @@ class TrustRegion:
         bub = np.maximum(bub - np.dot(aub, normal_step), 0.0)
         g_best = self.models.fun_grad(self.x_best) + self.lag_model_hess_prod(normal_step)
         if self._pb.type in ['unconstrained', 'bound-constrained']:
-            tangential_step = tangential_byrd_omojokun(g_best, self.lag_model_hess_prod, xl, xu, radius, options['debug'])
+            tangential_step = tangential_byrd_omojokun(g_best, self.lag_model_hess_prod, xl, xu, radius, options[Options.DEBUG])
         else:
             tangential_step = constrained_tangential_byrd_omojokun(g_best, self.lag_model_hess_prod, xl, xu, aub, bub, aeq, radius, options['debug'])
-        if options['debug']:
+        if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(tangential_step + tol < xl) or np.any(xu < tangential_step - tol):
                 warnings.warn('The tangential step does not respect the bound constraints.')
@@ -532,18 +533,18 @@ class TrustRegion:
            Methods and Software*. PhD thesis, The Hong Kong Polytechnic
            University, Hong Kong, China, 2022.
         """
-        if options['debug']:
+        if options[Options.DEBUG]:
             assert k_new != self.best_index, 'The index `k_new` must be different from the best index so far.'
 
         # Build the k_new-th Lagrange polynomial.
         coord_vec = np.squeeze(np.eye(1, self.models.npt, k_new))
-        lag = Quadratic(self.models.interpolation, coord_vec, options['debug'])
+        lag = Quadratic(self.models.interpolation, coord_vec, options[Options.DEBUG])
         g_lag = lag.grad(self.x_best, self.models.interpolation)
 
         # Compute a simple constrained Cauchy step.
         xl = self._pb.bounds.xl - self.x_best
         xu = self._pb.bounds.xu - self.x_best
-        step = cauchy_geometry(0.0, g_lag, lambda v: lag.curv(v, self.models.interpolation), xl, xu, self.radius, options['debug'])
+        step = cauchy_geometry(0.0, g_lag, lambda v: lag.curv(v, self.models.interpolation), xl, xu, self.radius, options[Options.DEBUG])
         sigma = self.models.denominators(self.x_best + step, k_new)
 
         # Compute the solution on the straight lines joining the interpolation
@@ -551,7 +552,7 @@ class TrustRegion:
         # the denominator of the updating formula.
         xpt = self.models.interpolation.xpt - self.models.interpolation.xpt[:, self.best_index, np.newaxis]
         xpt[:, [0, self.best_index]] = xpt[:, [self.best_index, 0]]
-        step_alt = spider_geometry(0.0, g_lag, lambda v: lag.curv(v, self.models.interpolation), xpt[:, 1:], xl, xu, self.radius, options['debug'])
+        step_alt = spider_geometry(0.0, g_lag, lambda v: lag.curv(v, self.models.interpolation), xpt[:, 1:], xl, xu, self.radius, options[Options.DEBUG])
         sigma_alt = self.models.denominators(self.x_best + step_alt, k_new)
         if abs(sigma_alt) > abs(sigma):
             step = step_alt
@@ -592,7 +593,7 @@ class TrustRegion:
                     if abs(sigma_alt) >= 0.1 * abs(sigma):
                         step = np.maximum(xl, np.minimum(step_alt, xu))
 
-        if options['debug']:
+        if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(step + tol < xl) or np.any(xu < step - tol):
                 warnings.warn('The geometry step does not respect the bound constraints.')
@@ -621,8 +622,8 @@ class TrustRegion:
         xl = self._pb.bounds.xl - self.x_best
         xu = self._pb.bounds.xu - self.x_best
         radius = np.linalg.norm(step)
-        soc_step = normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, radius, options['debug'])
-        if options['debug']:
+        soc_step = normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, radius, options[Options.DEBUG])
+        if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(soc_step + tol < xl) or np.any(xu < soc_step - tol):
                 warnings.warn('The second-order correction step does not respect the bound constraints.')
@@ -766,12 +767,12 @@ class TrustRegion:
         options : dict
             Options of the solver.
         """
-        if 250.0 * options['radius_final'] < self.resolution:
+        if 250.0 * options[Options.RADIUS_FINAL] < self.resolution:
             self.resolution *= 0.1
-        elif 16.0 * options['radius_final'] < self.resolution:
-            self.resolution = np.sqrt(self.resolution * options['radius_final'])
+        elif 16.0 * options[Options.RADIUS_FINAL] < self.resolution:
+            self.resolution = np.sqrt(self.resolution * options[Options.RADIUS_FINAL])
         else:
-            self.resolution = options['radius_final']
+            self.resolution = options[Options.RADIUS_FINAL]
 
         # Reduce the trust-region radius. The procedure below should not use
         # self.radius as otherwise, it will not be updated correctly.
