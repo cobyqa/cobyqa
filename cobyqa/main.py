@@ -231,6 +231,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     obj = ObjectiveFunction(fun, verbose, store_hist, hist_size, debug, *args)
 
     # Initialize the bound constraints.
+    if not hasattr(x0, '__len__'):
+        x0 = [x0]
     n_orig = len(x0)
     if xl is None:
         xl = np.full(n_orig, -np.inf, dtype=float)
@@ -312,7 +314,6 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         # trust-region radius and check whether the resolution should be
         # reduced and whether the geometry of the interpolation set should be
         # improved. Otherwise, we entertain a classical iteration.
-        k_new = None
         if s_norm <= 0.5 * framework.radius:
             framework.radius *= 0.5
             if radius_save > framework.resolution:
@@ -331,7 +332,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 n_very_short_steps = 0
                 improve_geometry = False
             else:
-                k_new, dist_new = framework.get_index_to_remove()
+                dist_new = framework.get_index_to_remove()[1]
                 improve_geometry = dist_new > max(framework.radius, 2.0 * framework.resolution)
         else:
             # Increase the penalty parameter if necessary.
@@ -374,7 +375,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 k_new = framework.get_index_to_remove(framework.x_best + step)[0]
 
                 # Update the interpolation set.
-                ill_conditioned = framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
+                improve_geometry = framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
                 framework.set_best_index()
 
                 # Update the trust-region radius.
@@ -394,10 +395,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                             framework.models.reset_models()
                             n_alt_models = 0
 
-                # Update reduce_resolution and improve_geometry.
-                k_new, dist_new = framework.get_index_to_remove()
-                reduce_resolution = radius_save <= framework.resolution and ratio <= 0.1 and dist_new <= max(framework.radius, 2.0 * framework.resolution)
-                improve_geometry = ill_conditioned or ratio <= 0.1 and dist_new > max(framework.radius, 2.0 * framework.resolution)
+                # Check whether the resolution should be reduced.
+                reduce_resolution = radius_save <= framework.resolution and ratio <= 0.1 and not improve_geometry
             else:
                 # When increasing the penalty parameter, the best point so far
                 # may change. In this case, we restart the iteration.
@@ -420,6 +419,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
 
         # Improve the geometry of the interpolation set if necessary.
         if improve_geometry:
+            k_new = framework.get_index_to_remove()[0]
             step = framework.get_geometry_step(k_new, options)
 
             # Evaluate the objective and constraint functions.

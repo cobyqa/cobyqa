@@ -594,8 +594,7 @@ class NonlinearConstraints(Function, Constraints):
         """
         if val is None:
             val = np.empty(0)
-        val = np.array(val, dtype=float)
-        val = np.atleast_1d(val)
+        val = _1d_array(val, 'The nonlinear constraints must return a vector.')
         val[np.isnan(val)] = self._barrier
         val = np.minimum(val, self._barrier)
         if self.is_equality:

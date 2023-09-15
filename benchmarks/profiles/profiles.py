@@ -760,11 +760,14 @@ class Profiles:
             if rng.uniform() <= self.feature_options['rate']:
                 f = np.nan
         elif self.feature == 'digits' and np.isfinite(f):
+            rng = np.random.default_rng(int(1e8 * abs(np.sin(k) + np.sin(self.feature_options['digits']) + np.sin(1e12 * f) + np.sum(np.sin(np.abs(np.sin(1e8 * x)))))))
             if f == 0.0:
-                fx_rounded = 0.0
+                digits = self.feature_options['digits'] - 1
             else:
-                fx_rounded = round(f, self.feature_options['digits'] - int(np.floor(np.log10(np.abs(f)))) - 1)
-            f = fx_rounded + (f - fx_rounded) * np.abs(np.sin(np.sin(np.sin(self.feature_options['digits'])) + np.sin(1e8 * f) + np.sum(np.sin(np.abs(1e8 * x))) + np.sin(x.size)))
+                digits = self.feature_options['digits'] - int(np.floor(np.log10(np.abs(f)))) - 1
+            f_truncated = round(f, digits)
+            sign = 1 if f_truncated >= 0.0 else -1
+            f = f_truncated + sign * rng.uniform(0.0, 10.0 ** (-digits))
         return f
 
     @staticmethod
