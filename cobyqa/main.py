@@ -311,7 +311,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 n_very_short_steps = 0
                 improve_geometry = False
             else:
-                dist_new = framework.get_index_to_remove()[1]
+                k_new, dist_new = framework.get_index_to_remove()
                 improve_geometry = dist_new > max(framework.radius, 2.0 * framework.resolution)
         else:
             # Increase the penalty parameter if necessary.
@@ -354,7 +354,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 k_new = framework.get_index_to_remove(framework.x_best + step)[0]
 
                 # Update the interpolation set.
-                improve_geometry = framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
+                ill_conditioned = framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
                 framework.set_best_index()
 
                 # Update the trust-region radius.
@@ -375,6 +375,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                             n_alt_models = 0
 
                 # Check whether the resolution should be reduced.
+                k_new, dist_new = framework.get_index_to_remove()
+                improve_geometry = ill_conditioned or ratio <= 0.1 and dist_new > max(framework.radius, 2.0 * framework.resolution)
                 reduce_resolution = radius_save <= framework.resolution and ratio <= 0.1 and not improve_geometry
             else:
                 # When increasing the penalty parameter, the best point so far
@@ -398,7 +400,6 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
 
         # Improve the geometry of the interpolation set if necessary.
         if improve_geometry:
-            k_new = framework.get_index_to_remove()[0]
             step = framework.get_geometry_step(k_new, options)
 
             # Evaluate the objective and constraint functions.
