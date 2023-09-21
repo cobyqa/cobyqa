@@ -5,21 +5,22 @@ set -x
 
 # Install cobyqa_latest
 git clone --depth 1 "https://github.com/$GITHUB_REPOSITORY.git" "$GITHUB_WORKSPACE/cobyqa_latest"
-cd "$GITHUB_WORKSPACE/cobyqa_latest"
-find . -type f -exec sed -i "s/cobyqa/cobyqa_latest/g" {} +
-mv cobyqa "cobyqa_latest"
-python -m pip install --progress-bar=off .[benchmarks]
+(
+  cd "$GITHUB_WORKSPACE/cobyqa_latest"
+  find . -type f -exec sed -i "s/cobyqa/cobyqa_latest/g" {} +
+  mv cobyqa "cobyqa_latest"
+  python -m pip install --progress-bar=off .[benchmarks]
+)
 
 # Install cobyqa
 python -m pip install --progress-bar=off cobyqa
 
 # Download CUTEst and its dependencies
 mkdir "$GITHUB_WORKSPACE/cutest"
-cd "$GITHUB_WORKSPACE/cutest"
-git clone --depth 1 --branch v2.1.24 https://github.com/ralna/ARCHDefs.git ./archdefs
-git clone --depth 1 --branch v2.0.6 https://github.com/ralna/SIFDecode.git ./sifdecode
-git clone --depth 1 --branch v2.0.17 https://github.com/ralna/CUTEst.git ./cutest
-git clone --depth 1 --branch v0.5 https://bitbucket.org/optrove/sif.git ./mastsif
+git clone --depth 1 --branch v2.1.24 https://github.com/ralna/ARCHDefs.git "$GITHUB_WORKSPACE/cutest/archdefs"
+git clone --depth 1 --branch v2.0.6 https://github.com/ralna/SIFDecode.git "$GITHUB_WORKSPACE/cutest/sifdecode"
+git clone --depth 1 --branch v2.0.17 https://github.com/ralna/CUTEst.git "$GITHUB_WORKSPACE/cutest/cutest"
+git clone --depth 1 --branch v0.5 https://bitbucket.org/optrove/sif.git "$GITHUB_WORKSPACE/cutest/mastsif"
 
 # Set the environment variables
 export ARCHDEFS="$GITHUB_WORKSPACE/cutest/archdefs"
@@ -37,3 +38,6 @@ export MYARCH=pc64.lnx.gfo
 
 # Build and install CUTEst
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/jfowkes/pycutest/master/.install_cutest.sh)"
+
+# Add the benchmarks to the PYTHONPATH
+echo "PYTHONPATH=$PWD/benchmarks:$PYTHONPATH" >> "$GITHUB_ENV"
