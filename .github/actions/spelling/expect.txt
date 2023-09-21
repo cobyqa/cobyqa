@@ -138,6 +138,7 @@ pycutest
 pydata
 pypa
 pyplot
+PYTHONPATH
 rago
 ragonneau
 razh
