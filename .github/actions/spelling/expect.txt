@@ -3,6 +3,7 @@ ABCDEFHIJ
 ABDEF
 allclose
 arange
+archdefs
 ARGLALE
 ARGLBLE
 ARGLCLE
@@ -54,6 +55,7 @@ fontsize
 footbibliography
 footcite
 framealpha
+gfo
 GPP
 handlelength
 handletextpad
@@ -83,10 +85,12 @@ linewidth
 linkcode
 linspace
 LIPPERT
+lnx
 LOBSTERZ
 lsq
 lstsq
 lvert
+mastsif
 mathalpha
 mathbb
 mathjax
@@ -102,6 +106,7 @@ mindepth
 minexp
 MISRA
 mnh
+MYARCH
 nanargmin
 nanmax
 nanmin
@@ -147,6 +152,7 @@ scipy
 scriptscriptstyle
 semilogx
 setcounter
+sifdecode
 sifdecoder
 slsqp
 SOURCEDIR

@@ -12,12 +12,17 @@ git clone --depth 1 --branch v2.0.17 https://github.com/ralna/CUTEst.git ./cutes
 git clone --depth 1 --branch v0.5 https://bitbucket.org/optrove/sif.git ./mastsif
 
 # Set the environment variables
+export ARCHDEFS="$GITHUB_WORKSPACE/cutest/archdefs"
+export SIFDECODE="$GITHUB_WORKSPACE/cutest/sifdecode"
+export CUTEST="$GITHUB_WORKSPACE/cutest/cutest"
+export MASTSIF="$GITHUB_WORKSPACE/cutest/mastsif"
+export MYARCH=pc64.lnx.gfo
 {
-  echo "ARCHDEFS=$GITHUB_WORKSPACE/cutest/archdefs"
-  echo "SIFDECODE=$GITHUB_WORKSPACE/cutest/sifdecode"
-  echo "CUTEST=$GITHUB_WORKSPACE/cutest/cutest"
-  echo "MASTSIF=$GITHUB_WORKSPACE/cutest/mastsif"
-  echo "MYARCH=pc64.lnx.gfo"
+  echo "ARCHDEFS=$ARCHDEFS"
+  echo "SIFDECODE=$SIFDECODE"
+  echo "CUTEST=$CUTEST"
+  echo "MASTSIF=$MASTSIF"
+  echo "MYARCH=$MYARCH"
 } >> "$GITHUB_ENV"
 
 # Build and install CUTEst
