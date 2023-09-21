@@ -102,8 +102,6 @@ html_theme_options = {
     'navbar_persistent': ['search-button'],
     'navbar_end': ['version-switcher', 'theme-switcher', 'navbar-icon-links'],
     'navbar_align': 'left',
-    'footer_start': ['copyright', 'sphinx-version', 'theme-version'],
-    'footer_end': [],
     'navigation_depth': 1,
     # 'announcement': '<p></p>',
 }
