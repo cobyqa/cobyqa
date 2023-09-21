@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        script: [unconstrained, bound-constrained, linearly-constrained, nonlinearly-constrained]
+        script: [unconstrained, bound_constrained, linearly_constrained, nonlinearly_constrained]
 
     steps:
       - name: Checkout repository
