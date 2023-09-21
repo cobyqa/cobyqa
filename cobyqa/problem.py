@@ -278,7 +278,7 @@ class ObjectiveFunction(Function):
         val = float(val)
         if np.isnan(val):
             val = self._barrier
-        return min(val, self._barrier)
+        return max(min(val, self._barrier), -self._barrier)
 
 
 class BoundConstraints(Constraints):
@@ -597,8 +597,7 @@ class NonlinearConstraints(Function, Constraints):
         val = _1d_array(val, 'The nonlinear constraints must return a vector.')
         val[np.isnan(val)] = self._barrier
         val = np.minimum(val, self._barrier)
-        if self.is_equality:
-            val = np.maximum(val, -self._barrier)
+        val = np.maximum(val, -self._barrier)
         if self._m is None:
             self._m = val.size
         return val

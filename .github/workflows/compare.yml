@@ -14,6 +14,11 @@ jobs:
     name: Compare current version with latest version on PyPI
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        script: [unconstrained, bound-constrained, linearly-constrained, nonlinearly-constrained]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,14 +28,11 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install the latest version of COBYQA
-        run: bash .github/actions/compare/install-cobyqa-latest.sh
+      - name: Setup the comparison
+        run: bash .github/actions/compare/setup.sh
 
-      - name: Install CUTEst and its dependencies
-        run: bash .github/actions/compare/install-cutest.sh
-
-      - name: Compare current version with latest version on PyPI
-        run: bash .github/actions/compare/compare.sh
+      - name: Compare the current version with the latest version on PyPI
+        run: python .github/actions/compare/${{ matrix.script }}.py
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
