@@ -61,6 +61,12 @@ class Optimizer:
             options['max_eval'] = self.max_eval
             res = minimize(lambda x: self.fun(x, fun_values, resid_values), self.problem.x0, xl=self.xl, xu=self.xu, aub=self.aub, bub=self.bub, aeq=self.aeq, beq=self.beq, cub=self.cub, ceq=self.ceq, options=options)
             success = res.success
+        elif self.solver_name.lower() == 'cobyqa-latest':
+            from cobyqa_latest import minimize
+
+            options['max_eval'] = self.max_eval
+            res = minimize(lambda x: self.fun(x, fun_values, resid_values), self.problem.x0, xl=self.xl, xu=self.xu, aub=self.aub, bub=self.bub, aeq=self.aeq, beq=self.beq, cub=self.cub, ceq=self.ceq, options=options)
+            success = res.success
         elif self.solver_name.lower() in ['pdfo', 'uobyqa', 'newuoa', 'bobyqa', 'lincoa', 'cobyla']:
             from pdfo import Bounds, LinearConstraint, NonlinearConstraint, pdfo
 

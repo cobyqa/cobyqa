@@ -23,8 +23,18 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Rename the package
-        run: bash .github/actions/compare/rename.sh
+      - name: Install the latest version of COBYQA
+        run: bash .github/actions/compare/install-cobyqa-latest.sh
 
       - name: Install CUTEst and its dependencies
         run: bash .github/actions/compare/install-cutest.sh
+
+      - name: Compare current version with latest version on PyPI
+        run: bash .github/actions/compare/compare.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            benchmarks/archives/data
+            benchmarks/archives/perf
