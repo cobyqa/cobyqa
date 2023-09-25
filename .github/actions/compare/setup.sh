@@ -4,13 +4,10 @@ set -e
 set -x
 
 # Install cobyqa_latest
-git clone --depth 1 "https://github.com/$GITHUB_REPOSITORY.git" "$GITHUB_WORKSPACE/cobyqa_latest"
-(
-  cd "$GITHUB_WORKSPACE/cobyqa_latest"
-  find . -type f -exec sed -i "s/cobyqa/cobyqa_latest/g" {} +
-  mv cobyqa "cobyqa_latest"
-  python -m pip install --progress-bar=off .[benchmarks]
-)
+find . -type f -maxdepth 1 -exec sed -i "s/cobyqa/cobyqa_latest/g" {} +
+find cobyqa -type f -exec sed -i "s/cobyqa/cobyqa_latest/g" {} +
+mv cobyqa cobyqa_latest
+python -m pip install --progress-bar=off .[benchmarks]
 
 # Install cobyqa
 python -m pip install --progress-bar=off cobyqa
