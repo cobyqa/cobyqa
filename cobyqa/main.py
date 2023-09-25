@@ -279,7 +279,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         n_iter += 1
 
         # Update the point around which the quadratic models are built.
-        if np.linalg.norm(framework.x_best - framework.models.interpolation.x_base) >= 5.0 * framework.radius:
+        if np.linalg.norm(framework.x_best - framework.models.interpolation.x_base) >= 10.0 * framework.radius:
             framework.shift_x_base(options)
 
         # Evaluate the trial step.

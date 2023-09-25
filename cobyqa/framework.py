@@ -31,9 +31,10 @@ class TrustRegion:
         self._models = Models(self._pb, options)
 
         # Set the initial penalty parameter.
-        self._penalty = self._get_low_penalty()
-        if not np.isfinite(self._penalty):
-            self._penalty = 0.0
+        self._penalty = 0.0
+        # self._penalty = self._get_low_penalty()
+        # if not np.isfinite(self._penalty):
+        #     self._penalty = 0.0
 
         # Set the index of the best interpolation point.
         self._best_index = 0
