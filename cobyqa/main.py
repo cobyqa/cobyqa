@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from scipy.optimize import OptimizeResult
 
@@ -303,7 +305,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 n_very_short_steps += 1
                 if s_norm > 0.1 * framework.resolution:
                     n_very_short_steps = 0
-            reduce_resolution = radius_save <= framework.resolution and (n_short_steps >= 5 or n_very_short_steps >= 3)
+            reduce_resolution = n_short_steps >= 5 or n_very_short_steps >= 3
             if reduce_resolution:
                 n_short_steps = 0
                 n_very_short_steps = 0
@@ -460,6 +462,11 @@ def _set_default_options(options, n):
     options[Options.HIST_SIZE.value] = int(options[Options.HIST_SIZE])
     options.setdefault(Options.DEBUG.value, DEFAULT_OPTIONS[Options.DEBUG])
     options[Options.DEBUG.value] = bool(options[Options.DEBUG])
+
+    # Check whether they are any unknown options.
+    for key in options:
+        if key not in Options.__members__.values():
+            warnings.warn(f'Unknown option: {key}.', RuntimeWarning)
 
 
 def _eval(pb, framework, step, options):
