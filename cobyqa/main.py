@@ -293,17 +293,15 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         # trust-region radius and check whether the resolution should be
         # reduced and whether the geometry of the interpolation set should be
         # improved. Otherwise, we entertain a classical iteration.
-        if s_norm <= 0.5 * framework.radius:
-            framework.radius *= 0.5
+        if s_norm <= 0.5 * framework.resolution:
+            framework.radius *= 0.1
             if radius_save > framework.resolution:
                 n_short_steps = 0
                 n_very_short_steps = 0
             else:
                 n_short_steps += 1
-                if s_norm >= 0.5 * framework.resolution:
-                    n_short_steps = 0
                 n_very_short_steps += 1
-                if s_norm >= 0.1 * framework.resolution:
+                if s_norm > 0.1 * framework.resolution:
                     n_very_short_steps = 0
             reduce_resolution = radius_save <= framework.resolution and (n_short_steps >= 5 or n_very_short_steps >= 3)
             if reduce_resolution:
