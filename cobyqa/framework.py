@@ -803,8 +803,6 @@ class TrustRegion:
         x : numpy.ndarray, shape (n,)
             Point at which the Lagrange multipliers are computed.
         """
-        # TODO: Is it normal that the multipliers are often zero?
-        # TODO: Should we use the least-squares multipliers instead?
         # Build the constraints of the least-squares problem.
         incl_linear_ub = self._pb.linear_ub.a @ x >= self._pb.linear_ub.b
         incl_nonlinear_ub = self.cub_best >= 0.0

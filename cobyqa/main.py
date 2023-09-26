@@ -347,8 +347,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 ratio = framework.get_reduction_ratio(step, fun_val, cub_val, ceq_val)
 
                 # Update the Lagrange multipliers.
-                framework.set_multipliers(framework.x_best)
-                # framework.set_multipliers(framework.x_best + step)
+                framework.set_multipliers(framework.x_best + step)
 
                 # Choose an interpolation point to remove.
                 k_new = framework.get_index_to_remove(framework.x_best + step)[0]
