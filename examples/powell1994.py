@@ -157,8 +157,7 @@ def solution(no):
     elif no == 'I':
         s = ([2.330499, 1.951372, -0.4775414, 4.365726, -0.6244870, 1.038131, 1.594227],)
     elif no == 'J':
-        s = ([0.8841292, 0.4672425, 0.03742076, 0.9992996, 0.8841292, 0.4672424, 0.03742076, 0.9992996, 0.0],
-             [0.9998553, -0.0170138, 0.51465085, 0.8573999, 0.9998555, -0.0170008, 0.51466203, 0.8573932, 0.0])
+        s = ([0.8841292, 0.4672425, 0.03742076, 0.9992996, 0.8841292, 0.4672424, 0.03742076, 0.9992996, 0.0])
     else:
         raise NotImplementedError
     return (np.array(xs) for xs in s)
@@ -185,3 +184,6 @@ if __name__ == '__main__':
         res = minimize(fun, x0(problem), problem, xl(problem), aub=aub(problem), bub=bub(problem), cub=cub)
         print(f'|   ({problem})   |{res.nfev:^13}|{res.fun:^20.4e}|{_resid(res.x, problem):^22.4e}|{_distance(res.x, problem):^22.4e}|')
     print('+---------+-------------+--------------------+----------------------+----------------------+')
+    print()
+    print(f'Note: The optimal value to problem (J) is {-0.5 * np.sqrt(3):.4e}.')
+    print('The distance to solution is the distance to the point reported in Hock and Schittkowski (1981).')

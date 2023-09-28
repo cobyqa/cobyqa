@@ -346,9 +346,6 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 # Calculate the reduction ratio.
                 ratio = framework.get_reduction_ratio(step, fun_val, cub_val, ceq_val)
 
-                # Update the Lagrange multipliers.
-                framework.set_multipliers(framework.x_best + step)
-
                 # Choose an interpolation point to remove.
                 k_new = framework.get_index_to_remove(framework.x_best + step)[0]
 
@@ -372,6 +369,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                         if n_alt_models >= 3:
                             framework.models.reset_models()
                             n_alt_models = 0
+
+                # Update the Lagrange multipliers.
+                framework.set_multipliers(framework.x_best + step)
 
                 # Check whether the resolution should be reduced.
                 k_new, dist_new = framework.get_index_to_remove()
