@@ -38,6 +38,7 @@ Ragonneau
 ranspose
 rgba
 Rosenbrock
+Schittkowski
 sif
 SQP
 ssh

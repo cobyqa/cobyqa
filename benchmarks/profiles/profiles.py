@@ -836,7 +836,7 @@ class Profiles:
         for i in range(merit_values.size):
             if resid_values[i] <= kwargs.get('low_resid', 1e-15):
                 merit_values[i] = fun_values[i]
-            elif kwargs.get('barrier', False) and resid_values[i] >= kwargs.get('high_resid', 1e-5):
+            elif kwargs.get('barrier', True) and resid_values[i] >= kwargs.get('high_resid', 1e-5):
                 merit_values[i] = np.inf
             else:
                 merit_values[i] = fun_values[i] + kwargs.get('penalty', 1e5) * resid_values[i]
