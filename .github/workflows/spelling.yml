@@ -42,9 +42,9 @@ jobs:
         use_sarif: 1
         extra_dictionary_limit: 10
         extra_dictionaries:
-          cspell:css/css.txt
+          cspell:css/src/css.txt
           cspell:filetypes/filetypes.txt
-          cspell:latex/latex.txt
+          cspell:latex/src/latex.txt
           cspell:python/src/common/extra.txt
           cspell:python/src/python/python.txt
           cspell:python/src/python/python-lib.txt

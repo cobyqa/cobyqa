@@ -390,7 +390,7 @@ class Quadratic:
 
         # Compute the scaled directions from the base point to the interpolation
         # points. We scale the directions to avoid numerical difficulties.
-        scale = min(np.max([np.linalg.norm(interpolation.xpt[:, k]) for k in range(npt)]), 1.0)
+        scale = np.max([np.linalg.norm(interpolation.xpt[:, k]) for k in range(npt)], initial=np.finfo(float).eps)
         xpt_scale = interpolation.xpt / scale
 
         # Build the left-hand side matrix of the interpolation system. The
