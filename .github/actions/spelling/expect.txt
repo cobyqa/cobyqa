@@ -51,6 +51,7 @@ endblock
 endfor
 finfo
 flatnonzero
+fontenc
 fontsize
 footbibliography
 footcite
@@ -148,6 +149,7 @@ rosenbrock
 ROSEPETAL
 rothyp
 rst
+rvert
 savefig
 scipy
 scriptscriptstyle
@@ -171,9 +173,11 @@ tnc
 tocdepth
 toctree
 uadratic
+usepackage
 usetex
 usr
 vartype
+vec
 whl
 xlabel
 xlim
