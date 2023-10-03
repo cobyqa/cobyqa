@@ -1060,7 +1060,13 @@ class Problem:
         numpy.ndarray, shape (m_nonlinear_eq,)
             Best nonlinear equality constraint function values.
         """
-        # Check whether a point in the filter is better than x.
+        # If the filter is empty, i.e., if no function evaluation has been
+        # performed, we evaluate the objective and nonlinear constraint
+        # functions at the initial guess.
+        if len(self._fun_filter) == 0:
+            self(self.x0)
+
+        # Find the best point in the filter.
         fun_filter = np.array(self._fun_filter)
         cub_filter = np.array(self._cub_filter)
         ceq_filter = np.array(self._ceq_filter)

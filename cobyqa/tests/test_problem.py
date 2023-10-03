@@ -27,8 +27,8 @@ class TestObjectiveFunction:
         assert captured.out == f'rosen({x}) = {rosen(x)}\n'
 
         # Check that no storage is performed.
-        assert obj.f_hist.size == 0
-        assert obj.x_hist.size == 0
+        assert obj.fun_history.size == 0
+        assert obj.x_history.size == 0
 
     def test_none(self, capsys):
         # Check an objective function with no function and verbose=False.
@@ -70,10 +70,10 @@ class TestObjectiveFunction:
         obj = ObjectiveFunction(rosen, False, True, 1, True)
         x = np.zeros(5)
         obj(x)
-        assert obj.f_hist.size == 1
-        assert obj.x_hist.shape[0] == 1
-        assert obj.f_hist[0] == rosen(x)
-        assert np.all(obj.x_hist[0, :] == x)
+        assert obj.fun_history.size == 1
+        assert obj.x_history.shape[0] == 1
+        assert obj.fun_history[0] == rosen(x)
+        assert np.all(obj.x_history[0, :] == x)
 
 
 class TestBoundConstraints:
@@ -132,8 +132,8 @@ class TestNonlinearConstraints:
         assert captured.out == f'sin({x}) = {np.sin(x)}\n'
 
         # Check that no storage is performed.
-        assert nonlinear.f_hist.size == 0
-        assert nonlinear.x_hist.size == 0
+        assert nonlinear.fun_history.size == 0
+        assert nonlinear.x_history.size == 0
 
     def test_none(self, capsys):
         # Check a constraint function with no function and verbose=False.
@@ -175,9 +175,9 @@ class TestNonlinearConstraints:
         nonlinear = NonlinearConstraints(np.sin, False, False, True, 1, True)
         x = np.zeros(5)
         nonlinear(x)
-        assert nonlinear.f_hist.shape[0] == 1
-        assert nonlinear.x_hist.size == 0
-        assert np.all(nonlinear.f_hist[0, :] == np.sin(x))
+        assert nonlinear.fun_history.shape[0] == 1
+        assert nonlinear.x_history.size == 0
+        assert np.all(nonlinear.fun_history[0, :] == np.sin(x))
 
 
 class TestProblem:
@@ -190,10 +190,8 @@ class TestProblem:
         linear_eq = LinearConstraints(np.ones((2, 5)), np.ones(2), True, True)
         nonlinear_ub = NonlinearConstraints(np.sin, False, False, False, 0, True)
         nonlinear_eq = NonlinearConstraints(np.sin, True, False, False, 0, True)
-        pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, True)
-        fun_x0 = pb.fun(pb.x0)
-        cub_x0 = pb.cub(pb.x0)
-        ceq_x0 = pb.ceq(pb.x0)
+        pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, 1, True)
+        fun_x0, cub_x0, ceq_x0 = pb(pb.x0)
         assert pb.n == 5
         assert pb.n_orig == 5
         assert pb.n_eval == 1
@@ -218,12 +216,11 @@ class TestProblem:
         linear_eq = LinearConstraints(np.ones((2, 5)), np.ones(2), True, True)
         nonlinear_ub = NonlinearConstraints(None, False, False, False, 0, True)
         nonlinear_eq = NonlinearConstraints(None, True, False, False, 0, True)
-        pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, True)
-        pb.cub(pb.x0)
-        pb.ceq(pb.x0)
+        pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, 1, True)
+        pb(pb.x0)
         assert pb.n == 4
         assert pb.n_orig == 5
-        assert pb.n_eval == 0
+        assert pb.n_eval == 1
         assert pb.m_bounds == 8
         assert pb.m_linear_ub == 2
         assert pb.m_linear_eq == 2
