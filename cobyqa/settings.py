@@ -22,13 +22,14 @@ class Options(str, Enum):
     Option names.
     """
     DEBUG = 'debug'
-    HIST_SIZE = 'hist_size'
+    FILTER_SIZE = 'filter_size'
+    HISTORY_SIZE = 'history_size'
     MAX_EVAL = 'max_eval'
     MAX_ITER = 'max_iter'
     NPT = 'npt'
     RADIUS_INIT = 'radius_init'
     RADIUS_FINAL = 'radius_final'
-    STORE_HIST = 'store_hist'
+    STORE_HISTORY = 'store_history'
     TARGET = 'target'
     VERBOSE = 'verbose'
 
@@ -36,13 +37,14 @@ class Options(str, Enum):
 # Default options.
 DEFAULT_OPTIONS = {
     Options.DEBUG.value: False,
+    Options.FILTER_SIZE.value: sys.maxsize,
+    Options.HISTORY_SIZE.value: sys.maxsize,
     Options.MAX_EVAL.value: lambda n: 500 * n,
     Options.MAX_ITER.value: lambda n: 1000 * n,
     Options.NPT.value: lambda n: 2 * n + 1,
     Options.RADIUS_INIT.value: 1.0,
     Options.RADIUS_FINAL.value: 1e-6,
-    Options.STORE_HIST.value: False,
-    Options.HIST_SIZE.value: sys.maxsize,
+    Options.STORE_HISTORY.value: False,
     Options.TARGET.value: -np.inf,
     Options.VERBOSE.value: False,
 }

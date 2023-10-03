@@ -84,7 +84,7 @@ class TestBoundConstraints:
         assert bounds.m == 10
         assert np.all(bounds.xl == 0.0)
         assert np.all(bounds.xu == 1.0)
-        assert bounds.resid(0.5 * np.ones(5)) == 0.0
+        assert bounds.maxcv(0.5 * np.ones(5)) == 0.0
 
     def test_exceptions(self):
         with pytest.raises(ValueError):
@@ -99,7 +99,7 @@ class TestLinearConstraints:
         assert not linear.is_equality
         assert np.all(linear.a == 1.0)
         assert np.all(linear.b == 1.0)
-        assert linear.resid(np.zeros(5)) == 0.0
+        assert linear.maxcv(np.zeros(5)) == 0.0
 
     def test_exceptions(self):
         with pytest.raises(ValueError):
@@ -120,8 +120,8 @@ class TestNonlinearConstraints:
         assert np.all(fun == np.sin(x))
         assert nonlinear.n_eval == 1
         assert captured.out == ''
-        assert nonlinear.resid(x) < 50.0 * np.finfo(float).eps
-        assert nonlinear.resid(x, np.zeros(5)) == 0.0
+        assert nonlinear.maxcv(x) < 50.0 * np.finfo(float).eps
+        assert nonlinear.maxcv(x, np.zeros(5)) == 0.0
 
         # Check a constraint function with verbose=True.
         nonlinear = NonlinearConstraints(np.sin, False, True, False, 0, True)
@@ -205,7 +205,7 @@ class TestProblem:
         assert pb.type == 'nonlinearly constrained'
         assert pb.fun_name == 'rosen'
         assert not pb.is_feasibility
-        assert pb.resid(pb.x0, cub_x0, ceq_x0) < 1.0 + 50.0 * np.finfo(float).eps
+        assert pb.maxcv(pb.x0, cub_x0, ceq_x0) < 1.0 + 50.0 * np.finfo(float).eps
         assert fun_x0 == rosen(x0)
         assert np.all(cub_x0 == np.sin(x0))
         assert np.all(ceq_x0 == np.sin(x0))

@@ -475,9 +475,7 @@ class Models:
 
         # Evaluate the nonlinear functions at the initial interpolation points.
         x_eval = self.interpolation.point(0)
-        fun_init = pb.fun(x_eval)
-        cub_init = pb.cub(x_eval)
-        ceq_init = pb.ceq(x_eval)
+        fun_init, cub_init, ceq_init = pb(x_eval)
         self._fun_val = np.full(options[Options.NPT], np.nan)
         self._cub_val = np.full((options[Options.NPT], cub_init.size), np.nan)
         self._ceq_val = np.full((options[Options.NPT], ceq_init.size), np.nan)
@@ -490,14 +488,12 @@ class Models:
                 self.ceq_val[k, :] = ceq_init
             else:
                 x_eval = self.interpolation.point(k)
-                self.fun_val[k] = pb.fun(x_eval)
-                self.cub_val[k, :] = pb.cub(x_eval)
-                self.ceq_val[k, :] = pb.ceq(x_eval)
+                self.fun_val[k], self.cub_val[k, :], self.ceq_val[k, :] = pb(x_eval)
 
             # Stop the iterations if the current interpolation point is nearly
             # feasible and has an objective function value below the target.
             if self._fun_val[k] < options[Options.TARGET]:
-                if pb.resid(self.interpolation.point(k), self.cub_val[k, :], self.ceq_val[k, :]) < tol:
+                if pb.maxcv(self.interpolation.point(k), self.cub_val[k, :], self.ceq_val[k, :]) < tol:
                     self._target_init = True
                     break
 

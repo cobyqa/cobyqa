@@ -69,9 +69,12 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 Target on the objective function value. The optimization
                 procedure is terminated when the objective function value of a
                 nearly feasible point is less than or equal to this target.
-            store_hist : bool, optional
+            filter_size : int, optional
+                Maximum number of points in the filter. The filter is used to
+                select the best point returned by the optimization procedure.
+            store_history : bool, optional
                 Whether to store the history of the function evaluations.
-            hist_size : int, optional
+            history_size : int, optional
                 Maximum number of function evaluations to store in the history.
             radius_init : float, optional
                 Initial trust-region radius.
@@ -199,17 +202,21 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     else:
         options = dict(options)
     verbose = options.get(Options.VERBOSE, DEFAULT_OPTIONS[Options.VERBOSE])
-    store_hist = options.get(Options.STORE_HIST, DEFAULT_OPTIONS[Options.STORE_HIST])
-    if Options.HIST_SIZE in options and options[Options.HIST_SIZE] <= 0:
+    store_history = options.get(Options.STORE_HISTORY, DEFAULT_OPTIONS[Options.STORE_HISTORY])
+    if Options.HISTORY_SIZE in options and options[Options.HISTORY_SIZE] <= 0:
         raise ValueError('The size of the history must be positive.')
-    hist_size = options.get(Options.HIST_SIZE, DEFAULT_OPTIONS[Options.HIST_SIZE])
-    hist_size = int(hist_size)
+    history_size = options.get(Options.HISTORY_SIZE, DEFAULT_OPTIONS[Options.HISTORY_SIZE])
+    history_size = int(history_size)
+    if Options.FILTER_SIZE in options and options[Options.FILTER_SIZE] <= 0:
+        raise ValueError('The size of the filter must be positive.')
+    filter_size = options.get(Options.FILTER_SIZE, DEFAULT_OPTIONS[Options.FILTER_SIZE])
+    filter_size = int(filter_size)
     debug = options.get(Options.DEBUG, DEFAULT_OPTIONS[Options.DEBUG])
 
     # Initialize the objective function.
     if not isinstance(args, tuple):
         args = (args,)
-    obj = ObjectiveFunction(fun, verbose, store_hist, hist_size, debug, *args)
+    obj = ObjectiveFunction(fun, verbose, store_history, history_size, debug, *args)
 
     # Initialize the bound constraints.
     if not hasattr(x0, '__len__'):
@@ -234,11 +241,11 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     linear_eq = LinearConstraints(aeq, beq, True, debug)
 
     # Initialize the nonlinear constraints.
-    nonlinear_ub = NonlinearConstraints(cub, False, verbose, store_hist, hist_size, debug, *args)
-    nonlinear_eq = NonlinearConstraints(ceq, True, verbose, store_hist, hist_size, debug, *args)
+    nonlinear_ub = NonlinearConstraints(cub, False, verbose, store_history, history_size, debug, *args)
+    nonlinear_eq = NonlinearConstraints(ceq, True, verbose, store_history, history_size, debug, *args)
 
     # Initialize the problem (and remove the fixed variables).
-    pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, debug)
+    pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, filter_size, debug)
 
     # Set the default options.
     _set_default_options(options, pb.n)
@@ -246,10 +253,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     # Initialize the models and skip the computations whenever possible.
     if not pb.bounds.is_feasible:
         # The bound constraints are infeasible.
-        return _build_result(pb, 0.0, pb.x0, False, ExitStatus.INFEASIBLE_ERROR, 0, verbose)
+        return _build_result(pb, 0.0, False, ExitStatus.INFEASIBLE_ERROR, 0, options)
     elif pb.n == 0:
         # All variables are fixed by the bound constraints.
-        return _build_result(pb, 0.0, pb.x0, True, ExitStatus.FIXED_SUCCESS, 0, verbose)
+        return _build_result(pb, 0.0, True, ExitStatus.FIXED_SUCCESS, 0, options)
     if verbose:
         print('Starting the optimization procedure.')
         print(f'Initial trust-region radius: {options[Options.RADIUS_INIT]}.')
@@ -260,10 +267,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     framework = TrustRegion(pb, options)
     if framework.models.target_init:
         # The target on the objective function value has been reached
-        return _build_result(pb, framework.penalty, framework.x_best, True, ExitStatus.TARGET_SUCCESS, 0, verbose, framework.fun_best, framework.cub_best, framework.ceq_best)
+        return _build_result(pb, framework.penalty, True, ExitStatus.TARGET_SUCCESS, 0, options)
     elif pb.n_eval >= options[Options.MAX_EVAL]:
         # The maximum number of function evaluations has been exceeded.
-        return _build_result(pb, framework.penalty, framework.x_best, False, ExitStatus.MAX_ITER_WARNING, 0, verbose, framework.fun_best, framework.cub_best, framework.ceq_best)
+        return _build_result(pb, framework.penalty, False, ExitStatus.MAX_ITER_WARNING, 0, options)
 
     # Start the optimization procedure.
     success = False
@@ -325,7 +332,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                     status = ExitStatus.MAX_EVAL_WARNING
                     break
                 if target:
-                    return _build_result(pb, framework.penalty, framework.x_best + step, True, ExitStatus.TARGET_SUCCESS, n_iter, verbose, fun_val, cub_val, ceq_val)
+                    return _build_result(pb, framework.penalty, True, ExitStatus.TARGET_SUCCESS, n_iter, options)
 
                 # Perform a second-order correction step if necessary.
                 merit_old = framework.merit(framework.x_best, framework.fun_best, framework.cub_best, framework.ceq_best)
@@ -342,7 +349,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                             status = ExitStatus.MAX_EVAL_WARNING
                             break
                         if target:
-                            return _build_result(pb, framework.penalty, framework.x_best + step, True, ExitStatus.TARGET_SUCCESS, n_iter, verbose, fun_val, cub_val, ceq_val)
+                            return _build_result(pb, framework.penalty, True, ExitStatus.TARGET_SUCCESS, n_iter, options)
 
                 # Calculate the reduction ratio.
                 ratio = framework.get_reduction_ratio(step, fun_val, cub_val, ceq_val)
@@ -394,8 +401,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
             framework.decrease_penalty()
 
             if verbose:
-                resid = pb.resid(framework.x_best, framework.cub_best, framework.ceq_best)
-                _print_step(f'New trust-region radius: {framework.resolution}', pb, pb.build_x(framework.x_best), framework.fun_best, resid, pb.n_eval, n_iter)
+                maxcv_val = pb.maxcv(framework.x_best, framework.cub_best, framework.ceq_best)
+                _print_step(f'New trust-region radius: {framework.resolution}', pb, pb.build_x(framework.x_best), framework.fun_best, maxcv_val, pb.n_eval, n_iter)
                 print()
 
         # Improve the geometry of the interpolation set if necessary.
@@ -409,13 +416,13 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 status = ExitStatus.MAX_EVAL_WARNING
                 break
             if target:
-                return _build_result(pb, framework.penalty, framework.x_best + step, True, ExitStatus.TARGET_SUCCESS, n_iter, verbose, fun_val, cub_val, ceq_val)
+                return _build_result(pb, framework.penalty, True, ExitStatus.TARGET_SUCCESS, n_iter, options)
 
             # Update the interpolation set.
             framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
             framework.set_best_index()
 
-    return _build_result(pb, framework.penalty, framework.x_best, success, status, n_iter, verbose, framework.fun_best, framework.cub_best, framework.ceq_best)
+    return _build_result(pb, framework.penalty, success, status, n_iter, options)
 
 
 def _set_default_options(options, n):
@@ -456,10 +463,12 @@ def _set_default_options(options, n):
     options[Options.TARGET.value] = float(options[Options.TARGET])
     options.setdefault(Options.VERBOSE.value, DEFAULT_OPTIONS[Options.VERBOSE])
     options[Options.VERBOSE.value] = bool(options[Options.VERBOSE])
-    options.setdefault(Options.STORE_HIST.value, DEFAULT_OPTIONS[Options.STORE_HIST])
-    options[Options.STORE_HIST.value] = bool(options[Options.STORE_HIST])
-    options.setdefault(Options.HIST_SIZE.value, DEFAULT_OPTIONS[Options.HIST_SIZE])
-    options[Options.HIST_SIZE.value] = int(options[Options.HIST_SIZE])
+    options.setdefault(Options.FILTER_SIZE.value, DEFAULT_OPTIONS[Options.FILTER_SIZE])
+    options[Options.FILTER_SIZE.value] = int(options[Options.FILTER_SIZE])
+    options.setdefault(Options.STORE_HISTORY.value, DEFAULT_OPTIONS[Options.STORE_HISTORY])
+    options[Options.STORE_HISTORY.value] = bool(options[Options.STORE_HISTORY])
+    options.setdefault(Options.HISTORY_SIZE.value, DEFAULT_OPTIONS[Options.HISTORY_SIZE])
+    options[Options.HISTORY_SIZE.value] = int(options[Options.HISTORY_SIZE])
     options.setdefault(Options.DEBUG.value, DEFAULT_OPTIONS[Options.DEBUG])
     options[Options.DEBUG.value] = bool(options[Options.DEBUG])
 
@@ -476,22 +485,20 @@ def _eval(pb, framework, step, options):
     if pb.n_eval >= options[Options.MAX_EVAL]:
         raise MaxEvalError
     x_eval = framework.x_best + step
-    fun_val = pb.fun(x_eval)
-    cub_val = pb.cub(x_eval)
-    ceq_val = pb.ceq(x_eval)
-    r_val = pb.resid(x_eval, cub_val, ceq_val)
+    fun_val, cub_val, ceq_val = pb(x_eval)
+    r_val = pb.maxcv(x_eval, cub_val, ceq_val)
     tol_bounds = get_arrays_tol(pb.bounds.xl, pb.bounds.xu)
     return fun_val, cub_val, ceq_val, fun_val <= options[Options.TARGET] and r_val < tol_bounds
 
 
-def _build_result(pb, penalty, x, success, status, n_iter, verbose, fun_val=None, cub_val=None, ceq_val=None):
+def _build_result(pb, penalty, success, status, n_iter, options):
     """
     Build the result of the optimization process.
     """
     # Build the result.
     result = OptimizeResult()
-    x, result.fun, result.cub, result.ceq = pb.best_eval(penalty, x, fun_val, cub_val, ceq_val)
-    result.maxcv = pb.resid(x, cub_val, ceq_val)
+    x, result.fun, result.cub, result.ceq = pb.best_eval(penalty)
+    result.maxcv = pb.maxcv(x, result.cub, result.ceq)
     result.x = pb.build_x(x)
     result.nfev = pb.n_eval
     result.nit = n_iter
@@ -507,9 +514,13 @@ def _build_result(pb, penalty, x, success, status, n_iter, verbose, fun_val=None
         ExitStatus.MAX_ITER_WARNING: 'The maximum number of iterations has been exceeded',
         ExitStatus.INFEASIBLE_ERROR: 'The bound constraints are infeasible',
     }.get(status, 'Unknown exit status')
+    if options[Options.STORE_HISTORY]:
+        result.fun_history = pb.fun_history
+        result.cub_history = pb.cub_history
+        result.ceq_history = pb.ceq_history
 
     # Print the result if requested.
-    if verbose:
+    if options[Options.VERBOSE]:
         _print_step(result.message, pb, result.x, result.fun, result.maxcv, result.nfev, result.nit)
     return result
 

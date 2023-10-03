@@ -411,12 +411,8 @@ class TrustRegion:
         float
             Value of the merit function at `x`.
         """
-        if fun_val is None:
-            fun_val = self._pb.fun(x)
-        if cub_val is None:
-            cub_val = self._pb.cub(x)
-        if ceq_val is None:
-            ceq_val = self._pb.ceq(x)
+        if fun_val is None or cub_val is None or ceq_val is None:
+            fun_val, cub_val, ceq_val = self._pb(x)
         m_val = fun_val
         if self._penalty > 0.0:
             c_val = np.block([self._pb.bounds.xl - x, x - self._pb.bounds.xu, self._pb.linear_ub.a @ x - self._pb.linear_ub.b, cub_val])
@@ -581,7 +577,7 @@ class TrustRegion:
                 cbd = np.block([xl - step_alt, step_alt - xu])
                 cub = aub @ step_alt - bub
                 ceq = aeq @ step_alt - beq
-                resid = max(np.max(array, initial=0.0) for array in [cbd, cub, np.abs(ceq)])
+                maxcv_val = max(np.max(array, initial=0.0) for array in [cbd, cub, np.abs(ceq)])
 
                 # Accept the new step if it is nearly feasible and do not
                 # drastically worsen the denominator of the updating formula.
@@ -589,7 +585,7 @@ class TrustRegion:
                 tol = np.max(np.abs(step_alt[~free_xu]), initial=tol)
                 tol = np.max(np.abs(aub[~free_ub, :] @ step_alt), initial=tol)
                 tol = min(10.0 * tol, 1e-2 * np.linalg.norm(step_alt))
-                if resid <= tol:
+                if maxcv_val <= tol:
                     sigma_alt = self.models.denominators(self.x_best + step_alt, k_new)
                     if abs(sigma_alt) >= 0.1 * abs(sigma):
                         step = np.maximum(xl, np.minimum(step_alt, xu))
@@ -696,13 +692,13 @@ class TrustRegion:
         """
         best_index = self.best_index
         m_best = self.merit(self.x_best, self.models.fun_val[best_index], self.models.cub_val[best_index, :], self.models.ceq_val[best_index, :])
-        r_best = self._pb.resid(self.x_best, self.models.cub_val[best_index, :], self.models.ceq_val[best_index, :])
+        r_best = self._pb.maxcv(self.x_best, self.models.cub_val[best_index, :], self.models.ceq_val[best_index, :])
         tol = 10.0 * np.finfo(float).eps * max(self.models.n, self.models.npt) * max(abs(m_best), 1.0)
         for k in range(self.models.npt):
             if k != self.best_index:
                 x_val = self.models.interpolation.point(k)
                 m_val = self.merit(x_val, self.models.fun_val[k], self.models.cub_val[k, :], self.models.ceq_val[k, :])
-                r_val = self._pb.resid(x_val, self.models.cub_val[k, :], self.models.ceq_val[k, :])
+                r_val = self._pb.maxcv(x_val, self.models.cub_val[k, :], self.models.ceq_val[k, :])
                 if m_val < m_best or (m_val < m_best + tol and r_val < r_best):
                     best_index = k
                     m_best = m_val
