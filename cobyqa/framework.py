@@ -777,8 +777,7 @@ class TrustRegion:
 
         # Reduce the trust-region radius. The procedure below should not use
         # self.radius as otherwise, it will not be updated correctly.
-        self._radius *= 0.5
-        self._radius = max(self._radius, self.resolution)
+        self._radius = max(0.5 * self._radius, self.resolution)
 
     def shift_x_base(self, options):
         """

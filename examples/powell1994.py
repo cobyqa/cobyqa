@@ -184,6 +184,3 @@ if __name__ == '__main__':
         res = minimize(fun, x0(problem), problem, xl(problem), aub=aub(problem), bub=bub(problem), cub=cub)
         print(f'|   ({problem})   |{res.nfev:^13}|{res.fun:^20.4e}|{_resid(res.x, problem):^22.4e}|{_distance(res.x, problem):^22.4e}|')
     print('+---------+-------------+--------------------+----------------------+----------------------+')
-    print()
-    print(f'Note: The optimal value to problem (J) is {-0.5 * np.sqrt(3):.4e}.')
-    print('The distance to solution is the distance to the point reported in Hock and Schittkowski (1981).')

@@ -43,7 +43,7 @@ def _plot_points(x, title=None):
 
 if __name__ == '__main__':
     rng = np.random.default_rng(0)
-    n = 40  # must be even
+    n = 80  # must be even
 
     xl = np.zeros(n, dtype=float)
     aub = np.zeros((n // 2, n), dtype=float)

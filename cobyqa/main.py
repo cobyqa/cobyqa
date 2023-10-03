@@ -267,6 +267,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
 
     # Start the optimization procedure.
     success = False
+    k_new = None
     n_short_steps = 0
     n_very_short_steps = 0
     n_alt_models = 0
