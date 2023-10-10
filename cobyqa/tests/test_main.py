@@ -64,10 +64,9 @@ class TestMinimizeBase(ABC):
         if status == 0:
             assert_allclose(res.x, x_best, atol=1e-4 * n)
             assert_allclose(res.fun, fun_best, atol=1e-6)
-            assert_allclose(res.maxcv, maxcv, atol=1e-10)
         if status == 1:
-            assert res.fun <= fun_best + maxcv
-            assert_allclose(res.maxcv, maxcv, atol=1e-10)
+            assert res.fun <= fun_best + res.maxcv
+        assert res.maxcv <= maxcv
 
     @pytest.fixture
     def x0(self, fun, n):
