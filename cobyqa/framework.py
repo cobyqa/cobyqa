@@ -747,6 +747,9 @@ class TrustRegion:
         ratio : float
             Reduction ratio.
         """
+        # TODO: Check the better one from Zaikun:
+        #  https://github.com/libprima/prima/blob/main/fortran/uobyqa/trustregion.f90#L615-L626
+        #  Take care to do min(self.radius, s_norm) when using s_norm!
         s_norm = np.linalg.norm(step)
         if ratio <= 0.1:
             self.radius *= 0.5

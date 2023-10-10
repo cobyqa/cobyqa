@@ -302,7 +302,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         # objective and constraint functions. Instead, we reduce the
         # trust-region radius and check whether the resolution should be
         # reduced and whether the geometry of the interpolation set should be
-        # improved. Otherwise, we entertain a classical iteration.
+        # improved. Otherwise, we entertain a classical iteration. The criterion
+        # for performing an exceptional jump is taken from NEWUOA.
         if s_norm <= 0.5 * framework.resolution:
             framework.radius *= 0.1
             if radius_save > framework.resolution:

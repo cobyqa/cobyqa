@@ -416,6 +416,7 @@ class Quadratic:
         right_scaling[npt + 1:] = scale
 
         # Build the solution.
+        # TODO: Stop the calculations properly if there is a NaN or Inf.
         ill_conditioned = False
         try:
             with warnings.catch_warnings():
