@@ -22,6 +22,7 @@ class Options(str, Enum):
     Option names.
     """
     DEBUG = 'debug'
+    FEASIBILITY_TOL = 'feasibility_tol'
     FILTER_SIZE = 'filter_size'
     HISTORY_SIZE = 'history_size'
     MAX_EVAL = 'max_eval'
@@ -37,6 +38,7 @@ class Options(str, Enum):
 # Default options.
 DEFAULT_OPTIONS = {
     Options.DEBUG.value: False,
+    Options.FEASIBILITY_TOL.value: np.sqrt(np.finfo(float).eps),
     Options.FILTER_SIZE.value: sys.maxsize,
     Options.HISTORY_SIZE.value: sys.maxsize,
     Options.MAX_EVAL.value: lambda n: 500 * n,

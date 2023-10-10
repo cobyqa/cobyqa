@@ -834,7 +834,7 @@ class Profiles:
         """
         merit_values = np.empty_like(fun_values)
         for i in range(merit_values.size):
-            if resid_values[i] <= kwargs.get('low_resid', 1e-15):
+            if resid_values[i] <= kwargs.get('low_resid', 1e-10):
                 merit_values[i] = fun_values[i]
             elif kwargs.get('barrier', True) and resid_values[i] >= kwargs.get('high_resid', 1e-5):
                 merit_values[i] = np.inf

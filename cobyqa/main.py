@@ -69,6 +69,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 Target on the objective function value. The optimization
                 procedure is terminated when the objective function value of a
                 nearly feasible point is less than or equal to this target.
+            feasibility_tol : float, optional
+                Tolerance on the constraint violation.
             filter_size : int, optional
                 Maximum number of points in the filter. The filter is used to
                 select the best point returned by the optimization procedure.
@@ -101,12 +103,25 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 Solution point.
             fun : float
                 Objective function value at the solution point.
+            cub : ndarray, shape (m_nonlinear_ub,)
+                Nonlinear inequality constraint values at the solution point.
+            ceq : ndarray, shape (m_nonlinear_eq,)
+                Nonlinear equality constraint values at the solution point.
             maxcv : float
                 Maximum constraint violation at the solution point.
             nit : int
                 Number of iterations.
             nfev : int
                 Number of function evaluations.
+
+        If `store_history` is True, the result also has the following fields:
+
+            fun_history : ndarray, shape (nfev,)
+                History of the objective function values.
+            cub_history : ndarray, shape (nfev, m_nonlinear_ub)
+                History of the nonlinear inequality constraint values.
+            ceq_history : ndarray, shape (nfev, m_nonlinear_eq)
+                History of the nonlinear equality constraint values.
 
     References
     ----------
@@ -202,7 +217,11 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     else:
         options = dict(options)
     verbose = options.get(Options.VERBOSE, DEFAULT_OPTIONS[Options.VERBOSE])
+    verbose = bool(verbose)
+    feasibility_tol = options.get(Options.FEASIBILITY_TOL, DEFAULT_OPTIONS[Options.FEASIBILITY_TOL])
+    feasibility_tol = float(feasibility_tol)
     store_history = options.get(Options.STORE_HISTORY, DEFAULT_OPTIONS[Options.STORE_HISTORY])
+    store_history = bool(store_history)
     if Options.HISTORY_SIZE in options and options[Options.HISTORY_SIZE] <= 0:
         raise ValueError('The size of the history must be positive.')
     history_size = options.get(Options.HISTORY_SIZE, DEFAULT_OPTIONS[Options.HISTORY_SIZE])
@@ -212,6 +231,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     filter_size = options.get(Options.FILTER_SIZE, DEFAULT_OPTIONS[Options.FILTER_SIZE])
     filter_size = int(filter_size)
     debug = options.get(Options.DEBUG, DEFAULT_OPTIONS[Options.DEBUG])
+    debug = bool(debug)
 
     # Initialize the objective function.
     if not isinstance(args, tuple):
@@ -245,7 +265,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     nonlinear_eq = NonlinearConstraints(ceq, True, verbose, store_history, history_size, debug, *args)
 
     # Initialize the problem (and remove the fixed variables).
-    pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, filter_size, debug)
+    pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, feasibility_tol, filter_size, debug)
 
     # Set the default options.
     _set_default_options(options, pb.n)
@@ -462,6 +482,8 @@ def _set_default_options(options, n):
     options[Options.MAX_ITER.value] = int(options[Options.MAX_ITER])
     options.setdefault(Options.TARGET.value, DEFAULT_OPTIONS[Options.TARGET])
     options[Options.TARGET.value] = float(options[Options.TARGET])
+    options.setdefault(Options.FEASIBILITY_TOL.value, DEFAULT_OPTIONS[Options.FEASIBILITY_TOL])
+    options[Options.FEASIBILITY_TOL.value] = float(options[Options.FEASIBILITY_TOL])
     options.setdefault(Options.VERBOSE.value, DEFAULT_OPTIONS[Options.VERBOSE])
     options[Options.VERBOSE.value] = bool(options[Options.VERBOSE])
     options.setdefault(Options.FILTER_SIZE.value, DEFAULT_OPTIONS[Options.FILTER_SIZE])

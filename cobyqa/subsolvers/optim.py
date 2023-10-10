@@ -112,7 +112,7 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
 
         # Stop the computations if a step along sd is expected to give a
         # relatively small reduction in the objective function.
-        if -alpha_tr * grad_sd <= 1e-2 * reduct:
+        if -alpha_tr * grad_sd <= 1e-8 * reduct:
             break
 
         # Set alpha_quad to the step size for the minimization problem.
@@ -126,7 +126,7 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
         # Stop the computations if the reduction in the objective function
         # provided by an unconstrained step is small.
         alpha = min(alpha_tr, alpha_quad)
-        if -alpha * (grad_sd + 0.5 * alpha * curv_sd) <= 1e-2 * reduct:
+        if -alpha * (grad_sd + 0.5 * alpha * curv_sd) <= 1e-8 * reduct:
             break
 
         # Set alpha_bd to the step size for the bound constraints.
@@ -143,7 +143,7 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
         # Update the iterate.
         alpha = min(alpha, alpha_bd)
         if alpha > 0.0:
-            step[free_bd] = np.maximum(xl[free_bd], np.minimum(step[free_bd] + alpha * sd[free_bd], xu[free_bd]))
+            step[free_bd] = np.clip(step[free_bd] + alpha * sd[free_bd], xl[free_bd], xu[free_bd])
             grad += alpha * hess_sd
             reduct -= alpha * (grad_sd + 0.5 * alpha * curv_sd)
 
@@ -195,7 +195,7 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
             grad_sd = -np.sqrt(max(step_sq * grad_sq - grad_step ** 2.0, 0.0))
             sd[free_bd] = grad_step * step[free_bd] - step_sq * grad[free_bd]
             sd[~free_bd] = 0.0
-            if grad_sd >= -1e-2 * reduct or np.any(grad_sd >= -np.finfo(float).tiny * np.abs(sd[free_bd])):
+            if grad_sd >= -1e-8 * reduct or np.any(grad_sd >= -np.finfo(float).tiny * np.abs(sd[free_bd])):
                 break
             sd[free_bd] /= -grad_sd
 
@@ -396,7 +396,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
 
         # Stop the computations if a step along sd is expected to give a
         # relatively small reduction in the objective function.
-        if -alpha_tr * grad_sd <= 1e-2 * reduct:
+        if -alpha_tr * grad_sd <= 1e-8 * reduct:
             break
 
         # Set alpha_quad to the step size for the minimization problem.
@@ -410,7 +410,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
         # Stop the computations if the reduction in the objective function
         # provided by an unconstrained step is small.
         alpha = min(alpha_tr, alpha_quad)
-        if -alpha * (grad_sd + 0.5 * alpha * curv_sd) <= 1e-2 * reduct:
+        if -alpha * (grad_sd + 0.5 * alpha * curv_sd) <= 1e-8 * reduct:
             break
 
         # Set alpha_bd to the step size for the bound constraints.
@@ -434,7 +434,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
         # Update the iterate.
         alpha = min(alpha, alpha_bd, alpha_ub)
         if alpha > 0.0:
-            step = np.maximum(xl, np.minimum(step + alpha * sd, xu))
+            step = np.clip(step + alpha * sd, xl, xu)
             grad += alpha * hess_sd
             resid = np.maximum(0.0, resid - alpha * aub_sd)
             reduct -= alpha * (grad_sd + 0.5 * alpha * curv_sd)
@@ -496,7 +496,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
             grad_step = grad_proj @ step_proj
             grad_sd = -np.sqrt(max(step_sq * grad_sq - grad_step ** 2.0, 0.0))
             sd = q[:, n_act:] @ (q[:, n_act:].T @ (grad_step * step - step_sq * grad))
-            if grad_sd >= -1e-2 * reduct or np.any(grad_sd >= -np.finfo(float).tiny * np.abs(sd)):
+            if grad_sd >= -1e-8 * reduct or np.any(grad_sd >= -np.finfo(float).tiny * np.abs(sd)):
                 break
             sd /= -grad_sd
 
@@ -558,7 +558,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
             # objective function, and update the iterate.
             i_max = np.argmax(all_reduct)
             cos_value = (1.0 - t_samples[i_max] ** 2.0) / (1.0 + t_samples[i_max] ** 2.0)
-            step = np.maximum(xl, np.minimum(step + (cos_value - 1.0) * step_proj + sin_values[i_max] * sd, xu))
+            step = np.clip(step + (cos_value - 1.0) * step_proj + sin_values[i_max] * sd, xl, xu)
             grad += (cos_value - 1.0) * hess_step + sin_values[i_max] * hess_sd
             resid = np.maximum(0.0, resid - (cos_value - 1.0) * aub_step - sin_values[i_max] * aub_sd)
             reduct += all_reduct[i_max]
@@ -717,7 +717,7 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
 
         # Stop the computations if a step along sd is expected to give a
         # relatively small reduction in the objective function.
-        if -alpha_tr * grad_sd <= 1e-2 * reduct:
+        if -alpha_tr * grad_sd <= 1e-8 * reduct:
             break
 
         # Set alpha_quad to the step size for the minimization problem.
@@ -731,7 +731,7 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
         # Stop the computations if the reduction in the objective function
         # provided by an unconstrained step is small.
         alpha = min(alpha_tr, alpha_quad)
-        if -alpha * (grad_sd + 0.5 * alpha * curv_sd) <= 1e-2 * reduct:
+        if -alpha * (grad_sd + 0.5 * alpha * curv_sd) <= 1e-8 * reduct:
             break
 
         # Set alpha_bd to the step size for the bound constraints.
@@ -759,7 +759,7 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
         # Update the iterate.
         alpha = min(alpha, alpha_bd, alpha_ub)
         if alpha > 0.0:
-            step = np.maximum(xl, np.minimum(step + alpha * sd[:n], xu))
+            step = np.clip(step + alpha * sd[:n], xl, xu)
             grad += alpha * hess_sd
             resid = np.maximum(0.0, resid - alpha * aub_sd)
             reduct -= alpha * (grad_sd + 0.5 * alpha * curv_sd)
@@ -822,7 +822,7 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
             grad_sd = -np.sqrt(max(step_sq * grad_sq - grad_step ** 2.0, 0.0))
             sd[free_bd] = grad_step * step[free_bd] - step_sq * grad[free_bd]
             sd[~free_bd] = 0.0
-            if grad_sd >= -1e-2 * reduct or np.any(grad_sd >= -np.finfo(float).tiny * np.abs(sd[free_bd])):
+            if grad_sd >= -1e-8 * reduct or np.any(grad_sd >= -np.finfo(float).tiny * np.abs(sd[free_bd])):
                 break
             sd[free_bd] /= -grad_sd
 
@@ -861,7 +861,7 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
             all_reduct = np.empty(n_samples)
             for i in range(n_samples):
                 sin_value = 2.0 * t_samples[i] / (1.0 + t_samples[i] ** 2.0)
-                step_alt = np.maximum(xl, np.minimum(step + sin_value * (sd - t_samples[i] * step_proj), xu))
+                step_alt = np.clip(step + sin_value * (sd - t_samples[i] * step_proj), xl, xu)
                 resid_ub_alt = np.maximum(aub @ step_alt - bub, 0.0)
                 resid_eq_alt = aeq @ step_alt - beq
                 all_reduct[i] = 0.5 * (resid_ub @ resid_ub + resid_eq @ resid_eq - resid_ub_alt @ resid_ub_alt - resid_eq_alt @ resid_eq_alt)

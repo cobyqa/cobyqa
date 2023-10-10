@@ -46,6 +46,7 @@ curv
 DANWOODLS
 DMN
 dsfontserif
+dsq
 dtype
 endblock
 endfor

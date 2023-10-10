@@ -1,4 +1,5 @@
 import numpy as np
+import pycutest
 
 
 class Optimizer:
@@ -59,13 +60,13 @@ class Optimizer:
             from cobyqa import minimize
 
             options['max_eval'] = self.max_eval
-            res = minimize(lambda x: self.fun(x, fun_values, resid_values), self.problem.x0, xl=self.xl, xu=self.xu, aub=self.aub, bub=self.bub, aeq=self.aeq, beq=self.beq, cub=self.cub, ceq=self.ceq, options=options)
+            res = minimize(lambda x: self.fun(x, fun_values, resid_values), self.x0, xl=self.xl, xu=self.xu, aub=self.aub, bub=self.bub, aeq=self.aeq, beq=self.beq, cub=self.cub, ceq=self.ceq, options=options)
             success = res.success
         elif self.solver_name.lower() == 'cobyqa-latest':
             from cobyqa_latest import minimize
 
             options['max_eval'] = self.max_eval
-            res = minimize(lambda x: self.fun(x, fun_values, resid_values), self.problem.x0, xl=self.xl, xu=self.xu, aub=self.aub, bub=self.bub, aeq=self.aeq, beq=self.beq, cub=self.cub, ceq=self.ceq, options=options)
+            res = minimize(lambda x: self.fun(x, fun_values, resid_values), self.x0, xl=self.xl, xu=self.xu, aub=self.aub, bub=self.bub, aeq=self.aeq, beq=self.beq, cub=self.cub, ceq=self.ceq, options=options)
             success = res.success
         elif self.solver_name.lower() in ['pdfo', 'uobyqa', 'newuoa', 'bobyqa', 'lincoa', 'cobyla']:
             from pdfo import Bounds, LinearConstraint, NonlinearConstraint, pdfo
@@ -83,7 +84,7 @@ class Optimizer:
             options['maxfev'] = self.max_eval
             options['eliminate_lin_eq'] = False
             method = None if self.solver_name.lower() == 'pdfo' else self.solver_name
-            res = pdfo(self.fun, self.problem.x0, (fun_values, resid_values), method, bounds, constraints, options)
+            res = pdfo(self.fun, self.x0, (fun_values, resid_values), method, bounds, constraints, options)
             success = res.success
         else:
             from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, minimize
@@ -104,7 +105,7 @@ class Optimizer:
                 options['maxfun'] = self.max_eval
             else:
                 options['maxfev'] = self.max_eval
-            res = minimize(self.fun, self.problem.x0, (fun_values, resid_values), method=self.solver_name, bounds=bounds, constraints=constraints, options=options)
+            res = minimize(self.fun, self.x0, (fun_values, resid_values), method=self.solver_name, bounds=bounds, constraints=constraints, options=options)
             success = res.success
         return success, np.array(fun_values), np.array(resid_values)
 
@@ -173,6 +174,39 @@ class Optimizer:
             return 0
         else:
             return np.count_nonzero(~self.problem.is_linear_cons & self.problem.is_eq_cons)
+
+    @property
+    def x0(self):
+        """
+        Initial guess.
+
+        Returns
+        -------
+        numpy.ndarray, shape (n,)
+            Initial guess.
+        """
+        from scipy.optimize import Bounds, LinearConstraint, minimize
+
+        x0 = np.array(self.problem.x0)
+
+        type_problem = pycutest.problem_properties(self.problem.name)['constraints']
+        if type_problem in ['unconstrained', 'fixed']:
+            return x0
+        elif type_problem == 'bound':
+            return np.clip(x0, self.xl, self.xu)
+        else:
+            def dsq(x):
+                g = x - x0
+                return 0.5 * np.inner(g, g), g
+
+            bounds = Bounds(self.xl, self.xu)
+            constraints = []
+            if self.m_linear_ub > 0:
+                constraints.append(LinearConstraint(self.aub, -np.inf, self.bub))
+            if self.m_linear_eq > 0:
+                constraints.append(LinearConstraint(self.aeq, self.beq, self.beq))
+            res = minimize(dsq, x0, jac=True, bounds=bounds, constraints=constraints)
+            return res.x
 
     @property
     def xl(self):

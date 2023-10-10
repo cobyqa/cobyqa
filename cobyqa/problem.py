@@ -389,7 +389,7 @@ class BoundConstraints(Constraints):
         numpy.ndarray, shape (n,)
             Projection of `x` onto the feasible set.
         """
-        return np.minimum(np.maximum(x, self.xl), self.xu) if self.is_feasible else x
+        return np.clip(x, self.xl, self.xu) if self.is_feasible else x
 
 
 class LinearConstraints(Constraints):
@@ -633,7 +633,7 @@ class Problem:
     Optimization problem.
     """
 
-    def __init__(self, obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, filter_size, debug):
+    def __init__(self, obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, feasibility_tol, filter_size, debug):
         """
         Initialize the nonlinear problem.
 
@@ -656,6 +656,8 @@ class Problem:
             Nonlinear inequality constraints.
         nonlinear_eq : NonlinearConstraints
             Nonlinear equality constraints.
+        feasibility_tol : float
+            Tolerance on the constraint violation.
         filter_size : int
             Maximum number of points in the filter.
         debug : bool
@@ -681,7 +683,7 @@ class Problem:
         tol = get_arrays_tol(bounds.xl, bounds.xu)
         self._fixed_idx = (bounds.xl <= bounds.xu) & (np.abs(bounds.xl - bounds.xu) < tol)
         self._fixed_val = 0.5 * (bounds.xl[self._fixed_idx] + bounds.xu[self._fixed_idx])
-        self._fixed_val = np.minimum(np.maximum(self._fixed_val, bounds.xl[self._fixed_idx]), bounds.xu[self._fixed_idx])
+        self._fixed_val = np.clip(self._fixed_val, bounds.xl[self._fixed_idx], bounds.xu[self._fixed_idx])
 
         # Set the bound and linear constraints.
         self._bounds = BoundConstraints(bounds.xl[~self._fixed_idx], bounds.xu[~self._fixed_idx])
@@ -692,6 +694,7 @@ class Problem:
         self._x0 = self._bounds.project(x0[~self._fixed_idx])
 
         # Set the initial filter.
+        self._feasibility_tol = feasibility_tol
         self._filter_size = filter_size
         self._fun_filter = []
         self._cub_filter = []
@@ -725,7 +728,8 @@ class Problem:
 
         # Add the point to the filter if it is not dominated by any point.
         maxcv_val = self.maxcv(x_eval, cub_val, ceq_val)
-        if all(fun_val < fun_filter or maxcv_val < maxcv_filter for fun_filter, maxcv_filter in zip(self._fun_filter, self._maxcv_filter)):
+        maxcv_shift = max(maxcv_val - self._feasibility_tol, 0.0)
+        if all(fun_val < fun_filter or maxcv_shift < max(maxcv_filter - self._feasibility_tol, 0.0) for fun_filter, maxcv_filter in zip(self._fun_filter, self._maxcv_filter)):
             self._fun_filter.append(fun_val)
             self._cub_filter.append(cub_val)
             self._ceq_filter.append(ceq_val)
@@ -734,7 +738,7 @@ class Problem:
 
         # Remove the points in the filter that are dominated by the new point.
         for k in range(len(self._fun_filter) - 2, -1, -1):
-            if fun_val <= self._fun_filter[k] and maxcv_val <= self._maxcv_filter[k]:
+            if fun_val <= self._fun_filter[k] and maxcv_shift <= max(self._maxcv_filter[k] - self._feasibility_tol, 0.0):
                 self._fun_filter.pop(k)
                 self._cub_filter.pop(k)
                 self._ceq_filter.pop(k)
@@ -1071,8 +1075,9 @@ class Problem:
         cub_filter = np.array(self._cub_filter)
         ceq_filter = np.array(self._ceq_filter)
         maxcv_filter = np.array(self._maxcv_filter)
+        maxcv_filter = np.maximum(maxcv_filter - self._feasibility_tol, 0.0)
         x_filter = np.array(self._x_filter)
-        feasible_idx = maxcv_filter < get_arrays_tol(self.bounds.xl, self.bounds.xu)
+        feasible_idx = maxcv_filter < max(np.finfo(float).eps, 2.0 * np.min(maxcv_filter))
         if np.any(feasible_idx):
             # At least one point is nearly feasible. We select the one with
             # the least objective function value. If there is a tie, we
