@@ -225,10 +225,10 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
                 alpha_neg = alpha_quad_neg
                 q_val_neg = q_val_quad_neg
         if abs(q_val_pos) >= abs(q_val_neg) and abs(q_val_pos) > abs(q_val):
-            step = np.maximum(xl, np.minimum(alpha_pos * xpt[:, k], xu))
+            step = np.clip(alpha_pos * xpt[:, k], xl, xu)
             q_val = q_val_pos
         elif abs(q_val_neg) > abs(q_val_pos) and abs(q_val_neg) > abs(q_val):
-            step = np.maximum(xl, np.minimum(alpha_neg * xpt[:, k], xu))
+            step = np.clip(alpha_neg * xpt[:, k], xl, xu)
             q_val = q_val_neg
 
     if debug:
@@ -299,7 +299,7 @@ def _cauchy_geom(const, grad, curv, xl, xu, delta, debug):
 
         # Calculate the solution and the corresponding function value.
         alpha = min(alpha_tr, alpha_quad, alpha_bd)
-        step = np.maximum(xl, np.minimum(alpha * cauchy_step, xu))
+        step = np.clip(alpha * cauchy_step, xl, xu)
         q_val = const + alpha * grad_step + 0.5 * alpha ** 2.0 * curv_step
     else:
         # This case is never reached in exact arithmetic. It prevents this

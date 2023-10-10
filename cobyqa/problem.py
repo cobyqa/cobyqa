@@ -389,7 +389,7 @@ class BoundConstraints(Constraints):
         numpy.ndarray, shape (n,)
             Projection of `x` onto the feasible set.
         """
-        return np.minimum(np.maximum(x, self.xl), self.xu) if self.is_feasible else x
+        return np.clip(x, self.xl, self.xu) if self.is_feasible else x
 
 
 class LinearConstraints(Constraints):
@@ -683,7 +683,7 @@ class Problem:
         tol = get_arrays_tol(bounds.xl, bounds.xu)
         self._fixed_idx = (bounds.xl <= bounds.xu) & (np.abs(bounds.xl - bounds.xu) < tol)
         self._fixed_val = 0.5 * (bounds.xl[self._fixed_idx] + bounds.xu[self._fixed_idx])
-        self._fixed_val = np.minimum(np.maximum(self._fixed_val, bounds.xl[self._fixed_idx]), bounds.xu[self._fixed_idx])
+        self._fixed_val = np.clip(self._fixed_val, bounds.xl[self._fixed_idx], bounds.xu[self._fixed_idx])
 
         # Set the bound and linear constraints.
         self._bounds = BoundConstraints(bounds.xl[~self._fixed_idx], bounds.xu[~self._fixed_idx])

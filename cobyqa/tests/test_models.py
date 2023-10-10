@@ -113,4 +113,4 @@ def _problem(x0):
     linear_eq = LinearConstraints(np.ones((2, x0.size)), np.ones(2), True, True)
     nonlinear_ub = NonlinearConstraints(None, False, False, False, 0, True)
     nonlinear_eq = NonlinearConstraints(None, True, False, False, 0, True)
-    return Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, 1, True)
+    return Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, 1e-8, 1, True)

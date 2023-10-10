@@ -588,7 +588,7 @@ class TrustRegion:
                 if maxcv_val <= tol:
                     sigma_alt = self.models.denominators(self.x_best + step_alt, k_new)
                     if abs(sigma_alt) >= 0.1 * abs(sigma):
-                        step = np.maximum(xl, np.minimum(step_alt, xu))
+                        step = np.clip(step_alt, xl, xu)
 
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
