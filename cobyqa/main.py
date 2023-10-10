@@ -103,12 +103,25 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 Solution point.
             fun : float
                 Objective function value at the solution point.
+            cub : ndarray, shape (m_nonlinear_ub,)
+                Nonlinear inequality constraint values at the solution point.
+            ceq : ndarray, shape (m_nonlinear_eq,)
+                Nonlinear equality constraint values at the solution point.
             maxcv : float
                 Maximum constraint violation at the solution point.
             nit : int
                 Number of iterations.
             nfev : int
                 Number of function evaluations.
+
+        If `store_history` is True, the result also has the following fields:
+
+            fun_history : ndarray, shape (nfev,)
+                History of the objective function values.
+            cub_history : ndarray, shape (nfev, m_nonlinear_ub)
+                History of the nonlinear inequality constraint values.
+            ceq_history : ndarray, shape (nfev, m_nonlinear_eq)
+                History of the nonlinear equality constraint values.
 
     References
     ----------
