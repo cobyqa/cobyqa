@@ -104,6 +104,7 @@ html_theme_options = {
     'navbar_align': 'left',
     'navigation_depth': 1,
     # 'announcement': '<p></p>',
+    'navigation_with_keys': False,  # TODO: Remove this when pydata-sphinx-theme 0.15 is released.
 }
 
 html_context = {
