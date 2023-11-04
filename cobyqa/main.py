@@ -13,8 +13,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     r"""
     Minimize a scalar function using the COBYQA method.
 
-    The COBYQA method is a derivative-free optimization method for general
-    nonlinear optimization described in [3]_.
+    The COBYQA method is a derivative-free optimization method designed to solve
+    general nonlinear optimization problems. A complete description of the
+    method is given in [3]_.
 
     Parameters
     ----------
@@ -90,8 +91,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
 
     Returns
     -------
-    scipy.optimize.OptimizeResult
-        Result of the optimization procedure, which has the following fields:
+    `scipy.optimize.OptimizeResult`
+        Result of the optimization procedure, with the following fields:
 
             message : str
                 Description of the cause of the termination.
@@ -99,13 +100,13 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 Whether the optimization procedure terminated successfully.
             status : int
                 Termination status of the optimization procedure.
-            x : ndarray, shape (n,)
+            x : `numpy.ndarray`, shape (n,)
                 Solution point.
             fun : float
                 Objective function value at the solution point.
-            cub : ndarray, shape (m_nonlinear_ub,)
+            cub : `numpy.ndarray`, shape (m_nonlinear_ub,)
                 Nonlinear inequality constraint values at the solution point.
-            ceq : ndarray, shape (m_nonlinear_eq,)
+            ceq : `numpy.ndarray`, shape (m_nonlinear_eq,)
                 Nonlinear equality constraint values at the solution point.
             maxcv : float
                 Maximum constraint violation at the solution point.
@@ -114,13 +115,14 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
             nfev : int
                 Number of function evaluations.
 
-        If `store_history` is True, the result also has the following fields:
+        If the ``store_history`` option is True, the result also has the
+        following fields:
 
-            fun_history : ndarray, shape (nfev,)
+            fun_history : `numpy.ndarray`, shape (nfev,)
                 History of the objective function values.
-            cub_history : ndarray, shape (nfev, m_nonlinear_ub)
+            cub_history : `numpy.ndarray`, shape (nfev, m_nonlinear_ub)
                 History of the nonlinear inequality constraint values.
-            ceq_history : ndarray, shape (nfev, m_nonlinear_eq)
+            ceq_history : `numpy.ndarray`, shape (nfev, m_nonlinear_eq)
                 History of the nonlinear equality constraint values.
 
     References
@@ -139,7 +141,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
 
     Examples
     --------
-    We first minimize the Rosenbrock function implemented in `scipy.optimize`.
+    Let us first minimize the Rosenbrock function implemented in
+    `scipy.optimize` in an unconstrained setting.
 
     .. testsetup::
 

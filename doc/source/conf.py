@@ -77,8 +77,6 @@ html_theme = 'pydata_sphinx_theme'
 
 html_static_path = ['_static']
 
-html_css_files = ['cobyqa.css']
-
 html_theme_options = {
     'logo': {
         'text': project,
@@ -180,7 +178,6 @@ autosummary_generate = True
 # -- Link to other projects' documentation ------------------------------------
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
     'scipy': ('https://docs.scipy.org/doc/scipy/', None),
 }
