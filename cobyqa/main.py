@@ -5,7 +5,7 @@ from scipy.optimize import OptimizeResult
 
 from .framework import TrustRegion
 from .problem import ObjectiveFunction, BoundConstraints, LinearConstraints, NonlinearConstraints, Problem
-from .utils import MaxEvalError, get_arrays_tol
+from .utils import MaxEvalError
 from .settings import ExitStatus, Options, DEFAULT_OPTIONS
 
 
@@ -513,8 +513,7 @@ def _eval(pb, framework, step, options):
     x_eval = framework.x_best + step
     fun_val, cub_val, ceq_val = pb(x_eval)
     r_val = pb.maxcv(x_eval, cub_val, ceq_val)
-    tol_bounds = get_arrays_tol(pb.bounds.xl, pb.bounds.xu)
-    return fun_val, cub_val, ceq_val, fun_val <= options[Options.TARGET] and r_val < tol_bounds
+    return fun_val, cub_val, ceq_val, fun_val <= options[Options.TARGET] and r_val <= options[Options.FEASIBILITY_TOL]
 
 
 def _build_result(pb, penalty, success, status, n_iter, options):
@@ -530,7 +529,7 @@ def _build_result(pb, penalty, success, status, n_iter, options):
     result.nit = n_iter
     result.success = success
     if status != ExitStatus.TARGET_SUCCESS:
-        result.success = result.success and (result.maxcv < options[Options.FEASIBILITY_TOL])
+        result.success = result.success and result.maxcv <= options[Options.FEASIBILITY_TOL]
     result.status = status.value
     result.message = {
         ExitStatus.RADIUS_SUCCESS: 'The lower bound for the trust-region radius has been reached',

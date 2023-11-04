@@ -480,7 +480,6 @@ class Models:
         self._fun_val = np.full(options[Options.NPT], np.nan)
         self._cub_val = np.full((options[Options.NPT], cub_init.size), np.nan)
         self._ceq_val = np.full((options[Options.NPT], ceq_init.size), np.nan)
-        tol = 10.0 * np.finfo(float).eps * max(self.n, self.npt) * np.max(np.abs(self.interpolation.x_base), initial=1.0)
         self._target_init = False
         for k in range(min(options[Options.NPT], options[Options.MAX_EVAL])):
             if k == 0:
@@ -494,7 +493,7 @@ class Models:
             # Stop the iterations if the current interpolation point is nearly
             # feasible and has an objective function value below the target.
             if self._fun_val[k] < options[Options.TARGET]:
-                if pb.maxcv(self.interpolation.point(k), self.cub_val[k, :], self.ceq_val[k, :]) < tol:
+                if pb.maxcv(self.interpolation.point(k), self.cub_val[k, :], self.ceq_val[k, :]) <= options[Options.FEASIBILITY_TOL]:
                     self._target_init = True
                     break
 
