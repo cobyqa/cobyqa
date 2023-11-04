@@ -25,7 +25,7 @@ COBYQA: Constrained Optimization BY Quadratic Approximations
 .. image:: https://img.shields.io/pypi/status/cobyqa?logo=pypi&style=for-the-badge
     :target: https://pypi.org/project/cobyqa/
 
-COBYQA, an acronym for *Constrained Optimization BY Quadratic Approximations*, is designed to succeed `COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_ as a derivative-free solver for general nonlinear optimization.
+COBYQA, an acronym for *Constrained Optimization BY Quadratic Approximations*, is designed to succeed `COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_ as a general derivative-free optimization solver.
 It can handle unconstrained, bound-constrained, linearly constrained, and nonlinearly constrained problems.
 It uses only function values of the objective and constraint functions, if any.
 No derivative information is needed.
@@ -35,7 +35,7 @@ No derivative information is needed.
 Installation
 ------------
 
-COBYQA can be installed on `Python 3.8 or above <https://www.python.org>`_.
+COBYQA can be installed for `Python 3.8 or above <https://www.python.org>`_.
 
 Dependencies
 ~~~~~~~~~~~~

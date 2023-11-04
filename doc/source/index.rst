@@ -13,27 +13,28 @@ COBYQA documentation
 :Useful links: `Issue tracker <https://github.com/cobyqa/cobyqa/issues>`_ | `Mailing list <https://mail.python.org/mailman3/lists/cobyqa.python.org/>`_
 :Authors: `Tom M. Ragonneau <https://tomragonneau.com/>`_ | `Zaikun Zhang <https://www.zhangzk.net/>`_
 
-COBYQA is designed to succeed `COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_ as a derivative-free solver for general nonlinear optimization.
+COBYQA is a general derivative-free optimization solver, designed to succeed `COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_.
 Using only functions values, and no derivatives, it aims at solving problems of the form
 
 .. math::
 
-    \min_{x \in \R^n} \quad \obj ( x ) \quad \text{s.t.} \quad
-    \left\{ \begin{array}{l}
-        \xl \le x \le \xu,\\
+    \min_{x \in \xbd} \quad \obj ( x ) \quad \text{s.t.} \quad
+    \begin{cases}
         \aub x \le \bub, ~ \aeq x = \beq,\\
-        \cub ( x ) \le 0, ~ \ceq ( x ) = 0.
-    \end{array} \right.
+        \cub ( x ) \le 0, ~ \ceq ( x ) = 0,
+    \end{cases}
 
-COBYQA assumes that the bound constraints :math:`l \le x \le u` are unrelaxable, i.e., that the nonlinear functions :math:`\obj`, :math:`\cub`, and :math:`\ceq` cannot be evaluated outside the bounds.
+where :math:`\xbd = \{ x \in \R^n : \xl \le x \le \xu \}`.
+The nonlinear functions :math:`\obj`, :math:`\cub`, and :math:`\ceq` are assumed to be well-defined only on :math:`\xbd`.
 Hence, COBYQA always respect the bound constraints throughout the optimization process.
+
 To install COBYQA, run in your terminal
 
 .. code-block:: bash
 
     pip install cobyqa
 
-For more details, see the :ref:`user guide <user>`.
+For more details on the installation and the usage of COBYQA, see the :ref:`user guide <user>`.
 
 Citing COBYQA
 -------------
@@ -75,5 +76,5 @@ As of |today|, COBYQA has been downloaded |total_downloads| times, including
 Acknowledgments
 ---------------
 
-The early development of COBYQA was funded by the `University Grants Committee <https://www.ugc.edu.hk/>`_ of Hong Kong, under the `Hong Kong PhD Fellowship Scheme <https://cerg1.ugc.edu.hk/hkpfs/index.html>`_ (ref. PF18-24698).
-It is now supported by `The Hong Kong Polytechnic University <https://www.polyu.edu.hk/>`_.
+The early development of COBYQA was funded by the `University Grants Committee <https://www.ugc.edu.hk>`_ of Hong Kong, under the `Hong Kong PhD Fellowship Scheme <https://cerg1.ugc.edu.hk/hkpfs/index.html>`_ (ref. PF18-24698).
+It is now supported by `The Hong Kong Polytechnic University <https://www.polyu.edu.hk>`_ and the `CAS AMSS-PolyU Joint Laboratory of Applied Mathematics <https://www.polyu.edu.hk/en/ama/research-and-consultancy/cas-amss-polyu-jlab/>`_.

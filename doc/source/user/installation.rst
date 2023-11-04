@@ -29,7 +29,7 @@ Alternative installation (using source distribution)
 ----------------------------------------------------
 
 Alternatively, although discouraged, COBYQA can be installed from the source code.
-Download and decompress the source code package.
+Download and decompress the `source code package <https://github.com/cobyqa/cobyqa/archive/refs/heads/main.zip>`_.
 You will obtain a folder containing ``pyproject.toml``.
 In a command shell, change your directory to this folder, and then run
 

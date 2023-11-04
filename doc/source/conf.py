@@ -133,13 +133,14 @@ latex_elements = {
 \usepackage[bb=dsfontserif]{mathalpha}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\transpose}[1]{#1^{\mathsf{T}}}
-\newcommand{\aeq}{A_{\scriptscriptstyle \text{E}}}
-\newcommand{\aub}{A_{\scriptscriptstyle \text{I}}}
-\newcommand{\beq}{b_{\scriptscriptstyle \text{E}}}
-\newcommand{\bub}{b_{\scriptscriptstyle \text{I}}}
-\newcommand{\ceq}{c_{\scriptscriptstyle \text{E}}}
-\newcommand{\cub}{c_{\scriptscriptstyle \text{I}}}
+\newcommand{\aeq}{A_{\scriptscriptstyle \mathcal{E}}}
+\newcommand{\aub}{A_{\scriptscriptstyle \mathcal{I}}}
+\newcommand{\beq}{b_{\scriptscriptstyle \mathcal{E}}}
+\newcommand{\bub}{b_{\scriptscriptstyle \mathcal{I}}}
+\newcommand{\ceq}{c_{\scriptscriptstyle \mathcal{E}}}
+\newcommand{\cub}{c_{\scriptscriptstyle \mathcal{I}}}
 \newcommand{\obj}{f}
+\newcommand{\xbd}{\mathcal{X}}
 \newcommand{\xl}{l}
 \newcommand{\xu}{u}
 
@@ -156,13 +157,14 @@ mathjax3_config = {
         'macros': {
             'R': r'\mathbb{R}',
             'transpose': [r'#1^{\mathsf{T}}', 1],
-            'aeq': r'A_{\scriptscriptstyle \text{E}}',
-            'aub': r'A_{\scriptscriptstyle \text{I}}',
-            'beq': r'b_{\scriptscriptstyle \text{E}}',
-            'bub': r'b_{\scriptscriptstyle \text{I}}',
-            'ceq': r'c_{\scriptscriptstyle \text{E}}',
-            'cub': r'c_{\scriptscriptstyle \text{I}}',
+            'aeq': r'A_{\scriptscriptstyle \mathcal{E}}',
+            'aub': r'A_{\scriptscriptstyle \mathcal{I}}',
+            'beq': r'b_{\scriptscriptstyle \mathcal{E}}',
+            'bub': r'b_{\scriptscriptstyle \mathcal{I}}',
+            'ceq': r'c_{\scriptscriptstyle \mathcal{E}}',
+            'cub': r'c_{\scriptscriptstyle \mathcal{I}}',
             'obj': r'f',
+            'xbd': r'\mathcal{X}',
             'xl': r'l',
             'xu': r'u',
         }

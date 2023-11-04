@@ -8,7 +8,7 @@ API documentation
 
 .. currentmodule:: cobyqa
 
-This section references a manual for using COBYQA.
+This section references a manual for using COBYQA in Python.
 Most users will only need to use the `minimize` function.
 An :ref:`installation <installation>` guide and :ref:`usage <usage>` examples are provided in the :ref:`user guide <user>`.
 

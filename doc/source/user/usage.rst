@@ -6,19 +6,22 @@ Usage
 .. currentmodule:: cobyqa
 
 We provide below basic usage information on how to use COBYQA.
-For more details on the `minimize` function, please refer to the :ref:`API documentation <api>`.
+For more details on the signature of the `minimize` function, please refer to the :ref:`API documentation <api>`.
 
 How to use COBYQA
 -----------------
 
 COBYQA provides a `minimize` function.
+This is the main entry point to the solver.
 It solves unconstrained, bound-constrained, linearly constrained, and nonlinearly constrained optimization problems.
-For details on the signature of the `minimize` function, please refer to the :ref:`API documentation <api>`.
 
 We provide below simple examples on how to use COBYQA.
 
 Examples
 --------
+
+Example of unconstrained optimization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Let us first minimize the Rosenbrock function implemented in `scipy.optimize`, defined as
 
@@ -39,6 +42,9 @@ To solve the problem using COBYQA, run:
     print(res.x)
 
 This should display the desired output ``[1. 1. 1. 1. 1.]``.
+
+Example of linear constrained optimization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To see how bound and linear constraints are handled using `minimize`, let us solve Example 16.4 of :cite:`ua-Nocedal_Wright_2006`, defined as
 
@@ -71,15 +77,18 @@ To solve the problem using COBYQA, run:
 
 This should display the desired output ``[1.4 1.7]``.
 
-Finally, to see how nonlinear constraints are handled, we solve Problem (F) of :cite:`ua-Powell_1994`, defined as
+Example of nonlinear constrained optimization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    .. math::
+To see how nonlinear constraints are handled, we solve Problem (F) of :cite:`ua-Powell_1994`, defined as
 
-        \begin{aligned}
-            \min_{x \in \R^2}   & \quad -x_1 - x_2\\
-            \text{s.t.}         & \quad x_1^2 - x_2 \le 0,\\
-                                & \quad x_1^2 + x_2^2 \le 1.
-        \end{aligned}
+.. math::
+
+    \begin{aligned}
+        \min_{x \in \R^2}   & \quad -x_1 - x_2\\
+        \text{s.t.}         & \quad x_1^2 - x_2 \le 0,\\
+                            & \quad x_1^2 + x_2^2 \le 1.
+    \end{aligned}
 
 To solve the problem using COBYQA, run:
 
