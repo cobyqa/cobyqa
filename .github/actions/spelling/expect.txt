@@ -52,7 +52,6 @@ endblock
 endfor
 finfo
 flatnonzero
-fontenc
 fontsize
 footbibliography
 footcite
@@ -76,7 +75,6 @@ keyprefix
 KOEBHELB
 labelprefix
 labelspacing
-Lato
 LEUVEN
 levelname
 LGR
@@ -95,6 +93,7 @@ lvert
 mastsif
 mathalpha
 mathbb
+mathcal
 mathjax
 mathsf
 matplotlib
@@ -107,7 +106,6 @@ maxiter
 mindepth
 minexp
 MISRA
-mnh
 MYARCH
 nanargmin
 nanmax
@@ -128,7 +126,6 @@ onstrained
 optim
 OSBORNEA
 papersize
-permd
 phdthesis
 plt
 powell
@@ -165,7 +162,6 @@ sphinxcontrib
 SPHINXOPTS
 sqp
 subsolvers
-sumpow
 sumsqu
 techreport
 testpypi
@@ -180,6 +176,7 @@ usr
 vartype
 vec
 whl
+xbd
 xlabel
 xlim
 xnew
@@ -190,4 +187,3 @@ ylabel
 ylim
 Yrc
 zaikunzhang
-zakharov
