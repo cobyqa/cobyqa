@@ -26,7 +26,7 @@ def cauchy_geometry(const, grad, curv, xl, xu, delta, debug):
     ----------
     const : float
         Constant :math:`c` as shown above.
-    grad : numpy.ndarray, shape (n,)
+    grad : `numpy.ndarray`, shape (n,)
         Gradient :math:`g` as shown above.
     curv : callable
         Curvature of :math:`H` along any vector.
@@ -34,9 +34,9 @@ def cauchy_geometry(const, grad, curv, xl, xu, delta, debug):
             ``curv(s) -> float``
 
         returns :math:`\transpose{s} H s`.
-    xl : numpy.ndarray, shape (n,)
+    xl : `numpy.ndarray`, shape (n,)
         Lower bounds :math:`\xl` as shown above.
-    xu : numpy.ndarray, shape (n,)
+    xu : `numpy.ndarray`, shape (n,)
         Upper bounds :math:`\xu` as shown above.
     delta : float
         Trust-region radius :math:`\Delta` as shown above.
@@ -45,7 +45,7 @@ def cauchy_geometry(const, grad, curv, xl, xu, delta, debug):
 
     Returns
     -------
-    numpy.ndarray, shape (n,)
+    `numpy.ndarray`, shape (n,)
         Approximate solution :math:`s`.
 
     Notes
@@ -110,7 +110,7 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
     ----------
     const : float
         Constant :math:`c` as shown above.
-    grad : numpy.ndarray, shape (n,)
+    grad : `numpy.ndarray`, shape (n,)
         Gradient :math:`g` as shown above.
     curv : callable
         Curvature of :math:`H` along any vector.
@@ -118,12 +118,12 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
             ``curv(s) -> float``
 
         returns :math:`\transpose{s} H s`.
-    xpt : numpy.ndarray, shape (n, npt)
+    xpt : `numpy.ndarray`, shape (n, npt)
         Points defining the straight lines. The straight lines considered are
         the ones passing through the origin and the points in `xpt`.
-    xl : numpy.ndarray, shape (n,)
+    xl : `numpy.ndarray`, shape (n,)
         Lower bounds :math:`\xl` as shown above.
-    xu : numpy.ndarray, shape (n,)
+    xu : `numpy.ndarray`, shape (n,)
         Upper bounds :math:`\xu` as shown above.
     delta : float
         Trust-region radius :math:`\Delta` as shown above.
@@ -132,7 +132,7 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
 
     Returns
     -------
-    numpy.ndarray, shape (n,)
+    `numpy.ndarray`, shape (n,)
         Approximate solution :math:`s`.
 
     Notes

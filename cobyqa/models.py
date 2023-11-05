@@ -97,7 +97,7 @@ class Interpolation:
 
         Returns
         -------
-        numpy.ndarray, shape (n, npt)
+        `numpy.ndarray`, shape (n, npt)
             Interpolation points.
         """
         return self._xpt
@@ -109,7 +109,7 @@ class Interpolation:
 
         Parameters
         ----------
-        xpt : numpy.ndarray, shape (n, npt)
+        xpt : `numpy.ndarray`, shape (n, npt)
             New interpolation points.
         """
         if self._debug:
@@ -123,7 +123,7 @@ class Interpolation:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Base point around which the models are expanded.
         """
         return self._x_base
@@ -135,7 +135,7 @@ class Interpolation:
 
         Parameters
         ----------
-        x_base : numpy.ndarray, shape (n,)
+        x_base : `numpy.ndarray`, shape (n,)
             New base point around which the models are expanded.
         """
         if self._debug:
@@ -155,7 +155,7 @@ class Interpolation:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             `k`-th interpolation point.
         """
         if self._debug:
@@ -186,7 +186,7 @@ class Quadratic:
         ----------
         interpolation : Interpolation
             Interpolation set.
-        values : numpy.ndarray, shape (npt,)
+        values : `numpy.ndarray`, shape (npt,)
             Values of the interpolated function at the interpolation points.
         debug : bool
             Whether to make debugging tests during the execution.
@@ -205,7 +205,7 @@ class Quadratic:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which the quadratic model is evaluated.
         interpolation : Interpolation
             Interpolation set.
@@ -250,14 +250,14 @@ class Quadratic:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which the gradient of the quadratic model is evaluated.
         interpolation : Interpolation
             Interpolation set.
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Gradient of the quadratic model at `x`.
         """
         if self._debug:
@@ -276,7 +276,7 @@ class Quadratic:
 
         Returns
         -------
-        numpy.ndarray, shape (n, n)
+        `numpy.ndarray`, shape (n, n)
             Hessian matrix of the quadratic model.
         """
         return self._e_hess + interpolation.xpt @ (self._i_hess[:, np.newaxis] * interpolation.xpt.T)
@@ -288,7 +288,7 @@ class Quadratic:
 
         Parameters
         ----------
-        v : numpy.ndarray, shape (n,)
+        v : `numpy.ndarray`, shape (n,)
             Vector with which the Hessian matrix of the quadratic model is
             multiplied from the right.
         interpolation : Interpolation
@@ -296,7 +296,7 @@ class Quadratic:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Right product of the Hessian matrix of the quadratic model with `v`.
         """
         if self._debug:
@@ -309,7 +309,7 @@ class Quadratic:
 
         Parameters
         ----------
-        v : numpy.ndarray, shape (n,)
+        v : `numpy.ndarray`, shape (n,)
             Direction along which the curvature of the quadratic model is
             evaluated.
         interpolation : Interpolation
@@ -338,9 +338,9 @@ class Quadratic:
             Updated interpolation set.
         k_new : int
             Index of the updated interpolation point.
-        dir_old : numpy.ndarray, shape (n,)
+        dir_old : `numpy.ndarray`, shape (n,)
             Value of ``interpolation.xpt[:, k_new]`` before the update.
-        values_diff : numpy.ndarray, shape (npt,)
+        values_diff : `numpy.ndarray`, shape (npt,)
             Differences between the values of the interpolated nonlinear
             function and the previous quadratic model at the updated
             interpolation points.
@@ -372,7 +372,7 @@ class Quadratic:
         ----------
         interpolation : Interpolation
             Previous interpolation set.
-        new_x_base : numpy.ndarray, shape (n,)
+        new_x_base : `numpy.ndarray`, shape (n,)
             Point that will replace ``interpolation.x_base``.
         """
         if self._debug:
@@ -436,16 +436,16 @@ class Quadratic:
         ----------
         interpolation : Interpolation
             Interpolation set.
-        values : numpy.ndarray, shape (npt,)
+        values : `numpy.ndarray`, shape (npt,)
             Values of the interpolated function at the interpolation points.
 
         Returns
         -------
         float
             Constant term of the quadratic model.
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Gradient of the quadratic model at ``interpolation.x_base``.
-        numpy.ndarray, shape (npt,)
+        `numpy.ndarray`, shape (npt,)
             Implicit Hessian matrix of the quadratic model.
         """
         assert values.shape == (interpolation.npt,), 'The shape of `values` is not valid.'
@@ -576,7 +576,7 @@ class Models:
 
         Returns
         -------
-        numpy.ndarray, shape (npt,)
+        `numpy.ndarray`, shape (npt,)
             Values of the objective function at the interpolation points.
         """
         return self._fun_val
@@ -589,7 +589,7 @@ class Models:
 
         Returns
         -------
-        numpy.ndarray, shape (npt, m_nonlinear_ub)
+        `numpy.ndarray`, shape (npt, m_nonlinear_ub)
             Values of the nonlinear inequality constraint functions at the
             interpolation points.
         """
@@ -603,7 +603,7 @@ class Models:
 
         Returns
         -------
-        numpy.ndarray, shape (npt, m_nonlinear_eq)
+        `numpy.ndarray`, shape (npt, m_nonlinear_eq)
             Values of the nonlinear equality constraint functions at the
             interpolation points.
         """
@@ -631,7 +631,7 @@ class Models:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which to evaluate the quadratic model of the objective
             function.
 
@@ -651,13 +651,13 @@ class Models:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which to evaluate the gradient of the quadratic model of
             the objective function.
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Gradient of the quadratic model of the objective function at `x`.
         """
         if self._debug:
@@ -671,7 +671,7 @@ class Models:
 
         Returns
         -------
-        numpy.ndarray, shape (n, n)
+        `numpy.ndarray`, shape (n, n)
             Hessian matrix of the quadratic model of the objective function.
         """
         return self._fun.hess(self.interpolation)
@@ -683,13 +683,13 @@ class Models:
 
         Parameters
         ----------
-        v : numpy.ndarray, shape (n,)
+        v : `numpy.ndarray`, shape (n,)
             Vector with which the Hessian matrix of the quadratic model of the
             objective function is multiplied from the right.
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Right product of the Hessian matrix of the quadratic model of the
             objective function with `v`.
         """
@@ -704,7 +704,7 @@ class Models:
 
         Parameters
         ----------
-        v : numpy.ndarray, shape (n,)
+        v : `numpy.ndarray`, shape (n,)
             Direction along which the curvature of the quadratic model of the
             objective function is evaluated.
 
@@ -725,13 +725,13 @@ class Models:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which to evaluate the gradient of the alternative quadratic
             model of the objective function.
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Gradient of the alternative quadratic model of the objective
             function at `x`.
         """
@@ -747,15 +747,15 @@ class Models:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which to evaluate the quadratic models of the nonlinear
             inequality functions.
-        mask : numpy.ndarray, shape (m_nonlinear_ub,), optional
+        mask : `numpy.ndarray`, shape (m_nonlinear_ub,), optional
             Mask of the quadratic models to consider.
 
         Returns
         -------
-        numpy.ndarray
+        `numpy.ndarray`
             Values of the quadratic model of the nonlinear inequality functions.
         """
         if self._debug:
@@ -770,15 +770,15 @@ class Models:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which to evaluate the gradients of the quadratic models of
             the nonlinear inequality functions.
-        mask : numpy.ndarray, shape (m_nonlinear_eq,), optional
+        mask : `numpy.ndarray`, shape (m_nonlinear_eq,), optional
             Mask of the quadratic models to consider.
 
         Returns
         -------
-        numpy.ndarray
+        `numpy.ndarray`
             Gradients of the quadratic model of the nonlinear inequality
             functions.
         """
@@ -794,12 +794,12 @@ class Models:
 
         Parameters
         ----------
-        mask : numpy.ndarray, shape (m_nonlinear_ub,), optional
+        mask : `numpy.ndarray`, shape (m_nonlinear_ub,), optional
             Mask of the quadratic models to consider.
 
         Returns
         -------
-        numpy.ndarray
+        `numpy.ndarray`
             Hessian matrices of the quadratic models of the nonlinear inequality
             functions.
         """
@@ -814,15 +814,15 @@ class Models:
 
         Parameters
         ----------
-        v : numpy.ndarray, shape (n,)
+        v : `numpy.ndarray`, shape (n,)
             Vector with which the Hessian matrices of the quadratic models of
             the nonlinear inequality functions are multiplied from the right.
-        mask : numpy.ndarray, shape (m_nonlinear_ub,), optional
+        mask : `numpy.ndarray`, shape (m_nonlinear_ub,), optional
             Mask of the quadratic models to consider.
 
         Returns
         -------
-        numpy.ndarray
+        `numpy.ndarray`
             Right products of the Hessian matrices of the quadratic models of
             the nonlinear inequality functions with `v`.
         """
@@ -838,15 +838,15 @@ class Models:
 
         Parameters
         ----------
-        v : numpy.ndarray, shape (n,)
+        v : `numpy.ndarray`, shape (n,)
             Direction along which the curvature of the quadratic models of the
             nonlinear inequality functions is evaluated.
-        mask : numpy.ndarray, shape (m_nonlinear_ub,), optional
+        mask : `numpy.ndarray`, shape (m_nonlinear_ub,), optional
             Mask of the quadratic models to consider.
 
         Returns
         -------
-        numpy.ndarray
+        `numpy.ndarray`
             Curvature of the quadratic models of the nonlinear inequality
             functions along `v`.
         """
@@ -862,15 +862,15 @@ class Models:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which to evaluate the quadratic models of the nonlinear
             equality functions.
-        mask : numpy.ndarray, shape (m_nonlinear_eq,), optional
+        mask : `numpy.ndarray`, shape (m_nonlinear_eq,), optional
             Mask of the quadratic models to consider.
 
         Returns
         -------
-        numpy.ndarray
+        `numpy.ndarray`
             Values of the quadratic model of the nonlinear equality functions.
         """
         if self._debug:
@@ -885,15 +885,15 @@ class Models:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which to evaluate the gradients of the quadratic models of
             the nonlinear equality functions.
-        mask : numpy.ndarray, shape (m_nonlinear_eq,), optional
+        mask : `numpy.ndarray`, shape (m_nonlinear_eq,), optional
             Mask of the quadratic models to consider.
 
         Returns
         -------
-        numpy.ndarray
+        `numpy.ndarray`
             Gradients of the quadratic model of the nonlinear equality
             functions.
         """
@@ -909,12 +909,12 @@ class Models:
 
         Parameters
         ----------
-        mask : numpy.ndarray, shape (m_nonlinear_eq,), optional
+        mask : `numpy.ndarray`, shape (m_nonlinear_eq,), optional
             Mask of the quadratic models to consider.
 
         Returns
         -------
-        numpy.ndarray
+        `numpy.ndarray`
             Hessian matrices of the quadratic models of the nonlinear equality
             functions.
         """
@@ -929,15 +929,15 @@ class Models:
 
         Parameters
         ----------
-        v : numpy.ndarray, shape (n,)
+        v : `numpy.ndarray`, shape (n,)
             Vector with which the Hessian matrices of the quadratic models of
             the nonlinear equality functions are multiplied from the right.
-        mask : numpy.ndarray, shape (m_nonlinear_eq,), optional
+        mask : `numpy.ndarray`, shape (m_nonlinear_eq,), optional
             Mask of the quadratic models to consider.
 
         Returns
         -------
-        numpy.ndarray
+        `numpy.ndarray`
             Right products of the Hessian matrices of the quadratic models of
             the nonlinear equality functions with `v`.
         """
@@ -953,15 +953,15 @@ class Models:
 
         Parameters
         ----------
-        v : numpy.ndarray, shape (n,)
+        v : `numpy.ndarray`, shape (n,)
             Direction along which the curvature of the quadratic models of the
             nonlinear equality functions is evaluated.
-        mask : numpy.ndarray, shape (m_nonlinear_eq,), optional
+        mask : `numpy.ndarray`, shape (m_nonlinear_eq,), optional
             Mask of the quadratic models to consider.
 
         Returns
         -------
-        numpy.ndarray
+        `numpy.ndarray`
             Curvature of the quadratic models of the nonlinear equality
             functions along `v`.
         """
@@ -996,15 +996,15 @@ class Models:
         ----------
         k_new : int
             Index of the updated interpolation point.
-        x_new : numpy.ndarray, shape (n,)
+        x_new : `numpy.ndarray`, shape (n,)
             New interpolation point. Its value is interpreted as relative to
             the origin, not the base point.
         fun_val : float
             Value of the objective function at `x_new`.
             Objective function value at `x_new`.
-        cub_val : numpy.ndarray, shape (m_nonlinear_ub,)
+        cub_val : `numpy.ndarray`, shape (m_nonlinear_ub,)
             Values of the nonlinear inequality constraints at `x_new`.
-        ceq_val : numpy.ndarray, shape (m_nonlinear_eq,)
+        ceq_val : `numpy.ndarray`, shape (m_nonlinear_eq,)
             Values of the nonlinear equality constraints at `x_new`.
         """
         if self._debug:
@@ -1050,7 +1050,7 @@ class Models:
 
         Parameters
         ----------
-        x_new : numpy.ndarray, shape (n,)
+        x_new : `numpy.ndarray`, shape (n,)
             New interpolation point. Its value is interpreted as relative to
             the origin, not the base point.
         k : int, optional
@@ -1059,7 +1059,7 @@ class Models:
 
         Returns
         -------
-        {float, numpy.ndarray, shape (npt,)}
+        {float, `numpy.ndarray`, shape (npt,)}
             Denominator(s) of the derivative-free symmetric Broyden update.
 
         References
@@ -1097,7 +1097,7 @@ class Models:
 
         Parameters
         ----------
-        new_x_base : numpy.ndarray, shape (n,)
+        new_x_base : `numpy.ndarray`, shape (n,)
             New base point.
         options : dict
             Options of the solver.
@@ -1125,12 +1125,12 @@ class Models:
 
         Parameters
         ----------
-        mask : numpy.ndarray, shape (m_nonlinear_ub,), optional
+        mask : `numpy.ndarray`, shape (m_nonlinear_ub,), optional
             Mask of the quadratic models to return.
 
         Returns
         -------
-        numpy.ndarray
+        `numpy.ndarray`
             Quadratic models of the nonlinear inequality constraints.
         """
         return self._cub if mask is None else self._cub[mask]
@@ -1141,12 +1141,12 @@ class Models:
 
         Parameters
         ----------
-        mask : numpy.ndarray, shape (m_nonlinear_eq,), optional
+        mask : `numpy.ndarray`, shape (m_nonlinear_eq,), optional
             Mask of the quadratic models to return.
 
         Returns
         -------
-        numpy.ndarray
+        `numpy.ndarray`
             Quadratic models of the nonlinear equality constraints.
         """
         return self._ceq if mask is None else self._ceq[mask]

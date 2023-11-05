@@ -25,17 +25,17 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
 
     Parameters
     ----------
-    grad : numpy.ndarray, shape (n,)
+    grad : `numpy.ndarray`, shape (n,)
         Gradient :math:`g` as shown above.
     hess_prod : callable
         Product of the Hessian matrix :math:`H` with any vector.
 
-            ``hess_prod(s) -> numpy.ndarray, shape (n,)``
+            ``hess_prod(s) -> `numpy.ndarray`, shape (n,)``
 
         returns the product :math:`H s`.
-    xl : numpy.ndarray, shape (n,)
+    xl : `numpy.ndarray`, shape (n,)
         Lower bounds :math:`\xl` as shown above.
-    xu : numpy.ndarray, shape (n,)
+    xu : `numpy.ndarray`, shape (n,)
         Upper bounds :math:`\xu` as shown above.
     delta : float
         Trust-region radius :math:`\Delta` as shown above.
@@ -44,7 +44,7 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
 
     Returns
     -------
-    numpy.ndarray, shape (n,)
+    `numpy.ndarray`, shape (n,)
         Approximate solution :math:`s`.
 
     Other Parameters
@@ -295,23 +295,23 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
 
     Parameters
     ----------
-    grad : numpy.ndarray, shape (n,)
+    grad : `numpy.ndarray`, shape (n,)
         Gradient :math:`g` as shown above.
     hess_prod : callable
         Product of the Hessian matrix :math:`H` with any vector.
 
-            ``hess_prod(s) -> numpy.ndarray, shape (n,)``
+            ``hess_prod(s) -> `numpy.ndarray`, shape (n,)``
 
         returns the product :math:`H s`.
-    xl : numpy.ndarray, shape (n,)
+    xl : `numpy.ndarray`, shape (n,)
         Lower bounds :math:`\xl` as shown above.
-    xu : numpy.ndarray, shape (n,)
+    xu : `numpy.ndarray`, shape (n,)
         Upper bounds :math:`\xu` as shown above.
-    aub : numpy.ndarray, shape (m_linear_ub, n)
+    aub : `numpy.ndarray`, shape (m_linear_ub, n)
         Coefficient matrix :math:`\aub` as shown above.
-    bub : numpy.ndarray, shape (m_linear_ub,)
+    bub : `numpy.ndarray`, shape (m_linear_ub,)
         Right-hand side :math:`\bub` as shown above.
-    aeq : numpy.ndarray, shape (m_linear_eq, n)
+    aeq : `numpy.ndarray`, shape (m_linear_eq, n)
         Coefficient matrix :math:`\aeq` as shown above.
     delta : float
         Trust-region radius :math:`\Delta` as shown above.
@@ -320,7 +320,7 @@ def constrained_tangential_byrd_omojokun(grad, hess_prod, xl, xu, aub, bub, aeq,
 
     Returns
     -------
-    numpy.ndarray, shape (n,)
+    `numpy.ndarray`, shape (n,)
         Approximate solution :math:`s`.
 
     Other Parameters
@@ -615,17 +615,17 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
 
     Parameters
     ----------
-    aub : numpy.ndarray, shape (m_linear_ub, n)
+    aub : `numpy.ndarray`, shape (m_linear_ub, n)
         Matrix :math:`\aub` as shown above.
-    bub : numpy.ndarray, shape (m_linear_ub,)
+    bub : `numpy.ndarray`, shape (m_linear_ub,)
         Vector :math:`\bub` as shown above.
-    aeq : numpy.ndarray, shape (m_linear_eq, n)
+    aeq : `numpy.ndarray`, shape (m_linear_eq, n)
         Matrix :math:`\aeq` as shown above.
-    beq : numpy.ndarray, shape (m_linear_eq,)
+    beq : `numpy.ndarray`, shape (m_linear_eq,)
         Vector :math:`\beq` as shown above.
-    xl : numpy.ndarray, shape (n,)
+    xl : `numpy.ndarray`, shape (n,)
         Lower bounds :math:`\xl` as shown above.
-    xu : numpy.ndarray, shape (n,)
+    xu : `numpy.ndarray`, shape (n,)
         Upper bounds :math:`\xu` as shown above.
     delta : float
         Trust-region radius :math:`\Delta` as shown above.
@@ -634,7 +634,7 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
 
     Returns
     -------
-    numpy.ndarray, shape (n,)
+    `numpy.ndarray`, shape (n,)
         Approximate solution :math:`s`.
 
     Other Parameters

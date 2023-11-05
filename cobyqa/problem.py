@@ -69,7 +69,7 @@ class Function(ABC):
 
         Returns
         -------
-        {float, numpy.ndarray}
+        {float, `numpy.ndarray`}
             Function value at `x`.
         """
         x = np.array(x, dtype=float)
@@ -125,7 +125,7 @@ class Function(ABC):
 
         Returns
         -------
-        numpy.ndarray
+        `numpy.ndarray`
             History of function evaluations.
         """
         return np.array(self._fun_history, dtype=float)
@@ -140,7 +140,7 @@ class Function(ABC):
 
         Returns
         -------
-        numpy.ndarray, shape (n_eval, n)
+        `numpy.ndarray`, shape (n_eval, n)
             History of variables.
         """
         return np.array(self._x_history, dtype=float)
@@ -159,7 +159,7 @@ class Function(ABC):
 
         Returns
         -------
-        {float, numpy.ndarray}
+        {float, `numpy.ndarray`}
             Function value with the barrier function applied.
         """
         raise NotImplementedError
@@ -215,7 +215,7 @@ class Constraints(ABC):
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Projection of `x` onto the feasible set.
 
         Raises
@@ -314,7 +314,7 @@ class BoundConstraints(Constraints):
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Lower bound.
         """
         return self._xl
@@ -326,7 +326,7 @@ class BoundConstraints(Constraints):
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Upper bound.
         """
         return self._xu
@@ -386,7 +386,7 @@ class BoundConstraints(Constraints):
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Projection of `x` onto the feasible set.
         """
         return np.clip(x, self.xl, self.xu) if self.is_feasible else x
@@ -441,7 +441,7 @@ class LinearConstraints(Constraints):
 
         Returns
         -------
-        numpy.ndarray, shape (m, n)
+        `numpy.ndarray`, shape (m, n)
             Left-hand side of the linear constraints.
         """
         return self._a
@@ -453,7 +453,7 @@ class LinearConstraints(Constraints):
 
         Returns
         -------
-        numpy.ndarray, shape (m,)
+        `numpy.ndarray`, shape (m,)
             Right-hand side of the linear constraints.
         """
         return self._b
@@ -588,7 +588,7 @@ class NonlinearConstraints(Function, Constraints):
 
         Returns
         -------
-        numpy.ndarray, shape (m,)
+        `numpy.ndarray`, shape (m,)
             Function value with the barrier function applied.
         """
         if val is None:
@@ -715,9 +715,9 @@ class Problem:
         -------
         float
             Objective function value.
-        numpy.ndarray, shape (m_nonlinear_ub,)
+        `numpy.ndarray`, shape (m_nonlinear_ub,)
             Nonlinear inequality constraint function values.
-        numpy.ndarray, shape (m_nonlinear_eq,)
+        `numpy.ndarray`, shape (m_nonlinear_eq,)
             Nonlinear equality constraint function values.
         """
         # Evaluate the objective and nonlinear constraint functions.
@@ -786,7 +786,7 @@ class Problem:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Initial guess.
         """
         return self._x0
@@ -928,7 +928,7 @@ class Problem:
 
         Returns
         -------
-        numpy.ndarray, shape (n_eval,)
+        `numpy.ndarray`, shape (n_eval,)
             History of objective function evaluations.
         """
         return self._obj.fun_history
@@ -940,7 +940,7 @@ class Problem:
 
         Returns
         -------
-        numpy.ndarray, shape (n_eval, m_nonlinear_ub)
+        `numpy.ndarray`, shape (n_eval, m_nonlinear_ub)
             History of nonlinear inequality constraint function evaluations.
         """
         return self._nonlinear_ub.fun_history
@@ -952,7 +952,7 @@ class Problem:
 
         Returns
         -------
-        numpy.ndarray, shape (n_eval, m_nonlinear_eq)
+        `numpy.ndarray`, shape (n_eval, m_nonlinear_eq)
             History of nonlinear equality constraint function evaluations.
         """
         return self._nonlinear_eq.fun_history
@@ -1010,7 +1010,7 @@ class Problem:
 
         Returns
         -------
-        numpy.ndarray, shape (n_orig,)
+        `numpy.ndarray`, shape (n_orig,)
             Full vector of variables.
         """
         x_full = np.empty(self.n_orig)
@@ -1055,13 +1055,13 @@ class Problem:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Best point.
         float
             Best objective function value.
-        numpy.ndarray, shape (m_nonlinear_ub,)
+        `numpy.ndarray`, shape (m_nonlinear_ub,)
             Best nonlinear inequality constraint function values.
-        numpy.ndarray, shape (m_nonlinear_eq,)
+        `numpy.ndarray`, shape (m_nonlinear_eq,)
             Best nonlinear equality constraint function values.
         """
         # If the filter is empty, i.e., if no function evaluation has been
@@ -1117,7 +1117,7 @@ def _1d_array(x, message):
 
     Returns
     -------
-    numpy.ndarray
+    `numpy.ndarray`
         Preprocessed array.
     """
     x = np.atleast_1d(np.squeeze(x)).astype(float)
@@ -1139,7 +1139,7 @@ def _2d_array(x, message):
 
     Returns
     -------
-    numpy.ndarray
+    `numpy.ndarray`
         Preprocessed array.
     """
     x = np.atleast_2d(x).astype(float)

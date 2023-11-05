@@ -209,7 +209,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray
+        `numpy.ndarray`
             Best interpolation point.
         """
         return self.models.interpolation.point(self.best_index)
@@ -233,7 +233,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (m_nonlinear_ub,)
+        `numpy.ndarray`, shape (m_nonlinear_ub,)
             Values of the nonlinear inequality constraints at `x_best`.
         """
         return self.models.cub_val[self.best_index, :]
@@ -245,7 +245,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (m_nonlinear_eq,)
+        `numpy.ndarray`, shape (m_nonlinear_eq,)
             Values of the nonlinear equality constraints at `x_best`.
         """
         return self.models.ceq_val[self.best_index, :]
@@ -256,7 +256,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which the Lagrangian model is evaluated.
 
         Returns
@@ -272,7 +272,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which the gradient of the Lagrangian model is evaluated.
 
         Returns
@@ -288,7 +288,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which the Hessian matrix of the Lagrangian model is
             evaluated.
 
@@ -306,7 +306,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        v : numpy.ndarray, shape (n,)
+        v : `numpy.ndarray`, shape (n,)
             Vector with which the Hessian matrix of the Lagrangian model is
             multiplied from the right.
 
@@ -324,7 +324,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        v : numpy.ndarray, shape (n,)
+        v : `numpy.ndarray`, shape (n,)
             Direction along which the curvature of the Lagrangian model is
             evaluated.
 
@@ -341,7 +341,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        step : numpy.ndarray, shape (n,)
+        step : `numpy.ndarray`, shape (n,)
             Step along which the objective function of the SQP subproblem is
             evaluated.
 
@@ -358,13 +358,13 @@ class TrustRegion:
 
         Parameters
         ----------
-        step : numpy.ndarray, shape (n,)
+        step : `numpy.ndarray`, shape (n,)
             Step along which the linearization of the nonlinear inequality
             constraints is evaluated.
 
         Returns
         -------
-        numpy.ndarray, shape (m_nonlinear_ub,)
+        `numpy.ndarray`, shape (m_nonlinear_ub,)
             Value of the linearization of the nonlinear inequality constraints
             along `step`.
         """
@@ -376,13 +376,13 @@ class TrustRegion:
 
         Parameters
         ----------
-        step : numpy.ndarray, shape (n,)
+        step : `numpy.ndarray`, shape (n,)
             Step along which the linearization of the nonlinear equality
             constraints is evaluated.
 
         Returns
         -------
-        numpy.ndarray, shape (m_nonlinear_ub,)
+        `numpy.ndarray`, shape (m_nonlinear_ub,)
             Value of the linearization of the nonlinear equality constraints
             along `step`.
         """
@@ -394,15 +394,15 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which the merit function is evaluated.
         fun_val : float, optional
             Value of the objective function at `x`. If not provided, the
             objective function is evaluated at `x`.
-        cub_val : numpy.ndarray, shape (m_nonlinear_ub,), optional
+        cub_val : `numpy.ndarray`, shape (m_nonlinear_ub,), optional
             Values of the nonlinear inequality constraints. If not provided,
             the nonlinear inequality constraints are evaluated at `x`.
-        ceq_val : numpy.ndarray, shape (m_nonlinear_eq,), optional
+        ceq_val : `numpy.ndarray`, shape (m_nonlinear_eq,), optional
             Values of the nonlinear equality constraints. If not provided,
             the nonlinear equality constraints are evaluated at `x`.
 
@@ -427,18 +427,18 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which the linearizations of the constraints are evaluated.
 
         Returns
         -------
-        numpy.ndarray, shape (m_linear_ub + m_nonlinear_ub, n)
+        `numpy.ndarray`, shape (m_linear_ub + m_nonlinear_ub, n)
             Left-hand side matrix of the linearized inequality constraints.
-        numpy.ndarray, shape (m_linear_ub + m_nonlinear_ub,)
+        `numpy.ndarray`, shape (m_linear_ub + m_nonlinear_ub,)
             Right-hand side vector of the linearized inequality constraints.
-        numpy.ndarray, shape (m_linear_eq + m_nonlinear_eq, n)
+        `numpy.ndarray`, shape (m_linear_eq + m_nonlinear_eq, n)
             Left-hand side matrix of the linearized equality constraints.
-        numpy.ndarray, shape (m_linear_eq + m_nonlinear_eq,)
+        `numpy.ndarray`, shape (m_linear_eq + m_nonlinear_eq,)
             Right-hand side vector of the linearized equality constraints.
         """
         aub = np.block([[self._pb.linear_ub.a], [self.models.cub_grad(x)]])
@@ -462,9 +462,9 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Normal step.
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Tangential step.
 
         References
@@ -521,7 +521,7 @@ class TrustRegion:
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Geometry-improving step.
 
         References
@@ -604,14 +604,14 @@ class TrustRegion:
 
         Parameters
         ----------
-        step : numpy.ndarray, shape (n,)
+        step : `numpy.ndarray`, shape (n,)
             Trust-region step.
         options : dict
             Options of the solver.
 
         Returns
         -------
-        numpy.ndarray, shape (n,)
+        `numpy.ndarray`, shape (n,)
             Second-order correction step.
         """
         # Evaluate the linearizations of the constraints.
@@ -634,13 +634,13 @@ class TrustRegion:
 
         Parameters
         ----------
-        step : numpy.ndarray, shape (n,)
+        step : `numpy.ndarray`, shape (n,)
             Trust-region step.
         fun_val : float
             Objective function value at the trial point.
-        cub_val : numpy.ndarray, shape (m_nonlinear_ub,)
+        cub_val : `numpy.ndarray`, shape (m_nonlinear_ub,)
             Nonlinear inequality constraint values at the trial point.
-        ceq_val : numpy.ndarray, shape (m_nonlinear_eq,)
+        ceq_val : `numpy.ndarray`, shape (m_nonlinear_eq,)
             Nonlinear equality constraint values at the trial point.
 
         Returns
@@ -663,7 +663,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        step : numpy.ndarray, shape (n,)
+        step : `numpy.ndarray`, shape (n,)
             Trust-region step.
         """
         aub, bub, aeq, beq = self.get_constraint_linearizations(self.x_best)
@@ -715,7 +715,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x_new : numpy.ndarray, shape (n,), optional
+        x_new : `numpy.ndarray`, shape (n,), optional
             New point to be included in the interpolation set.
 
         Returns
@@ -742,7 +742,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        step : numpy.ndarray, shape (n,)
+        step : `numpy.ndarray`, shape (n,)
             Trust-region step.
         ratio : float
             Reduction ratio.
@@ -798,7 +798,7 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : numpy.ndarray, shape (n,)
+        x : `numpy.ndarray`, shape (n,)
             Point at which the Lagrange multipliers are computed.
         """
         # Build the constraints of the least-squares problem.
