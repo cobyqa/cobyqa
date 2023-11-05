@@ -732,6 +732,8 @@ class TrustRegion:
             weights = dist_sq
         else:
             sigma = self.models.determinants(x_new)
+            if np.max(np.abs(sigma)) < np.finfo(float).eps:
+                sigma = 1.0
             weights = np.maximum(1.0, dist_sq / max(0.1 * self.radius, self.resolution) ** 2.0) ** 3.0
             weights[self.best_index] = -1.0  # The best point should never be removed.
         k_max = np.argmax(weights * np.abs(sigma))
