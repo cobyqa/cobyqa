@@ -542,15 +542,15 @@ class TrustRegion:
         xl = self._pb.bounds.xl - self.x_best
         xu = self._pb.bounds.xu - self.x_best
         step = cauchy_geometry(0.0, g_lag, lambda v: lag.curv(v, self.models.interpolation), xl, xu, self.radius, options[Options.DEBUG])
-        sigma = self.models.denominators(self.x_best + step, k_new)
+        sigma = self.models.determinants(self.x_best + step, k_new)
 
         # Compute the solution on the straight lines joining the interpolation
         # points to the k-th one, and choose it if it provides a larger value of
-        # the denominator of the updating formula.
+        # the determinant of the interpolation system in absolute value.
         xpt = self.models.interpolation.xpt - self.models.interpolation.xpt[:, self.best_index, np.newaxis]
         xpt[:, [0, self.best_index]] = xpt[:, [self.best_index, 0]]
         step_alt = spider_geometry(0.0, g_lag, lambda v: lag.curv(v, self.models.interpolation), xpt[:, 1:], xl, xu, self.radius, options[Options.DEBUG])
-        sigma_alt = self.models.denominators(self.x_best + step_alt, k_new)
+        sigma_alt = self.models.determinants(self.x_best + step_alt, k_new)
         if abs(sigma_alt) > abs(sigma):
             step = step_alt
             sigma = sigma_alt
@@ -580,13 +580,14 @@ class TrustRegion:
                 maxcv_val = max(np.max(array, initial=0.0) for array in [cbd, cub, np.abs(ceq)])
 
                 # Accept the new step if it is nearly feasible and do not
-                # drastically worsen the denominator of the updating formula.
+                # drastically worsen the determinant of the interpolation system
+                # in absolute value.
                 tol = np.max(np.abs(step_alt[~free_xl]), initial=0.0)
                 tol = np.max(np.abs(step_alt[~free_xu]), initial=tol)
                 tol = np.max(np.abs(aub[~free_ub, :] @ step_alt), initial=tol)
                 tol = min(10.0 * tol, 1e-2 * np.linalg.norm(step_alt))
                 if maxcv_val <= tol:
-                    sigma_alt = self.models.denominators(self.x_best + step_alt, k_new)
+                    sigma_alt = self.models.determinants(self.x_best + step_alt, k_new)
                     if abs(sigma_alt) >= 0.1 * abs(sigma):
                         step = np.clip(step_alt, xl, xu)
 
@@ -730,7 +731,7 @@ class TrustRegion:
             sigma = 1.0
             weights = dist_sq
         else:
-            sigma = self.models.denominators(x_new)
+            sigma = self.models.determinants(x_new)
             weights = np.maximum(1.0, dist_sq / max(0.1 * self.radius, self.resolution) ** 2.0) ** 3.0
             weights[self.best_index] = -1.0  # The best point should never be removed.
         k_max = np.argmax(weights * np.abs(sigma))

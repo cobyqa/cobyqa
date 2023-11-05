@@ -384,6 +384,30 @@ class Quadratic:
         self._e_hess += update + update.T
 
     @staticmethod
+    def build_system(xpt):
+        """
+        Build the left-hand side matrix of the interpolation system.
+
+        Parameters
+        ----------
+        xpt : `numpy.ndarray`, shape (n, npt)
+            Interpolation points.
+
+        Returns
+        -------
+        `numpy.ndarray`, shape (npt + n + 1, npt + n + 1)
+            Left-hand side matrix of the interpolation system.
+        """
+        n, npt = xpt.shape
+        a = np.zeros((npt + n + 1, npt + n + 1))
+        a[:npt, :npt] = 0.5 * (xpt.T @ xpt) ** 2.0
+        a[:npt, npt] = 1.0
+        a[:npt, npt + 1:] = xpt.T
+        a[npt, :npt] = 1.0
+        a[npt + 1:, :npt] = xpt
+        return a
+
+    @staticmethod
     def solve_system(interpolation, rhs):
         n, npt = interpolation.xpt.shape
         assert rhs.shape == (npt + n + 1,), 'The shape of `rhs` is not valid.'
@@ -398,12 +422,7 @@ class Quadratic:
         # where W is the theoretical matrix of the interpolation system. The
         # left and right scaling matrices are chosen to keep the elements in the
         # matrix well-balanced.
-        a = np.zeros((npt + n + 1, npt + n + 1))
-        a[:npt, :npt] = 0.5 * (xpt_scale.T @ xpt_scale) ** 2.0
-        a[:npt, npt] = 1.0
-        a[:npt, npt + 1:] = xpt_scale.T
-        a[npt, :npt] = 1.0
-        a[npt + 1:, :npt] = xpt_scale
+        a = Quadratic.build_system(xpt_scale)
 
         # Build the left and right scaling diagonal matrices.
         left_scaling = np.empty(npt + n + 1)
@@ -1041,55 +1060,38 @@ class Models:
             self._check_interpolation_conditions()
         return ill_conditioned
 
-    def denominators(self, x_new, k=None):
+    def determinants(self, x_new, k_new=None):
         """
-        Compute the denominator of the derivative-free symmetric Broyden update.
-
-        The denominator of the derivative-free symmetric Broyden update is the
-        denominator in Equation (2.12) of [1]_.
+        Compute the determinant of the new interpolation system.
 
         Parameters
         ----------
         x_new : `numpy.ndarray`, shape (n,)
             New interpolation point. Its value is interpreted as relative to
             the origin, not the base point.
-        k : int, optional
-            Index of the updated interpolation point. If `k` is not specified,
-            all the denominators for all the interpolation points are computed.
+        k_new : int, optional
+            Index of the updated interpolation point. If `k_new` is not
+            specified, all the possible determinants are computed.
 
         Returns
         -------
         {float, `numpy.ndarray`, shape (npt,)}
-            Denominator(s) of the derivative-free symmetric Broyden update.
+            Determinant(s) of the new interpolation system.
 
-        References
-        ----------
-        .. [1] M. J. D. Powell. On updating the inverse of a KKT matrix. In Y.
-           Yuan, editor, *Numerical Linear Algebra and Optimization*, pages
-           56--78. Science Press, Beijing, China, 2004.
         """
         if self._debug:
-            assert x_new.shape == (self.n,), 'The shape of `x` is not valid.'
-            assert k is None or 0 <= k < self.npt, 'The index `k` is not valid.'
+            assert x_new.shape == (self.n,), 'The shape of `x_new` is not valid.'
+            assert k_new is None or 0 <= k_new < self.npt, 'The index `k_new` is not valid.'
 
-        # Compute the values independent of k.
-        shift = x_new - self.interpolation.x_base
-        new_col = np.empty(self.npt + self.n + 1)
-        new_col[:self.npt] = 0.5 * (self.interpolation.xpt.T @ shift) ** 2.0
-        new_col[self.npt] = 1.0
-        new_col[self.npt + 1:] = shift
-        inv_new_col = Quadratic.solve_system(self.interpolation, new_col)[0]
-        beta = 0.5 * (shift @ shift) ** 2.0 - new_col @ inv_new_col
+        def get_xpt_new(k):
+            xpt_new = np.copy(self.interpolation.xpt)
+            xpt_new[:, k] = x_new - self.interpolation.x_base
+            return xpt_new
 
-        # Define a function to compute the value of alpha.
-        def get_alpha(k_idx):
-            coord_vec = np.squeeze(np.eye(1, self.npt + self.n + 1, k_idx))
-            return Quadratic.solve_system(self.interpolation, coord_vec)[0][k_idx]
-
-        # Compute the values that depend on k.
-        alpha = np.array([get_alpha(k_idx) for k_idx in range(self.npt)]) if k is None else get_alpha(k)
-        tau = inv_new_col[:self.npt] if k is None else inv_new_col[k]
-        return alpha * beta + tau ** 2.0
+        if k_new is not None:
+            return np.linalg.det(Quadratic.build_system(get_xpt_new(k_new)))
+        else:
+            return np.array([np.linalg.det(Quadratic.build_system(get_xpt_new(k))) for k in range(self.npt)])
 
     def shift_x_base(self, new_x_base, options):
         """
