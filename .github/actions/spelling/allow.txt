@@ -45,6 +45,7 @@ SQP
 ssh
 TXTs
 ubuntu
+underdetermined
 uobyqa
 workflows
 Zaikun
