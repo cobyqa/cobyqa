@@ -748,7 +748,7 @@ class TrustRegion:
         ratio : float
             Reduction ratio.
         """
-        s_norm = min(np.linalg.norm(step), self.radius)
+        s_norm = np.linalg.norm(step)
         if ratio <= 0.1:
             self.radius *= 0.5
         elif ratio <= 0.7:

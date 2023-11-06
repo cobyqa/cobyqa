@@ -436,14 +436,13 @@ class Quadratic:
 
         # Build the solution.
         # TODO: Stop the calculations properly if there is a NaN or Inf.
-        rhs *= left_scaling
         ill_conditioned = False
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter('error', LinAlgWarning)
-                left_scaled_solution = solve(a, rhs, assume_a='sym')
+                left_scaled_solution = solve(a, left_scaling * rhs, assume_a='sym')
         except (np.linalg.LinAlgError, LinAlgWarning):
-            left_scaled_solution = lstsq(a, rhs)[0]
+            left_scaled_solution = lstsq(a, left_scaling * rhs)[0]
             ill_conditioned = True
         return left_scaled_solution * right_scaling, ill_conditioned
 
