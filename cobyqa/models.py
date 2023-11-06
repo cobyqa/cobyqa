@@ -440,11 +440,11 @@ class Quadratic:
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter('error', LinAlgWarning)
-                left_scaled_solution = solve(a, np.multiply(left_scaling, rhs), assume_a='sym')
+                left_scaled_solution = solve(a, left_scaling * rhs, assume_a='sym')
         except (np.linalg.LinAlgError, LinAlgWarning):
-            left_scaled_solution = lstsq(a, np.multiply(left_scaling, rhs))[0]
+            left_scaled_solution = lstsq(a, left_scaling * rhs)[0]
             ill_conditioned = True
-        return np.multiply(left_scaled_solution, right_scaling), ill_conditioned
+        return left_scaled_solution * right_scaling, ill_conditioned
 
     @staticmethod
     def _get_model(interpolation, values):
@@ -1062,7 +1062,7 @@ class Models:
 
     def determinants(self, x_new, k_new=None):
         """
-        Compute the determinant of the new interpolation system.
+        Compute the normalized determinants of the new interpolation systems.
 
         Parameters
         ----------
@@ -1078,20 +1078,40 @@ class Models:
         {float, `numpy.ndarray`, shape (npt,)}
             Determinant(s) of the new interpolation system.
 
+        Notes
+        -----
+        The determinants are normalized by the determinant of the current
+        interpolation system. For stability reasons, the calculations are done
+        using the formula (2.12) in [1]_.
+
+        References
+        ----------
+        .. [1] M. J. D. Powell. On updating the inverse of a KKT matrix. In Y.
+           Yuan, editor, *Numerical Linear Algebra and Optimization*, pages
+           56--78. Science Press, Beijing, China, 2004.
         """
         if self._debug:
             assert x_new.shape == (self.n,), 'The shape of `x_new` is not valid.'
             assert k_new is None or 0 <= k_new < self.npt, 'The index `k_new` is not valid.'
 
-        def get_xpt_new(k):
-            xpt_new = np.copy(self.interpolation.xpt)
-            xpt_new[:, k] = x_new - self.interpolation.x_base
-            return xpt_new
+        # Compute the values independent of k_new.
+        shift = x_new - self.interpolation.x_base
+        new_col = np.empty(self.npt + self.n + 1)
+        new_col[:self.npt] = 0.5 * (self.interpolation.xpt.T @ shift) ** 2.0
+        new_col[self.npt] = 1.0
+        new_col[self.npt + 1:] = shift
+        inv_new_col = Quadratic.solve_system(self.interpolation, new_col)[0]
+        beta = 0.5 * (shift @ shift) ** 2.0 - new_col @ inv_new_col
 
-        if k_new is not None:
-            return np.linalg.det(Quadratic.build_system(get_xpt_new(k_new)))
-        else:
-            return np.array([np.linalg.det(Quadratic.build_system(get_xpt_new(k))) for k in range(self.npt)])
+        # Define a function to compute the value of alpha.
+        def get_alpha(k_idx):
+            coord_vec = np.squeeze(np.eye(1, self.npt + self.n + 1, k_idx))
+            return Quadratic.solve_system(self.interpolation, coord_vec)[0][k_idx]
+
+        # Compute the values that depend on k.
+        alpha = np.array([get_alpha(k_idx) for k_idx in range(self.npt)]) if k_new is None else get_alpha(k_new)
+        tau = inv_new_col[:self.npt] if k_new is None else inv_new_col[k_new]
+        return alpha * beta + tau ** 2.0
 
     def shift_x_base(self, new_x_base, options):
         """

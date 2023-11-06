@@ -13,7 +13,7 @@ COBYQA documentation
 :Useful links: `Issue tracker <https://github.com/cobyqa/cobyqa/issues>`_ | `Mailing list <https://mail.python.org/mailman3/lists/cobyqa.python.org/>`_
 :Authors: `Tom M. Ragonneau <https://tomragonneau.com/>`_ | `Zaikun Zhang <https://www.zhangzk.net/>`_
 
-COBYQA is a general derivative-free optimization solver, designed to succeed `COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_.
+COBYQA is a derivative-free optimization solver designed to succeed `COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_.
 Using only functions values, and no derivatives, it aims at solving problems of the form
 
 .. math::
@@ -25,8 +25,10 @@ Using only functions values, and no derivatives, it aims at solving problems of 
     \end{cases}
 
 where :math:`\xbd = \{ x \in \R^n : \xl \le x \le \xu \}`.
-The nonlinear functions :math:`\obj`, :math:`\cub`, and :math:`\ceq` are assumed to be well-defined only on :math:`\xbd`.
-Hence, COBYQA always respect the bound constraints throughout the optimization process.
+COBYQA always respect the bound constraints throughout the optimization process.
+Hence, the nonlinear functions :math:`\obj`, :math:`\cub`, and :math:`\ceq` do not need to be well-defined outside :math:`\xbd`.
+In essence, COBYQA is a derivative-free trust-region SQP method based on quadratic models obtained by underdetermined interpolation.
+For a more detailed description of the algorithm, see the :ref:`framework description <framework>`.
 
 To install COBYQA, run in your terminal
 
