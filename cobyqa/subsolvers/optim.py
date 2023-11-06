@@ -850,7 +850,6 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
             # For a range of equally spaced values of tan(0.5 * theta),
             # calculate the reduction in the objective function that would be
             # obtained by accepting the corresponding angle.
-            # TODO: Improve the computations below (possible?).
             n_samples = 20
             n_samples = int((n_samples - 3) * t_bd + 3)
             t_samples = np.linspace(t_bd / n_samples, t_bd, n_samples)
@@ -871,7 +870,6 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
 
             # Accept the angle that provides the largest reduction in the
             # objective function, and update the iterate.
-            # TODO: Can the gradient be updated smartly?
             i_max = np.argmax(all_reduct)
             cos_value = (1.0 - t_samples[i_max] ** 2.0) / (1.0 + t_samples[i_max] ** 2.0)
             sin_value = 2.0 * t_samples[i_max] / (1.0 + t_samples[i_max] ** 2.0)

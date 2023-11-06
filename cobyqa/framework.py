@@ -491,7 +491,7 @@ class TrustRegion:
         radius = np.sqrt(self.radius ** 2.0 - normal_step @ normal_step)
         xl -= normal_step
         xu -= normal_step
-        bub = np.maximum(bub - np.dot(aub, normal_step), 0.0)
+        bub = np.maximum(bub - aub @ normal_step, 0.0)
         g_best = self.models.fun_grad(self.x_best) + self.lag_model_hess_prod(normal_step)
         if self._pb.type in ['unconstrained', 'bound-constrained']:
             tangential_step = tangential_byrd_omojokun(g_best, self.lag_model_hess_prod, xl, xu, radius, options[Options.DEBUG])
@@ -748,10 +748,7 @@ class TrustRegion:
         ratio : float
             Reduction ratio.
         """
-        # TODO: Check the better one from Zaikun:
-        #  https://github.com/libprima/prima/blob/main/fortran/uobyqa/trustregion.f90#L615-L626
-        #  Take care to do min(self.radius, s_norm) when using s_norm!
-        s_norm = np.linalg.norm(step)
+        s_norm = min(np.linalg.norm(step), self.radius)
         if ratio <= 0.1:
             self.radius *= 0.5
         elif ratio <= 0.7:
