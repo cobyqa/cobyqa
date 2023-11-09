@@ -483,9 +483,9 @@ class TrustRegion:
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(normal_step + tol < xl) or np.any(xu < normal_step - tol):
-                warnings.warn('the normal step does not respect the bound constraint.')
+                warnings.warn('the normal step does not respect the bound constraint.', 2)
             if np.linalg.norm(normal_step) > 1.1 * 0.8 * self.radius:
-                warnings.warn('the normal step does not respect the trust-region constraint.')
+                warnings.warn('the normal step does not respect the trust-region constraint.', 2)
 
         # Evaluate the tangential step.
         radius = np.sqrt(self.radius ** 2.0 - normal_step @ normal_step)
@@ -500,9 +500,9 @@ class TrustRegion:
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(tangential_step + tol < xl) or np.any(xu < tangential_step - tol):
-                warnings.warn('The tangential step does not respect the bound constraints.')
+                warnings.warn('The tangential step does not respect the bound constraints.', 2)
             if np.linalg.norm(normal_step + tangential_step) > 1.1 * np.sqrt(2.0) * self.radius:
-                warnings.warn('The trial step does not respect the trust-region constraint.')
+                warnings.warn('The trial step does not respect the trust-region constraint.', 2)
         return normal_step, tangential_step
 
     def get_geometry_step(self, k_new, options):
@@ -594,9 +594,9 @@ class TrustRegion:
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(step + tol < xl) or np.any(xu < step - tol):
-                warnings.warn('The geometry step does not respect the bound constraints.')
+                warnings.warn('The geometry step does not respect the bound constraints.', 2)
             if np.linalg.norm(step) > 1.1 * self.radius:
-                warnings.warn('The geometry step does not respect the trust-region constraint.')
+                warnings.warn('The geometry step does not respect the trust-region constraint.', 2)
         return step
 
     def get_second_order_correction_step(self, step, options):
@@ -624,9 +624,9 @@ class TrustRegion:
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(soc_step + tol < xl) or np.any(xu < soc_step - tol):
-                warnings.warn('The second-order correction step does not respect the bound constraints.')
+                warnings.warn('The second-order correction step does not respect the bound constraints.', 2)
             if np.linalg.norm(soc_step) > 1.1 * radius:
-                warnings.warn('The second-order correction step does not respect the trust-region constraint.')
+                warnings.warn('The second-order correction step does not respect the trust-region constraint.', 2)
         return soc_step
 
     def get_reduction_ratio(self, step, fun_val, cub_val, ceq_val):

@@ -501,7 +501,7 @@ def _set_default_options(options, n):
     # Check whether they are any unknown options.
     for key in options:
         if key not in Options.__members__.values():
-            warnings.warn(f'Unknown option: {key}.', RuntimeWarning)
+            warnings.warn(f'Unknown option: {key}.', RuntimeWarning, 3)
 
 
 def _eval(pb, framework, step, options):
@@ -521,16 +521,11 @@ def _build_result(pb, penalty, success, status, n_iter, options):
     Build the result of the optimization process.
     """
     # Build the result.
-    result = OptimizeResult()
-    x, result.fun, result.cub, result.ceq = pb.best_eval(penalty)
-    result.maxcv = pb.maxcv(x, result.cub, result.ceq)
-    result.x = pb.build_x(x)
-    result.nfev = pb.n_eval
-    result.nit = n_iter
-    result.success = success
+    x, fun, cub, ceq = pb.best_eval(penalty)
+    maxcv = pb.maxcv(x, cub, ceq)
     if status != ExitStatus.TARGET_SUCCESS:
-        result.success = result.success and result.maxcv <= options[Options.FEASIBILITY_TOL]
-    result.status = status.value
+        success = success and maxcv <= options[Options.FEASIBILITY_TOL]
+    result = OptimizeResult()
     result.message = {
         ExitStatus.RADIUS_SUCCESS: 'The lower bound for the trust-region radius has been reached',
         ExitStatus.TARGET_SUCCESS: 'The target objective function value has been reached',
@@ -539,6 +534,15 @@ def _build_result(pb, penalty, success, status, n_iter, options):
         ExitStatus.MAX_ITER_WARNING: 'The maximum number of iterations has been exceeded',
         ExitStatus.INFEASIBLE_ERROR: 'The bound constraints are infeasible',
     }.get(status, 'Unknown exit status')
+    result.success = success
+    result.status = status.value
+    result.x = pb.build_x(x)
+    result.fun = fun
+    result.cub = cub
+    result.ceq = ceq
+    result.maxcv = maxcv
+    result.nfev = pb.n_eval
+    result.nit = n_iter
     if options[Options.STORE_HISTORY]:
         result.fun_history = pb.fun_history
         result.cub_history = pb.cub_history

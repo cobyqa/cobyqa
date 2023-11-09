@@ -1186,8 +1186,8 @@ class Models:
             error_ceq = np.max(np.abs(self.ceq(self.interpolation.point(k)) - self.ceq_val[k, :]), initial=error_ceq)
         tol = 10.0 * np.sqrt(np.finfo(float).eps) * max(self.n, self.npt)
         if error_fun > tol * np.max(np.abs(self.fun_val), initial=1.0):
-            warnings.warn('The interpolation conditions for the objective function are not satisfied.', RuntimeWarning)
+            warnings.warn('The interpolation conditions for the objective function are not satisfied.', RuntimeWarning, 2)
         if error_cub > tol * np.max(np.abs(self.cub_val), initial=1.0):
-            warnings.warn('The interpolation conditions for the inequality constraint function are not satisfied.', RuntimeWarning)
+            warnings.warn('The interpolation conditions for the inequality constraint function are not satisfied.', RuntimeWarning, 2)
         if error_ceq > tol * np.max(np.abs(self.ceq_val), initial=1.0):
-            warnings.warn('The interpolation conditions for the equality constraint function are not satisfied.', RuntimeWarning)
+            warnings.warn('The interpolation conditions for the equality constraint function are not satisfied.', RuntimeWarning, 2)
