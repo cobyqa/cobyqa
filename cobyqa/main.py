@@ -72,6 +72,14 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 nearly feasible point is less than or equal to this target.
             feasibility_tol : float, optional
                 Tolerance on the constraint violation.
+            radius_init : float, optional
+                Initial trust-region radius.
+            radius_final : float, optional
+                Final trust-region radius.
+            npt : int, optional
+                Number of interpolation points.
+            scale : bool, optional
+                Whether to scale the variables according to the bounds.
             filter_size : int, optional
                 Maximum number of points in the filter. The filter is used to
                 select the best point returned by the optimization procedure.
@@ -79,12 +87,6 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 Whether to store the history of the function evaluations.
             history_size : int, optional
                 Maximum number of function evaluations to store in the history.
-            radius_init : float, optional
-                Initial trust-region radius.
-            radius_final : float, optional
-                Final trust-region radius.
-            npt : int, optional
-                Number of interpolation points.
             debug : bool, optional
                 Whether to perform additional checks. This option should be
                 used only for debugging purposes and is highly discouraged.
@@ -223,6 +225,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     verbose = bool(verbose)
     feasibility_tol = options.get(Options.FEASIBILITY_TOL, DEFAULT_OPTIONS[Options.FEASIBILITY_TOL])
     feasibility_tol = float(feasibility_tol)
+    scale = options.get(Options.SCALE, DEFAULT_OPTIONS[Options.SCALE])
+    scale = bool(scale)
     store_history = options.get(Options.STORE_HISTORY, DEFAULT_OPTIONS[Options.STORE_HISTORY])
     store_history = bool(store_history)
     if Options.HISTORY_SIZE in options and options[Options.HISTORY_SIZE] <= 0:
@@ -268,7 +272,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     nonlinear_eq = NonlinearConstraints(ceq, True, verbose, store_history, history_size, debug, *args)
 
     # Initialize the problem (and remove the fixed variables).
-    pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, feasibility_tol, filter_size, debug)
+    pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, feasibility_tol, scale, filter_size, debug)
 
     # Set the default options.
     _set_default_options(options, pb.n)
@@ -489,6 +493,8 @@ def _set_default_options(options, n):
     options[Options.FEASIBILITY_TOL.value] = float(options[Options.FEASIBILITY_TOL])
     options.setdefault(Options.VERBOSE.value, DEFAULT_OPTIONS[Options.VERBOSE])
     options[Options.VERBOSE.value] = bool(options[Options.VERBOSE])
+    options.setdefault(Options.SCALE.value, DEFAULT_OPTIONS[Options.SCALE])
+    options[Options.SCALE.value] = bool(options[Options.SCALE])
     options.setdefault(Options.FILTER_SIZE.value, DEFAULT_OPTIONS[Options.FILTER_SIZE])
     options[Options.FILTER_SIZE.value] = int(options[Options.FILTER_SIZE])
     options.setdefault(Options.STORE_HISTORY.value, DEFAULT_OPTIONS[Options.STORE_HISTORY])

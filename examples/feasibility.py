@@ -19,8 +19,9 @@ def cub(x):
 
 
 if __name__ == '__main__':
+    x0 = [0.0, 0.0]
     aub = [[-1.0, 1.0]]
     bub = [-4.0]
 
     options = {'verbose': True}
-    minimize(None, np.zeros(2), aub=aub, bub=bub, cub=cub, options=options)
+    minimize(None, x0, aub=aub, bub=bub, cub=cub, options=options)

@@ -30,6 +30,7 @@ class Options(str, Enum):
     NPT = 'npt'
     RADIUS_INIT = 'radius_init'
     RADIUS_FINAL = 'radius_final'
+    SCALE = 'scale'
     STORE_HISTORY = 'store_history'
     TARGET = 'target'
     VERBOSE = 'verbose'
@@ -46,6 +47,7 @@ DEFAULT_OPTIONS = {
     Options.NPT.value: lambda n: 2 * n + 1,
     Options.RADIUS_INIT.value: 1.0,
     Options.RADIUS_FINAL.value: 1e-6,
+    Options.SCALE.value: False,
     Options.STORE_HISTORY.value: False,
     Options.TARGET.value: -np.inf,
     Options.VERBOSE.value: False,

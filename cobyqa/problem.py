@@ -633,7 +633,7 @@ class Problem:
     Optimization problem.
     """
 
-    def __init__(self, obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, feasibility_tol, filter_size, debug):
+    def __init__(self, obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, feasibility_tol, scale, filter_size, debug):
         """
         Initialize the nonlinear problem.
 
@@ -658,6 +658,8 @@ class Problem:
             Nonlinear equality constraints.
         feasibility_tol : float
             Tolerance on the constraint violation.
+        scale : bool
+            Whether to scale the problem according to the bounds.
         filter_size : int
             Maximum number of points in the filter.
         debug : bool
@@ -692,6 +694,19 @@ class Problem:
 
         # Set the initial guess.
         self._x0 = self._bounds.project(x0[~self._fixed_idx])
+
+        # Scale the problem if necessary.
+        scale = scale and self._bounds.is_feasible and np.all(np.isfinite(self._bounds.xl)) and np.all(np.isfinite(self._bounds.xu))
+        if scale:
+            self._scaling_factor = 0.5 * (self._bounds.xu - self._bounds.xl)
+            self._scaling_shift = 0.5 * (self._bounds.xu + self._bounds.xl)
+            self._bounds = BoundConstraints(-np.ones_like(self._x0), np.ones_like(self._x0))
+            self._linear_ub = LinearConstraints(self._linear_ub.a @ np.diag(self._scaling_factor), self._linear_ub.b - self._linear_ub.a @ self._scaling_shift, False, debug)
+            self._linear_eq = LinearConstraints(self._linear_eq.a @ np.diag(self._scaling_factor), self._linear_eq.b - self._linear_eq.a @ self._scaling_shift, True, debug)
+            self._x0 = (self._x0 - self._scaling_shift) / self._scaling_factor
+        else:
+            self._scaling_factor = np.ones_like(self.x0)
+            self._scaling_shift = np.zeros_like(self.x0)
 
         # Set the initial filter.
         self._feasibility_tol = feasibility_tol
@@ -1015,7 +1030,7 @@ class Problem:
         """
         x_full = np.empty(self.n_orig)
         x_full[self._fixed_idx] = self._fixed_val
-        x_full[~self._fixed_idx] = x
+        x_full[~self._fixed_idx] = x * self._scaling_factor + self._scaling_shift
         return x_full
 
     def maxcv(self, x, cub_val=None, ceq_val=None):
