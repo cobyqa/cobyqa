@@ -85,6 +85,7 @@ html_theme_options = {
         'json_url': 'https://www.cobyqa.com/en/latest/_static/switcher.json',
         'version_match': release,
     },
+    'show_version_warning_banner': True,
     'icon_links': [
         {
             'name': f'GitHub ({downloads["github"]:,} downloads)',

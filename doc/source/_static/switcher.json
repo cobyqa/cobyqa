@@ -1,6 +1,8 @@
 [
     {
+        "name": "1.0.0 (latest)",
         "version": "1.0.0",
-        "url": "https://www.cobyqa.com/en/latest/"
+        "url": "https://www.cobyqa.com/en/latest/",
+        "preferred": true
     }
 ]
