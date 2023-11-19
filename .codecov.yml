@@ -5,8 +5,6 @@ coverage:
     project:
       default:
         target: 1
-      patch:
-        target: 0  # some PRs might affect uncovered code only
 
 github_checks:
   annotations: false
