@@ -14,9 +14,9 @@ python -m pip install --progress-bar=off cobyqa
 
 # Download CUTEst and its dependencies
 mkdir "$GITHUB_WORKSPACE/cutest"
-git clone --depth 1 --branch v2.1.24 https://github.com/ralna/ARCHDefs.git "$GITHUB_WORKSPACE/cutest/archdefs"
-git clone --depth 1 --branch v2.0.6 https://github.com/ralna/SIFDecode.git "$GITHUB_WORKSPACE/cutest/sifdecode"
-git clone --depth 1 --branch v2.0.17 https://github.com/ralna/CUTEst.git "$GITHUB_WORKSPACE/cutest/cutest"
+git clone --depth 1 --branch v2.1.28 https://github.com/ralna/ARCHDefs.git "$GITHUB_WORKSPACE/cutest/archdefs"
+git clone --depth 1 --branch v2.0.8 https://github.com/ralna/SIFDecode.git "$GITHUB_WORKSPACE/cutest/sifdecode"
+git clone --depth 1 --branch v2.0.24 https://github.com/ralna/CUTEst.git "$GITHUB_WORKSPACE/cutest/cutest"
 git clone --depth 1 --branch v0.5 https://bitbucket.org/optrove/sif.git "$GITHUB_WORKSPACE/cutest/mastsif"
 
 # Set the environment variables

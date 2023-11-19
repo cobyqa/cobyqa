@@ -190,7 +190,7 @@ class TestProblem:
         linear_eq = LinearConstraints(np.ones((2, 5)), np.ones(2), True, True)
         nonlinear_ub = NonlinearConstraints(np.sin, False, False, False, 0, True)
         nonlinear_eq = NonlinearConstraints(np.sin, True, False, False, 0, True)
-        pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, 1e-8, 1, True)
+        pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, 1e-8, False, 1, True)
         fun_x0, cub_x0, ceq_x0 = pb(pb.x0)
         assert pb.n == 5
         assert pb.n_orig == 5
@@ -216,7 +216,7 @@ class TestProblem:
         linear_eq = LinearConstraints(np.ones((2, 5)), np.ones(2), True, True)
         nonlinear_ub = NonlinearConstraints(None, False, False, False, 0, True)
         nonlinear_eq = NonlinearConstraints(None, True, False, False, 0, True)
-        pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, 1e-8, 1, True)
+        pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, 1e-8, False, 1, True)
         pb(pb.x0)
         assert pb.n == 4
         assert pb.n_orig == 5
