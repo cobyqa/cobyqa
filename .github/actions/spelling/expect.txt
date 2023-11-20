@@ -48,6 +48,7 @@ DMN
 dsfontserif
 dsq
 dtype
+edgeitems
 endblock
 endfor
 finfo
