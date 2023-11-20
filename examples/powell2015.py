@@ -12,12 +12,6 @@ from matplotlib import pyplot as plt
 
 from cobyqa import minimize
 
-np.set_printoptions(
-    precision=3,
-    threshold=10,
-    suppress=True,
-)
-
 
 def fun(x):
     f = 0.0
