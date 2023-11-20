@@ -6,7 +6,7 @@ from scipy.optimize import OptimizeResult
 from .framework import TrustRegion
 from .problem import ObjectiveFunction, BoundConstraints, LinearConstraints, NonlinearConstraints, Problem
 from .utils import MaxEvalError
-from .settings import ExitStatus, Options, DEFAULT_OPTIONS
+from .settings import ExitStatus, Options, DEFAULT_OPTIONS, PRINT_OPTIONS
 
 
 def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, beq=None, cub=None, ceq=None, options=None):
@@ -571,4 +571,5 @@ def _print_step(message, pb, x, fun_val, r_val, n_eval, n_iter):
     if not pb.is_feasibility:
         print(f'Least value of {pb.fun_name}: {fun_val}.')
     print(f'Maximum constraint violation: {r_val}.')
-    print(f'Corresponding point: {x}.')
+    with np.printoptions(**PRINT_OPTIONS):
+        print(f'Corresponding point: {x}.')

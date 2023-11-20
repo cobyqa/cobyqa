@@ -2,6 +2,7 @@ from abc import ABC
 
 import numpy as np
 
+from .settings import PRINT_OPTIONS
 from .utils import get_arrays_tol
 
 
@@ -80,7 +81,8 @@ class Function(ABC):
             val = self.apply_barrier(val)
             self._n_eval += 1
             if self._verbose:
-                print(f'{self.name}({x}) = {val}')
+                with np.printoptions(**PRINT_OPTIONS):
+                    print(f'{self.name}({x}) = {val}')
         if self._store_fun_history:
             if len(self._fun_history) >= self._history_size:
                 self._fun_history.pop(0)

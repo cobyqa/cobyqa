@@ -52,3 +52,12 @@ DEFAULT_OPTIONS = {
     Options.TARGET.value: -np.inf,
     Options.VERBOSE.value: False,
 }
+
+
+# Printing options
+PRINT_OPTIONS = {
+    'threshold': 6,
+    'edgeitems': 2,
+    'linewidth': sys.maxsize,
+    'formatter': {'float_kind': lambda x: np.format_float_scientific(x, precision=3, unique=False, pad_left=2)}
+}
