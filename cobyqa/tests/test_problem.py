@@ -3,6 +3,7 @@ import pytest
 from scipy.optimize import rosen
 
 from cobyqa.problem import ObjectiveFunction, BoundConstraints, LinearConstraints, NonlinearConstraints, Problem
+from cobyqa.settings import PRINT_OPTIONS
 
 
 class TestObjectiveFunction:
@@ -24,7 +25,8 @@ class TestObjectiveFunction:
         captured = capsys.readouterr()
         assert fun == rosen(x)
         assert obj.n_eval == 1
-        assert captured.out == f'rosen({x}) = {rosen(x)}\n'
+        with np.printoptions(**PRINT_OPTIONS):
+            assert captured.out == f'rosen({x}) = {rosen(x)}\n'
 
         # Check that no storage is performed.
         assert obj.fun_history.size == 0
@@ -129,7 +131,8 @@ class TestNonlinearConstraints:
         captured = capsys.readouterr()
         assert np.all(fun == np.sin(x))
         assert nonlinear.n_eval == 1
-        assert captured.out == f'sin({x}) = {np.sin(x)}\n'
+        with np.printoptions(**PRINT_OPTIONS):
+            assert captured.out == f'sin({x}) = {np.sin(x)}\n'
 
         # Check that no storage is performed.
         assert nonlinear.fun_history.size == 0
