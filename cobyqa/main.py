@@ -147,6 +147,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
               - The maximum number of iterations has been exceeded.
             * - -1
               - The bound constraints are infeasible.
+            * - -2
+              - A linear algebra error occurred.
 
     References
     ----------
@@ -312,7 +314,11 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         print(f'Maximum number of function evaluations: {options[Options.MAX_EVAL]}.')
         print(f'Maximum number of iterations: {options[Options.MAX_ITER]}.')
         print()
-    framework = TrustRegion(pb, options)
+    try:
+        framework = TrustRegion(pb, options)
+    except np.linalg.LinAlgError:
+        # The construction of the initial interpolation set failed.
+        return _build_result(pb, 0.0, False, ExitStatus.LINALG_ERROR, 0, options)
     if framework.models.target_init:
         # The target on the objective function value has been reached
         return _build_result(pb, framework.penalty, True, ExitStatus.TARGET_SUCCESS, 0, options)
@@ -368,7 +374,11 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 n_very_short_steps = 0
                 improve_geometry = False
             else:
-                k_new, dist_new = framework.get_index_to_remove()
+                try:
+                    k_new, dist_new = framework.get_index_to_remove()
+                except np.linalg.LinAlgError:
+                    status = ExitStatus.LINALG_ERROR
+                    break
                 improve_geometry = dist_new > max(framework.radius, 2.0 * framework.resolution)
         else:
             # Increase the penalty parameter if necessary.
@@ -404,10 +414,18 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 ratio = framework.get_reduction_ratio(step, fun_val, cub_val, ceq_val)
 
                 # Choose an interpolation point to remove.
-                k_new = framework.get_index_to_remove(framework.x_best + step)[0]
+                try:
+                    k_new = framework.get_index_to_remove(framework.x_best + step)[0]
+                except np.linalg.LinAlgError:
+                    status = ExitStatus.LINALG_ERROR
+                    break
 
                 # Update the interpolation set.
-                ill_conditioned = framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
+                try:
+                    ill_conditioned = framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
+                except np.linalg.LinAlgError:
+                    status = ExitStatus.LINALG_ERROR
+                    break
                 framework.set_best_index()
 
                 # Update the trust-region radius.
@@ -420,18 +438,30 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                     else:
                         n_alt_models += 1
                         grad = framework.models.fun_grad(framework.x_best)
-                        grad_alt = framework.models.fun_alt_grad(framework.x_best)
+                        try:
+                            grad_alt = framework.models.fun_alt_grad(framework.x_best)
+                        except np.linalg.LinAlgError:
+                            status = ExitStatus.LINALG_ERROR
+                            break
                         if np.linalg.norm(grad) < 10.0 * np.linalg.norm(grad_alt):
                             n_alt_models = 0
                         if n_alt_models >= 3:
-                            framework.models.reset_models()
+                            try:
+                                framework.models.reset_models()
+                            except np.linalg.LinAlgError:
+                                status = ExitStatus.LINALG_ERROR
+                                break
                             n_alt_models = 0
 
                 # Update the Lagrange multipliers.
                 framework.set_multipliers(framework.x_best + step)
 
                 # Check whether the resolution should be reduced.
-                k_new, dist_new = framework.get_index_to_remove()
+                try:
+                    k_new, dist_new = framework.get_index_to_remove()
+                except np.linalg.LinAlgError:
+                    status = ExitStatus.LINALG_ERROR
+                    break
                 improve_geometry = ill_conditioned or ratio <= 0.1 and dist_new > max(framework.radius, 2.0 * framework.resolution)
                 reduce_resolution = radius_save <= framework.resolution and ratio <= 0.1 and not improve_geometry
             else:
@@ -456,7 +486,11 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
 
         # Improve the geometry of the interpolation set if necessary.
         if improve_geometry:
-            step = framework.get_geometry_step(k_new, options)
+            try:
+                step = framework.get_geometry_step(k_new, options)
+            except np.linalg.LinAlgError:
+                status = ExitStatus.LINALG_ERROR
+                break
 
             # Evaluate the objective and constraint functions.
             try:
@@ -468,7 +502,11 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 return _build_result(pb, framework.penalty, True, ExitStatus.TARGET_SUCCESS, n_iter, options)
 
             # Update the interpolation set.
-            framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
+            try:
+                framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
+            except np.linalg.LinAlgError:
+                status = ExitStatus.LINALG_ERROR
+                break
             framework.set_best_index()
 
     return _build_result(pb, framework.penalty, success, status, n_iter, options)
@@ -560,6 +598,7 @@ def _build_result(pb, penalty, success, status, n_iter, options):
         ExitStatus.MAX_EVAL_WARNING: 'The maximum number of function evaluations has been exceeded',
         ExitStatus.MAX_ITER_WARNING: 'The maximum number of iterations has been exceeded',
         ExitStatus.INFEASIBLE_ERROR: 'The bound constraints are infeasible',
+        ExitStatus.LINALG_ERROR: 'A linear algebra error occurred',
     }.get(status, 'Unknown exit status')
     result.success = success
     result.status = status.value

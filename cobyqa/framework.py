@@ -21,10 +21,15 @@ class TrustRegion:
 
         Parameters
         ----------
-        pb : Problem
+        pb : `cobyqa.problem.Problem`
             Problem to solve.
         options : dict
             Options of the solver.
+
+        Raises
+        ------
+        `numpy.linalg.LinAlgError`
+            If the initial interpolation system is ill-defined.
         """
         # Initialize the models.
         self._pb = pb
@@ -32,9 +37,6 @@ class TrustRegion:
 
         # Set the initial penalty parameter.
         self._penalty = 0.0
-        # self._penalty = self._get_low_penalty()
-        # if not np.isfinite(self._penalty):
-        #     self._penalty = 0.0
 
         # Set the index of the best interpolation point.
         self._best_index = 0
@@ -183,7 +185,7 @@ class TrustRegion:
 
         Returns
         -------
-        Models
+        `cobyqa.models.Models`
             Models of the objective function and constraints.
         """
         return self._models
@@ -277,7 +279,7 @@ class TrustRegion:
 
         Returns
         -------
-        float
+        `numpy.ndarray`, shape (n,)
             Gradient of the Lagrangian model at `x`.
         """
         return self.models.fun_grad(x) + self._lm_linear_ub @ self._pb.linear_ub.a + self._lm_linear_eq @ self._pb.linear_eq.a + self._lm_nonlinear_ub @ self.models.cub_grad(x) + self._lm_nonlinear_eq @ self.models.ceq_grad(x)
@@ -286,15 +288,9 @@ class TrustRegion:
         """
         Evaluate the Hessian matrix of the Lagrangian model at a given point.
 
-        Parameters
-        ----------
-        x : `numpy.ndarray`, shape (n,)
-            Point at which the Hessian matrix of the Lagrangian model is
-            evaluated.
-
         Returns
         -------
-        float
+        `numpy.ndarray`, shape (n, n)
             Hessian matrix of the Lagrangian model at `x`.
         """
         return self.models.fun_hess() + self._lm_nonlinear_ub @ self.models.cub_hess() + self._lm_nonlinear_eq @ self.models.ceq_hess()
@@ -312,7 +308,7 @@ class TrustRegion:
 
         Returns
         -------
-        float
+        `numpy.ndarray`, shape (n,)
             Right product of the Hessian matrix of the Lagrangian model with
             `v`.
         """
@@ -483,9 +479,9 @@ class TrustRegion:
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(normal_step + tol < xl) or np.any(xu < normal_step - tol):
-                warnings.warn('the normal step does not respect the bound constraint.', 2)
+                warnings.warn('the normal step does not respect the bound constraint.', RuntimeWarning, 2)
             if np.linalg.norm(normal_step) > 1.1 * 0.8 * self.radius:
-                warnings.warn('the normal step does not respect the trust-region constraint.', 2)
+                warnings.warn('the normal step does not respect the trust-region constraint.', RuntimeWarning, 2)
 
         # Evaluate the tangential step.
         radius = np.sqrt(self.radius ** 2.0 - normal_step @ normal_step)
@@ -500,9 +496,9 @@ class TrustRegion:
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(tangential_step + tol < xl) or np.any(xu < tangential_step - tol):
-                warnings.warn('The tangential step does not respect the bound constraints.', 2)
+                warnings.warn('The tangential step does not respect the bound constraints.', RuntimeWarning, 2)
             if np.linalg.norm(normal_step + tangential_step) > 1.1 * np.sqrt(2.0) * self.radius:
-                warnings.warn('The trial step does not respect the trust-region constraint.', 2)
+                warnings.warn('The trial step does not respect the trust-region constraint.', RuntimeWarning, 2)
         return normal_step, tangential_step
 
     def get_geometry_step(self, k_new, options):
@@ -523,6 +519,11 @@ class TrustRegion:
         -------
         `numpy.ndarray`, shape (n,)
             Geometry-improving step.
+
+        Raises
+        ------
+        `numpy.linalg.LinAlgError`
+            If the computation of a determinant fails.
 
         References
         ----------
@@ -594,9 +595,9 @@ class TrustRegion:
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(step + tol < xl) or np.any(xu < step - tol):
-                warnings.warn('The geometry step does not respect the bound constraints.', 2)
+                warnings.warn('The geometry step does not respect the bound constraints.', RuntimeWarning, 2)
             if np.linalg.norm(step) > 1.1 * self.radius:
-                warnings.warn('The geometry step does not respect the trust-region constraint.', 2)
+                warnings.warn('The geometry step does not respect the trust-region constraint.', RuntimeWarning, 2)
         return step
 
     def get_second_order_correction_step(self, step, options):
@@ -624,9 +625,9 @@ class TrustRegion:
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(soc_step + tol < xl) or np.any(xu < soc_step - tol):
-                warnings.warn('The second-order correction step does not respect the bound constraints.', 2)
+                warnings.warn('The second-order correction step does not respect the bound constraints.', RuntimeWarning, 2)
             if np.linalg.norm(soc_step) > 1.1 * radius:
-                warnings.warn('The second-order correction step does not respect the trust-region constraint.', 2)
+                warnings.warn('The second-order correction step does not respect the trust-region constraint.', RuntimeWarning, 2)
         return soc_step
 
     def get_reduction_ratio(self, step, fun_val, cub_val, ceq_val):
@@ -725,6 +726,11 @@ class TrustRegion:
             Index of the interpolation point to remove.
         float
             Distance between `x_best` and the removed point.
+
+        Raises
+        ------
+        `numpy.linalg.LinAlgError`
+            If the computation of a determinant fails.
         """
         dist_sq = np.sum((self.models.interpolation.xpt - self.models.interpolation.xpt[:, self.best_index, np.newaxis]) ** 2.0, axis=0)
         if x_new is None:
@@ -772,8 +778,7 @@ class TrustRegion:
         else:
             self.resolution = options[Options.RHOEND]
 
-        # Reduce the trust-region radius. The procedure below should not use
-        # self.radius as otherwise, it will not be updated correctly.
+        # Reduce the trust-region radius.
         self._radius = max(0.5 * self._radius, self.resolution)
 
     def shift_x_base(self, options):

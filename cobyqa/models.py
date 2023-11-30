@@ -21,7 +21,7 @@ class Interpolation:
 
         Parameters
         ----------
-        pb : Problem
+        pb : `cobyqa.problem.Problem`
             Problem to be solved.
         options : dict
             Options of the solver.
@@ -184,12 +184,17 @@ class Quadratic:
 
         Parameters
         ----------
-        interpolation : Interpolation
+        interpolation : `cobyqa.models.Interpolation`
             Interpolation set.
         values : `numpy.ndarray`, shape (npt,)
             Values of the interpolated function at the interpolation points.
         debug : bool
             Whether to make debugging tests during the execution.
+
+        Raises
+        ------
+        `numpy.linalg.LinAlgError`
+            If the interpolation system is ill-defined.
         """
         self._debug = debug
         if self._debug:
@@ -207,7 +212,7 @@ class Quadratic:
         ----------
         x : `numpy.ndarray`, shape (n,)
             Point at which the quadratic model is evaluated.
-        interpolation : Interpolation
+        interpolation : `cobyqa.models.Interpolation`
             Interpolation set.
 
         Returns
@@ -252,7 +257,7 @@ class Quadratic:
         ----------
         x : `numpy.ndarray`, shape (n,)
             Point at which the gradient of the quadratic model is evaluated.
-        interpolation : Interpolation
+        interpolation : `cobyqa.models.Interpolation`
             Interpolation set.
 
         Returns
@@ -271,7 +276,7 @@ class Quadratic:
 
         Parameters
         ----------
-        interpolation : Interpolation
+        interpolation : `cobyqa.models.Interpolation`
             Interpolation set.
 
         Returns
@@ -291,7 +296,7 @@ class Quadratic:
         v : `numpy.ndarray`, shape (n,)
             Vector with which the Hessian matrix of the quadratic model is
             multiplied from the right.
-        interpolation : Interpolation
+        interpolation : `cobyqa.models.Interpolation`
             Interpolation set.
 
         Returns
@@ -312,7 +317,7 @@ class Quadratic:
         v : `numpy.ndarray`, shape (n,)
             Direction along which the curvature of the quadratic model is
             evaluated.
-        interpolation : Interpolation
+        interpolation : `cobyqa.models.Interpolation`
             Interpolation set.
 
         Returns
@@ -334,7 +339,7 @@ class Quadratic:
 
         Parameters
         ----------
-        interpolation : Interpolation
+        interpolation : `cobyqa.models.Interpolation`
             Updated interpolation set.
         k_new : int
             Index of the updated interpolation point.
@@ -344,6 +349,11 @@ class Quadratic:
             Differences between the values of the interpolated nonlinear
             function and the previous quadratic model at the updated
             interpolation points.
+
+        Raises
+        ------
+        `numpy.linalg.LinAlgError`
+            If the interpolation system is ill-defined.
         """
         if self._debug:
             assert 0 <= k_new < self.npt, 'The index `k_new` is not valid.'
@@ -370,7 +380,7 @@ class Quadratic:
 
         Parameters
         ----------
-        interpolation : Interpolation
+        interpolation : `cobyqa.models.Interpolation`
             Previous interpolation set.
         new_x_base : `numpy.ndarray`, shape (n,)
             Point that will replace ``interpolation.x_base``.
@@ -409,6 +419,28 @@ class Quadratic:
 
     @staticmethod
     def solve_system(interpolation, rhs):
+        """
+        Solve the interpolation system.
+
+        Parameters
+        ----------
+        interpolation : `cobyqa.models.Interpolation`
+            Interpolation set.
+        rhs : `numpy.ndarray`, shape (npt + n + 1,)
+            Right-hand side vector of the interpolation system.
+
+        Returns
+        -------
+        `numpy.ndarray`, shape (npt + n + 1,)
+            Solution of the interpolation system.
+        bool
+            Whether the interpolation system is ill-conditioned.
+
+        Raises
+        ------
+        `numpy.linalg.LinAlgError`
+            If the interpolation system is ill-defined.
+        """
         n, npt = interpolation.xpt.shape
         assert rhs.shape == (npt + n + 1,), 'The shape of `rhs` is not valid.'
 
@@ -435,14 +467,16 @@ class Quadratic:
         right_scaling[npt + 1:] = scale
 
         # Build the solution.
-        # TODO: Stop the calculations properly if there is a NaN or Inf.
         ill_conditioned = False
+        rhs_scale = right_scaling * rhs
+        if not (np.all(np.isfinite(a)) and np.all(np.isfinite(rhs_scale))):
+            raise np.linalg.LinAlgError('The interpolation system is ill-defined.')
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter('error', LinAlgWarning)
-                left_scaled_solution = solve(a, left_scaling * rhs, assume_a='sym')
+                left_scaled_solution = solve(a, rhs_scale, assume_a='sym')
         except (np.linalg.LinAlgError, LinAlgWarning):
-            left_scaled_solution = lstsq(a, left_scaling * rhs)[0]
+            left_scaled_solution = lstsq(a, rhs_scale)[0]
             ill_conditioned = True
         return left_scaled_solution * right_scaling, ill_conditioned
 
@@ -453,7 +487,7 @@ class Quadratic:
 
         Parameters
         ----------
-        interpolation : Interpolation
+        interpolation : `cobyqa.models.Interpolation`
             Interpolation set.
         values : `numpy.ndarray`, shape (npt,)
             Values of the interpolated function at the interpolation points.
@@ -466,6 +500,11 @@ class Quadratic:
             Gradient of the quadratic model at ``interpolation.x_base``.
         `numpy.ndarray`, shape (npt,)
             Implicit Hessian matrix of the quadratic model.
+
+        Raises
+        ------
+        `numpy.linalg.LinAlgError`
+            If the interpolation system is ill-defined.
         """
         assert values.shape == (interpolation.npt,), 'The shape of `values` is not valid.'
         n, npt = interpolation.xpt.shape
@@ -484,10 +523,15 @@ class Models:
 
         Parameters
         ----------
-        pb : Problem
+        pb : `cobyqa.problem.Problem`
             Problem to be solved.
         options : dict
             Options of the solver.
+
+        Raises
+        ------
+        `numpy.linalg.LinAlgError`
+            If the interpolation system is ill-defined.
         """
         # Set the initial interpolation set.
         self._debug = options[Options.DEBUG]
@@ -583,7 +627,7 @@ class Models:
 
         Returns
         -------
-        Interpolation
+        `cobyqa.models.Interpolation`
             Interpolation set.
         """
         return self._interpolation
@@ -753,6 +797,11 @@ class Models:
         `numpy.ndarray`, shape (n,)
             Gradient of the alternative quadratic model of the objective
             function at `x`.
+
+        Raises
+        ------
+        `numpy.linalg.LinAlgError`
+            If the interpolation system is ill-defined.
         """
         if self._debug:
             assert x.shape == (self.n,), 'The shape of `x` is not valid.'
@@ -994,6 +1043,11 @@ class Models:
         Set the quadratic models of the objective function, nonlinear inequality
         constraints, and nonlinear equality constraints to the alternative
         quadratic models.
+
+        Raises
+        ------
+        `numpy.linalg.LinAlgError`
+            If the interpolation system is ill-defined.
         """
         self._fun = Quadratic(self.interpolation, self.fun_val, self._debug)
         for i in range(self.m_nonlinear_ub):
@@ -1025,6 +1079,11 @@ class Models:
             Values of the nonlinear inequality constraints at `x_new`.
         ceq_val : `numpy.ndarray`, shape (m_nonlinear_eq,)
             Values of the nonlinear equality constraints at `x_new`.
+
+        Raises
+        ------
+        `numpy.linalg.LinAlgError`
+            If the interpolation system is ill-defined.
         """
         if self._debug:
             assert 0 <= k_new < self.npt, 'The index `k_new` is not valid.'
@@ -1035,8 +1094,8 @@ class Models:
 
         # Compute the updates in the interpolation conditions.
         fun_diff = np.zeros(self.npt)
-        cub_diff = np.zeros_like(self.cub_val)
-        ceq_diff = np.zeros_like(self.ceq_val)
+        cub_diff = np.zeros(self.cub_val.shape)
+        ceq_diff = np.zeros(self.ceq_val.shape)
         fun_diff[k_new] = fun_val - self.fun(x_new)
         cub_diff[k_new, :] = cub_val - self.cub(x_new)
         ceq_diff[k_new, :] = ceq_val - self.ceq(x_new)
@@ -1077,6 +1136,11 @@ class Models:
         -------
         {float, `numpy.ndarray`, shape (npt,)}
             Determinant(s) of the new interpolation system.
+
+        Raises
+        ------
+        `numpy.linalg.LinAlgError`
+            If the interpolation system is ill-defined.
 
         Notes
         -----

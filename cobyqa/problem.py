@@ -702,13 +702,13 @@ class Problem:
         if scale:
             self._scaling_factor = 0.5 * (self._bounds.xu - self._bounds.xl)
             self._scaling_shift = 0.5 * (self._bounds.xu + self._bounds.xl)
-            self._bounds = BoundConstraints(-np.ones_like(self._x0), np.ones_like(self._x0))
+            self._bounds = BoundConstraints(-np.ones(self.n), np.ones(self.n))
             self._linear_ub = LinearConstraints(self._linear_ub.a @ np.diag(self._scaling_factor), self._linear_ub.b - self._linear_ub.a @ self._scaling_shift, False, debug)
             self._linear_eq = LinearConstraints(self._linear_eq.a @ np.diag(self._scaling_factor), self._linear_eq.b - self._linear_eq.a @ self._scaling_shift, True, debug)
             self._x0 = (self._x0 - self._scaling_shift) / self._scaling_factor
         else:
-            self._scaling_factor = np.ones_like(self.x0)
-            self._scaling_shift = np.zeros_like(self.x0)
+            self._scaling_factor = np.ones(self.n)
+            self._scaling_shift = np.zeros(self.n)
 
         # Set the initial filter.
         self._feasibility_tol = feasibility_tol

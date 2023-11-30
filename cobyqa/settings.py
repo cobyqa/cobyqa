@@ -15,6 +15,7 @@ class ExitStatus(Enum):
     MAX_EVAL_WARNING = 3
     MAX_ITER_WARNING = 4
     INFEASIBLE_ERROR = -1
+    LINALG_ERROR = -2
 
 
 class Options(str, Enum):
