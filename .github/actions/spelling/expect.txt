@@ -4,9 +4,6 @@ ABDEF
 allclose
 arange
 archdefs
-ARGLALE
-ARGLBLE
-ARGLCLE
 argsort
 arwhead
 asarray
@@ -43,7 +40,6 @@ cov
 cumsum
 currentmodule
 curv
-DANWOODLS
 DMN
 dsfontserif
 dsq
@@ -67,20 +63,17 @@ htmlhelp
 htmlzip
 idx
 ieq
-img
 incollection
 intersphinx
 iub
 jac
 joblib
 keyprefix
-KOEBHELB
 labelprefix
 labelspacing
 LEUVEN
 levelname
 LGR
-LHAIFAM
 linalg
 linestyle
 linewidth
@@ -107,7 +100,6 @@ maxfun
 maxiter
 mindepth
 minexp
-MISRA
 MYARCH
 nanargmin
 nanmax
@@ -115,7 +107,6 @@ nanmin
 ncg
 ndarray
 ndim
-NELSONLS
 newaxis
 nfev
 NLocator
@@ -126,7 +117,6 @@ objname
 omojokun
 onstrained
 optim
-OSBORNEA
 papersize
 phdthesis
 plt
@@ -142,9 +132,10 @@ pyplot
 PYTHONPATH
 rago
 ragonneau
-ranspose
 razh
 RDW
+RHOBEG
+RHOEND
 rosen
 rosenbrock
 ROSEPETAL
