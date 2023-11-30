@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_allclose
 from scipy.optimize import rosen
 
-from cobyqa.models import Interpolation, Quadratic, Models
+from cobyqa.models import Interpolation, Quadratic
 from cobyqa.problem import ObjectiveFunction, BoundConstraints, LinearConstraints, NonlinearConstraints, Problem
 
 
