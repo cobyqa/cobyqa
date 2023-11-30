@@ -13,10 +13,10 @@ class TestInterpolation:
     def test_simple(self, n):
         x0 = 0.5 * np.ones(n)
         pb = _problem(x0)
-        options = {'radius_init': 0.5, 'radius_final': 1e-6, 'npt': (n + 1) * (n + 2) // 2, 'debug': True}
+        options = {'radius_init': 0.5, 'radius_final': 1e-6, 'nb_points': (n + 1) * (n + 2) // 2, 'debug': True}
         interpolation = Interpolation(pb, options)
         assert_allclose(interpolation.x_base, 0.5)
-        for k in range(options['npt']):
+        for k in range(options['nb_points']):
             assert options['radius_init'] == 0.5
             assert np.all(pb.bounds.xl <= interpolation.point(k))
             assert np.all(interpolation.point(k) <= pb.bounds.xu)
@@ -28,10 +28,10 @@ class TestInterpolation:
         if n > 1:
             x0[1] = 0.6
         pb = _problem(x0)
-        options = {'radius_init': 0.5, 'radius_final': 1e-6, 'npt': (n + 1) * (n + 2) // 2, 'debug': True}
+        options = {'radius_init': 0.5, 'radius_final': 1e-6, 'nb_points': (n + 1) * (n + 2) // 2, 'debug': True}
         interpolation = Interpolation(pb, options)
         assert_allclose(interpolation.x_base, 0.5)
-        for k in range(options['npt']):
+        for k in range(options['nb_points']):
             assert options['radius_init'] == 0.5
             assert np.all(pb.bounds.xl <= interpolation.point(k))
             assert np.all(interpolation.point(k) <= pb.bounds.xu)
@@ -43,13 +43,13 @@ class TestInterpolation:
         if n > 1:
             x0[1] = 0.9
         pb = _problem(x0)
-        options = {'radius_init': 0.5, 'radius_final': 1e-6, 'npt': (n + 1) * (n + 2) // 2, 'debug': True}
+        options = {'radius_init': 0.5, 'radius_final': 1e-6, 'nb_points': (n + 1) * (n + 2) // 2, 'debug': True}
         interpolation = Interpolation(pb, options)
         assert_allclose(interpolation.x_base[0], 0.0)
         if n > 1:
             assert_allclose(interpolation.x_base[1], 1.0)
             assert_allclose(interpolation.x_base[2:], 0.5)
-        for k in range(options['npt']):
+        for k in range(options['nb_points']):
             assert options['radius_init'] == 0.5
             assert np.all(pb.bounds.xl <= interpolation.point(k))
             assert np.all(interpolation.point(k) <= pb.bounds.xu)
@@ -58,10 +58,10 @@ class TestInterpolation:
     def test_reduce_radius(self, n):
         x0 = 0.5 * np.ones(n)
         pb = _problem(x0)
-        options = {'radius_init': 1.0, 'radius_final': 1e-6, 'npt': (n + 1) * (n + 2) // 2, 'debug': True}
+        options = {'radius_init': 1.0, 'radius_final': 1e-6, 'nb_points': (n + 1) * (n + 2) // 2, 'debug': True}
         interpolation = Interpolation(pb, options)
         assert_allclose(interpolation.x_base, 0.5)
-        for k in range(options['npt']):
+        for k in range(options['nb_points']):
             assert options['radius_init'] == 0.5
             assert np.all(pb.bounds.xl <= interpolation.point(k))
             assert np.all(interpolation.point(k) <= pb.bounds.xu)
@@ -79,20 +79,20 @@ class TestQuadratic:
     def test_simple(self, n, npt_f):
         x0 = 0.5 * np.ones(n)
         pb = _problem(x0)
-        options = {'radius_init': 1.0, 'radius_final': 1e-6, 'npt': npt_f(n), 'debug': True}
+        options = {'radius_init': 1.0, 'radius_final': 1e-6, 'nb_points': npt_f(n), 'debug': True}
         interpolation = Interpolation(pb, options)
         for seed in range(100):
             rng = np.random.default_rng(seed)
-            values = rng.standard_normal(options['npt'])
+            values = rng.standard_normal(options['nb_points'])
             quadratic = Quadratic(interpolation, values, True)
 
             # Check basic properties.
             assert quadratic.n == n
-            assert quadratic.npt == options['npt']
+            assert quadratic.npt == options['nb_points']
 
             # Check the interpolation conditions.
-            tol = 10.0 * np.sqrt(np.finfo(float).eps) * options['npt']
-            for k in range(options['npt']):
+            tol = 10.0 * np.sqrt(np.finfo(float).eps) * options['nb_points']
+            for k in range(options['nb_points']):
                 assert abs(quadratic(interpolation.point(k), interpolation) - values[k]) < tol
 
             # Check the Hessian matrix.
