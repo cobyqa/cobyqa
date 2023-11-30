@@ -49,7 +49,7 @@ class TrustRegion:
             self.set_multipliers(self.x_best)
 
         # Set the initial trust-region radius and the resolution.
-        self._resolution = options[Options.RADIUS_INIT]
+        self._resolution = options[Options.RHOBEG]
         self._radius = self.resolution
 
     @property
@@ -765,12 +765,12 @@ class TrustRegion:
         options : dict
             Options of the solver.
         """
-        if 250.0 * options[Options.RADIUS_FINAL] < self.resolution:
+        if 250.0 * options[Options.RHOEND] < self.resolution:
             self.resolution *= 0.1
-        elif 16.0 * options[Options.RADIUS_FINAL] < self.resolution:
-            self.resolution = np.sqrt(self.resolution * options[Options.RADIUS_FINAL])
+        elif 16.0 * options[Options.RHOEND] < self.resolution:
+            self.resolution = np.sqrt(self.resolution * options[Options.RHOEND])
         else:
-            self.resolution = options[Options.RADIUS_FINAL]
+            self.resolution = options[Options.RHOEND]
 
         # Reduce the trust-region radius. The procedure below should not use
         # self.radius as otherwise, it will not be updated correctly.

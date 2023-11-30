@@ -12,7 +12,7 @@ How to use COBYQA
 -----------------
 
 COBYQA provides a `minimize` function.
-This is the main entry point to the solver.
+This is the entry point to the solver.
 It solves unconstrained, bound-constrained, linearly constrained, and nonlinearly constrained optimization problems.
 
 We provide below simple examples on how to use COBYQA.

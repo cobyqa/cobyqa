@@ -67,6 +67,7 @@ htmlhelp
 htmlzip
 idx
 ieq
+img
 incollection
 intersphinx
 iub
@@ -141,6 +142,7 @@ pyplot
 PYTHONPATH
 rago
 ragonneau
+ranspose
 razh
 RDW
 rosen

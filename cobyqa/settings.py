@@ -27,9 +27,9 @@ class Options(str, Enum):
     HISTORY_SIZE = 'history_size'
     MAX_EVAL = 'max_eval'
     MAX_ITER = 'max_iter'
-    NPT = 'npt'
-    RADIUS_INIT = 'radius_init'
-    RADIUS_FINAL = 'radius_final'
+    NPT = 'nb_points'
+    RHOBEG = 'radius_init'
+    RHOEND = 'radius_final'
     SCALE = 'scale'
     STORE_HISTORY = 'store_history'
     TARGET = 'target'
@@ -45,8 +45,8 @@ DEFAULT_OPTIONS = {
     Options.MAX_EVAL.value: lambda n: 500 * n,
     Options.MAX_ITER.value: lambda n: 1000 * n,
     Options.NPT.value: lambda n: 2 * n + 1,
-    Options.RADIUS_INIT.value: 1.0,
-    Options.RADIUS_FINAL.value: 1e-6,
+    Options.RHOBEG.value: 1.0,
+    Options.RHOEND.value: 1e-6,
     Options.SCALE.value: False,
     Options.STORE_HISTORY.value: False,
     Options.TARGET.value: -np.inf,

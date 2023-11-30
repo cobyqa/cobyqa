@@ -20,7 +20,6 @@ epub
 github
 Hennart
 https
-img
 KKT
 krylov
 lincoa
@@ -36,7 +35,6 @@ PDFs
 Pillo
 Powell
 Ragonneau
-ranspose
 rgba
 Rosenbrock
 Schittkowski

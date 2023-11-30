@@ -76,7 +76,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 Initial trust-region radius.
             radius_final : float, optional
                 Final trust-region radius.
-            npt : int, optional
+            nb_points : int, optional
                 Number of interpolation points.
             scale : bool, optional
                 Whether to scale the variables according to the bounds.
@@ -126,6 +126,27 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 History of the nonlinear inequality constraint values.
             ceq_history : `numpy.ndarray`, shape (nfev, m_nonlinear_eq)
                 History of the nonlinear equality constraint values.
+
+        A description of the termination statuses is given below.
+
+        .. list-table::
+            :widths: 25 75
+            :header-rows: 1
+
+            * - Exit status
+              - Description
+            * - 0
+              - The lower bound for the trust-region radius has been reached.
+            * - 1
+              - The target objective function value has been reached.
+            * - 2
+              - All variables are fixed by the bound constraints.
+            * - 3
+              - The maximum number of function evaluations has been exceeded.
+            * - 4
+              - The maximum number of iterations has been exceeded.
+            * - -1
+              - The bound constraints are infeasible.
 
     References
     ----------
@@ -286,8 +307,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         return _build_result(pb, 0.0, True, ExitStatus.FIXED_SUCCESS, 0, options)
     if verbose:
         print('Starting the optimization procedure.')
-        print(f'Initial trust-region radius: {options[Options.RADIUS_INIT]}.')
-        print(f'Final trust-region radius: {options[Options.RADIUS_FINAL]}.')
+        print(f'Initial trust-region radius: {options[Options.RHOBEG]}.')
+        print(f'Final trust-region radius: {options[Options.RHOEND]}.')
         print(f'Maximum number of function evaluations: {options[Options.MAX_EVAL]}.')
         print(f'Maximum number of iterations: {options[Options.MAX_ITER]}.')
         print()
@@ -421,7 +442,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
 
         # Reduce the resolution if necessary.
         if reduce_resolution:
-            if framework.resolution <= options[Options.RADIUS_FINAL]:
+            if framework.resolution <= options[Options.RHOEND]:
                 success = True
                 status = ExitStatus.RADIUS_SUCCESS
                 break
@@ -457,22 +478,22 @@ def _set_default_options(options, n):
     """
     Set the default options.
     """
-    if Options.RADIUS_INIT in options and options[Options.RADIUS_INIT] <= 0.0:
+    if Options.RHOBEG in options and options[Options.RHOBEG] <= 0.0:
         raise ValueError('The initial trust-region radius must be positive.')
-    if Options.RADIUS_FINAL in options and options[Options.RADIUS_FINAL] < 0.0:
+    if Options.RHOEND in options and options[Options.RHOEND] < 0.0:
         raise ValueError('The final trust-region radius must be nonnegative.')
-    if Options.RADIUS_INIT in options and Options.RADIUS_FINAL in options:
-        if options[Options.RADIUS_INIT] < options[Options.RADIUS_FINAL]:
+    if Options.RHOBEG in options and Options.RHOEND in options:
+        if options[Options.RHOBEG] < options[Options.RHOEND]:
             raise ValueError('The initial trust-region radius must be greater than or equal to the final trust-region radius.')
-    elif Options.RADIUS_INIT in options:
-        options[Options.RADIUS_FINAL.value] = min(DEFAULT_OPTIONS[Options.RADIUS_FINAL], options[Options.RADIUS_INIT])
-    elif Options.RADIUS_FINAL in options:
-        options[Options.RADIUS_INIT.value] = max(DEFAULT_OPTIONS[Options.RADIUS_INIT], options[Options.RADIUS_FINAL])
+    elif Options.RHOBEG in options:
+        options[Options.RHOEND.value] = min(DEFAULT_OPTIONS[Options.RHOEND], options[Options.RHOBEG])
+    elif Options.RHOEND in options:
+        options[Options.RHOBEG.value] = max(DEFAULT_OPTIONS[Options.RHOBEG], options[Options.RHOEND])
     else:
-        options[Options.RADIUS_INIT.value] = DEFAULT_OPTIONS[Options.RADIUS_INIT]
-        options[Options.RADIUS_FINAL.value] = DEFAULT_OPTIONS[Options.RADIUS_FINAL]
-    options[Options.RADIUS_INIT.value] = float(options[Options.RADIUS_INIT])
-    options[Options.RADIUS_FINAL.value] = float(options[Options.RADIUS_FINAL])
+        options[Options.RHOBEG.value] = DEFAULT_OPTIONS[Options.RHOBEG]
+        options[Options.RHOEND.value] = DEFAULT_OPTIONS[Options.RHOEND]
+    options[Options.RHOBEG.value] = float(options[Options.RHOBEG])
+    options[Options.RHOEND.value] = float(options[Options.RHOEND])
     if Options.NPT in options and options[Options.NPT] <= 0:
         raise ValueError('The number of interpolation points must be positive.')
     if Options.NPT in options and options[Options.NPT] > ((n + 1) * (n + 2)) // 2:

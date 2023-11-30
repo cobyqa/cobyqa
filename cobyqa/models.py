@@ -29,36 +29,36 @@ class Interpolation:
         # Reduce the initial trust-region radius if necessary.
         self._debug = options[Options.DEBUG]
         max_radius = 0.5 * np.min(pb.bounds.xu - pb.bounds.xl)
-        if options[Options.RADIUS_INIT] > max_radius:
-            options[Options.RADIUS_INIT.value] = max_radius
-            options[Options.RADIUS_FINAL.value] = min(options[Options.RADIUS_FINAL], max_radius)
+        if options[Options.RHOBEG] > max_radius:
+            options[Options.RHOBEG.value] = max_radius
+            options[Options.RHOEND.value] = min(options[Options.RHOEND], max_radius)
 
         # Set the initial point around which the models are expanded.
         self._x_base = np.copy(pb.x0)
-        very_close_xl_idx = (self.x_base <= pb.bounds.xl + 0.5 * options[Options.RADIUS_INIT])
+        very_close_xl_idx = (self.x_base <= pb.bounds.xl + 0.5 * options[Options.RHOBEG])
         self.x_base[very_close_xl_idx] = pb.bounds.xl[very_close_xl_idx]
-        close_xl_idx = (pb.bounds.xl + 0.5 * options[Options.RADIUS_INIT] < self.x_base) & (self.x_base <= pb.bounds.xl + options[Options.RADIUS_INIT])
-        self.x_base[close_xl_idx] = np.minimum(pb.bounds.xl[close_xl_idx] + options[Options.RADIUS_INIT], pb.bounds.xu[close_xl_idx])
-        very_close_xu_idx = (self.x_base >= pb.bounds.xu - 0.5 * options[Options.RADIUS_INIT])
+        close_xl_idx = (pb.bounds.xl + 0.5 * options[Options.RHOBEG] < self.x_base) & (self.x_base <= pb.bounds.xl + options[Options.RHOBEG])
+        self.x_base[close_xl_idx] = np.minimum(pb.bounds.xl[close_xl_idx] + options[Options.RHOBEG], pb.bounds.xu[close_xl_idx])
+        very_close_xu_idx = (self.x_base >= pb.bounds.xu - 0.5 * options[Options.RHOBEG])
         self.x_base[very_close_xu_idx] = pb.bounds.xu[very_close_xu_idx]
-        close_xu_idx = (self.x_base < pb.bounds.xu - 0.5 * options[Options.RADIUS_INIT]) & (pb.bounds.xu - options[Options.RADIUS_INIT] <= self.x_base)
-        self.x_base[close_xu_idx] = np.maximum(pb.bounds.xu[close_xu_idx] - options[Options.RADIUS_INIT], pb.bounds.xl[close_xu_idx])
+        close_xu_idx = (self.x_base < pb.bounds.xu - 0.5 * options[Options.RHOBEG]) & (pb.bounds.xu - options[Options.RHOBEG] <= self.x_base)
+        self.x_base[close_xu_idx] = np.maximum(pb.bounds.xu[close_xu_idx] - options[Options.RHOBEG], pb.bounds.xl[close_xu_idx])
 
         # Set the initial interpolation set.
         self._xpt = np.zeros((pb.n, options[Options.NPT]))
         for k in range(1, options[Options.NPT]):
             if k <= pb.n:
                 if very_close_xu_idx[k - 1]:
-                    self.xpt[k - 1, k] = -options[Options.RADIUS_INIT]
+                    self.xpt[k - 1, k] = -options[Options.RHOBEG]
                 else:
-                    self.xpt[k - 1, k] = options[Options.RADIUS_INIT]
+                    self.xpt[k - 1, k] = options[Options.RHOBEG]
             elif k <= 2 * pb.n:
                 if very_close_xl_idx[k - pb.n - 1]:
-                    self.xpt[k - pb.n - 1, k] = 2.0 * options[Options.RADIUS_INIT]
+                    self.xpt[k - pb.n - 1, k] = 2.0 * options[Options.RHOBEG]
                 elif very_close_xu_idx[k - pb.n - 1]:
-                    self.xpt[k - pb.n - 1, k] = -2.0 * options[Options.RADIUS_INIT]
+                    self.xpt[k - pb.n - 1, k] = -2.0 * options[Options.RHOBEG]
                 else:
-                    self.xpt[k - pb.n - 1, k] = -options[Options.RADIUS_INIT]
+                    self.xpt[k - pb.n - 1, k] = -options[Options.RHOBEG]
             else:
                 spread = (k - pb.n - 1) // pb.n
                 k1 = k - (1 + spread) * pb.n - 1

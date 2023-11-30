@@ -36,24 +36,6 @@ class Profiles:
     EXCLUDED_PROBLEMS = {
         # The compilation of the sources is prohibitively time-consuming.
         'BA-L73', 'BA-L73LS', 'BDRY2', 'CHANDHEU', 'CHARDIS0', 'CHARDIS1', 'DMN15102', 'DMN15102LS', 'DMN15103', 'DMN15103LS', 'DMN15332', 'DMN15332LS', 'DMN15333', 'DMN15333LS', 'DMN37142', 'DMN37142LS', 'DMN37143', 'DMN37143LS', 'GPP', 'LEUVEN3', 'LEUVEN4', 'LEUVEN5', 'LEUVEN6', 'LIPPERT2', 'LOBSTERZ', 'PDE1', 'PDE2', 'PENALTY3', 'RDW2D51F', 'RDW2D51U', 'RDW2D52B', 'RDW2D52F', 'RDW2D52U', 'ROSEPETAL', 'WALL100', 'YATP1SQ', 'YATP2SQ', 'BA-L16LS', 'BA-L21', 'BA-L21LS', 'BA-L49', 'BA-L49LS', 'BA-L52LS', 'BA-L52',
-
-        # The starting points contain NaN values.
-        'LHAIFAM',
-
-        # The problems contain a lot of NaN.
-        'HS62', 'HS112', 'LIN',
-
-        # The problems seem not lower-bounded.
-        'INDEF',
-
-        # The problems are known infeasible.
-        'ARGLALE', 'ARGLBLE', 'ARGLCLE', 'MODEL', 'NASH',
-
-        # Classical UOBYQA and COBYLA suffer from infinite cycling.
-        'GAUSS1LS', 'GAUSS2LS', 'GAUSS3LS', 'MGH17LS', 'MISRA1ALS', 'MISRA1CLS', 'NELSONLS', 'OSBORNEA', 'RAT43LS',
-
-        # Classical COBYLA suffers from infinite cycling.
-        'DANWOODLS', 'KOEBHELB',
     }
 
     def __init__(self, n_min, n_max, constraints, m_min=0, m_max=1000, feature='plain', **kwargs):
@@ -77,43 +59,42 @@ class Profiles:
         feature : str
             Feature to be used. Possible values are:
 
-                ``'plain'``
+                ``plain``
                     The problems are left unmodified.
-                ``'Lq'``, ``'Lh'``, ``'L1'``
+                ``Lq``, ``Lh``, ``L1``
                     A ``p``-regularization term is added to the objective
                     functions of all problems, with ``p = 0.25``, ``0.5``, and
                     ``1.0``, respectively.
-                ``'noisy'``
+                ``noisy``
                     A Gaussian noise is included in the objective functions of
                     all problems. It can be relative or absolute.
-                ``'nan'``
+                ``nan``
                     The objective function evaluations sometimes fail.
-                ``'randomize_x0'``
+                ``randomize_x0``
                     The starting points are randomized.
-                ``'digits[0-9]+'``
+                ``digits[0-9]+``
                     Only the first digits of the objective function values
                     are significant (the other are randomized). For example,
-                    ``'digits3'`` means that only the first three digits after
+                    ``digits3`` means that only the first three digits after
                     the decimal point are significant.
 
         Other Parameters
         ----------------
         regularization : float, optional
-            Regularization parameter for the ``'Lq'``, ``'Lh'``, and ``'L1'``
+            Regularization parameter for the ``Lq``, ``Lh``, and ``L1``
             features. The default value is 1.0.
-        noise_type : str, optional
-            Type of the noise for the ``'noisy'`` and ``'randomize_x0'``
-            features. The default value is ``'relative'`` (the only other
-            accepted entry is ``'absolute'``).
+        noise_type : {'relative', 'absolute'}, optional
+            Type of the noise for the ``noisy`` and ``randomize_x0``
+            features. The default value is ``relative``.
         noise_level : float, optional
-            Standard deviation of the noise for the ``'noisy'`` and
-            ``'randomize_x0`` features. The default value is 1e-3.
+            Standard deviation of the noise for the ``noisy`` and
+            ``randomize_x0`` features. The default value is 1e-3.
         rerun : int, optional
-            Number of experiment runs for the ``'noisy'``, ``'nan'``, and
-            ``'randomize_x0`` features. The default is 10.
+            Number of experiment runs for the ``noisy``, ``nan``, and
+            ``randomize_x0`` features. The default is 10.
         nan_rate : float, optional
             Rate of NaN values returned by the objective function for the
-            ``'nan'`` feature. The default value is 0.1.
+            ``nan`` feature. The default value is 0.1.
         barrier : bool, optional
             If ``True``, the merit function is set to infinity when the residual
             value is above `high_resid`. The default value is ``False``.
@@ -213,21 +194,20 @@ class Profiles:
         Other Parameters
         ----------------
         regularization : float, optional
-            Regularization parameter for the ``'Lq'``, ``'Lh'``, and ``'L1'``
+            Regularization parameter for the ``Lq``, ``Lh``, and ``L1``
             features. The default value is 1.0.
-        noise_type : str, optional
-            Type of the noise for the ``'noisy'`` and ``'randomize_x0'``
-            features. The default value is ``'relative'`` (the only other
-            accepted entry is ``'absolute'``).
+        noise_type : {'relative', 'absolute'}, optional
+            Type of the noise for the ``noisy`` and ``randomize_x0``
+            features. The default value is ``relative``.
         noise_level : float, optional
-            Standard deviation of the noise for the ``'noisy'`` and
-            ``'randomize_x0`` features. The default value is 1e-3.
+            Standard deviation of the noise for the ``noisy`` and
+            ``randomize_x0`` features. The default value is 1e-3.
         rerun : int, optional
-            Number of experiment runs for the ``'noisy'``, ``'nan'``, and
-            ``'randomize_x0`` features. The default is 10.
+            Number of experiment runs for the ``noisy``, ``nan``, and
+            ``randomize_x0`` features. The default is 10.
         nan_rate : float, optional
             Rate of NaN values returned by the objective function for the
-            ``'nan'`` feature. The default value is 0.1.
+            ``nan`` feature. The default value is 0.1.
         """
         significant_digits = re.match(r'digits(\d+)', self.feature)
         options = {'rerun': 1}

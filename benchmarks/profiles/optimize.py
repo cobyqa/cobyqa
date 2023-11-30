@@ -13,7 +13,7 @@ class Optimizer:
 
         Parameters
         ----------
-        problem : pycutest.CUTEstProblem
+        problem : `pycutest.CUTEstProblem`
             Problem to be solved.
         solver_name : str
             Solver to be used.
@@ -68,27 +68,10 @@ class Optimizer:
             options['max_eval'] = self.max_eval
             res = minimize(lambda x: self.fun(x, fun_values, resid_values), self.x0, xl=self.xl, xu=self.xu, aub=self.aub, bub=self.bub, aeq=self.aeq, beq=self.beq, cub=self.cub, ceq=self.ceq, options=options)
             success = res.success
-        elif self.solver_name.lower() in ['pdfo', 'uobyqa', 'newuoa', 'bobyqa', 'lincoa', 'cobyla']:
-            from pdfo import Bounds, LinearConstraint, NonlinearConstraint, pdfo
-
-            bounds = Bounds(self.xl, self.xu)
-            constraints = []
-            if self.m_linear_ub > 0:
-                constraints.append(LinearConstraint(self.aub, -np.inf, self.bub))
-            if self.m_linear_eq > 0:
-                constraints.append(LinearConstraint(self.aeq, self.beq, self.beq))
-            if self.m_nonlinear_ub > 0:
-                constraints.append(NonlinearConstraint(self.cub, -np.inf, np.zeros(self.m_nonlinear_ub)))
-            if self.m_nonlinear_eq > 0:
-                constraints.append(NonlinearConstraint(self.ceq, np.zeros(self.m_nonlinear_eq), np.zeros(self.m_nonlinear_eq)))
-            options['maxfev'] = self.max_eval
-            options['eliminate_lin_eq'] = False
-            method = None if self.solver_name.lower() == 'pdfo' else self.solver_name
-            res = pdfo(self.fun, self.x0, (fun_values, resid_values), method, bounds, constraints, options)
-            success = res.success
         else:
-            from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, minimize
+            from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint
 
+            # Build the constraints.
             bounds = Bounds(self.xl, self.xu)
             constraints = []
             if self.m_linear_ub > 0:
@@ -99,14 +82,26 @@ class Optimizer:
                 constraints.append(NonlinearConstraint(self.cub, -np.inf, np.zeros(self.m_nonlinear_ub)))
             if self.m_nonlinear_eq > 0:
                 constraints.append(NonlinearConstraint(self.ceq, np.zeros(self.m_nonlinear_eq), np.zeros(self.m_nonlinear_eq)))
-            if self.solver_name.lower() in ['cg', 'bfgs', 'newton-cg', 'cobyla', 'slsqp', 'trust-constr', 'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']:
-                options['maxiter'] = self.max_eval
-            elif self.solver_name.lower() in ['l-bfgs-b', 'tnc']:
-                options['maxfun'] = self.max_eval
-            else:
+
+            if self.solver_name.lower() in ['pdfo', 'uobyqa', 'newuoa', 'bobyqa', 'lincoa', 'cobyla']:
+                from pdfo import pdfo
+
                 options['maxfev'] = self.max_eval
-            res = minimize(self.fun, self.x0, (fun_values, resid_values), method=self.solver_name, bounds=bounds, constraints=constraints, options=options)
-            success = res.success
+                options['eliminate_lin_eq'] = False
+                method = None if self.solver_name.lower() == 'pdfo' else self.solver_name
+                res = pdfo(self.fun, self.x0, (fun_values, resid_values), method, bounds, constraints, options)
+                success = res.success
+            else:
+                from scipy.optimize import minimize
+
+                if self.solver_name.lower() in ['cg', 'bfgs', 'newton-cg', 'cobyla', 'slsqp', 'trust-constr', 'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov']:
+                    options['maxiter'] = self.max_eval
+                elif self.solver_name.lower() in ['l-bfgs-b', 'tnc']:
+                    options['maxfun'] = self.max_eval
+                else:
+                    options['maxfev'] = self.max_eval
+                res = minimize(self.fun, self.x0, (fun_values, resid_values), method=self.solver_name, bounds=bounds, constraints=constraints, options=options)
+                success = res.success
         return success, np.array(fun_values), np.array(resid_values)
 
     @property
@@ -373,7 +368,7 @@ class Optimizer:
         x = np.asarray(x, dtype=float)
         f = self.problem.obj(x)
         fun_values.append(f)
-        resid_values.append(self.resid(x))
+        resid_values.append(self.maxcv(x))
         if self.callback is not None:
             # Add perturbation to the function value.
             f = self.callback(x, f, *self.args)
@@ -432,14 +427,14 @@ class Optimizer:
             c.append(c_val - 0.5 * (self.cl[index] + self.cu[index]))
         return np.array(c, dtype=float)
 
-    def resid(self, x):
+    def maxcv(self, x):
         """
-        Evaluate the residuals of the constraints at ``x``.
+        Evaluate the maximum constraint violation at ``x``.
 
         Parameters
         ----------
         x : numpy.ndarray, shape (n,)
-            Point at which the residuals are evaluated.
+            Point at which the maximum constraint violation is evaluated.
 
         Returns
         -------

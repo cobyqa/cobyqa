@@ -51,7 +51,7 @@ The corresponding BibTeX entries are given hereunder.
 .. code-block:: bib
     :substitutions:
 
-    @phdthesis{rago22,
+    @phdthesis{rago_thesis,
         author          = {Ragonneau, T. M.},
         title           = {Model-Based Derivative-Free Optimization Methods and Software},
         school          = {Department of Applied Mathematics, The Hong Kong Polytechnic University},
@@ -59,7 +59,7 @@ The corresponding BibTeX entries are given hereunder.
         year            = 2022,
     }
 
-    @misc{razh22,
+    @misc{razh_cobyqa,
         author          = {Ragonneau, T. M. and Zhang, Z.},
         title           = {{COBYQA}: {C}onstrained {O}ptimization {BY} {Q}uadratic {A}pproximations},
         howpublished    = {Available at https://www.cobyqa.com},
@@ -79,4 +79,4 @@ Acknowledgments
 ---------------
 
 The early development of COBYQA was funded by the `University Grants Committee <https://www.ugc.edu.hk>`_ of Hong Kong, under the `Hong Kong PhD Fellowship Scheme <https://cerg1.ugc.edu.hk/hkpfs/index.html>`_ (ref. PF18-24698).
-It is now supported by `The Hong Kong Polytechnic University <https://www.polyu.edu.hk>`_ and the `CAS AMSS-PolyU Joint Laboratory of Applied Mathematics <https://www.polyu.edu.hk/en/ama/research-and-consultancy/cas-amss-polyu-jlab/>`_.
+It is now supported by `The Hong Kong Polytechnic University <https://www.polyu.edu.hk>`_.
