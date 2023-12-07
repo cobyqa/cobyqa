@@ -107,7 +107,7 @@ class TestQuadratic:
 
 
 def _problem(x0):
-    obj = ObjectiveFunction(rosen, False, False, 0, True)
+    obj = ObjectiveFunction(rosen, None, False, False, 0, True)
     bounds = BoundConstraints(np.zeros(x0.size), np.ones(x0.size))
     linear_ub = LinearConstraints(np.ones((2, x0.size)), np.ones(2), False, True)
     linear_eq = LinearConstraints(np.ones((2, x0.size)), np.ones(2), True, True)

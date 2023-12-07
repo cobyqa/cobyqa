@@ -1,6 +1,7 @@
 from abc import ABC
 
 import numpy as np
+from scipy.optimize import OptimizeResult
 
 from .settings import PRINT_OPTIONS
 from .utils import get_arrays_tol
@@ -233,7 +234,7 @@ class ObjectiveFunction(Function):
     Real-valued objective function.
     """
 
-    def __init__(self, fun, verbose, store_history, history_size, debug, *args):
+    def __init__(self, fun, callback, verbose, store_history, history_size, debug, *args):
         """
         Initialize the objective function.
 
@@ -257,6 +258,31 @@ class ObjectiveFunction(Function):
             Additional arguments to be passed to the function.
         """
         super().__init__(fun, verbose, store_history, store_history, history_size, debug, *args)
+        self._callback = callback
+
+    def __call__(self, x):
+        """
+        Evaluate the objective function.
+
+        This method also applies the barrier function to the function value.
+
+        Parameters
+        ----------
+        x : array_like, shape (n,)
+            Point at which the objective function is evaluated.
+
+        Returns
+        -------
+        float
+            Function value at `x`.
+        """
+        f = super().__call__(x)
+        if self._callback is not None:
+            if not callable(self._callback):
+                raise ValueError('The callback must be a callable function.')
+            intermediate_result = OptimizeResult(x=x, fun=f)
+            self._callback(intermediate_result)
+        return f
 
     def apply_barrier(self, val=None):
         """

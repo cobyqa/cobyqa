@@ -10,7 +10,7 @@ class TestObjectiveFunction:
 
     def test_simple(self, capsys):
         # Check an objective function with verbose=False.
-        obj = ObjectiveFunction(rosen, False, False, 0, True)
+        obj = ObjectiveFunction(rosen, None, False, False, 0, True)
         x = np.zeros(5)
         fun = obj(x)
         captured = capsys.readouterr()
@@ -20,7 +20,7 @@ class TestObjectiveFunction:
         assert captured.out == ''
 
         # Check an objective function with verbose=True.
-        obj = ObjectiveFunction(rosen, True, False, 0, True)
+        obj = ObjectiveFunction(rosen, None, True, False, 0, True)
         fun = obj(x)
         captured = capsys.readouterr()
         assert fun == rosen(x)
@@ -34,7 +34,7 @@ class TestObjectiveFunction:
 
     def test_none(self, capsys):
         # Check an objective function with no function and verbose=False.
-        obj = ObjectiveFunction(None, False, False, 0, True)
+        obj = ObjectiveFunction(None, None, False, False, 0, True)
         x = np.zeros(5)
         fun = obj(x)
         captured = capsys.readouterr()
@@ -44,7 +44,7 @@ class TestObjectiveFunction:
         assert captured.out == ''
 
         # Check an objective function with no function and verbose=True.
-        obj = ObjectiveFunction(None, True, False, 0, True)
+        obj = ObjectiveFunction(None, None, True, False, 0, True)
         fun = obj(x)
         captured = capsys.readouterr()
         assert fun == 0.0
@@ -53,7 +53,7 @@ class TestObjectiveFunction:
 
     def test_barrier(self):
         # Check an objective function with an infinite value.
-        obj = ObjectiveFunction(lambda x: np.inf, False, False, 0, True)
+        obj = ObjectiveFunction(lambda x: np.inf, None, False, False, 0, True)
         x = np.zeros(5)
         fun = obj(x)
         assert obj.name == '<lambda>'
@@ -61,7 +61,7 @@ class TestObjectiveFunction:
         assert obj.n_eval == 1
 
         # Check an objective function with a NaN value.
-        obj = ObjectiveFunction(lambda x: np.nan, False, False, 0, True)
+        obj = ObjectiveFunction(lambda x: np.nan, None, False, False, 0, True)
         x = np.zeros(5)
         fun = obj(x)
         assert obj.name == '<lambda>'
@@ -69,7 +69,7 @@ class TestObjectiveFunction:
         assert obj.n_eval == 1
 
     def test_store(self):
-        obj = ObjectiveFunction(rosen, False, True, 1, True)
+        obj = ObjectiveFunction(rosen, None, False, True, 1, True)
         x = np.zeros(5)
         obj(x)
         assert obj.fun_history.size == 1
@@ -186,7 +186,7 @@ class TestNonlinearConstraints:
 class TestProblem:
 
     def test_simple(self):
-        obj = ObjectiveFunction(rosen, False, False, 0, True)
+        obj = ObjectiveFunction(rosen, None, False, False, 0, True)
         x0 = np.zeros(5)
         bounds = BoundConstraints(np.zeros(5), np.ones(5))
         linear_ub = LinearConstraints(np.ones((2, 5)), np.ones(2), False, True)
@@ -212,7 +212,7 @@ class TestProblem:
         assert np.all(ceq_x0 == np.sin(x0))
 
     def test_fixed(self):
-        obj = ObjectiveFunction(rosen, False, False, 0, True)
+        obj = ObjectiveFunction(rosen, None, False, False, 0, True)
         x0 = np.zeros(5)
         bounds = BoundConstraints(np.block([np.zeros(4), 1.0]), np.ones(5))
         linear_ub = LinearConstraints(np.ones((2, 5)), np.ones(2), False, True)

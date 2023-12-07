@@ -9,7 +9,7 @@ from .utils import MaxEvalError
 from .settings import ExitStatus, Options, DEFAULT_OPTIONS, PRINT_OPTIONS
 
 
-def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, beq=None, cub=None, ceq=None, options=None):
+def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, beq=None, cub=None, ceq=None, callback=None, options=None):
     r"""
     Minimize a scalar function using the COBYQA method.
 
@@ -57,6 +57,18 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
             ``ceq(x, *args) -> array_like, shape (m_nonlinear_eq,)``
 
         where ``x`` is an array with shape (n,) and `args` is a tuple.
+    callback : callable, optional
+
+        A callback executed at each objective function evaluation. The method
+        terminates if a ``StopIteration`` exception is raised by the callback.
+        It should have the signature:
+
+            ``callback(intermediate_result)``
+
+        where ``intermediate_result`` is an instance of
+        `scipy.optimize.OptimizeResult`, with attributes ``x`` and ``fun``,
+        being the point at which the objective function is evaluated and the
+        value of the objective function, respectively.
     options : dict, optional
         Options passed to the solver. Accepted keys are:
 
@@ -142,8 +154,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
             * - 2
               - All variables are fixed by the bound constraints.
             * - 3
-              - The maximum number of function evaluations has been exceeded.
+              - The callback requested to stop the optimization procedure.
             * - 4
+              - The maximum number of function evaluations has been exceeded.
+            * - 5
               - The maximum number of iterations has been exceeded.
             * - -1
               - The bound constraints are infeasible.
@@ -266,7 +280,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     # Initialize the objective function.
     if not isinstance(args, tuple):
         args = (args,)
-    obj = ObjectiveFunction(fun, verbose, store_history, history_size, debug, *args)
+    obj = ObjectiveFunction(fun, callback, verbose, store_history, history_size, debug, *args)
 
     # Initialize the bound constraints.
     if not hasattr(x0, '__len__'):
@@ -319,6 +333,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     except np.linalg.LinAlgError:
         # The construction of the initial interpolation set failed.
         return _build_result(pb, 0.0, False, ExitStatus.LINALG_ERROR, 0, options)
+    except StopIteration:
+        # The callback raised a StopIteration exception.
+        return _build_result(pb, 0.0, True, ExitStatus.CALLBACK_SUCCESS, 0, options)
     if framework.models.target_init:
         # The target on the objective function value has been reached
         return _build_result(pb, framework.penalty, True, ExitStatus.TARGET_SUCCESS, 0, options)
@@ -390,8 +407,14 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 except MaxEvalError:
                     status = ExitStatus.MAX_EVAL_WARNING
                     break
+                except StopIteration:
+                    status = ExitStatus.CALLBACK_SUCCESS
+                    success = True
+                    break
                 if target:
-                    return _build_result(pb, framework.penalty, True, ExitStatus.TARGET_SUCCESS, n_iter, options)
+                    status = ExitStatus.TARGET_SUCCESS
+                    success = True
+                    break
 
                 # Perform a second-order correction step if necessary.
                 merit_old = framework.merit(framework.x_best, framework.fun_best, framework.cub_best, framework.ceq_best)
@@ -407,8 +430,14 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                         except MaxEvalError:
                             status = ExitStatus.MAX_EVAL_WARNING
                             break
+                        except StopIteration:
+                            status = ExitStatus.CALLBACK_SUCCESS
+                            success = True
+                            break
                         if target:
-                            return _build_result(pb, framework.penalty, True, ExitStatus.TARGET_SUCCESS, n_iter, options)
+                            status = ExitStatus.TARGET_SUCCESS
+                            success = True
+                            break
 
                 # Calculate the reduction ratio.
                 ratio = framework.get_reduction_ratio(step, fun_val, cub_val, ceq_val)
@@ -498,8 +527,14 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
             except MaxEvalError:
                 status = ExitStatus.MAX_EVAL_WARNING
                 break
+            except StopIteration:
+                status = ExitStatus.CALLBACK_SUCCESS
+                success = True
+                break
             if target:
-                return _build_result(pb, framework.penalty, True, ExitStatus.TARGET_SUCCESS, n_iter, options)
+                status = ExitStatus.TARGET_SUCCESS
+                success = True
+                break
 
             # Update the interpolation set.
             try:
@@ -595,6 +630,7 @@ def _build_result(pb, penalty, success, status, n_iter, options):
         ExitStatus.RADIUS_SUCCESS: 'The lower bound for the trust-region radius has been reached',
         ExitStatus.TARGET_SUCCESS: 'The target objective function value has been reached',
         ExitStatus.FIXED_SUCCESS: 'All variables are fixed by the bound constraints',
+        ExitStatus.CALLBACK_SUCCESS: 'The callback requested to stop the optimization procedure',
         ExitStatus.MAX_EVAL_WARNING: 'The maximum number of function evaluations has been exceeded',
         ExitStatus.MAX_ITER_WARNING: 'The maximum number of iterations has been exceeded',
         ExitStatus.INFEASIBLE_ERROR: 'The bound constraints are infeasible',
