@@ -84,7 +84,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 procedure is terminated when the objective function value of a
                 nearly feasible point is less than or equal to this target.
             timeout : int, optional
-                Maximum number of seconds allowed for the main optimization
+                Maximum number of seconds allowed for the optimization
                 procedure. If zero, no timeout is enforced.
             feasibility_tol : float, optional
                 Tolerance on the constraint violation.
@@ -320,43 +320,46 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     # Set the default options.
     _set_default_options(options, pb.n)
 
-    # Initialize the models and skip the computations whenever possible.
-    if not pb.bounds.is_feasible:
-        # The bound constraints are infeasible.
-        return _build_result(pb, 0.0, False, ExitStatus.INFEASIBLE_ERROR, 0, options)
-    elif pb.n == 0:
-        # All variables are fixed by the bound constraints.
-        return _build_result(pb, 0.0, True, ExitStatus.FIXED_SUCCESS, 0, options)
-    if verbose:
-        print('Starting the optimization procedure.')
-        print(f'Initial trust-region radius: {options[Options.RHOBEG]}.')
-        print(f'Final trust-region radius: {options[Options.RHOEND]}.')
-        print(f'Maximum number of function evaluations: {options[Options.MAX_EVAL]}.')
-        print(f'Maximum number of iterations: {options[Options.MAX_ITER]}.')
-        print()
-    try:
-        framework = TrustRegion(pb, options)
-    except np.linalg.LinAlgError:
-        # The construction of the initial interpolation set failed.
-        return _build_result(pb, 0.0, False, ExitStatus.LINALG_ERROR, 0, options)
-    except StopIteration:
-        # The callback raised a StopIteration exception.
-        return _build_result(pb, 0.0, True, ExitStatus.CALLBACK_SUCCESS, 0, options)
-    if framework.models.target_init:
-        # The target on the objective function value has been reached
-        return _build_result(pb, framework.penalty, True, ExitStatus.TARGET_SUCCESS, 0, options)
-    elif pb.n_eval >= options[Options.MAX_EVAL]:
-        # The maximum number of function evaluations has been exceeded.
-        return _build_result(pb, framework.penalty, False, ExitStatus.MAX_ITER_WARNING, 0, options)
-
     # Set the timeout.
     signal.signal(signal.SIGALRM, timeout_handler)
     if options[Options.TIMEOUT] > 0:
         signal.alarm(options[Options.TIMEOUT])
 
-    # Start the optimization procedure.
+    # Initialize the models and skip the computations whenever possible.
     success = False
     n_iter = 0
+    try:
+        if not pb.bounds.is_feasible:
+            # The bound constraints are infeasible.
+            return _build_result(pb, 0.0, False, ExitStatus.INFEASIBLE_ERROR, n_iter, options)
+        elif pb.n == 0:
+            # All variables are fixed by the bound constraints.
+            return _build_result(pb, 0.0, True, ExitStatus.FIXED_SUCCESS, n_iter, options)
+        if verbose:
+            print('Starting the optimization procedure.')
+            print(f'Initial trust-region radius: {options[Options.RHOBEG]}.')
+            print(f'Final trust-region radius: {options[Options.RHOEND]}.')
+            print(f'Maximum number of function evaluations: {options[Options.MAX_EVAL]}.')
+            print(f'Maximum number of iterations: {options[Options.MAX_ITER]}.')
+            print()
+        try:
+            framework = TrustRegion(pb, options)
+        except np.linalg.LinAlgError:
+            # The construction of the initial interpolation set failed.
+            return _build_result(pb, 0.0, False, ExitStatus.LINALG_ERROR, n_iter, options)
+        except StopIteration:
+            # The callback raised a StopIteration exception.
+            return _build_result(pb, 0.0, True, ExitStatus.CALLBACK_SUCCESS, n_iter, options)
+        if framework.models.target_init:
+            # The target on the objective function value has been reached
+            return _build_result(pb, framework.penalty, True, ExitStatus.TARGET_SUCCESS, n_iter, options)
+        elif pb.n_eval >= options[Options.MAX_EVAL]:
+            # The maximum number of function evaluations has been exceeded.
+            return _build_result(pb, framework.penalty, False, ExitStatus.MAX_ITER_WARNING, n_iter, options)
+    except TimeoutError:
+        return _build_result(pb, 0.0, False, ExitStatus.TIMEOUT_WARNING, n_iter, options)
+
+    # Start the optimization procedure.
     try:
         k_new = None
         n_short_steps = 0
