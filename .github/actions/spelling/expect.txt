@@ -149,6 +149,7 @@ semilogx
 setcounter
 sifdecode
 sifdecoder
+SIGALRM
 slsqp
 SOURCEDIR
 SPHINXBUILD
