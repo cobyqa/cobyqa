@@ -15,6 +15,7 @@ class ExitStatus(Enum):
     CALLBACK_SUCCESS = 3
     MAX_EVAL_WARNING = 4
     MAX_ITER_WARNING = 5
+    TIMEOUT_WARNING = 6
     INFEASIBLE_ERROR = -1
     LINALG_ERROR = -2
 
@@ -35,6 +36,7 @@ class Options(str, Enum):
     SCALE = 'scale'
     STORE_HISTORY = 'store_history'
     TARGET = 'target'
+    TIMEOUT = 'timeout'
     VERBOSE = 'verbose'
 
 
@@ -52,6 +54,7 @@ DEFAULT_OPTIONS = {
     Options.SCALE.value: False,
     Options.STORE_HISTORY.value: False,
     Options.TARGET.value: -np.inf,
+    Options.TIMEOUT.value: 0,
     Options.VERBOSE.value: False,
 }
 

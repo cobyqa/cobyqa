@@ -1,3 +1,4 @@
+import signal
 import warnings
 
 import numpy as np
@@ -82,6 +83,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                 Target on the objective function value. The optimization
                 procedure is terminated when the objective function value of a
                 nearly feasible point is less than or equal to this target.
+            timeout : int, optional
+                Maximum number of seconds allowed for the main optimization
+                procedure. If zero, no timeout is enforced.
             feasibility_tol : float, optional
                 Tolerance on the constraint violation.
             radius_init : float, optional
@@ -159,6 +163,8 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
               - The maximum number of function evaluations has been exceeded.
             * - 5
               - The maximum number of iterations has been exceeded.
+            * - 6
+              - The timeout has been reached.
             * - -1
               - The bound constraints are infeasible.
             * - -2
@@ -343,64 +349,190 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         # The maximum number of function evaluations has been exceeded.
         return _build_result(pb, framework.penalty, False, ExitStatus.MAX_ITER_WARNING, 0, options)
 
+    # Set the timeout.
+    signal.signal(signal.SIGALRM, timeout_handler)
+    if options[Options.TIMEOUT] > 0:
+        signal.alarm(options[Options.TIMEOUT])
+
     # Start the optimization procedure.
     success = False
-    k_new = None
-    n_short_steps = 0
-    n_very_short_steps = 0
-    n_alt_models = 0
     n_iter = 0
-    while True:
-        # Stop the optimization procedure if the maximum number of iterations
-        # has been exceeded. We do not write the main loop as a for loop because
-        # we want to access the number of iterations outside the loop.
-        if n_iter >= options[Options.MAX_ITER]:
-            status = ExitStatus.MAX_ITER_WARNING
-            break
-        n_iter += 1
+    try:
+        k_new = None
+        n_short_steps = 0
+        n_very_short_steps = 0
+        n_alt_models = 0
+        while True:
+            # Stop the optimization procedure if the maximum number of iterations
+            # has been exceeded. We do not write the main loop as a for loop because
+            # we want to access the number of iterations outside the loop.
+            if n_iter >= options[Options.MAX_ITER]:
+                status = ExitStatus.MAX_ITER_WARNING
+                break
+            n_iter += 1
 
-        # Update the point around which the quadratic models are built.
-        if np.linalg.norm(framework.x_best - framework.models.interpolation.x_base) >= 10.0 * framework.radius:
-            framework.shift_x_base(options)
+            # Update the point around which the quadratic models are built.
+            if np.linalg.norm(framework.x_best - framework.models.interpolation.x_base) >= 10.0 * framework.radius:
+                framework.shift_x_base(options)
 
-        # Evaluate the trial step.
-        radius_save = framework.radius
-        normal_step, tangential_step = framework.get_trust_region_step(options)
-        step = normal_step + tangential_step
-        s_norm = np.linalg.norm(step)
+            # Evaluate the trial step.
+            radius_save = framework.radius
+            normal_step, tangential_step = framework.get_trust_region_step(options)
+            step = normal_step + tangential_step
+            s_norm = np.linalg.norm(step)
 
-        # If the trial step is too short, we do not attempt to evaluate the
-        # objective and constraint functions. Instead, we reduce the
-        # trust-region radius and check whether the resolution should be
-        # reduced and whether the geometry of the interpolation set should be
-        # improved. Otherwise, we entertain a classical iteration. The criterion
-        # for performing an exceptional jump is taken from NEWUOA.
-        if s_norm <= 0.5 * framework.resolution:
-            framework.radius *= 0.1
-            if radius_save > framework.resolution:
-                n_short_steps = 0
-                n_very_short_steps = 0
-            else:
-                n_short_steps += 1
-                n_very_short_steps += 1
-                if s_norm > 0.1 * framework.resolution:
+            # If the trial step is too short, we do not attempt to evaluate the
+            # objective and constraint functions. Instead, we reduce the
+            # trust-region radius and check whether the resolution should be
+            # reduced and whether the geometry of the interpolation set should be
+            # improved. Otherwise, we entertain a classical iteration. The criterion
+            # for performing an exceptional jump is taken from NEWUOA.
+            if s_norm <= 0.5 * framework.resolution:
+                framework.radius *= 0.1
+                if radius_save > framework.resolution:
+                    n_short_steps = 0
                     n_very_short_steps = 0
-            reduce_resolution = n_short_steps >= 5 or n_very_short_steps >= 3
-            if reduce_resolution:
-                n_short_steps = 0
-                n_very_short_steps = 0
-                improve_geometry = False
+                else:
+                    n_short_steps += 1
+                    n_very_short_steps += 1
+                    if s_norm > 0.1 * framework.resolution:
+                        n_very_short_steps = 0
+                reduce_resolution = n_short_steps >= 5 or n_very_short_steps >= 3
+                if reduce_resolution:
+                    n_short_steps = 0
+                    n_very_short_steps = 0
+                    improve_geometry = False
+                else:
+                    try:
+                        k_new, dist_new = framework.get_index_to_remove()
+                    except np.linalg.LinAlgError:
+                        status = ExitStatus.LINALG_ERROR
+                        break
+                    improve_geometry = dist_new > max(framework.radius, 2.0 * framework.resolution)
             else:
+                # Increase the penalty parameter if necessary.
+                same_best_point = framework.increase_penalty(step)
+                if same_best_point:
+                    # Evaluate the objective and constraint functions.
+                    try:
+                        fun_val, cub_val, ceq_val, target = _eval(pb, framework, step, options)
+                    except MaxEvalError:
+                        status = ExitStatus.MAX_EVAL_WARNING
+                        break
+                    except StopIteration:
+                        status = ExitStatus.CALLBACK_SUCCESS
+                        success = True
+                        break
+                    if target:
+                        status = ExitStatus.TARGET_SUCCESS
+                        success = True
+                        break
+
+                    # Perform a second-order correction step if necessary.
+                    merit_old = framework.merit(framework.x_best, framework.fun_best, framework.cub_best, framework.ceq_best)
+                    merit_new = framework.merit(framework.x_best + step, fun_val, cub_val, ceq_val)
+                    if pb.type == 'nonlinearly constrained' and merit_new > merit_old and np.linalg.norm(normal_step) > 0.8 ** 2.0 * framework.radius:
+                        soc_step = framework.get_second_order_correction_step(step, options)
+                        if np.linalg.norm(soc_step) > 0.0:
+                            step += soc_step
+
+                            # Evaluate the objective and constraint functions.
+                            try:
+                                fun_val, cub_val, ceq_val, target = _eval(pb, framework, step, options)
+                            except MaxEvalError:
+                                status = ExitStatus.MAX_EVAL_WARNING
+                                break
+                            except StopIteration:
+                                status = ExitStatus.CALLBACK_SUCCESS
+                                success = True
+                                break
+                            if target:
+                                status = ExitStatus.TARGET_SUCCESS
+                                success = True
+                                break
+
+                    # Calculate the reduction ratio.
+                    ratio = framework.get_reduction_ratio(step, fun_val, cub_val, ceq_val)
+
+                    # Choose an interpolation point to remove.
+                    try:
+                        k_new = framework.get_index_to_remove(framework.x_best + step)[0]
+                    except np.linalg.LinAlgError:
+                        status = ExitStatus.LINALG_ERROR
+                        break
+
+                    # Update the interpolation set.
+                    try:
+                        ill_conditioned = framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
+                    except np.linalg.LinAlgError:
+                        status = ExitStatus.LINALG_ERROR
+                        break
+                    framework.set_best_index()
+
+                    # Update the trust-region radius.
+                    framework.update_radius(step, ratio)
+
+                    # Attempt to replace the models by the alternative ones.
+                    if framework.radius <= framework.resolution:
+                        if ratio >= 0.01:
+                            n_alt_models = 0
+                        else:
+                            n_alt_models += 1
+                            grad = framework.models.fun_grad(framework.x_best)
+                            try:
+                                grad_alt = framework.models.fun_alt_grad(framework.x_best)
+                            except np.linalg.LinAlgError:
+                                status = ExitStatus.LINALG_ERROR
+                                break
+                            if np.linalg.norm(grad) < 10.0 * np.linalg.norm(grad_alt):
+                                n_alt_models = 0
+                            if n_alt_models >= 3:
+                                try:
+                                    framework.models.reset_models()
+                                except np.linalg.LinAlgError:
+                                    status = ExitStatus.LINALG_ERROR
+                                    break
+                                n_alt_models = 0
+
+                    # Update the Lagrange multipliers.
+                    framework.set_multipliers(framework.x_best + step)
+
+                    # Check whether the resolution should be reduced.
+                    try:
+                        k_new, dist_new = framework.get_index_to_remove()
+                    except np.linalg.LinAlgError:
+                        status = ExitStatus.LINALG_ERROR
+                        break
+                    improve_geometry = ill_conditioned or ratio <= 0.1 and dist_new > max(framework.radius, 2.0 * framework.resolution)
+                    reduce_resolution = radius_save <= framework.resolution and ratio <= 0.1 and not improve_geometry
+                else:
+                    # When increasing the penalty parameter, the best point so far
+                    # may change. In this case, we restart the iteration.
+                    reduce_resolution = False
+                    improve_geometry = False
+
+            # Reduce the resolution if necessary.
+            if reduce_resolution:
+                if framework.resolution <= options[Options.RHOEND]:
+                    success = True
+                    status = ExitStatus.RADIUS_SUCCESS
+                    break
+                framework.reduce_resolution(options)
+                framework.decrease_penalty()
+
+                if verbose:
+                    maxcv_val = pb.maxcv(framework.x_best, framework.cub_best, framework.ceq_best)
+                    _print_step(f'New trust-region radius: {framework.resolution}', pb, pb.build_x(framework.x_best), framework.fun_best, maxcv_val, pb.n_eval, n_iter)
+                    print()
+
+            # Improve the geometry of the interpolation set if necessary.
+            if improve_geometry:
                 try:
-                    k_new, dist_new = framework.get_index_to_remove()
+                    step = framework.get_geometry_step(k_new, options)
                 except np.linalg.LinAlgError:
                     status = ExitStatus.LINALG_ERROR
                     break
-                improve_geometry = dist_new > max(framework.radius, 2.0 * framework.resolution)
-        else:
-            # Increase the penalty parameter if necessary.
-            same_best_point = framework.increase_penalty(step)
-            if same_best_point:
+
                 # Evaluate the objective and constraint functions.
                 try:
                     fun_val, cub_val, ceq_val, target = _eval(pb, framework, step, options)
@@ -416,135 +548,24 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
                     success = True
                     break
 
-                # Perform a second-order correction step if necessary.
-                merit_old = framework.merit(framework.x_best, framework.fun_best, framework.cub_best, framework.ceq_best)
-                merit_new = framework.merit(framework.x_best + step, fun_val, cub_val, ceq_val)
-                if pb.type == 'nonlinearly constrained' and merit_new > merit_old and np.linalg.norm(normal_step) > 0.8 ** 2.0 * framework.radius:
-                    soc_step = framework.get_second_order_correction_step(step, options)
-                    if np.linalg.norm(soc_step) > 0.0:
-                        step += soc_step
-
-                        # Evaluate the objective and constraint functions.
-                        try:
-                            fun_val, cub_val, ceq_val, target = _eval(pb, framework, step, options)
-                        except MaxEvalError:
-                            status = ExitStatus.MAX_EVAL_WARNING
-                            break
-                        except StopIteration:
-                            status = ExitStatus.CALLBACK_SUCCESS
-                            success = True
-                            break
-                        if target:
-                            status = ExitStatus.TARGET_SUCCESS
-                            success = True
-                            break
-
-                # Calculate the reduction ratio.
-                ratio = framework.get_reduction_ratio(step, fun_val, cub_val, ceq_val)
-
-                # Choose an interpolation point to remove.
-                try:
-                    k_new = framework.get_index_to_remove(framework.x_best + step)[0]
-                except np.linalg.LinAlgError:
-                    status = ExitStatus.LINALG_ERROR
-                    break
-
                 # Update the interpolation set.
                 try:
-                    ill_conditioned = framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
+                    framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
                 except np.linalg.LinAlgError:
                     status = ExitStatus.LINALG_ERROR
                     break
                 framework.set_best_index()
-
-                # Update the trust-region radius.
-                framework.update_radius(step, ratio)
-
-                # Attempt to replace the models by the alternative ones.
-                if framework.radius <= framework.resolution:
-                    if ratio >= 0.01:
-                        n_alt_models = 0
-                    else:
-                        n_alt_models += 1
-                        grad = framework.models.fun_grad(framework.x_best)
-                        try:
-                            grad_alt = framework.models.fun_alt_grad(framework.x_best)
-                        except np.linalg.LinAlgError:
-                            status = ExitStatus.LINALG_ERROR
-                            break
-                        if np.linalg.norm(grad) < 10.0 * np.linalg.norm(grad_alt):
-                            n_alt_models = 0
-                        if n_alt_models >= 3:
-                            try:
-                                framework.models.reset_models()
-                            except np.linalg.LinAlgError:
-                                status = ExitStatus.LINALG_ERROR
-                                break
-                            n_alt_models = 0
-
-                # Update the Lagrange multipliers.
-                framework.set_multipliers(framework.x_best + step)
-
-                # Check whether the resolution should be reduced.
-                try:
-                    k_new, dist_new = framework.get_index_to_remove()
-                except np.linalg.LinAlgError:
-                    status = ExitStatus.LINALG_ERROR
-                    break
-                improve_geometry = ill_conditioned or ratio <= 0.1 and dist_new > max(framework.radius, 2.0 * framework.resolution)
-                reduce_resolution = radius_save <= framework.resolution and ratio <= 0.1 and not improve_geometry
-            else:
-                # When increasing the penalty parameter, the best point so far
-                # may change. In this case, we restart the iteration.
-                reduce_resolution = False
-                improve_geometry = False
-
-        # Reduce the resolution if necessary.
-        if reduce_resolution:
-            if framework.resolution <= options[Options.RHOEND]:
-                success = True
-                status = ExitStatus.RADIUS_SUCCESS
-                break
-            framework.reduce_resolution(options)
-            framework.decrease_penalty()
-
-            if verbose:
-                maxcv_val = pb.maxcv(framework.x_best, framework.cub_best, framework.ceq_best)
-                _print_step(f'New trust-region radius: {framework.resolution}', pb, pb.build_x(framework.x_best), framework.fun_best, maxcv_val, pb.n_eval, n_iter)
-                print()
-
-        # Improve the geometry of the interpolation set if necessary.
-        if improve_geometry:
-            try:
-                step = framework.get_geometry_step(k_new, options)
-            except np.linalg.LinAlgError:
-                status = ExitStatus.LINALG_ERROR
-                break
-
-            # Evaluate the objective and constraint functions.
-            try:
-                fun_val, cub_val, ceq_val, target = _eval(pb, framework, step, options)
-            except MaxEvalError:
-                status = ExitStatus.MAX_EVAL_WARNING
-                break
-            except StopIteration:
-                status = ExitStatus.CALLBACK_SUCCESS
-                success = True
-                break
-            if target:
-                status = ExitStatus.TARGET_SUCCESS
-                success = True
-                break
-
-            # Update the interpolation set.
-            try:
-                framework.models.update_interpolation(k_new, framework.x_best + step, fun_val, cub_val, ceq_val)
-            except np.linalg.LinAlgError:
-                status = ExitStatus.LINALG_ERROR
-                break
-            framework.set_best_index()
+    except TimeoutError:
+        status = ExitStatus.TIMEOUT_WARNING
 
     return _build_result(pb, framework.penalty, success, status, n_iter, options)
+
+
+def timeout_handler(signum, frame):
+    """
+    Raise a TimeoutError exception.
+    """
+    raise TimeoutError
 
 
 def _set_default_options(options, n):
@@ -583,6 +604,8 @@ def _set_default_options(options, n):
     options[Options.MAX_ITER.value] = int(options[Options.MAX_ITER])
     options.setdefault(Options.TARGET.value, DEFAULT_OPTIONS[Options.TARGET])
     options[Options.TARGET.value] = float(options[Options.TARGET])
+    options.setdefault(Options.TIMEOUT.value, DEFAULT_OPTIONS[Options.TIMEOUT])
+    options[Options.TIMEOUT.value] = int(options[Options.TIMEOUT])
     options.setdefault(Options.FEASIBILITY_TOL.value, DEFAULT_OPTIONS[Options.FEASIBILITY_TOL])
     options[Options.FEASIBILITY_TOL.value] = float(options[Options.FEASIBILITY_TOL])
     options.setdefault(Options.VERBOSE.value, DEFAULT_OPTIONS[Options.VERBOSE])
@@ -633,6 +656,7 @@ def _build_result(pb, penalty, success, status, n_iter, options):
         ExitStatus.CALLBACK_SUCCESS: 'The callback requested to stop the optimization procedure',
         ExitStatus.MAX_EVAL_WARNING: 'The maximum number of function evaluations has been exceeded',
         ExitStatus.MAX_ITER_WARNING: 'The maximum number of iterations has been exceeded',
+        ExitStatus.TIMEOUT_WARNING: 'The timeout has been reached',
         ExitStatus.INFEASIBLE_ERROR: 'The bound constraints are infeasible',
         ExitStatus.LINALG_ERROR: 'A linear algebra error occurred',
     }.get(status, 'Unknown exit status')
