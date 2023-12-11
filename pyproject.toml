@@ -58,7 +58,7 @@ dynamic = ["version"]
 benchmarks = [
     "joblib==1.3.2",
     "matplotlib",
-    "pdfo==2.0.0",
+    "pdfo==2.0.1",
     "pycutest==1.5.1",
 ]
 doc = [
