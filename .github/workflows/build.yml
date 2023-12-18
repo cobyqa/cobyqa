@@ -30,7 +30,7 @@ jobs:
         run: bash .github/actions/build/test_package.sh
 
       - name: Store artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: dist/*
 
