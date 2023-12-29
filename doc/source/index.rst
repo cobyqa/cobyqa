@@ -43,28 +43,30 @@ Citing COBYQA
 
 If you would like to acknowledge the significance of COBYQA in your research, we suggest citing the project as follows.
 
-- T.\  M.\  Ragonneau. `Model-Based Derivative-Free Optimization Methods and Software <https://tomragonneau.com/documents/thesis.pdf>`_. PhD thesis, Department of Applied Mathematics, The Hong Kong Polytechnic University, Hong Kong, China, 2022.
-- T.\  M.\  Ragonneau and Z.\  Zhang. COBYQA: Constrained Optimization BY Quadratic Approximations. Available at https://www.cobyqa.com, |year|. Version |release|.
+- T.\  M.\  Ragonneau. "Model-Based Derivative-Free Optimization Methods and Software." PhD thesis. Hong Kong, China: Department of Applied Mathematics, The Hong Kong Polytechnic University, 2022. URL: https://theses.lib.polyu.edu.hk/handle/200/12294.
+- T.\  M.\  Ragonneau and Z.\  Zhang. COBYQA. Version |release|. |year|. URL: https://www.cobyqa.com.
 
-The corresponding BibTeX entries are given hereunder.
+The corresponding BibLaTeX entries are given hereunder.
 
 .. code-block:: bib
     :substitutions:
 
-    @phdthesis{rago_thesis,
+    @thesis{rago_thesis,
         author          = {Ragonneau, T. M.},
         title           = {Model-Based Derivative-Free Optimization Methods and Software},
-        school          = {Department of Applied Mathematics, The Hong Kong Polytechnic University},
+        type            = {phdthesis},
+        institution     = {Department of Applied Mathematics, The Hong Kong Polytechnic University},
         address         = {Hong Kong, China},
-        year            = 2022,
+        date            = 2022,
+        url             = {https://theses.lib.polyu.edu.hk/handle/200/12294},
     }
 
-    @misc{razh_cobyqa,
+    @software{razh_cobyqa,
         author          = {Ragonneau, T. M. and Zhang, Z.},
-        title           = {{COBYQA}: {C}onstrained {O}ptimization {BY} {Q}uadratic {A}pproximations},
-        howpublished    = {Available at https://www.cobyqa.com},
-        note            = {Version |release|},
-        year            = |year|,
+        title           = {{COBYQA}},
+        version         = {|release|},
+        date            = |year|,
+        url             = {https://www.cobyqa.com},
     }
 
 Statistics
@@ -78,5 +80,4 @@ As of |today|, COBYQA has been downloaded |total_downloads| times, including
 Acknowledgments
 ---------------
 
-The early development of COBYQA was funded by the `University Grants Committee <https://www.ugc.edu.hk>`_ of Hong Kong, under the `Hong Kong PhD Fellowship Scheme <https://cerg1.ugc.edu.hk/hkpfs/index.html>`_ (ref. PF18-24698).
-It is now supported by `The Hong Kong Polytechnic University <https://www.polyu.edu.hk>`_.
+This work was partially supported by the `Research Grants Council <https://www.ugc.edu.hk/eng/rgc/>`_ of Hong Kong under Grants PF18-24698, PolyU 253012/17P, PolyU 153054/20P, PolyU 153066/21P, and `The Hong Kong Polytechnic University <https://www.polyu.edu.hk/>`_.
