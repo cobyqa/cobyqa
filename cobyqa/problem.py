@@ -716,6 +716,7 @@ class Problem:
         self._fixed_val = np.clip(self._fixed_val, bounds.xl[self._fixed_idx], bounds.xu[self._fixed_idx])
 
         # Set the bound and linear constraints.
+        self._orig_bounds = bounds
         self._bounds = BoundConstraints(bounds.xl[~self._fixed_idx], bounds.xu[~self._fixed_idx])
         self._linear_ub = LinearConstraints(linear_ub.a[:, ~self._fixed_idx], linear_ub.b - linear_ub.a[:, self._fixed_idx] @ self._fixed_val, False, debug)
         self._linear_eq = LinearConstraints(linear_eq.a[:, ~self._fixed_idx], linear_eq.b - linear_eq.a[:, self._fixed_idx] @ self._fixed_val, True, debug)
@@ -764,20 +765,19 @@ class Problem:
             Nonlinear equality constraint function values.
         """
         # Evaluate the objective and nonlinear constraint functions.
-        x_eval = self.bounds.project(x)
-        fun_val = self._obj(self.build_x(x_eval))
-        cub_val = self._nonlinear_ub(self.build_x(x_eval))
-        ceq_val = self._nonlinear_eq(self.build_x(x_eval))
+        fun_val = self._obj(self.build_x(x))
+        cub_val = self._nonlinear_ub(self.build_x(x))
+        ceq_val = self._nonlinear_eq(self.build_x(x))
 
         # Add the point to the filter if it is not dominated by any point.
-        maxcv_val = self.maxcv(x_eval, cub_val, ceq_val)
+        maxcv_val = self.maxcv(x, cub_val, ceq_val)
         maxcv_shift = max(maxcv_val - self._feasibility_tol, 0.0)
         if all(fun_val < fun_filter or maxcv_shift < max(maxcv_filter - self._feasibility_tol, 0.0) for fun_filter, maxcv_filter in zip(self._fun_filter, self._maxcv_filter)):
             self._fun_filter.append(fun_val)
             self._cub_filter.append(cub_val)
             self._ceq_filter.append(ceq_val)
             self._maxcv_filter.append(maxcv_val)
-            self._x_filter.append(x_eval)
+            self._x_filter.append(np.copy(x))
 
         # Remove the points in the filter that are dominated by the new point.
         for k in range(len(self._fun_filter) - 2, -1, -1):
@@ -1059,7 +1059,7 @@ class Problem:
         x_full = np.empty(self.n_orig)
         x_full[self._fixed_idx] = self._fixed_val
         x_full[~self._fixed_idx] = x * self._scaling_factor + self._scaling_shift
-        return x_full
+        return self._orig_bounds.project(x_full)
 
     def maxcv(self, x, cub_val=None, ceq_val=None):
         """
