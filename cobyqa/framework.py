@@ -293,7 +293,12 @@ class TrustRegion:
         `numpy.ndarray`, shape (n, n)
             Hessian matrix of the Lagrangian model at `x`.
         """
-        return self.models.fun_hess() + self._lm_nonlinear_ub @ self.models.cub_hess() + self._lm_nonlinear_eq @ self.models.ceq_hess()
+        hess = self.models.fun_hess()
+        if self.m_nonlinear_ub > 0:
+            hess += self._lm_nonlinear_ub @ self.models.cub_hess()
+        if self.m_nonlinear_eq > 0:
+            hess += self._lm_nonlinear_eq @ self.models.ceq_hess()
+        return hess
 
     def lag_model_hess_prod(self, v):
         """
