@@ -34,8 +34,8 @@ To solve the problem using COBYQA, run:
 
 .. code-block:: python
 
-    from scipy.optimize import rosen
     from cobyqa import minimize
+    from scipy.optimize import rosen
 
     x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
     res = minimize(rosen, x0)
@@ -63,16 +63,18 @@ To solve the problem using COBYQA, run:
 
 .. code-block:: python
 
+    import numpy np
     from cobyqa import minimize
+    from scipy.optimize import Bounds
 
     def fun(x):
         return (x[0] - 1.0) ** 2.0 + (x[1] - 2.5) ** 2.0
 
     x0 = [2.0, 0.0]
-    xl = [0.0, 0.0]
+    bounds = Bounds([0.0, 0.0], np.inf)
     aub = [[-1.0, 2.0], [1.0, 2.0], [1.0, -2.0]]
     bub = [2.0, 6.0, 2.0]
-    res = minimize(fun, x0, xl=xl, aub=aub, bub=bub)
+    res = minimize(fun, x0, bounds=bounds, aub=aub, bub=bub)
     print(res.x)
 
 This should display the desired output ``[1.4 1.7]``.

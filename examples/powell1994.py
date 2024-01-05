@@ -11,8 +11,8 @@ References
    Dordrecht, The Netherlands, 1994.
 """
 import numpy as np
-
 from cobyqa import minimize
+from scipy.optimize import Bounds
 
 
 def fun(x, no):
@@ -40,7 +40,7 @@ def fun(x, no):
         raise NotImplementedError
 
 
-def x0(no):
+def _x0(no):
     if no in 'ABDEF':
         x = [1.0, 1.0]
     elif no in 'CG':
@@ -56,17 +56,16 @@ def x0(no):
     return np.array(x)
 
 
-def xl(no):
+def _bounds(no):
     if no in 'ABCDEFGHI':
         return None
     if no == 'J':
-        x = [-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, 0.0]
+        return Bounds([-np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, 0.0], np.inf)
     else:
         raise NotImplementedError
-    return np.array(x)
 
 
-def aub(no):
+def _aub(no):
     if no in 'ABCDEFHIJ':
         return None
     if no == 'G':
@@ -76,7 +75,7 @@ def aub(no):
     return np.array(a)
 
 
-def bub(no):
+def _bub(no):
     if no in 'ABCDEFHIJ':
         return None
     if no == 'G':
@@ -86,7 +85,7 @@ def bub(no):
     return np.array(b)
 
 
-def cub(x, no):
+def _cub(x, no):
     if no in 'ADE':
         c = []
     elif no == 'B':
@@ -134,7 +133,7 @@ def cub(x, no):
     return np.array(c)
 
 
-def solution(no):
+def _solution(no):
     if no == 'A':
         s = ([-1.0, 0.0],)
     elif no == 'B':
@@ -164,16 +163,18 @@ def solution(no):
 
 
 def _resid(x, no):
-    resid = np.max(cub(x, no), initial=0.0)
-    if xl(no) is not None:
-        resid = max(resid, np.max(xl(no) - x, initial=0.0))
-    if aub(no) is not None:
-        resid = max(resid, np.max(np.dot(aub(no), x) - bub(no), initial=0.0))
+    resid = np.max(_cub(x, no), initial=0.0)
+    bounds = _bounds(no)
+    if bounds is not None:
+        resid = np.max(bounds.lb - x, initial=resid)
+        resid = np.max(x - bounds.ub, initial=resid)
+    if _aub(no) is not None:
+        resid = max(resid, np.max(np.dot(_aub(no), x) - _bub(no), initial=0.0))
     return resid
 
 
 def _distance(x, no):
-    return min(np.linalg.norm(x - xs) for xs in solution(no))
+    return min(np.linalg.norm(x - xs) for xs in _solution(no))
 
 
 if __name__ == '__main__':
@@ -181,6 +182,6 @@ if __name__ == '__main__':
     print('| Problem | Evaluations | Objective function | Constraint violation | Distance to solution |')
     print('+---------+-------------+--------------------+----------------------+----------------------+')
     for problem in 'ABCDEFGHIJ':
-        res = minimize(fun, x0(problem), problem, xl(problem), aub=aub(problem), bub=bub(problem), cub=cub)
+        res = minimize(fun, _x0(problem), problem, _bounds(problem), aub=_aub(problem), bub=_bub(problem), cub=_cub)
         print(f'|   ({problem})   |{res.nfev:^13}|{res.fun:^20.4e}|{_resid(res.x, problem):^22.4e}|{_distance(res.x, problem):^22.4e}|')
     print('+---------+-------------+--------------------+----------------------+----------------------+')

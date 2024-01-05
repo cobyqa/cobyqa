@@ -1,8 +1,7 @@
-import signal
 import warnings
 
 import numpy as np
-from scipy.optimize import OptimizeResult
+from scipy.optimize import Bounds, OptimizeResult
 
 from .framework import TrustRegion
 from .problem import ObjectiveFunction, BoundConstraints, LinearConstraints, NonlinearConstraints, Problem
@@ -10,7 +9,7 @@ from .utils import MaxEvalError
 from .settings import ExitStatus, Options, DEFAULT_OPTIONS, PRINT_OPTIONS
 
 
-def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, beq=None, cub=None, ceq=None, callback=None, options=None):
+def minimize(fun, x0, args=(), bounds=None, aub=None, bub=None, aeq=None, beq=None, cub=None, ceq=None, callback=None, options=None):
     r"""
     Minimize a scalar function using the COBYQA method.
 
@@ -30,10 +29,15 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         Initial guess.
     args : tuple, optional
         Extra arguments passed to the objective and constraints function.
-    xl : array_like, shape (n,), optional
-        Lower bounds on the variables ``xl <= x``.
-    xu : array_like, shape (n,), optional
-        Upper bounds on the variables ``x <= xu``.
+    bounds : {`scipy.optimize.Bounds`, array_like, shape (n, 2)}, optional
+        Bound constraints of the problem. It can be one of the cases below.
+
+        #. An instance of `scipy.optimize.Bounds`.
+        #. An array with shape (n, 2). The bound constraints for ``x[i]`` are
+           ``bounds[i][0] <= x[i] <= bounds[i][1]``. Set ``bounds[i][0]`` to
+           :math:`-\infty` if there is no lower bound, and set ``bounds[i][1]``
+           to :math:`\infty` if there is no upper bound.
+
     aub : array_like, shape (m_linear_ub, n), optional
         Left-hand side matrix of the linear inequality constraints
         ``aub @ x <= bub``.
@@ -189,8 +193,9 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
         import numpy as np
         np.set_printoptions(precision=3, suppress=True)
 
-    >>> from scipy.optimize import rosen
+    >>> import numpy as np
     >>> from cobyqa import minimize
+    >>> from scipy.optimize import Bounds, rosen
 
     To solve the problem using COBYQA, run:
 
@@ -221,10 +226,10 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     This problem can be solved using `minimize` as:
 
     >>> x0 = [2.0, 0.0]
-    >>> xl = [0.0, 0.0]
+    >>> bounds = Bounds([0.0, 0.0], np.inf)
     >>> aub = [[-1.0, 2.0], [1.0, 2.0], [1.0, -2.0]]
     >>> bub = [2.0, 6.0, 2.0]
-    >>> res = minimize(fun, x0, xl=xl, aub=aub, bub=bub)
+    >>> res = minimize(fun, x0, bounds=bounds, aub=aub, bub=bub)
     >>> res.x
     array([1.4, 1.7])
 
@@ -287,10 +292,7 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
     if not hasattr(x0, '__len__'):
         x0 = [x0]
     n_orig = len(x0)
-    if xl is None:
-        xl = np.full(n_orig, -np.inf, dtype=float)
-    if xu is None:
-        xu = np.full(n_orig, np.inf, dtype=float)
+    xl, xu = _get_bounds(bounds, n_orig)
     bounds = BoundConstraints(xl, xu)
 
     # Initialize the linear constraints.
@@ -546,6 +548,20 @@ def minimize(fun, x0, args=(), xl=None, xu=None, aub=None, bub=None, aeq=None, b
             framework.set_best_index()
 
     return _build_result(pb, framework.penalty, success, status, n_iter, options)
+
+
+def _get_bounds(bounds, n):
+    if bounds is None:
+        return np.full(n, -np.inf), np.full(n, np.inf)
+    elif isinstance(bounds, Bounds):
+        return bounds.lb, bounds.ub
+    elif hasattr(bounds, '__len__'):
+        bounds = np.asarray(bounds)
+        if bounds.shape != (n, 2):
+            raise ValueError('The shape of the bounds is not compatible with the number of variables.')
+        return bounds[:, 0], bounds[:, 1]
+    else:
+        raise TypeError('The bounds must be an instance of scipy.optimize.Bounds or an array-like object.')
 
 
 def _set_default_options(options, n):

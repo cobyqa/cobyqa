@@ -10,7 +10,6 @@ Solve the feasibility problem
 
 """
 import numpy as np
-
 from cobyqa import minimize
 
 

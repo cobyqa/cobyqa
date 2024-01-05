@@ -8,9 +8,9 @@ References
    linear constraints. Math. Program. Comput., 7(3):237--267, 2015.
 """
 import numpy as np
-from matplotlib import pyplot as plt
-
 from cobyqa import minimize
+from matplotlib import pyplot as plt
+from scipy.optimize import Bounds
 
 
 def fun(x):
@@ -39,9 +39,9 @@ if __name__ == '__main__':
     rng = np.random.default_rng(0)
     n = 80  # must be even
 
-    xl = np.zeros(n, dtype=float)
-    aub = np.zeros((n // 2, n), dtype=float)
-    bub = 2.0 * np.ones(n // 2, dtype=float)
+    bounds = Bounds(np.zeros(n), np.inf)
+    aub = np.zeros((n // 2, n))
+    bub = 2.0 * np.ones(n // 2)
     x0 = np.empty(n, dtype=float)
     for i in range(n // 2):
         aub[i, [2 * i, 2 * i + 1]] = 1.0
@@ -55,5 +55,5 @@ if __name__ == '__main__':
     _plot_points(x0, 'Initial points')
 
     options = {'verbose': True}
-    res = minimize(fun, x0, xl=xl, aub=aub, bub=bub, options=options)
+    res = minimize(fun, x0, bounds=bounds, aub=aub, bub=bub, options=options)
     _plot_points(res.x, 'Final points')
