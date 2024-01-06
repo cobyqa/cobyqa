@@ -53,17 +53,23 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
         #. A list, each of whose elements are described in 1, 2, and 3.
 
     callback : callable, optional
-
         A callback executed at each objective function evaluation. The method
         terminates if a ``StopIteration`` exception is raised by the callback.
-        It should have the signature:
+        It should have either of the two signatures below:
 
             ``callback(intermediate_result)``
 
-        where ``intermediate_result`` is an instance of
-        `scipy.optimize.OptimizeResult`, with attributes ``x`` and ``fun``,
-        being the point at which the objective function is evaluated and the
-        value of the objective function, respectively.
+        where ``intermediate_result`` is a keyword parameter that contains an
+        an instance of `scipy.optimize.OptimizeResult`, with attributes ``x``
+        and ``fun``, being the point at which the objective function is
+        evaluated and the value of the objective function, respectively. The
+        name of the parameter must be ``intermediate_result`` for the callback
+        to be passed an instance of `scipy.optimize.OptimizeResult`.
+
+            ``callback(x)``
+
+        where ``x`` is the point at which the objective function is evaluated.
+        Introspection is used to determine which of the signatures to invoke.
     options : dict, optional
         Options passed to the solver. Accepted keys are:
 
@@ -113,10 +119,6 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
                 Solution point.
             fun : float
                 Objective function value at the solution point.
-            cub : `numpy.ndarray`, shape (m_nonlinear_ub,)
-                Nonlinear inequality constraint values at the solution point.
-            ceq : `numpy.ndarray`, shape (m_nonlinear_eq,)
-                Nonlinear equality constraint values at the solution point.
             maxcv : float
                 Maximum constraint violation at the solution point.
             nit : int
@@ -129,10 +131,8 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
 
             fun_history : `numpy.ndarray`, shape (nfev,)
                 History of the objective function values.
-            cub_history : `numpy.ndarray`, shape (nfev, m_nonlinear_ub)
-                History of the nonlinear inequality constraint values.
-            ceq_history : `numpy.ndarray`, shape (nfev, m_nonlinear_eq)
-                History of the nonlinear equality constraint values.
+            maxcv_history : `numpy.ndarray`, shape (nfev,)
+                History of the maximum constraint violations.
 
         A description of the termination statuses is given below.
 

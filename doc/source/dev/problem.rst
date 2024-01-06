@@ -10,8 +10,6 @@ This module implements classes for representing optimization problems tackled by
 .. autosummary::
     :toctree: generated/
 
-    Function
-    Constraints
     ObjectiveFunction
     BoundConstraints
     LinearConstraints

@@ -1,3 +1,5 @@
+from inspect import signature
+
 import numpy as np
 from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, OptimizeResult
 
@@ -73,8 +75,12 @@ class ObjectiveFunction:
         if self._callback is not None:
             if not callable(self._callback):
                 raise ValueError('The callback must be a callable function.')
-            intermediate_result = OptimizeResult(x=x, fun=f)
-            self._callback(intermediate_result)
+            sig = signature(self._callback)
+            if set(sig.parameters) == {'intermediate_result'}:
+                intermediate_result = OptimizeResult(x=x, fun=f)
+                self._callback(intermediate_result)
+            else:
+                self._callback(x)
         return f
 
     @property
@@ -850,7 +856,7 @@ class Problem:
         `numpy.ndarray`, shape (n_eval,)
             History of objective function evaluations.
         """
-        return self._fun_history
+        return np.array(self._fun_history, dtype=float)
 
     @property
     def maxcv_history(self):
@@ -862,7 +868,7 @@ class Problem:
         `numpy.ndarray`, shape (n_eval,)
             History of maximum constraint violations.
         """
-        return self._maxcv_history
+        return np.array(self._maxcv_history, dtype=float)
 
     @property
     def type(self):
@@ -975,9 +981,9 @@ class Problem:
         # Find the best point in the filter.
         fun_filter = np.array(self._fun_filter)
         maxcv_filter = np.array(self._maxcv_filter)
-        maxcv_filter = np.maximum(maxcv_filter - self._feasibility_tol, 0.0)
+        maxcv_filter_shifted = np.maximum(maxcv_filter - self._feasibility_tol, 0.0)
         x_filter = np.array(self._x_filter)
-        feasible_idx = maxcv_filter < max(np.finfo(float).eps, 2.0 * np.min(maxcv_filter))
+        feasible_idx = maxcv_filter_shifted < max(np.finfo(float).eps, 2.0 * np.min(maxcv_filter_shifted))
         if np.any(feasible_idx):
             # At least one point is nearly feasible. We select the one with
             # the least objective function value. If there is a tie, we
@@ -987,19 +993,19 @@ class Problem:
             if np.count_nonzero(fun_min_idx) == 1:
                 i = np.flatnonzero(fun_min_idx)[0]
             else:
-                fun_min_idx &= (maxcv_filter <= np.min(maxcv_filter))
+                fun_min_idx &= (maxcv_filter_shifted <= np.min(maxcv_filter_shifted))
                 i = np.flatnonzero(fun_min_idx)[-1]
         else:
             # No feasible point is found. We select the one with the least
             # merit function value. If there is a tie, we select the point
             # with the least maximum constraint violation. If there is still
             # a tie, we select the most recent point.
-            merit_filter = fun_filter + penalty * maxcv_filter
+            merit_filter = fun_filter + penalty * maxcv_filter_shifted
             merit_min_idx = merit_filter <= np.min(merit_filter)
             if np.count_nonzero(merit_min_idx) == 1:
                 i = np.flatnonzero(merit_min_idx)[0]
             else:
-                merit_min_idx &= (maxcv_filter <= np.min(maxcv_filter))
+                merit_min_idx &= (maxcv_filter_shifted <= np.min(maxcv_filter_shifted))
                 i = np.flatnonzero(merit_min_idx)[-1]
         return self.bounds.project(x_filter[i, :]), fun_filter[i], maxcv_filter[i]
 

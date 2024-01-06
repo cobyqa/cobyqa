@@ -63,7 +63,7 @@ To solve the problem using COBYQA, run:
 
 .. code-block:: python
 
-    import numpy np
+    import numpy as np
     from cobyqa import minimize
     from scipy.optimize import Bounds, LinearConstraint
 
@@ -95,6 +95,7 @@ To solve the problem using COBYQA, run:
 
 .. code-block:: python
 
+    import numpy as np
     from cobyqa import minimize
     from scipy.optimize import NonlinearConstraint
 
