@@ -4,7 +4,7 @@ from abc import ABC
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from scipy.optimize import Bounds
+from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint
 
 from cobyqa import minimize
 
@@ -243,26 +243,26 @@ class TestMinimizeLinearInequalityConstrained(TestMinimizeBase):
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['sphere', 'sumsqu'])
     def test_simple(self, fun, n, x0, xl, xu, aub, bub, x_best, fun_best):
-        res = minimize(fun=getattr(self, fun), x0=x0, aub=aub, bub=bub, options={'debug': True})
+        res = minimize(fun=getattr(self, fun), x0=x0, constraints=LinearConstraint(aub, -np.inf, bub), options={'debug': True})
         self.assert_result(res, n, x_best, fun_best, 0, np.sqrt(np.finfo(float).eps))
 
-        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), aub=aub, bub=bub, options={'debug': True})
+        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), constraints=LinearConstraint(aub, -np.inf, bub), options={'debug': True})
         self.assert_result(res, n, x_best, fun_best, 0, np.sqrt(np.finfo(float).eps))
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['sphere', 'sumsqu'])
     def test_tough(self, fun, n, x0, xl, xu, aub, bub):
-        minimize(fun=getattr(self, fun + '_tough'), x0=x0, aub=aub, bub=bub)
+        minimize(fun=getattr(self, fun + '_tough'), x0=x0, constraints=LinearConstraint(aub, -np.inf, bub))
 
-        minimize(fun=getattr(self, fun + '_tough'), x0=x0, bounds=Bounds(xl, xu), aub=aub, bub=bub)
+        minimize(fun=getattr(self, fun + '_tough'), x0=x0, bounds=Bounds(xl, xu), constraints=LinearConstraint(aub, -np.inf, bub))
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['sphere', 'sumsqu'])
     def test_target(self, fun, n, x0, xl, xu, aub, bub, x_best, fun_best):
-        res = minimize(fun=getattr(self, fun), x0=x0, aub=aub, bub=bub, options={'debug': True, 'target': fun_best + 1.0})
+        res = minimize(fun=getattr(self, fun), x0=x0, constraints=LinearConstraint(aub, -np.inf, bub), options={'debug': True, 'target': fun_best + 1.0})
         self.assert_result(res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps))
 
-        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), aub=aub, bub=bub, options={'debug': True, 'target': fun_best + 1.0})
+        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), constraints=LinearConstraint(aub, -np.inf, bub), options={'debug': True, 'target': fun_best + 1.0})
         self.assert_result(res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps))
 
 
@@ -304,26 +304,26 @@ class TestMinimizeLinearEqualityConstrained(TestMinimizeBase):
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['arwhead', 'sphere', 'sumsqu'])
     def test_simple(self, fun, n, x0, xl, xu, aeq, beq, x_best, fun_best):
-        res = minimize(fun=getattr(self, fun), x0=x0, aeq=aeq, beq=beq, options={'debug': True})
+        res = minimize(fun=getattr(self, fun), x0=x0, constraints=LinearConstraint(aeq, beq, beq), options={'debug': True})
         self.assert_result(res, n, x_best, fun_best, 0, np.sqrt(np.finfo(float).eps))
 
-        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), aeq=aeq, beq=beq, options={'debug': True})
+        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), constraints=LinearConstraint(aeq, beq, beq), options={'debug': True})
         self.assert_result(res, n, x_best, fun_best, 0, np.sqrt(np.finfo(float).eps))
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['arwhead', 'sphere', 'sumsqu'])
     def test_tough(self, fun, n, x0, xl, xu, aeq, beq):
-        minimize(fun=getattr(self, fun + '_tough'), x0=x0, aeq=aeq, beq=beq)
+        minimize(fun=getattr(self, fun + '_tough'), x0=x0, constraints=LinearConstraint(aeq, beq, beq))
 
-        minimize(fun=getattr(self, fun + '_tough'), x0=x0, bounds=Bounds(xl, xu), aeq=aeq, beq=beq)
+        minimize(fun=getattr(self, fun + '_tough'), x0=x0, bounds=Bounds(xl, xu), constraints=LinearConstraint(aeq, beq, beq))
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['arwhead', 'sphere', 'sumsqu'])
     def test_target(self, fun, n, x0, xl, xu, aeq, beq, x_best, fun_best):
-        res = minimize(fun=getattr(self, fun), x0=x0, aeq=aeq, beq=beq, options={'debug': True, 'target': fun_best + 1.0})
+        res = minimize(fun=getattr(self, fun), x0=x0, constraints=LinearConstraint(aeq, beq, beq), options={'debug': True, 'target': fun_best + 1.0})
         self.assert_result(res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps))
 
-        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), aeq=aeq, beq=beq, options={'debug': True, 'target': fun_best + 1.0})
+        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), constraints=LinearConstraint(aeq, beq, beq), options={'debug': True, 'target': fun_best + 1.0})
         self.assert_result(res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps))
 
 
@@ -362,26 +362,26 @@ class TestMinimizeNonlinearInequalityConstrained(TestMinimizeBase):
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['sphere', 'sumsqu'])
     def test_simple(self, fun, n, x0, xl, xu, cub, x_best, fun_best):
-        res = minimize(fun=getattr(self, fun), x0=x0, cub=cub, options={'debug': True})
+        res = minimize(fun=getattr(self, fun), x0=x0, constraints=NonlinearConstraint(cub, -np.inf, 0.0), options={'debug': True})
         self.assert_result(res, n, x_best, fun_best, 0, np.sqrt(np.finfo(float).eps))
 
-        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), cub=cub, options={'debug': True})
+        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), constraints=NonlinearConstraint(cub, -np.inf, 0.0), options={'debug': True})
         self.assert_result(res, n, x_best, fun_best, 0, np.sqrt(np.finfo(float).eps))
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['sphere', 'sumsqu'])
     def test_tough(self, fun, n, x0, xl, xu, cub_tough):
-        minimize(fun=getattr(self, fun + '_tough'), x0=x0, cub=cub_tough)
+        minimize(fun=getattr(self, fun + '_tough'), x0=x0, constraints=NonlinearConstraint(cub_tough, -np.inf, 0.0))
 
-        minimize(fun=getattr(self, fun + '_tough'), x0=x0, bounds=Bounds(xl, xu), cub=cub_tough)
+        minimize(fun=getattr(self, fun + '_tough'), x0=x0, bounds=Bounds(xl, xu), constraints=NonlinearConstraint(cub_tough, -np.inf, 0.0))
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['sphere', 'sumsqu'])
     def test_target(self, fun, n, x0, xl, xu, cub, x_best, fun_best):
-        res = minimize(fun=getattr(self, fun), x0=x0, cub=cub, options={'debug': True, 'target': fun_best + 1.0})
+        res = minimize(fun=getattr(self, fun), x0=x0, constraints=NonlinearConstraint(cub, -np.inf, 0.0), options={'debug': True, 'target': fun_best + 1.0})
         self.assert_result(res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps))
 
-        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), cub=cub, options={'debug': True, 'target': fun_best + 1.0})
+        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), constraints=NonlinearConstraint(cub, -np.inf, 0.0), options={'debug': True, 'target': fun_best + 1.0})
         self.assert_result(res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps))
 
 
@@ -420,24 +420,24 @@ class TestMinimizeNonlinearEqualityConstrained(TestMinimizeBase):
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['sphere', 'sumsqu'])
     def test_simple(self, fun, n, x0, xl, xu, ceq, x_best, fun_best):
-        res = minimize(fun=getattr(self, fun), x0=x0, ceq=ceq, options={'debug': True})
+        res = minimize(fun=getattr(self, fun), x0=x0, constraints=NonlinearConstraint(ceq, 0.0, 0.0), options={'debug': True})
         self.assert_result(res, n, x_best, fun_best, 0, np.sqrt(np.finfo(float).eps))
 
-        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), ceq=ceq, options={'debug': True})
+        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), constraints=NonlinearConstraint(ceq, 0.0, 0.0), options={'debug': True})
         self.assert_result(res, n, x_best, fun_best, 0, np.sqrt(np.finfo(float).eps))
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['sphere', 'sumsqu'])
     def test_tough(self, fun, n, x0, xl, xu, ceq_tough):
-        minimize(fun=getattr(self, fun + '_tough'), x0=x0, ceq=ceq_tough)
+        minimize(fun=getattr(self, fun + '_tough'), x0=x0, constraints=NonlinearConstraint(ceq_tough, 0.0, 0.0))
 
-        minimize(fun=getattr(self, fun + '_tough'), x0=x0, bounds=Bounds(xl, xu), ceq=ceq_tough)
+        minimize(fun=getattr(self, fun + '_tough'), x0=x0, bounds=Bounds(xl, xu), constraints=NonlinearConstraint(ceq_tough, 0.0, 0.0))
 
     @pytest.mark.parametrize('n', [2, 5, 10])
     @pytest.mark.parametrize('fun', ['sphere', 'sumsqu'])
     def test_target(self, fun, n, x0, xl, xu, ceq, x_best, fun_best):
-        res = minimize(fun=getattr(self, fun), x0=x0, ceq=ceq, options={'debug': True, 'target': fun_best + 1.0})
+        res = minimize(fun=getattr(self, fun), x0=x0, constraints=NonlinearConstraint(ceq, 0.0, 0.0), options={'debug': True, 'target': fun_best + 1.0})
         self.assert_result(res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps))
 
-        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), ceq=ceq, options={'debug': True, 'target': fun_best + 1.0})
+        res = minimize(fun=getattr(self, fun), x0=x0, bounds=Bounds(xl, xu), constraints=NonlinearConstraint(ceq, 0.0, 0.0), options={'debug': True, 'target': fun_best + 1.0})
         self.assert_result(res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps))

@@ -266,7 +266,7 @@ class TrustRegion:
         float
             Value of the Lagrangian model at `x`.
         """
-        return self.models.fun(x) + self._lm_linear_ub @ (self._pb.linear_ub.a @ x - self._pb.linear_ub.b) + self._lm_linear_eq @ (self._pb.linear_eq.a @ x - self._pb.linear_eq.b) + self._lm_nonlinear_ub @ self.models.cub(x) + self._lm_nonlinear_eq @ self.models.ceq(x)
+        return self.models.fun(x) + self._lm_linear_ub @ (self._pb.linear.a_ub @ x - self._pb.linear.b_ub) + self._lm_linear_eq @ (self._pb.linear.a_eq @ x - self._pb.linear.b_eq) + self._lm_nonlinear_ub @ self.models.cub(x) + self._lm_nonlinear_eq @ self.models.ceq(x)
 
     def lag_model_grad(self, x):
         """
@@ -282,7 +282,7 @@ class TrustRegion:
         `numpy.ndarray`, shape (n,)
             Gradient of the Lagrangian model at `x`.
         """
-        return self.models.fun_grad(x) + self._lm_linear_ub @ self._pb.linear_ub.a + self._lm_linear_eq @ self._pb.linear_eq.a + self._lm_nonlinear_ub @ self.models.cub_grad(x) + self._lm_nonlinear_eq @ self.models.ceq_grad(x)
+        return self.models.fun_grad(x) + self._lm_linear_ub @ self._pb.linear.a_ub + self._lm_linear_eq @ self._pb.linear.a_eq + self._lm_nonlinear_ub @ self.models.cub_grad(x) + self._lm_nonlinear_eq @ self.models.ceq_grad(x)
 
     def lag_model_hess(self):
         """
@@ -416,9 +416,9 @@ class TrustRegion:
             fun_val, cub_val, ceq_val = self._pb(x)
         m_val = fun_val
         if self._penalty > 0.0:
-            c_val = np.block([self._pb.bounds.xl - x, x - self._pb.bounds.xu, self._pb.linear_ub.a @ x - self._pb.linear_ub.b, cub_val])
+            c_val = np.block([self._pb.bounds.xl - x, x - self._pb.bounds.xu, self._pb.linear.a_ub @ x - self._pb.linear.b_ub, cub_val])
             c_val = np.maximum(c_val, 0.0)
-            c_val = np.block([c_val, np.abs(self._pb.linear_eq.a @ x - self._pb.linear_eq.b), np.abs(ceq_val)])
+            c_val = np.block([c_val, np.abs(self._pb.linear.a_eq @ x - self._pb.linear.b_eq), np.abs(ceq_val)])
             m_val += self._penalty * np.linalg.norm(c_val)
         return m_val
 
@@ -442,10 +442,10 @@ class TrustRegion:
         `numpy.ndarray`, shape (m_linear_eq + m_nonlinear_eq,)
             Right-hand side vector of the linearized equality constraints.
         """
-        aub = np.block([[self._pb.linear_ub.a], [self.models.cub_grad(x)]])
-        bub = np.block([self._pb.linear_ub.b - self._pb.linear_ub.a @ x, -self.models.cub(x)])
-        aeq = np.block([[self._pb.linear_eq.a], [self.models.ceq_grad(x)]])
-        beq = np.block([self._pb.linear_eq.b - self._pb.linear_eq.a @ x, -self.models.ceq(x)])
+        aub = np.block([[self._pb.linear.a_ub], [self.models.cub_grad(x)]])
+        bub = np.block([self._pb.linear.b_ub - self._pb.linear.a_ub @ x, -self.models.cub(x)])
+        aeq = np.block([[self._pb.linear.a_eq], [self.models.ceq_grad(x)]])
+        beq = np.block([self._pb.linear.b_eq - self._pb.linear.a_eq @ x, -self.models.ceq(x)])
         return aub, bub, aeq, beq
 
     def get_trust_region_step(self, options):
@@ -810,7 +810,7 @@ class TrustRegion:
             Point at which the Lagrange multipliers are computed.
         """
         # Build the constraints of the least-squares problem.
-        incl_linear_ub = self._pb.linear_ub.a @ x >= self._pb.linear_ub.b
+        incl_linear_ub = self._pb.linear.a_ub @ x >= self._pb.linear.b_ub
         incl_nonlinear_ub = self.cub_best >= 0.0
         incl_xl = self._pb.bounds.xl >= x
         incl_xu = self._pb.bounds.xu <= x
@@ -824,9 +824,9 @@ class TrustRegion:
             c_jac = np.r_[
                 -identity[incl_xl, :],
                 identity[incl_xu, :],
-                self._pb.linear_ub.a[incl_linear_ub, :],
+                self._pb.linear.a_ub[incl_linear_ub, :],
                 self.models.cub_grad(x, incl_nonlinear_ub),
-                self._pb.linear_eq.a,
+                self._pb.linear.a_eq,
                 self.models.ceq_grad(x),
             ]
 
@@ -845,8 +845,8 @@ class TrustRegion:
             self._lm_nonlinear_eq[:] = res.x[m_xl + m_xu + m_linear_ub + m_nonlinear_ub + self.m_linear_eq:]
 
     def _get_low_penalty(self):
-        r_val_ub = np.c_[(self.models.interpolation.x_base[np.newaxis, :] + self.models.interpolation.xpt.T) @ self._pb.linear_ub.a.T - self._pb.linear_ub.b[np.newaxis, :], self.models.cub_val]
-        r_val_eq = (self.models.interpolation.x_base[np.newaxis, :] + self.models.interpolation.xpt.T) @ self._pb.linear_eq.a.T - self._pb.linear_eq.b[np.newaxis, :]
+        r_val_ub = np.c_[(self.models.interpolation.x_base[np.newaxis, :] + self.models.interpolation.xpt.T) @ self._pb.linear.a_ub.T - self._pb.linear.b_ub[np.newaxis, :], self.models.cub_val]
+        r_val_eq = (self.models.interpolation.x_base[np.newaxis, :] + self.models.interpolation.xpt.T) @ self._pb.linear.a_eq.T - self._pb.linear.b_eq[np.newaxis, :]
         r_val_eq = np.c_[r_val_eq, -r_val_eq, self.models.ceq_val, -self.models.ceq_val]
         r_val = np.c_[r_val_ub, r_val_eq]
         c_min = np.nanmin(r_val, axis=0)

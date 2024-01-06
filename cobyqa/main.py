@@ -1,7 +1,7 @@
 import warnings
 
 import numpy as np
-from scipy.optimize import Bounds, OptimizeResult
+from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, OptimizeResult
 
 from .framework import TrustRegion
 from .problem import ObjectiveFunction, BoundConstraints, LinearConstraints, NonlinearConstraints, Problem
@@ -9,7 +9,7 @@ from .utils import MaxEvalError
 from .settings import ExitStatus, Options, DEFAULT_OPTIONS, PRINT_OPTIONS
 
 
-def minimize(fun, x0, args=(), bounds=None, aub=None, bub=None, aeq=None, beq=None, cub=None, ceq=None, callback=None, options=None):
+def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, options=None):
     r"""
     Minimize a scalar function using the COBYQA method.
 
@@ -28,7 +28,7 @@ def minimize(fun, x0, args=(), bounds=None, aub=None, bub=None, aeq=None, beq=No
     x0 : array_like, shape (n,)
         Initial guess.
     args : tuple, optional
-        Extra arguments passed to the objective and constraints function.
+        Extra arguments passed to the objective function.
     bounds : {`scipy.optimize.Bounds`, array_like, shape (n, 2)}, optional
         Bound constraints of the problem. It can be one of the cases below.
 
@@ -38,30 +38,20 @@ def minimize(fun, x0, args=(), bounds=None, aub=None, bub=None, aeq=None, beq=No
            :math:`-\infty` if there is no lower bound, and set ``bounds[i][1]``
            to :math:`\infty` if there is no upper bound.
 
-    aub : array_like, shape (m_linear_ub, n), optional
-        Left-hand side matrix of the linear inequality constraints
-        ``aub @ x <= bub``.
-    bub : array_like, shape (m_linear_ub,), optional
-        Right-hand side vector of the linear inequality constraints
-        ``aub @ x <= bub``.
-    aeq : array_like, shape (m_linear_eq, n), optional
-        Left-hand side matrix of the linear equality constraints
-        ``aeq @ x == beq``.
-    beq : array_like, shape (m_linear_eq,), optional
-        Right-hand side vector of the linear equality constraints
-        ``aeq @ x == beq``.
-    cub : callable, optional
-        Nonlinear inequality constraints function ``cub(x, *args) <= 0``.
+    constraints : {`scipy.optimize.LinearConstraint`, `scipy.optimize.NonlinearConstraint`, dict, list}, optional
+        General constraints of the problem. It can be one of the cases below.
 
-            ``cub(x, *args) -> array_like, shape (m_nonlinear_ub,)``
+        #. An instance of `scipy.optimize.LinearConstraint`.
+        #. An instance of `scipy.optimize.NonlinearConstraint`.
+        #. A dictionary with fields:
 
-        where ``x`` is an array with shape (n,) and `args` is a tuple.
-    ceq : callable, optional
-        Nonlinear equality constraints function ``ceq(x, *args) == 0``.
+            type : {'eq', 'ineq'}
+                Whether the constraint is ``fun(x) = 0`` or ``fun(x) >= 0``.
+            fun : callable
+                Constraint function.
 
-            ``ceq(x, *args) -> array_like, shape (m_nonlinear_eq,)``
+        #. A list, each of whose elements are described in 1, 2, and 3.
 
-        where ``x`` is an array with shape (n,) and `args` is a tuple.
     callback : callable, optional
 
         A callback executed at each objective function evaluation. The method
@@ -195,7 +185,7 @@ def minimize(fun, x0, args=(), bounds=None, aub=None, bub=None, aeq=None, beq=No
 
     >>> import numpy as np
     >>> from cobyqa import minimize
-    >>> from scipy.optimize import Bounds, rosen
+    >>> from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, rosen
 
     To solve the problem using COBYQA, run:
 
@@ -227,9 +217,8 @@ def minimize(fun, x0, args=(), bounds=None, aub=None, bub=None, aeq=None, beq=No
 
     >>> x0 = [2.0, 0.0]
     >>> bounds = Bounds([0.0, 0.0], np.inf)
-    >>> aub = [[-1.0, 2.0], [1.0, 2.0], [1.0, -2.0]]
-    >>> bub = [2.0, 6.0, 2.0]
-    >>> res = minimize(fun, x0, bounds=bounds, aub=aub, bub=bub)
+    >>> constraints = LinearConstraint([[-1.0, 2.0], [1.0, 2.0], [1.0, -2.0]], -np.inf, [2.0, 6.0, 2.0])
+    >>> res = minimize(fun, x0, bounds=bounds, constraints=constraints)
     >>> res.x
     array([1.4, 1.7])
 
@@ -250,12 +239,13 @@ def minimize(fun, x0, args=(), bounds=None, aub=None, bub=None, aeq=None, beq=No
     ...     return -x[0] - x[1]
     >>>
     >>> def cub(x):
-    ...     return [x[0] ** 2.0 - x[1], x[0] ** 2.0 + x[1] ** 2.0 - 1.0]
+    ...     return [x[0] ** 2.0 - x[1], x[0] ** 2.0 + x[1] ** 2.0]
 
     This problem can be solved using `minimize` as:
 
     >>> x0 = [1.0, 1.0]
-    >>> res = minimize(fun, x0, cub=cub)
+    >>> constraints = NonlinearConstraint(cub, -np.inf, [0.0, 1.0])
+    >>> res = minimize(fun, x0, constraints=constraints)
     >>> res.x
     array([0.707, 0.707])
     """
@@ -286,33 +276,21 @@ def minimize(fun, x0, args=(), bounds=None, aub=None, bub=None, aeq=None, beq=No
     # Initialize the objective function.
     if not isinstance(args, tuple):
         args = (args,)
-    obj = ObjectiveFunction(fun, callback, verbose, store_history, history_size, debug, *args)
+    obj = ObjectiveFunction(fun, callback, verbose, debug, *args)
 
     # Initialize the bound constraints.
     if not hasattr(x0, '__len__'):
         x0 = [x0]
     n_orig = len(x0)
-    xl, xu = _get_bounds(bounds, n_orig)
-    bounds = BoundConstraints(xl, xu)
+    bounds = BoundConstraints(_get_bounds(bounds, n_orig))
 
-    # Initialize the linear constraints.
-    if aub is None:
-        aub = np.empty((0, n_orig))
-    if bub is None:
-        bub = np.empty(0)
-    linear_ub = LinearConstraints(aub, bub, False, debug)
-    if aeq is None:
-        aeq = np.empty((0, n_orig))
-    if beq is None:
-        beq = np.empty(0)
-    linear_eq = LinearConstraints(aeq, beq, True, debug)
-
-    # Initialize the nonlinear constraints.
-    nonlinear_ub = NonlinearConstraints(cub, False, verbose, store_history, history_size, debug, *args)
-    nonlinear_eq = NonlinearConstraints(ceq, True, verbose, store_history, history_size, debug, *args)
+    # Initialize the constraints.
+    linear_constraints, nonlinear_constraints = _get_constraints(constraints)
+    linear = LinearConstraints(linear_constraints, n_orig, debug)
+    nonlinear = NonlinearConstraints(nonlinear_constraints, verbose, debug)
 
     # Initialize the problem (and remove the fixed variables).
-    pb = Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, feasibility_tol, scale, filter_size, debug)
+    pb = Problem(obj, x0, bounds, linear, nonlinear, feasibility_tol, scale, store_history, history_size, filter_size, debug)
 
     # Set the default options.
     _set_default_options(options, pb.n)
@@ -552,16 +530,39 @@ def minimize(fun, x0, args=(), bounds=None, aub=None, bub=None, aeq=None, beq=No
 
 def _get_bounds(bounds, n):
     if bounds is None:
-        return np.full(n, -np.inf), np.full(n, np.inf)
+        return Bounds(np.full(n, -np.inf), np.full(n, np.inf))
     elif isinstance(bounds, Bounds):
-        return bounds.lb, bounds.ub
+        return bounds
     elif hasattr(bounds, '__len__'):
         bounds = np.asarray(bounds)
         if bounds.shape != (n, 2):
             raise ValueError('The shape of the bounds is not compatible with the number of variables.')
-        return bounds[:, 0], bounds[:, 1]
+        return Bounds(bounds[:, 0], bounds[:, 1])
     else:
         raise TypeError('The bounds must be an instance of scipy.optimize.Bounds or an array-like object.')
+
+
+def _get_constraints(constraints):
+    if not hasattr(constraints, '__len__'):
+        constraints = (constraints,)
+
+    # Extract the linear and nonlinear constraints.
+    linear_constraints = []
+    nonlinear_constraints = []
+    for constraint in constraints:
+        if isinstance(constraint, LinearConstraint):
+            linear_constraints.append(LinearConstraint(constraint.A, *np.broadcast_arrays(np.atleast_1d(constraint.lb), np.atleast_1d(constraint.ub))))
+        elif isinstance(constraint, NonlinearConstraint):
+            nonlinear_constraints.append(NonlinearConstraint(constraint.fun, *np.broadcast_arrays(np.atleast_1d(constraint.lb), np.atleast_1d(constraint.ub))))
+        elif isinstance(constraint, dict):
+            if 'type' not in constraint or constraint['type'] not in ('eq', 'ineq'):
+                raise ValueError('The constraint type must be "eq" or "ineq".')
+            if 'fun' not in constraint or not callable(constraint['fun']):
+                raise ValueError('The constraint function must be callable.')
+            nonlinear_constraints.append({'fun': constraint['fun'], 'type': constraint['type']})
+        else:
+            raise TypeError('The constraints must be instances of scipy.optimize.LinearConstraint, scipy.optimize.NonlinearConstraint, or dict.')
+    return linear_constraints, nonlinear_constraints
 
 
 def _set_default_options(options, n):
@@ -638,8 +639,7 @@ def _build_result(pb, penalty, success, status, n_iter, options):
     Build the result of the optimization process.
     """
     # Build the result.
-    x, fun, cub, ceq = pb.best_eval(penalty)
-    maxcv = pb.maxcv(x, cub, ceq)
+    x, fun, maxcv = pb.best_eval(penalty)
     if status != ExitStatus.TARGET_SUCCESS:
         success = success and maxcv <= options[Options.FEASIBILITY_TOL]
     result = OptimizeResult()
@@ -657,15 +657,12 @@ def _build_result(pb, penalty, success, status, n_iter, options):
     result.status = status.value
     result.x = pb.build_x(x)
     result.fun = fun
-    result.cub = cub
-    result.ceq = ceq
     result.maxcv = maxcv
     result.nfev = pb.n_eval
     result.nit = n_iter
     if options[Options.STORE_HISTORY]:
         result.fun_history = pb.fun_history
-        result.cub_history = pb.cub_history
-        result.ceq_history = pb.ceq_history
+        result.maxcv_history = pb.maxcv_history
 
     # Print the result if requested.
     if options[Options.VERBOSE]:

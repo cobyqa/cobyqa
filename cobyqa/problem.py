@@ -1,240 +1,18 @@
-from abc import ABC
-
 import numpy as np
-from scipy.optimize import OptimizeResult
+from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, OptimizeResult
 
 from .settings import PRINT_OPTIONS
 from .utils import get_arrays_tol
 
-
-class Function(ABC):
-    """
-    Base class for objective and constraints functions.
-    """
-
-    def __init__(self, fun, verbose, store_fun_history, store_x_history, history_size, debug, *args):
-        """
-        Initialize the function.
-
-        Parameters
-        ----------
-        fun : {callable, None}
-            Function to evaluate, or None.
-
-                ``fun(x, *args) -> {float, array_like}``
-
-            where ``x`` is an array with shape (n,) and `args` is a tuple.
-        verbose : bool
-            Whether to print the function evaluations.
-        store_fun_history : bool
-            Whether to store the function evaluations.
-        store_x_history : bool
-            Whether to store the visited points.
-        history_size : int
-            Maximum number of function evaluations to store.
-        debug : bool
-            Whether to make debugging tests during the execution.
-        *args : tuple
-            Additional arguments to be passed to the function.
-        """
-        if debug:
-            assert fun is None or callable(fun)
-            assert isinstance(verbose, bool)
-            assert isinstance(store_fun_history, bool)
-            assert isinstance(store_x_history, bool)
-            assert isinstance(history_size, int)
-            if store_fun_history or store_x_history:
-                assert history_size > 0
-            assert isinstance(debug, bool)
-
-        self._fun = fun
-        self._verbose = verbose
-        self._store_fun_history = store_fun_history
-        self._store_x_history = store_x_history
-        self._history_size = history_size
-        self._args = args
-        self._n_eval = 0
-        self._fun_history = []
-        self._x_history = []
-        self._barrier = 2.0 ** min(100, np.finfo(float).maxexp // 2, -np.finfo(float).minexp // 2)
-
-    def __call__(self, x):
-        """
-        Evaluate the function.
-
-        This method also applies the barrier function to the function value.
-
-        Parameters
-        ----------
-        x : array_like, shape (n,)
-            Point at which the function is evaluated.
-
-        Returns
-        -------
-        {float, `numpy.ndarray`}
-            Function value at `x`.
-        """
-        x = np.array(x, dtype=float)
-        if self._fun is None:
-            val = self.apply_barrier()
-        else:
-            val = self._fun(x, *self._args)
-            val = self.apply_barrier(val)
-            self._n_eval += 1
-            if self._verbose:
-                with np.printoptions(**PRINT_OPTIONS):
-                    print(f'{self.name}({x}) = {val}')
-        if self._store_fun_history:
-            if len(self._fun_history) >= self._history_size:
-                self._fun_history.pop(0)
-            self._fun_history.append(val)
-        if self._store_x_history:
-            if len(self._x_history) >= self._history_size:
-                self._x_history.pop(0)
-            self._x_history.append(x)
-        return val
-
-    @property
-    def name(self):
-        """
-        Name of the function.
-
-        Returns
-        -------
-        str
-            Name of the function.
-        """
-        return self._fun.__name__ if self._fun is not None else ''
-
-    @property
-    def n_eval(self):
-        """
-        Number of function evaluations.
-
-        Returns
-        -------
-        int
-            Number of function evaluations.
-        """
-        return self._n_eval
-
-    @property
-    def fun_history(self):
-        """
-        History of function evaluations.
-
-        This property returns an empty array if the history of function
-        evaluations is not maintained.
-
-        Returns
-        -------
-        `numpy.ndarray`
-            History of function evaluations.
-        """
-        return np.array(self._fun_history, dtype=float)
-
-    @property
-    def x_history(self):
-        """
-        History of variables.
-
-        This property returns an empty array if the history of function
-        evaluations is not maintained.
-
-        Returns
-        -------
-        `numpy.ndarray`, shape (n_eval, n)
-            History of variables.
-        """
-        return np.array(self._x_history, dtype=float)
-
-    def apply_barrier(self, val=None):
-        """
-        Apply the barrier function to the function value.
-
-        This method must be implemented in the derived classes. If `val` is
-        None, the method must return the default value of the function.
-
-        Parameters
-        ----------
-        val : {float, array_like}, optional
-            Function value to which the barrier function is to be applied.
-
-        Returns
-        -------
-        {float, `numpy.ndarray`}
-            Function value with the barrier function applied.
-        """
-        raise NotImplementedError
+BARRIER = 2.0 ** min(100, np.finfo(float).maxexp // 2, -np.finfo(float).minexp // 2)
 
 
-class Constraints(ABC):
-    """
-    Base class for constraints.
-    """
-
-    @property
-    def m(self):
-        """
-        Number of constraints.
-
-        This method must be implemented in the derived classes.
-
-        Returns
-        -------
-        int
-            Number of constraints.
-        """
-        raise NotImplementedError
-
-    def maxcv(self, x, *args):
-        """
-        Evaluate the maximum constraint violation.
-
-        This method must be implemented in the derived classes.
-
-        Parameters
-        ----------
-        x : array_like, shape (n,)
-            Point at which the maximum constraint violation is evaluated.
-        *args : tuple
-            Additional arguments to be passed to the function.
-
-        Returns
-        -------
-        float
-            Maximum constraint violation at `x`.
-        """
-        raise NotImplementedError
-
-    def project(self, x):
-        """
-        Project a point onto the feasible set.
-
-        Parameters
-        ----------
-        x : array_like, shape (n,)
-            Point to be projected.
-
-        Returns
-        -------
-        `numpy.ndarray`, shape (n,)
-            Projection of `x` onto the feasible set.
-
-        Raises
-        ------
-        NotImplementedError
-            If the constraints do not implement the projection.
-        """
-        raise NotImplementedError
-
-
-class ObjectiveFunction(Function):
+class ObjectiveFunction:
     """
     Real-valued objective function.
     """
 
-    def __init__(self, fun, callback, verbose, store_history, history_size, debug, *args):
+    def __init__(self, fun, callback, verbose, debug, *args):
         """
         Initialize the objective function.
 
@@ -248,17 +26,21 @@ class ObjectiveFunction(Function):
             where ``x`` is an array with shape (n,) and `args` is a tuple.
         verbose : bool
             Whether to print the function evaluations.
-        store_history : bool
-            Whether to store the function evaluations.
-        history_size : int
-            Maximum number of function evaluations to store.
         debug : bool
             Whether to make debugging tests during the execution.
         *args : tuple
             Additional arguments to be passed to the function.
         """
-        super().__init__(fun, verbose, store_history, store_history, history_size, debug, *args)
+        if debug:
+            assert fun is None or callable(fun)
+            assert isinstance(verbose, bool)
+            assert isinstance(debug, bool)
+
+        self._fun = fun
         self._callback = callback
+        self._verbose = verbose
+        self._args = args
+        self._n_eval = 0
 
     def __call__(self, x):
         """
@@ -276,7 +58,18 @@ class ObjectiveFunction(Function):
         float
             Function value at `x`.
         """
-        f = super().__call__(x)
+        x = np.array(x, dtype=float)
+        if self._fun is None:
+            f = 0.0
+        else:
+            f = float(self._fun(x, *self._args))
+            if np.isnan(f):
+                f = BARRIER
+            f = max(min(f, BARRIER), -BARRIER)
+            self._n_eval += 1
+            if self._verbose:
+                with np.printoptions(**PRINT_OPTIONS):
+                    print(f'{self.name}({x}) = {f}')
         if self._callback is not None:
             if not callable(self._callback):
                 raise ValueError('The callback must be a callable function.')
@@ -284,52 +77,47 @@ class ObjectiveFunction(Function):
             self._callback(intermediate_result)
         return f
 
-    def apply_barrier(self, val=None):
+    @property
+    def n_eval(self):
         """
-        Apply the barrier function to the function value.
-
-        If `val` is None, the method returns zero.
-
-        Parameters
-        ----------
-        val : float, optional
-            Function value to which the barrier function is to be applied.
+        Number of function evaluations.
 
         Returns
         -------
-        float
-            Function value with the barrier function applied.
+        int
+            Number of function evaluations.
         """
-        if val is None:
-            val = 0.0
-        val = float(val)
-        if np.isnan(val):
-            val = self._barrier
-        return max(min(val, self._barrier), -self._barrier)
+        return self._n_eval
+
+    @property
+    def name(self):
+        """
+        Name of the objective function.
+
+        Returns
+        -------
+        str
+            Name of the objective function.
+        """
+        return self._fun.__name__ if self._fun is not None else ''
 
 
-class BoundConstraints(Constraints):
+class BoundConstraints:
     """
     Bound constraints ``xl <= x <= xu``.
     """
 
-    def __init__(self, xl, xu):
+    def __init__(self, bounds):
         """
         Initialize the bound constraints.
 
         Parameters
         ----------
-        xl : array_like, shape (n,)
-            Lower bound.
-        xu : array_like, shape (n,)
-            Upper bound.
+        bounds : scipy.optimize.Bounds
+            Bound constraints.
         """
-        self._xl = _1d_array(xl, 'The lower bound must be a vector.')
-        self._xu = _1d_array(xu, 'The upper bound must be a vector.')
-
-        # Check the bounds.
-        if self.xl.size != self.xu.size:
-            raise ValueError('The bounds must have the same size.')
+        self._xl = bounds.lb
+        self._xu = bounds.ub
 
         # Remove the ill-defined bounds.
         self.xl[np.isnan(self.xl)] = -np.inf
@@ -383,7 +171,7 @@ class BoundConstraints(Constraints):
         """
         return np.all(self.xl <= self.xu) and np.all(self.xl < np.inf) and np.all(self.xu > -np.inf)
 
-    def maxcv(self, x, *args):
+    def maxcv(self, x):
         """
         Evaluate the maximum constraint violation.
 
@@ -391,8 +179,6 @@ class BoundConstraints(Constraints):
         ----------
         x : array_like, shape (n,)
             Point at which the maximum constraint violation is evaluated.
-        *args : tuple
-            This argument is ignored.
 
         Returns
         -------
@@ -420,97 +206,132 @@ class BoundConstraints(Constraints):
         return np.clip(x, self.xl, self.xu) if self.is_feasible else x
 
 
-class LinearConstraints(Constraints):
+class LinearConstraints:
     """
-    Linear constraints ``a @ x <= b`` or ``a @ x == b``.
+    Linear constraints ``a_ub @ x <= b_ub`` and ``a_eq @ x == b_eq``.
     """
 
-    def __init__(self, a, b, is_equality, debug):
+    def __init__(self, constraints, n, debug):
         """
         Initialize the linear constraints.
 
         Parameters
         ----------
-        a : array_like, shape (m, n)
-            Left-hand side of the linear constraints.
-        b : array_like, shape (m,)
-            Right-hand side of the linear constraints.
-        is_equality : bool
-            Whether the linear constraints are equality constraints. If True,
-            the linear constraints are ``a @ x == b``. Otherwise, the linear
-            constraints are ``a @ x <= b``.
+        constraints : list of LinearConstraint
+            Linear constraints.
+        n : int
+            Number of variables.
         debug : bool
             Whether to make debugging tests during the execution.
         """
         if debug:
-            assert isinstance(is_equality, bool)
+            assert isinstance(constraints, list)
+            for constraint in constraints:
+                assert isinstance(constraint, LinearConstraint)
+            assert isinstance(debug, bool)
 
-        c_type = 'equality' if is_equality else 'inequality'
-        self._a = _2d_array(a, f'The left-hand side of the linear {c_type} constraints must be a matrix.')
-        self._b = _1d_array(b, f'The right-hand side of the linear {c_type} constraints must be a vector.')
-        self._is_equality = is_equality
+        self._a_ub = np.empty((0, n))
+        self._b_ub = np.empty(0)
+        self._a_eq = np.empty((0, n))
+        self._b_eq = np.empty(0)
+        for constraint in constraints:
+            is_equality = np.abs(constraint.ub - constraint.lb) <= get_arrays_tol(constraint.lb, constraint.ub)
+            if np.any(is_equality):
+                self._a_eq = np.vstack((self.a_eq, constraint.A[is_equality]))
+                self._b_eq = np.concatenate((self.b_eq, 0.5 * (constraint.lb[is_equality] + constraint.ub[is_equality])))
+            if not np.all(is_equality):
+                self._a_ub = np.vstack((self.a_ub, constraint.A[~is_equality], -constraint.A[~is_equality]))
+                self._b_ub = np.concatenate((self.b_ub, constraint.ub[~is_equality], -constraint.lb[~is_equality]))
 
         # Check the constraints.
-        if self.a.shape[0] != self.b.size:
-            raise ValueError(f'The linear {c_type} constraints are inconsistent.')
+        if self._a_ub.shape[0] != self._b_ub.size:
+            raise ValueError(f'The linear inequality constraints are inconsistent.')
+        if self._a_eq.shape[0] != self._b_eq.size:
+            raise ValueError(f'The linear equality constraints are inconsistent.')
 
         # Remove the ill-defined constraints.
-        self.a[np.isnan(self.a)] = 0.0
-        undef_c = np.isnan(self.b)
-        if not self._is_equality:
-            undef_c |= np.isinf(self.b)
-        self._a = self.a[~undef_c, :]
-        self._b = self.b[~undef_c]
+        self.a_ub[np.isnan(self.a_ub)] = 0.0
+        self.a_eq[np.isnan(self.a_eq)] = 0.0
+        undef_ub = np.isnan(self.b_ub) | np.isinf(self.b_ub)
+        undef_eq = np.isnan(self.b_eq)
+        self._a_ub = self.a_ub[~undef_ub, :]
+        self._b_ub = self.b_ub[~undef_ub]
+        self._a_eq = self.a_eq[~undef_eq, :]
+        self._b_eq = self.b_eq[~undef_eq]
 
     @property
-    def a(self):
+    def a_ub(self):
         """
-        Left-hand side of the linear constraints.
+        Left-hand side matrix of the linear inequality constraints.
 
         Returns
         -------
         `numpy.ndarray`, shape (m, n)
-            Left-hand side of the linear constraints.
+            Left-hand side matrix of the linear inequality constraints.
         """
-        return self._a
+        return self._a_ub
 
     @property
-    def b(self):
+    def b_ub(self):
         """
-        Right-hand side of the linear constraints.
+        Right-hand side vector of the linear inequality constraints.
 
         Returns
         -------
-        `numpy.ndarray`, shape (m,)
-            Right-hand side of the linear constraints.
+        `numpy.ndarray`, shape (m, n)
+            Right-hand side vector of the linear inequality constraints.
         """
-        return self._b
+        return self._b_ub
 
     @property
-    def is_equality(self):
+    def a_eq(self):
         """
-        Whether the linear constraints are equality constraints.
+        Left-hand side matrix of the linear equality constraints.
 
         Returns
         -------
-        bool
-            Whether the linear constraints are equality constraints.
+        `numpy.ndarray`, shape (m, n)
+            Left-hand side matrix of the linear equality constraints.
         """
-        return self._is_equality
+        return self._a_eq
 
     @property
-    def m(self):
+    def b_eq(self):
         """
-        Number of linear constraints.
+        Right-hand side vector of the linear equality constraints.
+
+        Returns
+        -------
+        `numpy.ndarray`, shape (m, n)
+            Right-hand side vector of the linear equality constraints.
+        """
+        return self._b_eq
+
+    @property
+    def m_ub(self):
+        """
+        Number of linear inequality constraints.
 
         Returns
         -------
         int
-            Number of linear constraints.
+            Number of linear inequality constraints.
         """
-        return self.b.size
+        return self.b_ub.size
 
-    def maxcv(self, x, *args):
+    @property
+    def m_eq(self):
+        """
+        Number of linear equality constraints.
+
+        Returns
+        -------
+        int
+            Number of linear equality constraints.
+        """
+        return self.b_eq.size
+
+    def maxcv(self, x):
         """
         Evaluate the maximum constraint violation.
 
@@ -518,8 +339,6 @@ class LinearConstraints(Constraints):
         ----------
         x : array_like, shape (n,)
             Point at which the maximum constraint violation is evaluated.
-        *args : tuple
-            This argument is ignored.
 
         Returns
         -------
@@ -527,109 +346,149 @@ class LinearConstraints(Constraints):
             Maximum constraint violation at `x`.
         """
         x = np.array(x, dtype=float)
-        val = self.a @ x - self.b
-        if self.is_equality:
-            return np.max(np.abs(val), initial=0.0)
-        else:
-            return np.max(val, initial=0.0)
+        return max(np.max(self.a_ub @ x - self.b_ub, initial=0.0), np.max(np.abs(self.a_eq @ x - self.b_eq), initial=0.0))
 
 
-class NonlinearConstraints(Function, Constraints):
+class NonlinearConstraints:
     """
-    Nonlinear constraints ``fun(x) <= 0`` or ``fun(x) == 0``.
+    Nonlinear constraints ``c_ub(x) <= 0`` and ``c_eq(x) == b_eq``.
     """
 
-    def __init__(self, fun, is_equality, verbose, store_history, history_size, debug, *args):
+    def __init__(self, constraints, verbose, debug):
         """
         Initialize the nonlinear constraints.
 
         Parameters
         ----------
-        fun : {callable, None}
-            Function to evaluate, or None.
-
-                ``fun(x, *args) -> array_like``
-
-            where ``x`` is an array with shape (n,) and `args` is a tuple.
-        is_equality : bool
-            Whether the nonlinear constraints are equality constraints.
+        constraints : list of {NonlinearConstraint, dict}
+            Nonlinear constraints.
         verbose : bool
             Whether to print the function evaluations.
-        store_history : bool
-            Whether to store the function evaluations.
-        history_size : int
-            Maximum number of function evaluations to store.
         debug : bool
             Whether to make debugging tests during the execution.
-        *args : tuple
-            Additional arguments passed to the function.
         """
         if debug:
-            assert isinstance(is_equality, bool)
+            assert isinstance(constraints, list)
+            for constraint in constraints:
+                assert isinstance(constraint, NonlinearConstraint) or isinstance(constraint, dict)
+            assert isinstance(verbose, bool)
+            assert isinstance(debug, bool)
 
-        super().__init__(fun, verbose, store_history, False, history_size, debug, *args)
-        self._is_equality = is_equality
-        self._m = 0 if fun is None else None
+        self._constraints = constraints
+        self._verbose = verbose
+        self._m_ub = None
+        self._m_eq = None
+        self._n_eval = 0
 
-    @property
-    def is_equality(self):
+    def __call__(self, x):
         """
-        Whether the nonlinear constraints are equality constraints.
+        Evaluate the constraints.
+
+        This method also applies the barrier function to the function values.
+
+        Parameters
+        ----------
+        x : array_like, shape (n,)
+            Point at which the constraints are evaluated.
 
         Returns
         -------
-        bool
-            Whether the nonlinear constraints are equality constraints.
+        `numpy.ndarray`, shape (m_nonlinear_ub,)
+            Nonlinear inequality constraint function values.
+        `numpy.ndarray`, shape (m_nonlinear_eq,)
+            Nonlinear equality constraint function values.
         """
-        return self._is_equality
+        x = np.array(x, dtype=float)
+        c_ub = np.empty(0)
+        c_eq = np.empty(0)
+        for constraint in self._constraints:
+            if isinstance(constraint, NonlinearConstraint):
+                fun = constraint.fun
+            else:
+                fun = constraint['fun']
+            val = fun(x)
+            val = _1d_array(val, 'The nonlinear constraints must return a vector.')
+            val[np.isnan(val)] = BARRIER
+            val = np.minimum(val, BARRIER)
+            val = np.maximum(val, -BARRIER)
+            if self._verbose:
+                with np.printoptions(**PRINT_OPTIONS):
+                    print(f'{fun.__name__}({x}) = {val}')
+            if isinstance(constraint, NonlinearConstraint):
+                is_equality = np.abs(constraint.ub - constraint.lb) <= get_arrays_tol(constraint.lb, constraint.ub)
+                if np.any(is_equality):
+                    c_eq = np.concatenate((c_eq, val[is_equality] - 0.5 * (constraint.lb[is_equality] + constraint.lb[is_equality])))
+                if not np.all(is_equality):
+                    is_inequality_lb = ~is_equality & (constraint.lb > -np.inf)
+                    is_inequality_ub = ~is_equality & (constraint.ub < np.inf)
+                    if np.any(is_inequality_lb):
+                        c_ub = np.concatenate((c_ub, constraint.lb[is_inequality_lb] - val[is_inequality_lb]))
+                    if np.any(is_inequality_ub):
+                        c_ub = np.concatenate((c_ub, val[is_inequality_ub] - constraint.ub[is_inequality_ub]))
+            elif constraint['type'] == 'ineq':
+                c_ub = np.concatenate((c_ub, -val))
+            else:
+                c_eq = np.concatenate((c_eq, val))
+        self._n_eval += 1
+        if self._m_ub is None:
+            self._m_ub = c_ub.size
+        if self._m_eq is None:
+            self._m_eq = c_eq.size
+        return c_ub, c_eq
 
     @property
-    def m(self):
+    def m_ub(self):
         """
-        Number of nonlinear constraints.
+        Number of nonlinear inequality constraints.
 
         Returns
         -------
         int
-            Number of nonlinear constraints.
+            Number of nonlinear inequality constraints.
 
         Raises
         ------
         ValueError
-            If the number of nonlinear constraints is unknown.
+            If the number of nonlinear inequality constraints is unknown.
         """
-        if self._m is None:
-            raise ValueError('The number of nonlinear constraints is unknown.')
+        if self._m_ub is None:
+            raise ValueError('The number of nonlinear inequality constraints is unknown.')
         else:
-            return self._m
+            return self._m_ub
 
-    def apply_barrier(self, val=None):
+    @property
+    def m_eq(self):
         """
-        Apply the barrier function to the function value.
-
-        If `val` is None, the method returns an empty array.
-
-        Parameters
-        ----------
-        val : array_like, optional
-            Function value to which the barrier function is to be applied.
+        Number of nonlinear equality constraints.
 
         Returns
         -------
-        `numpy.ndarray`, shape (m,)
-            Function value with the barrier function applied.
-        """
-        if val is None:
-            val = np.empty(0)
-        val = _1d_array(val, 'The nonlinear constraints must return a vector.')
-        val[np.isnan(val)] = self._barrier
-        val = np.minimum(val, self._barrier)
-        val = np.maximum(val, -self._barrier)
-        if self._m is None:
-            self._m = val.size
-        return val
+        int
+            Number of nonlinear equality constraints.
 
-    def maxcv(self, x, *args):
+        Raises
+        ------
+        ValueError
+            If the number of nonlinear equality constraints is unknown.
+        """
+        if self._m_eq is None:
+            raise ValueError('The number of nonlinear equality constraints is unknown.')
+        else:
+            return self._m_eq
+
+    @property
+    def n_eval(self):
+        """
+        Number of function evaluations.
+
+        Returns
+        -------
+        int
+            Number of function evaluations.
+        """
+        return self._n_eval
+
+    def maxcv(self, x, cub_val=None, ceq_val=None):
         """
         Evaluate the maximum constraint violation.
 
@@ -637,23 +496,21 @@ class NonlinearConstraints(Function, Constraints):
         ----------
         x : array_like, shape (n,)
             Point at which the maximum constraint violation is evaluated.
-        *args : tuple
-            One argument is expected, which is the function value at `x`. If
-            this argument is not passed, the constraint function is evaluated.
+        cub_val : array_like, shape (m_nonlinear_ub,), optional
+            Values of the nonlinear inequality constraints. If not provided,
+            the nonlinear inequality constraints are evaluated at `x`.
+        ceq_val : array_like, shape (m_nonlinear_eq,), optional
+            Values of the nonlinear equality constraints. If not provided,
+            the nonlinear equality constraints are evaluated at `x`.
 
         Returns
         -------
         float
             Maximum constraint violation at `x`.
         """
-        if len(args) == 1 and args[0] is not None:
-            val = np.array(args[0], dtype=float)
-        else:
-            val = self(x)
-        if self.is_equality:
-            return np.max(np.abs(val), initial=0.0)
-        else:
-            return np.max(val, initial=0.0)
+        if cub_val is None or ceq_val is None:
+            cub_val, ceq_val = self(x)
+        return max(np.max(cub_val, initial=0.0), np.max(np.abs(ceq_val), initial=0.0))
 
 
 class Problem:
@@ -661,7 +518,7 @@ class Problem:
     Optimization problem.
     """
 
-    def __init__(self, obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, feasibility_tol, scale, filter_size, debug):
+    def __init__(self, obj, x0, bounds, linear, nonlinear, feasibility_tol, scale, store_history, history_size, filter_size, debug):
         """
         Initialize the nonlinear problem.
 
@@ -676,26 +533,41 @@ class Problem:
             Initial guess.
         bounds : BoundConstraints
             Bound constraints.
-        linear_ub : LinearConstraints
-            Linear inequality constraints.
-        linear_eq : LinearConstraints
-            Linear equality constraints.
-        nonlinear_ub : NonlinearConstraints
-            Nonlinear inequality constraints.
-        nonlinear_eq : NonlinearConstraints
-            Nonlinear equality constraints.
+        linear : LinearConstraints
+            Linear constraints.
+        nonlinear : NonlinearConstraints
+            Nonlinear constraints.
         feasibility_tol : float
             Tolerance on the constraint violation.
         scale : bool
             Whether to scale the problem according to the bounds.
+        store_history : bool
+            Whether to store the function evaluations.
+        history_size : int
+            Maximum number of function evaluations to store.
         filter_size : int
             Maximum number of points in the filter.
         debug : bool
             Whether to make debugging tests during the execution.
         """
+        if debug:
+            assert isinstance(obj, ObjectiveFunction)
+            assert isinstance(bounds, BoundConstraints)
+            assert isinstance(linear, LinearConstraints)
+            assert isinstance(nonlinear, NonlinearConstraints)
+            assert isinstance(feasibility_tol, float)
+            assert isinstance(scale, bool)
+            assert isinstance(store_history, bool)
+            assert isinstance(history_size, int)
+            if store_history:
+                assert history_size > 0
+            assert isinstance(filter_size, int)
+            assert filter_size > 0
+            assert isinstance(debug, bool)
+
         self._obj = obj
-        self._nonlinear_ub = nonlinear_ub
-        self._nonlinear_eq = nonlinear_eq
+        self._linear = linear
+        self._nonlinear = nonlinear
 
         # Check the consistency of the problem.
         x0 = _1d_array(x0, 'The initial guess must be a vector.')
@@ -704,9 +576,9 @@ class Problem:
             raise ValueError(f'The lower bound must have {n} elements.')
         if bounds.xu.size != n:
             raise ValueError(f'The upper bound must have {n} elements.')
-        if linear_ub.a.shape[1] != n:
+        if linear.a_ub.shape[1] != n:
             raise ValueError(f'The left-hand side matrix of the linear inequality constraints must have {n} columns.')
-        if linear_eq.a.shape[1] != n:
+        if linear.a_eq.shape[1] != n:
             raise ValueError(f'The left-hand side matrix of the linear equality constraints must have {n} columns.')
 
         # Check which variables are fixed.
@@ -715,23 +587,31 @@ class Problem:
         self._fixed_val = 0.5 * (bounds.xl[self._fixed_idx] + bounds.xu[self._fixed_idx])
         self._fixed_val = np.clip(self._fixed_val, bounds.xl[self._fixed_idx], bounds.xu[self._fixed_idx])
 
-        # Set the bound and linear constraints.
+        # Set the bound constraints.
         self._orig_bounds = bounds
-        self._bounds = BoundConstraints(bounds.xl[~self._fixed_idx], bounds.xu[~self._fixed_idx])
-        self._linear_ub = LinearConstraints(linear_ub.a[:, ~self._fixed_idx], linear_ub.b - linear_ub.a[:, self._fixed_idx] @ self._fixed_val, False, debug)
-        self._linear_eq = LinearConstraints(linear_eq.a[:, ~self._fixed_idx], linear_eq.b - linear_eq.a[:, self._fixed_idx] @ self._fixed_val, True, debug)
+        self._bounds = BoundConstraints(Bounds(bounds.xl[~self._fixed_idx], bounds.xu[~self._fixed_idx]))
 
         # Set the initial guess.
         self._x0 = self._bounds.project(x0[~self._fixed_idx])
+
+        # Set the linear constraints.
+        b_eq = linear.b_eq - linear.a_eq[:, self._fixed_idx] @ self._fixed_val
+        self._linear = LinearConstraints([
+            LinearConstraint(linear.a_ub[:, ~self._fixed_idx], -np.inf, linear.b_ub - linear.a_ub[:, self._fixed_idx] @ self._fixed_val),
+            LinearConstraint(linear.a_eq[:, ~self._fixed_idx], b_eq, b_eq),
+        ], self.n, debug)
 
         # Scale the problem if necessary.
         scale = scale and self._bounds.is_feasible and np.all(np.isfinite(self._bounds.xl)) and np.all(np.isfinite(self._bounds.xu))
         if scale:
             self._scaling_factor = 0.5 * (self._bounds.xu - self._bounds.xl)
             self._scaling_shift = 0.5 * (self._bounds.xu + self._bounds.xl)
-            self._bounds = BoundConstraints(-np.ones(self.n), np.ones(self.n))
-            self._linear_ub = LinearConstraints(self._linear_ub.a @ np.diag(self._scaling_factor), self._linear_ub.b - self._linear_ub.a @ self._scaling_shift, False, debug)
-            self._linear_eq = LinearConstraints(self._linear_eq.a @ np.diag(self._scaling_factor), self._linear_eq.b - self._linear_eq.a @ self._scaling_shift, True, debug)
+            self._bounds = BoundConstraints(Bounds(-np.ones(self.n), np.ones(self.n)))
+            b_eq = self._linear.b_eq - self._linear.a_eq @ self._scaling_shift
+            self._linear = LinearConstraints([
+                LinearConstraint(self._linear.a_ub @ np.diag(self._scaling_factor), -np.inf, self._linear.b_ub - self._linear.a_ub @ self._scaling_shift),
+                LinearConstraint(self._linear.a_eq @ np.diag(self._scaling_factor), b_eq, b_eq),
+            ], self.n, debug)
             self._x0 = (self._x0 - self._scaling_shift) / self._scaling_factor
         else:
             self._scaling_factor = np.ones(self.n)
@@ -741,10 +621,15 @@ class Problem:
         self._feasibility_tol = feasibility_tol
         self._filter_size = filter_size
         self._fun_filter = []
-        self._cub_filter = []
-        self._ceq_filter = []
         self._maxcv_filter = []
         self._x_filter = []
+
+        # Set the initial history.
+        self._store_history = store_history
+        self._history_size = history_size
+        self._fun_history = []
+        self._maxcv_history = []
+        self._x_history = []
 
     def __call__(self, x):
         """
@@ -766,16 +651,23 @@ class Problem:
         """
         # Evaluate the objective and nonlinear constraint functions.
         fun_val = self._obj(self.build_x(x))
-        cub_val = self._nonlinear_ub(self.build_x(x))
-        ceq_val = self._nonlinear_eq(self.build_x(x))
+        cub_val, ceq_val = self._nonlinear(self.build_x(x))
+        maxcv_val = self.maxcv(x, cub_val, ceq_val)
+        if self._store_history:
+            if len(self._fun_history) >= self._history_size:
+                self._fun_history.pop(0)
+            self._fun_history.append(fun_val)
+            if len(self._maxcv_history) >= self._history_size:
+                self._maxcv_history.pop(0)
+            self._maxcv_history.append(maxcv_val)
+            if len(self._x_history) >= self._history_size:
+                self._x_history.pop(0)
+            self._x_history.append(x)
 
         # Add the point to the filter if it is not dominated by any point.
-        maxcv_val = self.maxcv(x, cub_val, ceq_val)
         maxcv_shift = max(maxcv_val - self._feasibility_tol, 0.0)
         if all(fun_val < fun_filter or maxcv_shift < max(maxcv_filter - self._feasibility_tol, 0.0) for fun_filter, maxcv_filter in zip(self._fun_filter, self._maxcv_filter)):
             self._fun_filter.append(fun_val)
-            self._cub_filter.append(cub_val)
-            self._ceq_filter.append(ceq_val)
             self._maxcv_filter.append(maxcv_val)
             self._x_filter.append(np.copy(x))
 
@@ -783,16 +675,12 @@ class Problem:
         for k in range(len(self._fun_filter) - 2, -1, -1):
             if fun_val <= self._fun_filter[k] and maxcv_shift <= max(self._maxcv_filter[k] - self._feasibility_tol, 0.0):
                 self._fun_filter.pop(k)
-                self._cub_filter.pop(k)
-                self._ceq_filter.pop(k)
                 self._maxcv_filter.pop(k)
                 self._x_filter.pop(k)
 
         # Keep only the most recent points in the filter.
         if len(self._fun_filter) > self._filter_size:
             self._fun_filter.pop(0)
-            self._cub_filter.pop(0)
-            self._ceq_filter.pop(0)
             self._maxcv_filter.pop(0)
             self._x_filter.pop(0)
 
@@ -835,6 +723,18 @@ class Problem:
         return self._x0
 
     @property
+    def n_eval(self):
+        """
+        Number of function evaluations.
+
+        Returns
+        -------
+        int
+            Number of function evaluations.
+        """
+        return max(self._obj.n_eval, self._nonlinear.n_eval)
+
+    @property
     def fun_name(self):
         """
         Name of the objective function.
@@ -845,18 +745,6 @@ class Problem:
             Name of the objective function.
         """
         return self._obj.name
-
-    @property
-    def n_eval(self):
-        """
-        Number of function evaluations.
-
-        Returns
-        -------
-        int
-            Number of function evaluations.
-        """
-        return max(self._obj.n_eval, self._nonlinear_ub.n_eval, self._nonlinear_eq.n_eval)
 
     @property
     def bounds(self):
@@ -871,28 +759,16 @@ class Problem:
         return self._bounds
 
     @property
-    def linear_ub(self):
+    def linear(self):
         """
-        Linear inequality constraints.
+        Linear constraints.
 
         Returns
         -------
         LinearConstraints
-            Linear inequality constraints.
+            Linear constraints.
         """
-        return self._linear_ub
-
-    @property
-    def linear_eq(self):
-        """
-        Linear equality constraints.
-
-        Returns
-        -------
-        LinearConstraints
-            Linear equality constraints.
-        """
-        return self._linear_eq
+        return self._linear
 
     @property
     def m_bounds(self):
@@ -916,7 +792,7 @@ class Problem:
         int
             Number of linear inequality constraints.
         """
-        return self.linear_ub.m
+        return self.linear.m_ub
 
     @property
     def m_linear_eq(self):
@@ -928,7 +804,7 @@ class Problem:
         int
             Number of linear equality constraints.
         """
-        return self.linear_eq.m
+        return self.linear.m_eq
 
     @property
     def m_nonlinear_ub(self):
@@ -945,7 +821,7 @@ class Problem:
         ValueError
             If the number of nonlinear inequality constraints is not known.
         """
-        return self._nonlinear_ub.m
+        return self._nonlinear.m_ub
 
     @property
     def m_nonlinear_eq(self):
@@ -962,7 +838,7 @@ class Problem:
         ValueError
             If the number of nonlinear equality constraints is not known.
         """
-        return self._nonlinear_eq.m
+        return self._nonlinear.m_eq
 
     @property
     def fun_history(self):
@@ -974,31 +850,19 @@ class Problem:
         `numpy.ndarray`, shape (n_eval,)
             History of objective function evaluations.
         """
-        return self._obj.fun_history
+        return self._fun_history
 
     @property
-    def cub_history(self):
+    def maxcv_history(self):
         """
-        History of nonlinear inequality constraint function evaluations.
+        History of maximum constraint violations.
 
         Returns
         -------
-        `numpy.ndarray`, shape (n_eval, m_nonlinear_ub)
-            History of nonlinear inequality constraint function evaluations.
+        `numpy.ndarray`, shape (n_eval,)
+            History of maximum constraint violations.
         """
-        return self._nonlinear_ub.fun_history
-
-    @property
-    def ceq_history(self):
-        """
-        History of nonlinear equality constraint function evaluations.
-
-        Returns
-        -------
-        `numpy.ndarray`, shape (n_eval, m_nonlinear_eq)
-            History of nonlinear equality constraint function evaluations.
-        """
-        return self._nonlinear_eq.fun_history
+        return self._maxcv_history
 
     @property
     def type(self):
@@ -1081,10 +945,7 @@ class Problem:
         float
             Maximum constraint violation at `x`.
         """
-        maxcv_bounds = self.bounds.maxcv(x)
-        maxcv_linear = max(self.linear_ub.maxcv(x), self.linear_eq.maxcv(x))
-        maxcv_nonlinear = max(self._nonlinear_ub.maxcv(x, cub_val), self._nonlinear_eq.maxcv(x, ceq_val))
-        return max(maxcv_bounds, maxcv_linear, maxcv_nonlinear)
+        return max(self.bounds.maxcv(x), self.linear.maxcv(x), self._nonlinear.maxcv(x, cub_val, ceq_val))
 
     def best_eval(self, penalty):
         """
@@ -1101,11 +962,9 @@ class Problem:
         `numpy.ndarray`, shape (n,)
             Best point.
         float
-            Best objective function value.
-        `numpy.ndarray`, shape (m_nonlinear_ub,)
-            Best nonlinear inequality constraint function values.
-        `numpy.ndarray`, shape (m_nonlinear_eq,)
-            Best nonlinear equality constraint function values.
+            Corresponding objective function value.
+        float
+            Corresponding maximum constraint violation.
         """
         # If the filter is empty, i.e., if no function evaluation has been
         # performed, we evaluate the objective and nonlinear constraint
@@ -1115,8 +974,6 @@ class Problem:
 
         # Find the best point in the filter.
         fun_filter = np.array(self._fun_filter)
-        cub_filter = np.array(self._cub_filter)
-        ceq_filter = np.array(self._ceq_filter)
         maxcv_filter = np.array(self._maxcv_filter)
         maxcv_filter = np.maximum(maxcv_filter - self._feasibility_tol, 0.0)
         x_filter = np.array(self._x_filter)
@@ -1144,7 +1001,7 @@ class Problem:
             else:
                 merit_min_idx &= (maxcv_filter <= np.min(maxcv_filter))
                 i = np.flatnonzero(merit_min_idx)[-1]
-        return self.bounds.project(x_filter[i, :]), fun_filter[i], cub_filter[i, :], ceq_filter[i, :]
+        return self.bounds.project(x_filter[i, :]), fun_filter[i], maxcv_filter[i]
 
 
 def _1d_array(x, message):
@@ -1165,27 +1022,5 @@ def _1d_array(x, message):
     """
     x = np.atleast_1d(np.squeeze(x)).astype(float)
     if x.ndim != 1:
-        raise ValueError(message)
-    return x
-
-
-def _2d_array(x, message):
-    """
-    Preprocess a 2-dimensional array.
-
-    Parameters
-    ----------
-    x : array_like
-        Array to be preprocessed.
-    message : str
-        Error message if `x` cannot be interpreter as a 2-dimensional array.
-
-    Returns
-    -------
-    `numpy.ndarray`
-        Preprocessed array.
-    """
-    x = np.atleast_2d(x).astype(float)
-    if x.ndim != 2:
         raise ValueError(message)
     return x

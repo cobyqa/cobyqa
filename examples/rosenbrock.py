@@ -5,7 +5,7 @@ linear inequality and equality constraints.
 """
 import numpy as np
 from cobyqa import minimize
-from scipy.optimize import Bounds, rosen
+from scipy.optimize import Bounds, LinearConstraint, rosen
 
 
 if __name__ == '__main__':
@@ -23,6 +23,9 @@ if __name__ == '__main__':
     bub = np.dot(aub, x_rand) + rng.uniform(0.0, 1.0, m_linear_ub)
     aeq = rng.standard_normal((m_linear_eq, n))
     beq = np.dot(aeq, x_rand)
-
-    res = minimize(rosen, x0, bounds=bounds, aub=aub, bub=bub, aeq=aeq, beq=beq)
+    constraints = [
+        LinearConstraint(aub, -np.inf, bub),
+        LinearConstraint(aeq, beq, beq),
+    ]
+    res = minimize(rosen, x0, bounds=bounds, constraints=constraints)
     print(res)

@@ -10,7 +10,7 @@ References
 import numpy as np
 from cobyqa import minimize
 from matplotlib import pyplot as plt
-from scipy.optimize import Bounds
+from scipy.optimize import Bounds, LinearConstraint
 
 
 def fun(x):
@@ -37,9 +37,8 @@ def _plot_points(x, title=None):
 
 if __name__ == '__main__':
     rng = np.random.default_rng(0)
-    n = 80  # must be even
+    n = 30  # must be even
 
-    bounds = Bounds(np.zeros(n), np.inf)
     aub = np.zeros((n // 2, n))
     bub = 2.0 * np.ones(n // 2)
     x0 = np.empty(n, dtype=float)
@@ -54,6 +53,8 @@ if __name__ == '__main__':
         x0[2 * i + 1] = x0_odd
     _plot_points(x0, 'Initial points')
 
+    bounds = Bounds(np.zeros(n), np.inf)
+    constraints = LinearConstraint(aub, -np.inf, bub)
     options = {'verbose': True}
-    res = minimize(fun, x0, bounds=bounds, aub=aub, bub=bub, options=options)
+    res = minimize(fun, x0, bounds=bounds, constraints=constraints, options=options)
     _plot_points(res.x, 'Final points')

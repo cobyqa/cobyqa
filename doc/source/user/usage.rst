@@ -65,16 +65,15 @@ To solve the problem using COBYQA, run:
 
     import numpy np
     from cobyqa import minimize
-    from scipy.optimize import Bounds
+    from scipy.optimize import Bounds, LinearConstraint
 
     def fun(x):
         return (x[0] - 1.0) ** 2.0 + (x[1] - 2.5) ** 2.0
 
     x0 = [2.0, 0.0]
     bounds = Bounds([0.0, 0.0], np.inf)
-    aub = [[-1.0, 2.0], [1.0, 2.0], [1.0, -2.0]]
-    bub = [2.0, 6.0, 2.0]
-    res = minimize(fun, x0, bounds=bounds, aub=aub, bub=bub)
+    constraints = LinearConstraint([[-1.0, 2.0], [1.0, 2.0], [1.0, -2.0]], -np.inf, [2.0, 6.0, 2.0])
+    res = minimize(fun, x0, bounds=bounds, constraints=constraints)
     print(res.x)
 
 This should display the desired output ``[1.4 1.7]``.
@@ -97,15 +96,20 @@ To solve the problem using COBYQA, run:
 .. code-block:: python
 
     from cobyqa import minimize
+    from scipy.optimize import NonlinearConstraint
 
     def fun(x):
         return -x[0] - x[1]
 
     def cub(x):
-        return [x[0] ** 2.0 - x[1], x[0] ** 2.0 + x[1] ** 2.0 - 1.0]
+        return
 
     x0 = [1.0, 1.0]
-    res = minimize(fun, x0, cub=cub)
+    constraints = NonlinearConstraint(lambda x: [
+        x[0] ** 2.0 - x[1],
+        x[0] ** 2.0 + x[1] ** 2.0,
+    ], -np.inf, [0.0, 1.0])
+    res = minimize(fun, x0, constraints=constraints)
     print(res.x)
 
 This should display the desired output ``[0.7071 0.7071]``.

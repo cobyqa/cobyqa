@@ -12,7 +12,7 @@ References
 """
 import numpy as np
 from cobyqa import minimize
-from scipy.optimize import Bounds
+from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint
 
 
 def fun(x, no):
@@ -65,72 +65,54 @@ def _bounds(no):
         raise NotImplementedError
 
 
-def _aub(no):
-    if no in 'ABCDEFHIJ':
-        return None
-    if no == 'G':
-        a = [[-5.0, 1.0, -1.0], [5.0, 1.0, -1.0]]
-    else:
-        raise NotImplementedError
-    return np.array(a)
-
-
-def _bub(no):
-    if no in 'ABCDEFHIJ':
-        return None
-    if no == 'G':
-        b = [0.0, 0.0]
-    else:
-        raise NotImplementedError
-    return np.array(b)
-
-
-def _cub(x, no):
+def _constraints(no):
+    constraints = []
     if no in 'ADE':
-        c = []
+        pass
     elif no == 'B':
-        c = [x[0] ** 2.0 + x[1] ** 2.0 - 1.0]
+        constraints.append(NonlinearConstraint(lambda x: [x[0] ** 2.0 + x[1] ** 2.0], -np.inf, [1.0]))
     elif no == 'C':
-        c = [x[0] ** 2.0 + 2.0 * x[1] ** 2.0 + 3.0 * x[2] ** 2.0 - 1.0]
+        constraints.append(NonlinearConstraint(lambda x: [x[0] ** 2.0 + 2.0 * x[1] ** 2.0 + 3.0 * x[2] ** 2.0], -np.inf, [1.0]))
     elif no == 'F':
-        c = [
-            x[0] ** 2.0 + x[1] ** 2.0 - 1.0,
+        constraints.append(NonlinearConstraint(lambda x: [
+            x[0] ** 2.0 + x[1] ** 2.0,
             x[0] ** 2.0 - x[1],
-        ]
+        ], -np.inf, [1.0, 0.0]))
     elif no == 'G':
-        c = [x[0] ** 2.0 + x[1] ** 2.0 + 4.0 * x[1] - x[2]]
+        constraints.append(LinearConstraint([[-5.0, 1.0, -1.0], [5.0, 1.0, -1.0]], -np.inf, [0.0, 0.0]))
+        constraints.append(NonlinearConstraint(lambda x: [x[0] ** 2.0 + x[1] ** 2.0 + 4.0 * x[1] - x[2]], -np.inf, [0.0]))
     elif no == 'H':
-        c = [
-            x[0] ** 2.0 + x[1] ** 2.0 + x[2] ** 2.0 + x[3] ** 2.0 + x[0] - x[1] + x[2] - x[3] - 8.0,
-            x[0] ** 2.0 + 2.0 * x[1] ** 2.0 + x[2] ** 2.0 + 2.0 * x[3] ** 2.0 - x[0] - x[3] - 10.0,
-            2.0 * x[0] ** 2.0 + x[1] ** 2.0 + x[2] ** 2.0 + 2.0 * x[0] - x[1] - x[3] - 5.0,
-        ]
+        constraints.append(NonlinearConstraint(lambda x: [
+            x[0] ** 2.0 + x[1] ** 2.0 + x[2] ** 2.0 + x[3] ** 2.0 + x[0] - x[1] + x[2] - x[3],
+            x[0] ** 2.0 + 2.0 * x[1] ** 2.0 + x[2] ** 2.0 + 2.0 * x[3] ** 2.0 - x[0] - x[3],
+            2.0 * x[0] ** 2.0 + x[1] ** 2.0 + x[2] ** 2.0 + 2.0 * x[0] - x[1] - x[3],
+        ], -np.inf, [8.0, 10.0, 5.0]))
     elif no == 'I':
-        c = [
-            2.0 * x[0] ** 2.0 + 3.0 * x[1] ** 4.0 + x[2] + 4.0 * x[3] ** 2.0 + 5.0 * x[4] - 127.0,
-            7.0 * x[0] + 3.0 * x[1] + 10.0 * x[2] ** 2.0 + x[3] - x[4] - 282.0,
-            23.0 * x[0] + x[1] ** 2.0 + 6.0 * x[5] ** 2.0 - 8.0 * x[6] - 196.0,
+        constraints.append(NonlinearConstraint(lambda x: [
+            2.0 * x[0] ** 2.0 + 3.0 * x[1] ** 4.0 + x[2] + 4.0 * x[3] ** 2.0 + 5.0 * x[4],
+            7.0 * x[0] + 3.0 * x[1] + 10.0 * x[2] ** 2.0 + x[3] - x[4],
+            23.0 * x[0] + x[1] ** 2.0 + 6.0 * x[5] ** 2.0 - 8.0 * x[6],
             4.0 * x[0] ** 2.0 + x[1] ** 2.0 - 3.0 * x[0] * x[1] + 2.0 * x[2] ** 2.0 + 5.0 * x[5] - 11.0 * x[6],
-        ]
+        ], -np.inf, [127.0, 282.0, 196.0, 0.0]))
     elif no == 'J':
-        c = [
-            x[2] ** 2.0 + x[3] ** 2.0 - 1.0,
-            x[4] ** 2.0 + x[5] ** 2.0 - 1.0,
-            (x[0] - x[4]) ** 2.0 + (x[1] - x[5]) ** 2.0 - 1.0,
-            (x[0] - x[6]) ** 2.0 + (x[1] - x[7]) ** 2.0 - 1.0,
-            (x[2] - x[4]) ** 2.0 + (x[3] - x[5]) ** 2.0 - 1.0,
-            (x[2] - x[6]) ** 2.0 + (x[3] - x[7]) ** 2.0 - 1.0,
-            x[6] ** 2.0 + (x[7] - x[8]) ** 2.0 - 1.0,
-            x[8] ** 2.0 - 1.0,
-            x[0] ** 2.0 + (x[1] - x[8]) ** 2.0 - 1.0,
+        constraints.append(NonlinearConstraint(lambda x: [
+            x[2] ** 2.0 + x[3] ** 2.0,
+            x[4] ** 2.0 + x[5] ** 2.0,
+            (x[0] - x[4]) ** 2.0 + (x[1] - x[5]) ** 2.0,
+            (x[0] - x[6]) ** 2.0 + (x[1] - x[7]) ** 2.0,
+            (x[2] - x[4]) ** 2.0 + (x[3] - x[5]) ** 2.0,
+            (x[2] - x[6]) ** 2.0 + (x[3] - x[7]) ** 2.0,
+            x[6] ** 2.0 + (x[7] - x[8]) ** 2.0,
+            x[8] ** 2.0,
+            x[0] ** 2.0 + (x[1] - x[8]) ** 2.0,
             -x[2] * x[8],
             x[5] * x[6] - x[4] * x[7],
             x[1] * x[2] - x[0] * x[3],
             x[4] * x[8],
-        ]
+        ], -np.inf, [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0]))
     else:
         raise NotImplementedError
-    return np.array(c)
+    return constraints
 
 
 def _solution(no):
@@ -163,13 +145,22 @@ def _solution(no):
 
 
 def _resid(x, no):
-    resid = np.max(_cub(x, no), initial=0.0)
     bounds = _bounds(no)
     if bounds is not None:
-        resid = np.max(bounds.lb - x, initial=resid)
+        resid = np.max(bounds.lb - x, initial=0.0)
         resid = np.max(x - bounds.ub, initial=resid)
-    if _aub(no) is not None:
-        resid = max(resid, np.max(np.dot(_aub(no), x) - _bub(no), initial=0.0))
+    else:
+        resid = 0.0
+    constraints = _constraints(no)
+    for constraint in constraints:
+        if isinstance(constraint, LinearConstraint):
+            c = np.dot(constraint.A, x)
+            resid = np.max(np.asarray(constraint.lb) - c, initial=resid)
+            resid = np.max(c - np.asarray(constraint.ub), initial=resid)
+        else:
+            c = np.asarray(constraint.fun(x))
+            resid = np.max(np.asarray(constraint.lb) - c, initial=resid)
+            resid = np.max(c - np.asarray(constraint.ub), initial=resid)
     return resid
 
 
@@ -182,6 +173,6 @@ if __name__ == '__main__':
     print('| Problem | Evaluations | Objective function | Constraint violation | Distance to solution |')
     print('+---------+-------------+--------------------+----------------------+----------------------+')
     for problem in 'ABCDEFGHIJ':
-        res = minimize(fun, _x0(problem), problem, _bounds(problem), aub=_aub(problem), bub=_bub(problem), cub=_cub)
+        res = minimize(fun, _x0(problem), problem, _bounds(problem), _constraints(problem))
         print(f'|   ({problem})   |{res.nfev:^13}|{res.fun:^20.4e}|{_resid(res.x, problem):^22.4e}|{_distance(res.x, problem):^22.4e}|')
     print('+---------+-------------+--------------------+----------------------+----------------------+')

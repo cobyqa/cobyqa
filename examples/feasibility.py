@@ -11,16 +11,18 @@ Solve the feasibility problem
 """
 import numpy as np
 from cobyqa import minimize
+from scipy.optimize import LinearConstraint, NonlinearConstraint
 
 
 def cub(x):
-    return [(x[1] + x[0] ** 2) ** 2 + 0.1 * x[1] ** 2 - 1, x[1] - np.exp(-x[0]) + 3]
+    return [(x[1] + x[0] ** 2) ** 2 + 0.1 * x[1] ** 2, x[1] - np.exp(-x[0])]
 
 
 if __name__ == '__main__':
     x0 = [0.0, 0.0]
-    aub = [[-1.0, 1.0]]
-    bub = [-4.0]
-
+    constraints = [
+        LinearConstraint([[-1.0, 1.0]], -np.inf, [-4.0]),
+        NonlinearConstraint(cub, -np.inf, [1.0, -3.0]),
+    ]
     options = {'verbose': True}
-    minimize(None, x0, aub=aub, bub=bub, cub=cub, options=options)
+    minimize(None, x0, constraints=constraints, options=options)
