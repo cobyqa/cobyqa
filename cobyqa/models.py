@@ -174,8 +174,9 @@ class Quadratic:
     ----------
     .. [1] M. J. D. Powell. The NEWUOA software for unconstrained optimization
        without derivatives. In G. Di Pillo and M. Roma, editors, *Large-Scale
-       Nonlinear Optimization*, volume 83 of *Nonconvex Optimization and Its
-       Applications*, pages 255--297. Springer, Boston, MA, USA, 2006.
+       Nonlinear Optimization*, volume 83 of Nonconvex Optim. Appl., pages
+       255--297. Springer, Boston, MA, USA, 2006. `doi:10.1007/0-387-30065-1_16
+       <https://doi.org/10.1007/0-387-30065-1_16>`_.
     """
 
     def __init__(self, interpolation, values, debug):
@@ -1150,9 +1151,10 @@ class Models:
 
         References
         ----------
-        .. [1] M. J. D. Powell. On updating the inverse of a KKT matrix. In Y.
-           Yuan, editor, *Numerical Linear Algebra and Optimization*, pages
-           56--78. Science Press, Beijing, China, 2004.
+        .. [1] M. J. D. Powell. On updating the inverse of a KKT matrix.
+           Technical Report DAMTP 2004/NA01, Department of Applied Mathematics
+           and Theoretical Physics, University of Cambridge, Cambridge, UK,
+           2004.
         """
         if self._debug:
             assert x_new.shape == (self.n,), 'The shape of `x_new` is not valid.'

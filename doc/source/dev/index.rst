@@ -8,7 +8,7 @@ If you want to use COBYQA in your project, please refer to the :ref:`API documen
 This guide is intended for developers who want to contribute to the COBYQA solver and to derivative-free optimization solvers in general.
 
 The `cobyqa` module has four submodules, detailed below.
-Users should not need to import these submodules when using COBYQA.
+Users do not need to import these submodules when using COBYQA.
 
 .. currentmodule:: cobyqa
 

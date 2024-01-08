@@ -3,7 +3,7 @@
 Optimization problem
 ====================
 
-This module implements classes for representing optimization problems tackled by COBYQA.
+This module implements classes for representing optimization problems for COBYQA.
 
 .. currentmodule:: cobyqa.problem
 

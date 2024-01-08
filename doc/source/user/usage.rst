@@ -43,10 +43,10 @@ To solve the problem using COBYQA, run:
 
 This should display the desired output ``[1. 1. 1. 1. 1.]``.
 
-Example of linear constrained optimization
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Example of linearly constrained optimization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To see how bound and linear constraints are handled using `minimize`, let us solve Example 16.4 of :cite:`ua-Nocedal_Wright_2006`, defined as
+To see how bound and linear constraints are handled using `minimize`, let us solve Example 16.4 of :cite:`uu-Nocedal_Wright_2006`, defined as
 
 .. math::
 
@@ -78,10 +78,10 @@ To solve the problem using COBYQA, run:
 
 This should display the desired output ``[1.4 1.7]``.
 
-Example of nonlinear constrained optimization
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Example of nonlinearly constrained optimization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To see how nonlinear constraints are handled, we solve Problem (F) of :cite:`ua-Powell_1994`, defined as
+To see how nonlinear constraints are handled, we solve Problem (F) of :cite:`uu-Powell_1994`, defined as
 
 .. math::
 
@@ -102,9 +102,6 @@ To solve the problem using COBYQA, run:
     def fun(x):
         return -x[0] - x[1]
 
-    def cub(x):
-        return
-
     x0 = [1.0, 1.0]
     constraints = NonlinearConstraint(lambda x: [
         x[0] ** 2.0 - x[1],
@@ -116,5 +113,5 @@ To solve the problem using COBYQA, run:
 This should display the desired output ``[0.7071 0.7071]``.
 
 .. bibliography::
-    :labelprefix: UA
-    :keyprefix: ua-
+    :labelprefix: UU
+    :keyprefix: uu-

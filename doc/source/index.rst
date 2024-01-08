@@ -11,9 +11,9 @@ COBYQA documentation
 
 :Version: |version|
 :Useful links: `Issue tracker <https://github.com/cobyqa/cobyqa/issues>`_ | `Mailing list <https://mail.python.org/mailman3/lists/cobyqa.python.org/>`_
-:Authors: `Tom M. Ragonneau <https://tomragonneau.com/>`_ | `Zaikun Zhang <https://www.zhangzk.net/>`_
+:Authors: `Tom M. Ragonneau <https://tomragonneau.com>`_ | `Zaikun Zhang <https://www.zhangzk.net>`_
 
-COBYQA is a derivative-free optimization solver designed to succeed `COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_.
+COBYQA is a derivative-free optimization solver designed to supersede `COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_.
 Using only functions values, and no derivatives, it aims at solving problems of the form
 
 .. math::
@@ -44,29 +44,27 @@ Citing COBYQA
 If you would like to acknowledge the significance of COBYQA in your research, we suggest citing the project as follows.
 
 - T.\  M.\  Ragonneau. "Model-Based Derivative-Free Optimization Methods and Software." PhD thesis. Hong Kong, China: Department of Applied Mathematics, The Hong Kong Polytechnic University, 2022. URL: https://theses.lib.polyu.edu.hk/handle/200/12294.
-- T.\  M.\  Ragonneau and Z.\  Zhang. COBYQA. Version |release|. |year|. URL: https://www.cobyqa.com.
+- T.\  M.\  Ragonneau and Z.\  Zhang. COBYQA Version |release|. |year|. URL: https://www.cobyqa.com.
 
-The corresponding BibLaTeX entries are given hereunder.
+The corresponding BibTeX entries are given hereunder.
 
 .. code-block:: bib
     :substitutions:
 
-    @thesis{rago_thesis,
-        author          = {Ragonneau, T. M.},
-        title           = {Model-Based Derivative-Free Optimization Methods and Software},
-        type            = {phdthesis},
-        institution     = {Department of Applied Mathematics, The Hong Kong Polytechnic University},
-        address         = {Hong Kong, China},
-        date            = 2022,
-        url             = {https://theses.lib.polyu.edu.hk/handle/200/12294},
+    @phdthesis{rago_thesis,
+        title        = {Model-Based Derivative-Free Optimization Methods and Software},
+        author       = {Ragonneau, T. M.},
+        school       = {Department of Applied Mathematics, The Hong Kong Polytechnic University},
+        address      = {Hong Kong, China},
+        year         = 2022,
+        url          = {https://theses.lib.polyu.edu.hk/handle/200/12294},
     }
 
-    @software{razh_cobyqa,
-        author          = {Ragonneau, T. M. and Zhang, Z.},
-        title           = {{COBYQA}},
-        version         = {|release|},
-        date            = |year|,
-        url             = {https://www.cobyqa.com},
+    @misc{razh_cobyqa,
+        author       = {Ragonneau, T. M. and Zhang, Z.},
+        title        = {{COBYQA} {V}ersion |release|},
+        year         = |year|,
+        url          = {https://www.cobyqa.com},
     }
 
 Statistics

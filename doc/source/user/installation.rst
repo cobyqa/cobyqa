@@ -8,7 +8,7 @@ Recommended installation
 
 We highly recommend installing COBYQA via `PyPI <https://pypi.org/project/cobyqa>`_.
 This does not need you to download the source code.
-Install `pip <https://pip.pypa.io/en/stable/installing>`_ in your system, then execute
+Install `pip <https://pip.pypa.io/en/stable/installation/>`_ in your system, then execute
 
 .. code-block:: bash
 

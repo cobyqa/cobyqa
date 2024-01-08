@@ -88,12 +88,6 @@ html_theme_options = {
     'logo': {
         'text': project,
     },
-    'external_links': [
-        {
-            'name': 'Issue tracker',
-            'url': f'https://github.com/{html_context["github_user"]}/{html_context["github_repo"]}/issues',
-        },
-    ],
     'switcher': {
         'json_url': 'https://www.cobyqa.com/en/latest/_static/switcher.json',
         'version_match': release,

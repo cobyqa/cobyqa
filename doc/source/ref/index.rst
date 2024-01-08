@@ -18,4 +18,4 @@ An :ref:`installation <installation>` guide and :ref:`usage <usage>` examples ar
     solver
 
 The implementation of COBYQA is documented in the :ref:`developer guide <dev>`.
-It is completely unnecessary to read the :ref:`developer guide <dev>` to use COBYQA, and it only provides insights for people interested in the development of derivative-free optimization methods.
+It is completely unnecessary to read the :ref:`developer guide <dev>` to use COBYQA, and it only provides insights for people interested in the development of derivative-free optimization methods such as COBYQA.

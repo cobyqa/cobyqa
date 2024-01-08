@@ -471,8 +471,9 @@ class TrustRegion:
         References
         ----------
         .. [1] T. M. Ragonneau. *Model-Based Derivative-Free Optimization
-           Methods and Software*. PhD thesis, The Hong Kong Polytechnic
-           University, Hong Kong, China, 2022.
+           Methods and Software*. PhD thesis, Department of Applied Mathematics,
+           The Hong Kong Polytechnic University, Hong Kong, China, 2022. URL:
+           https://theses.lib.polyu.edu.hk/handle/200/12294.
         """
         # Evaluate the linearizations of the constraints.
         aub, bub, aeq, beq = self.get_constraint_linearizations(self.x_best)
@@ -533,8 +534,9 @@ class TrustRegion:
         References
         ----------
         .. [1] T. M. Ragonneau. *Model-Based Derivative-Free Optimization
-           Methods and Software*. PhD thesis, The Hong Kong Polytechnic
-           University, Hong Kong, China, 2022.
+           Methods and Software*. PhD thesis, Department of Applied Mathematics,
+           The Hong Kong Polytechnic University, Hong Kong, China, 2022. URL:
+           https://theses.lib.polyu.edu.hk/handle/200/12294.
         """
         if options[Options.DEBUG]:
             assert k_new != self.best_index, 'The index `k_new` must be different from the best index so far.'

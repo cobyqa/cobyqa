@@ -41,7 +41,7 @@ def _get_deps_info():
 
 def show_versions():
     """
-    Display useful system information and the versions of the dependencies.
+    Display useful system and dependencies information.
 
     When reporting issues, please include this information.
     """

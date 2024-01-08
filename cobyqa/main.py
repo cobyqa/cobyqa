@@ -24,7 +24,8 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
 
             ``fun(x, *args) -> float``
 
-        where ``x`` is an array with shape (n,) and `args` is a tuple.
+        where ``x`` is an array with shape (n,) and `args` is a tuple. If None,
+        the objective function is assumed to be the zero function.
     x0 : array_like, shape (n,)
         Initial guess.
     args : tuple, optional
@@ -32,7 +33,8 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
     bounds : {`scipy.optimize.Bounds`, array_like, shape (n, 2)}, optional
         Bound constraints of the problem. It can be one of the cases below.
 
-        #. An instance of `scipy.optimize.Bounds`.
+        #. An instance of `scipy.optimize.Bounds`. For the time being, the
+           argument ``keep_feasible`` is disregarded.
         #. An array with shape (n, 2). The bound constraints for ``x[i]`` are
            ``bounds[i][0] <= x[i] <= bounds[i][1]``. Set ``bounds[i][0]`` to
            :math:`-\infty` if there is no lower bound, and set ``bounds[i][1]``
@@ -41,34 +43,42 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
     constraints : {`scipy.optimize.LinearConstraint`, `scipy.optimize.NonlinearConstraint`, dict, list}, optional
         General constraints of the problem. It can be one of the cases below.
 
-        #. An instance of `scipy.optimize.LinearConstraint`.
-        #. An instance of `scipy.optimize.NonlinearConstraint`.
+        #. An instance of `scipy.optimize.LinearConstraint`. The argument
+           ``keep_feasible`` is disregarded.
+        #. An instance of `scipy.optimize.NonlinearConstraint`. The arguments
+           ``jac``, ``hess``, ``keep_feasible``, ``finite_diff_rel_step``, and
+           ``finite_diff_jac_sparsity`` are disregarded.
         #. A dictionary with fields:
 
             type : {'eq', 'ineq'}
-                Whether the constraint is ``fun(x) = 0`` or ``fun(x) >= 0``.
+                Whether the constraint is an equality ``fun(x, *args) = 0`` or
+                an inequality ``fun(x, *args) >= 0``.
             fun : callable
                 Constraint function.
+            args : tuple, optional
+                Extra arguments passed to the constraint function.
 
-        #. A list, each of whose elements are described in 1, 2, and 3.
+        #. A list, each of whose elements are described in the cases above.
 
     callback : callable, optional
         A callback executed at each objective function evaluation. The method
-        terminates if a ``StopIteration`` exception is raised by the callback.
-        It should have either of the two signatures below:
+        terminates if a ``StopIteration`` exception is raised by the callback
+        function. Its signature can be one of the following:
 
             ``callback(intermediate_result)``
 
         where ``intermediate_result`` is a keyword parameter that contains an
-        an instance of `scipy.optimize.OptimizeResult`, with attributes ``x``
+        instance of `scipy.optimize.OptimizeResult`, with attributes ``x``
         and ``fun``, being the point at which the objective function is
         evaluated and the value of the objective function, respectively. The
         name of the parameter must be ``intermediate_result`` for the callback
         to be passed an instance of `scipy.optimize.OptimizeResult`.
 
-            ``callback(x)``
+        Alternatively, the callback function can have the signature:
 
-        where ``x`` is the point at which the objective function is evaluated.
+            ``callback(xk)``
+
+        where ``xk`` is the point at which the objective function is evaluated.
         Introspection is used to determine which of the signatures to invoke.
     options : dict, optional
         Options passed to the solver. Accepted keys are:
@@ -86,11 +96,15 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
             feasibility_tol : float, optional
                 Tolerance on the constraint violation.
             radius_init : float, optional
-                Initial trust-region radius.
+                Initial trust-region radius. Typically, this value should be in
+                the order of one tenth of the greatest expected change to the
+                variables.
             radius_final : float, optional
-                Final trust-region radius.
+                Final trust-region radius. It should indicate the accuracy
+                required in the final values of the variables.
             nb_points : int, optional
-                Number of interpolation points.
+                Number of interpolation points used to build the quadratic
+                models of the objective and constraint functions.
             scale : bool, optional
                 Whether to scale the variables according to the bounds.
             filter_size : int, optional
@@ -102,7 +116,8 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
                 Maximum number of function evaluations to store in the history.
             debug : bool, optional
                 Whether to perform additional checks. This option should be
-                used only for debugging purposes and is highly discouraged.
+                used only for debugging purposes and is highly discouraged to
+                general users.
 
     Returns
     -------
@@ -121,13 +136,12 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
                 Objective function value at the solution point.
             maxcv : float
                 Maximum constraint violation at the solution point.
-            nit : int
-                Number of iterations.
             nfev : int
                 Number of function evaluations.
+            nit : int
+                Number of iterations.
 
-        If the ``store_history`` option is True, the result also has the
-        following fields:
+        If ``store_history`` is True, the result also has the following fields:
 
             fun_history : `numpy.ndarray`, shape (nfev,)
                 History of the objective function values.
@@ -161,31 +175,33 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
 
     References
     ----------
-    .. [1] J. Nocedal and S. J. Wright. *Numerical Optimization*. Springer
-       Series in Operations Research and Financial Engineering. Springer, New
-       York, NY, USA, second edition, 2006.
+    .. [1] J. Nocedal and S. J. Wright. *Numerical Optimization*. Springer Ser.
+       Oper. Res. Financ. Eng. Springer, New York, NY, USA, second edition,
+       2006. `doi:10.1007/978-0-387-40065-5
+       <https://doi.org/10.1007/978-0-387-40065-5>`_.
     .. [2] M. J. D. Powell. A direct search optimization method that models the
        objective and constraint functions by linear interpolation. In S. Gomez
-       and J. P. Hennart, editors, *Advances in Optimization and Numerical
-       Analysis*, volume 275 of *Mathematics and Its Applications*, pages 51–67.
-       Springer, Dordrecht, The Netherlands, 1994.
+       and J.-P. Hennart, editors, *Advances in Optimization and Numerical
+       Analysis*, volume 275 of Math. Appl., pages 51--67. Springer, Dordrecht,
+       Netherlands, 1994. `doi:10.1007/978-94-015-8330-5_4
+       <https://doi.org/10.1007/978-94-015-8330-5_4>`_.
     .. [3] T. M. Ragonneau. *Model-Based Derivative-Free Optimization Methods
-       and Software*. PhD thesis, The Hong Kong Polytechnic University, Hong
-       Kong, China, 2022.
+       and Software*. PhD thesis, Department of Applied Mathematics, The Hong
+       Kong Polytechnic University, Hong Kong, China, 2022. URL:
+       https://theses.lib.polyu.edu.hk/handle/200/12294.
 
     Examples
     --------
-    Let us first minimize the Rosenbrock function implemented in
-    `scipy.optimize` in an unconstrained setting.
+    To demonstrate how to use `minimize`, we first minimize the Rosenbrock
+    function implemented in `scipy.optimize` in an unconstrained setting.
 
     .. testsetup::
 
         import numpy as np
         np.set_printoptions(precision=3, suppress=True)
 
-    >>> import numpy as np
     >>> from cobyqa import minimize
-    >>> from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, rosen
+    >>> from scipy.optimize import rosen
 
     To solve the problem using COBYQA, run:
 
@@ -194,8 +210,8 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-    To see how bound and linear constraints are handled using `minimize`, we
-    solve Example 16.4 of [1]_, defined as
+    To see how bound and constraints are handled using `minimize`, we solve
+    Example 16.4 of [1]_, defined as
 
     .. math::
 
@@ -207,6 +223,9 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
                                         & \quad x_1 \ge 0,\\
                                         & \quad x_2 \ge 0.
         \end{aligned}
+
+    >>> import numpy as np
+    >>> from scipy.optimize import Bounds, LinearConstraint
 
     Its objective function can be implemented as:
 
@@ -232,6 +251,8 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
             \text{s.t.}                 & \quad x_1^2 - x_2 \le 0,\\
                                         & \quad x_1^2 + x_2^2 \le 1.
         \end{aligned}
+
+    >>> from scipy.optimize import NonlinearConstraint
 
     Its objective and constraint functions can be implemented as:
 
@@ -559,7 +580,7 @@ def _get_constraints(constraints):
                 raise ValueError('The constraint type must be "eq" or "ineq".')
             if 'fun' not in constraint or not callable(constraint['fun']):
                 raise ValueError('The constraint function must be callable.')
-            nonlinear_constraints.append({'fun': constraint['fun'], 'type': constraint['type']})
+            nonlinear_constraints.append({'fun': constraint['fun'], 'type': constraint['type'], 'args': constraints.get('args', ())})
         else:
             raise TypeError('The constraints must be instances of scipy.optimize.LinearConstraint, scipy.optimize.NonlinearConstraint, or dict.')
     return linear_constraints, nonlinear_constraints
