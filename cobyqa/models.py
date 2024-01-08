@@ -4,6 +4,7 @@ import numpy as np
 from scipy.linalg import LinAlgWarning, lstsq, solve
 
 from .settings import Options
+from .utils import MaxEvalError, TargetSuccess, FeasibleSuccess
 
 
 class Interpolation:
@@ -531,6 +532,13 @@ class Models:
 
         Raises
         ------
+        `cobyqa.utils.MaxEvalError`
+            If the maximum number of evaluations is reached.
+        `cobyqa.utils.TargetSuccess`
+            If a nearly feasible point has been found with an objective function
+            value below the target.
+        `cobyqa.utils.FeasibleSuccess`
+            If a feasible point has been found for a feasibility problem.
         `numpy.linalg.LinAlgError`
             If the interpolation system is ill-defined.
         """
@@ -544,9 +552,9 @@ class Models:
         self._fun_val = np.full(options[Options.NPT], np.nan)
         self._cub_val = np.full((options[Options.NPT], cub_init.size), np.nan)
         self._ceq_val = np.full((options[Options.NPT], ceq_init.size), np.nan)
-        self._target_init = False
-        self._feasibility_solved_init = False
-        for k in range(min(options[Options.NPT], options[Options.MAX_EVAL])):
+        for k in range(options[Options.NPT]):
+            if k >= options[Options.MAX_EVAL]:
+                raise MaxEvalError
             if k == 0:
                 self.fun_val[k] = fun_init
                 self.cub_val[k, :] = cub_init
@@ -558,27 +566,23 @@ class Models:
             # Stop the iterations if the problem is a feasibility problem and
             # the current interpolation point is feasible.
             if pb.is_feasibility and pb.maxcv(self.interpolation.point(k), self.cub_val[k, :], self.ceq_val[k, :]) <= options[Options.FEASIBILITY_TOL]:
-                self._feasibility_solved_init = True
-                break
+                raise FeasibleSuccess
 
             # Stop the iterations if the current interpolation point is nearly
             # feasible and has an objective function value below the target.
-            if self._fun_val[k] < options[Options.TARGET]:
-                if pb.maxcv(self.interpolation.point(k), self.cub_val[k, :], self.ceq_val[k, :]) <= options[Options.FEASIBILITY_TOL]:
-                    self._target_init = True
-                    break
+            if self._fun_val[k] < options[Options.TARGET] and pb.maxcv(self.interpolation.point(k), self.cub_val[k, :], self.ceq_val[k, :]) <= options[Options.FEASIBILITY_TOL]:
+                raise TargetSuccess
 
         # Build the initial quadratic models.
-        if options[Options.MAX_EVAL] > options[Options.NPT] and not self.target_init and not self.feasibility_solved_init:
-            self._fun = Quadratic(self.interpolation, self._fun_val, options[Options.DEBUG])
-            self._cub = np.empty(self.m_nonlinear_ub, dtype=Quadratic)
-            self._ceq = np.empty(self.m_nonlinear_eq, dtype=Quadratic)
-            for i in range(self.m_nonlinear_ub):
-                self._cub[i] = Quadratic(self.interpolation, self.cub_val[:, i], options[Options.DEBUG])
-            for i in range(self.m_nonlinear_eq):
-                self._ceq[i] = Quadratic(self.interpolation, self.ceq_val[:, i], options[Options.DEBUG])
-            if self._debug:
-                self._check_interpolation_conditions()
+        self._fun = Quadratic(self.interpolation, self._fun_val, options[Options.DEBUG])
+        self._cub = np.empty(self.m_nonlinear_ub, dtype=Quadratic)
+        self._ceq = np.empty(self.m_nonlinear_eq, dtype=Quadratic)
+        for i in range(self.m_nonlinear_ub):
+            self._cub[i] = Quadratic(self.interpolation, self.cub_val[:, i], options[Options.DEBUG])
+        for i in range(self.m_nonlinear_eq):
+            self._ceq[i] = Quadratic(self.interpolation, self.ceq_val[:, i], options[Options.DEBUG])
+        if self._debug:
+            self._check_interpolation_conditions()
 
     @property
     def n(self):
@@ -679,34 +683,6 @@ class Models:
             interpolation points.
         """
         return self._ceq_val
-
-    @property
-    def target_init(self):
-        """
-        Whether a nearly feasible interpolation point has been found with an
-        objective function value below the target.
-
-        If this is the case, the models are not initialized.
-
-        Returns
-        -------
-        bool
-            Whether a nearly feasible interpolation point has been found with an
-            objective function value below the target.
-        """
-        return self._target_init
-
-    @property
-    def feasibility_solved_init(self):
-        """
-        Whether the problem is a feasibility problem and is solved.
-
-        Returns
-        -------
-        bool
-            Whether the problem is a feasibility problem and is solved.
-        """
-        return self._feasibility_solved_init
 
     def fun(self, x):
         """

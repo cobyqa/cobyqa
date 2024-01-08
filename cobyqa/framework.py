@@ -28,6 +28,13 @@ class TrustRegion:
 
         Raises
         ------
+        `cobyqa.utils.MaxEvalError`
+            If the maximum number of evaluations is reached.
+        `cobyqa.utils.TargetSuccess`
+            If a nearly feasible point has been found with an objective function
+            value below the target.
+        `cobyqa.utils.FeasibleSuccess`
+            If a feasible point has been found for a feasibility problem.
         `numpy.linalg.LinAlgError`
             If the initial interpolation system is ill-defined.
         """
@@ -47,8 +54,7 @@ class TrustRegion:
         self._lm_linear_eq = np.zeros(self.m_linear_eq)
         self._lm_nonlinear_ub = np.zeros(self.m_nonlinear_ub)
         self._lm_nonlinear_eq = np.zeros(self.m_nonlinear_eq)
-        if options[Options.MAX_EVAL] > options[Options.NPT] and not self._models.target_init and not self._models.feasibility_solved_init:
-            self.set_multipliers(self.x_best)
+        self.set_multipliers(self.x_best)
 
         # Set the initial trust-region radius and the resolution.
         self._resolution = options[Options.RHOBEG]

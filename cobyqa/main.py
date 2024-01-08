@@ -5,7 +5,7 @@ from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, Optimi
 
 from .framework import TrustRegion
 from .problem import ObjectiveFunction, BoundConstraints, LinearConstraints, NonlinearConstraints, Problem
-from .utils import MaxEvalError
+from .utils import MaxEvalError, TargetSuccess, FeasibleSuccess
 from .settings import ExitStatus, Options, DEFAULT_OPTIONS, PRINT_OPTIONS
 
 
@@ -334,20 +334,21 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
         print()
     try:
         framework = TrustRegion(pb, options)
-    except np.linalg.LinAlgError:
-        # The construction of the initial interpolation set failed.
-        return _build_result(pb, 0.0, False, ExitStatus.LINALG_ERROR, 0, options)
+    except TargetSuccess:
+        # The target on the objective function value has been reached
+        return _build_result(pb, 0.0, True, ExitStatus.TARGET_SUCCESS, 0, options)
     except StopIteration:
         # The callback raised a StopIteration exception.
         return _build_result(pb, 0.0, True, ExitStatus.CALLBACK_SUCCESS, 0, options)
-    if framework.models.feasibility_solved_init:
-        return _build_result(pb, framework.penalty, True, ExitStatus.FEASIBLE_SUCCESS, 0, options)
-    if framework.models.target_init:
-        # The target on the objective function value has been reached
-        return _build_result(pb, framework.penalty, True, ExitStatus.TARGET_SUCCESS, 0, options)
-    elif pb.n_eval >= options[Options.MAX_EVAL]:
+    except FeasibleSuccess:
+        # The feasibility problem has been solved successfully.
+        return _build_result(pb, 0.0, True, ExitStatus.FEASIBLE_SUCCESS, 0, options)
+    except MaxEvalError:
         # The maximum number of function evaluations has been exceeded.
-        return _build_result(pb, framework.penalty, False, ExitStatus.MAX_ITER_WARNING, 0, options)
+        return _build_result(pb, 0.0, False, ExitStatus.MAX_ITER_WARNING, 0, options)
+    except np.linalg.LinAlgError:
+        # The construction of the initial interpolation set failed.
+        return _build_result(pb, 0.0, False, ExitStatus.LINALG_ERROR, 0, options)
 
     # Start the optimization procedure.
     success = False
@@ -409,21 +410,21 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
             if same_best_point:
                 # Evaluate the objective and constraint functions.
                 try:
-                    fun_val, cub_val, ceq_val, target, feasible = _eval(pb, framework, step, options)
-                except MaxEvalError:
-                    status = ExitStatus.MAX_EVAL_WARNING
+                    fun_val, cub_val, ceq_val = _eval(pb, framework, step, options)
+                except TargetSuccess:
+                    status = ExitStatus.TARGET_SUCCESS
+                    success = True
+                    break
+                except FeasibleSuccess:
+                    status = ExitStatus.FEASIBLE_SUCCESS
+                    success = True
                     break
                 except StopIteration:
                     status = ExitStatus.CALLBACK_SUCCESS
                     success = True
                     break
-                if pb.is_feasibility and feasible:
-                    status = ExitStatus.FEASIBLE_SUCCESS
-                    success = True
-                    break
-                if target and feasible:
-                    status = ExitStatus.TARGET_SUCCESS
-                    success = True
+                except MaxEvalError:
+                    status = ExitStatus.MAX_EVAL_WARNING
                     break
 
                 # Perform a second-order correction step if necessary.
@@ -436,21 +437,21 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
 
                         # Evaluate the objective and constraint functions.
                         try:
-                            fun_val, cub_val, ceq_val, target, feasible = _eval(pb, framework, step, options)
-                        except MaxEvalError:
-                            status = ExitStatus.MAX_EVAL_WARNING
+                            fun_val, cub_val, ceq_val = _eval(pb, framework, step, options)
+                        except TargetSuccess:
+                            status = ExitStatus.TARGET_SUCCESS
+                            success = True
+                            break
+                        except FeasibleSuccess:
+                            status = ExitStatus.FEASIBLE_SUCCESS
+                            success = True
                             break
                         except StopIteration:
                             status = ExitStatus.CALLBACK_SUCCESS
                             success = True
                             break
-                        if pb.is_feasibility and feasible:
-                            status = ExitStatus.FEASIBLE_SUCCESS
-                            success = True
-                            break
-                        if target and feasible:
-                            status = ExitStatus.TARGET_SUCCESS
-                            success = True
+                        except MaxEvalError:
+                            status = ExitStatus.MAX_EVAL_WARNING
                             break
 
                 # Calculate the reduction ratio.
@@ -537,21 +538,21 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
 
             # Evaluate the objective and constraint functions.
             try:
-                fun_val, cub_val, ceq_val, target, feasible = _eval(pb, framework, step, options)
-            except MaxEvalError:
-                status = ExitStatus.MAX_EVAL_WARNING
+                fun_val, cub_val, ceq_val = _eval(pb, framework, step, options)
+            except TargetSuccess:
+                status = ExitStatus.TARGET_SUCCESS
+                success = True
+                break
+            except FeasibleSuccess:
+                status = ExitStatus.FEASIBLE_SUCCESS
+                success = True
                 break
             except StopIteration:
                 status = ExitStatus.CALLBACK_SUCCESS
                 success = True
                 break
-            if pb.is_feasibility and feasible:
-                status = ExitStatus.FEASIBLE_SUCCESS
-                success = True
-                break
-            if target and feasible:
-                status = ExitStatus.TARGET_SUCCESS
-                success = True
+            except MaxEvalError:
+                status = ExitStatus.MAX_EVAL_WARNING
                 break
 
             # Update the interpolation set.
@@ -668,7 +669,11 @@ def _eval(pb, framework, step, options):
     x_eval = framework.x_best + step
     fun_val, cub_val, ceq_val = pb(x_eval)
     r_val = pb.maxcv(x_eval, cub_val, ceq_val)
-    return fun_val, cub_val, ceq_val, fun_val <= options[Options.TARGET], r_val <= options[Options.FEASIBILITY_TOL]
+    if fun_val <= options[Options.TARGET] and r_val <= options[Options.FEASIBILITY_TOL]:
+        raise TargetSuccess
+    if pb.is_feasibility and r_val <= options[Options.FEASIBILITY_TOL]:
+        raise FeasibleSuccess
+    return fun_val, cub_val, ceq_val
 
 
 def _build_result(pb, penalty, success, status, n_iter, options):
