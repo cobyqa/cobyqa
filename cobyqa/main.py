@@ -165,8 +165,10 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
             * - 3
               - The callback requested to stop the optimization procedure.
             * - 4
-              - The maximum number of function evaluations has been exceeded.
+              - The feasibility problem received has been solved successfully.
             * - 5
+              - The maximum number of function evaluations has been exceeded.
+            * - 6
               - The maximum number of iterations has been exceeded.
             * - -1
               - The bound constraints are infeasible.
@@ -338,6 +340,8 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
     except StopIteration:
         # The callback raised a StopIteration exception.
         return _build_result(pb, 0.0, True, ExitStatus.CALLBACK_SUCCESS, 0, options)
+    if framework.models.feasibility_solved_init:
+        return _build_result(pb, framework.penalty, True, ExitStatus.FEASIBLE_SUCCESS, 0, options)
     if framework.models.target_init:
         # The target on the objective function value has been reached
         return _build_result(pb, framework.penalty, True, ExitStatus.TARGET_SUCCESS, 0, options)
@@ -405,7 +409,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
             if same_best_point:
                 # Evaluate the objective and constraint functions.
                 try:
-                    fun_val, cub_val, ceq_val, target = _eval(pb, framework, step, options)
+                    fun_val, cub_val, ceq_val, target, feasible = _eval(pb, framework, step, options)
                 except MaxEvalError:
                     status = ExitStatus.MAX_EVAL_WARNING
                     break
@@ -413,7 +417,11 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
                     status = ExitStatus.CALLBACK_SUCCESS
                     success = True
                     break
-                if target:
+                if pb.is_feasibility and feasible:
+                    status = ExitStatus.FEASIBLE_SUCCESS
+                    success = True
+                    break
+                if target and feasible:
                     status = ExitStatus.TARGET_SUCCESS
                     success = True
                     break
@@ -428,7 +436,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
 
                         # Evaluate the objective and constraint functions.
                         try:
-                            fun_val, cub_val, ceq_val, target = _eval(pb, framework, step, options)
+                            fun_val, cub_val, ceq_val, target, feasible = _eval(pb, framework, step, options)
                         except MaxEvalError:
                             status = ExitStatus.MAX_EVAL_WARNING
                             break
@@ -436,7 +444,11 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
                             status = ExitStatus.CALLBACK_SUCCESS
                             success = True
                             break
-                        if target:
+                        if pb.is_feasibility and feasible:
+                            status = ExitStatus.FEASIBLE_SUCCESS
+                            success = True
+                            break
+                        if target and feasible:
                             status = ExitStatus.TARGET_SUCCESS
                             success = True
                             break
@@ -525,7 +537,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
 
             # Evaluate the objective and constraint functions.
             try:
-                fun_val, cub_val, ceq_val, target = _eval(pb, framework, step, options)
+                fun_val, cub_val, ceq_val, target, feasible = _eval(pb, framework, step, options)
             except MaxEvalError:
                 status = ExitStatus.MAX_EVAL_WARNING
                 break
@@ -533,7 +545,11 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
                 status = ExitStatus.CALLBACK_SUCCESS
                 success = True
                 break
-            if target:
+            if pb.is_feasibility and feasible:
+                status = ExitStatus.FEASIBLE_SUCCESS
+                success = True
+                break
+            if target and feasible:
                 status = ExitStatus.TARGET_SUCCESS
                 success = True
                 break
@@ -652,7 +668,7 @@ def _eval(pb, framework, step, options):
     x_eval = framework.x_best + step
     fun_val, cub_val, ceq_val = pb(x_eval)
     r_val = pb.maxcv(x_eval, cub_val, ceq_val)
-    return fun_val, cub_val, ceq_val, fun_val <= options[Options.TARGET] and r_val <= options[Options.FEASIBILITY_TOL]
+    return fun_val, cub_val, ceq_val, fun_val <= options[Options.TARGET], r_val <= options[Options.FEASIBILITY_TOL]
 
 
 def _build_result(pb, penalty, success, status, n_iter, options):
@@ -661,7 +677,7 @@ def _build_result(pb, penalty, success, status, n_iter, options):
     """
     # Build the result.
     x, fun, maxcv = pb.best_eval(penalty)
-    if status != ExitStatus.TARGET_SUCCESS:
+    if status not in [ExitStatus.TARGET_SUCCESS, ExitStatus.FEASIBLE_SUCCESS]:
         success = success and maxcv <= options[Options.FEASIBILITY_TOL]
     result = OptimizeResult()
     result.message = {
@@ -669,6 +685,7 @@ def _build_result(pb, penalty, success, status, n_iter, options):
         ExitStatus.TARGET_SUCCESS: 'The target objective function value has been reached',
         ExitStatus.FIXED_SUCCESS: 'All variables are fixed by the bound constraints',
         ExitStatus.CALLBACK_SUCCESS: 'The callback requested to stop the optimization procedure',
+        ExitStatus.FEASIBLE_SUCCESS: 'The feasibility problem received has been solved successfully',
         ExitStatus.MAX_EVAL_WARNING: 'The maximum number of function evaluations has been exceeded',
         ExitStatus.MAX_ITER_WARNING: 'The maximum number of iterations has been exceeded',
         ExitStatus.INFEASIBLE_ERROR: 'The bound constraints are infeasible',

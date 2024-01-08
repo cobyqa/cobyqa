@@ -545,6 +545,7 @@ class Models:
         self._cub_val = np.full((options[Options.NPT], cub_init.size), np.nan)
         self._ceq_val = np.full((options[Options.NPT], ceq_init.size), np.nan)
         self._target_init = False
+        self._feasibility_solved_init = False
         for k in range(min(options[Options.NPT], options[Options.MAX_EVAL])):
             if k == 0:
                 self.fun_val[k] = fun_init
@@ -554,6 +555,12 @@ class Models:
                 x_eval = self.interpolation.point(k)
                 self.fun_val[k], self.cub_val[k, :], self.ceq_val[k, :] = pb(x_eval)
 
+            # Stop the iterations if the problem is a feasibility problem and
+            # the current interpolation point is feasible.
+            if pb.is_feasibility and pb.maxcv(self.interpolation.point(k), self.cub_val[k, :], self.ceq_val[k, :]) <= options[Options.FEASIBILITY_TOL]:
+                self._feasibility_solved_init = True
+                break
+
             # Stop the iterations if the current interpolation point is nearly
             # feasible and has an objective function value below the target.
             if self._fun_val[k] < options[Options.TARGET]:
@@ -562,7 +569,7 @@ class Models:
                     break
 
         # Build the initial quadratic models.
-        if options[Options.MAX_EVAL] > options[Options.NPT] and not self.target_init:
+        if options[Options.MAX_EVAL] > options[Options.NPT] and not self.target_init and not self.feasibility_solved_init:
             self._fun = Quadratic(self.interpolation, self._fun_val, options[Options.DEBUG])
             self._cub = np.empty(self.m_nonlinear_ub, dtype=Quadratic)
             self._ceq = np.empty(self.m_nonlinear_eq, dtype=Quadratic)
@@ -688,6 +695,18 @@ class Models:
             objective function value below the target.
         """
         return self._target_init
+
+    @property
+    def feasibility_solved_init(self):
+        """
+        Whether the problem is a feasibility problem and is solved.
+
+        Returns
+        -------
+        bool
+            Whether the problem is a feasibility problem and is solved.
+        """
+        return self._feasibility_solved_init
 
     def fun(self, x):
         """
