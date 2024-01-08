@@ -77,10 +77,23 @@ html_theme = 'pydata_sphinx_theme'
 
 html_static_path = ['_static']
 
+html_context = {
+    'github_user': 'cobyqa',
+    'github_repo': 'cobyqa',
+    'github_version': 'main',
+    'doc_path': 'doc/source',
+}
+
 html_theme_options = {
     'logo': {
         'text': project,
     },
+    'external_links': [
+        {
+            'name': 'Issue tracker',
+            'url': f'https://github.com/{html_context["github_user"]}/{html_context["github_repo"]}/issues',
+        },
+    ],
     'switcher': {
         'json_url': 'https://www.cobyqa.com/en/latest/_static/switcher.json',
         'version_match': release,
@@ -89,7 +102,7 @@ html_theme_options = {
     'icon_links': [
         {
             'name': f'GitHub ({downloads["github"]:,} downloads)',
-            'url': 'https://github.com/cobyqa/cobyqa',
+            'url': f'https://github.com/{html_context["github_user"]}/{html_context["github_repo"]}',
             'icon': 'fa-brands fa-github',
         },
         {
@@ -103,13 +116,6 @@ html_theme_options = {
     'navbar_align': 'left',
     'navigation_depth': 1,
     # 'announcement': '<p></p>',
-}
-
-html_context = {
-    'github_user': 'cobyqa',
-    'github_repo': 'cobyqa',
-    'github_version': 'main',
-    'doc_path': 'doc/source',
 }
 
 html_title = f'{project} v{version} Manual'

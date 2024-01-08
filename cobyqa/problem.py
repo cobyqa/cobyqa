@@ -14,7 +14,7 @@ class ObjectiveFunction:
     Real-valued objective function.
     """
 
-    def __init__(self, fun, callback, verbose, debug, *args):
+    def __init__(self, fun, verbose, debug, *args):
         """
         Initialize the objective function.
 
@@ -39,7 +39,6 @@ class ObjectiveFunction:
             assert isinstance(debug, bool)
 
         self._fun = fun
-        self._callback = callback
         self._verbose = verbose
         self._args = args
         self._n_eval = 0
@@ -72,15 +71,6 @@ class ObjectiveFunction:
             if self._verbose:
                 with np.printoptions(**PRINT_OPTIONS):
                     print(f'{self.name}({x}) = {f}')
-        if self._callback is not None:
-            if not callable(self._callback):
-                raise ValueError('The callback must be a callable function.')
-            sig = signature(self._callback)
-            if set(sig.parameters) == {'intermediate_result'}:
-                intermediate_result = OptimizeResult(x=x, fun=f)
-                self._callback(intermediate_result)
-            else:
-                self._callback(x)
         return f
 
     @property
@@ -122,8 +112,8 @@ class BoundConstraints:
         bounds : scipy.optimize.Bounds
             Bound constraints.
         """
-        self._xl = bounds.lb
-        self._xu = bounds.ub
+        self._xl = np.array(bounds.lb, float)
+        self._xu = np.array(bounds.ub, float)
 
         # Remove the ill-defined bounds.
         self.xl[np.isnan(self.xl)] = -np.inf
@@ -366,7 +356,7 @@ class NonlinearConstraints:
 
         Parameters
         ----------
-        constraints : list of {NonlinearConstraint, dict}
+        constraints : list
             Nonlinear constraints.
         verbose : bool
             Whether to print the function evaluations.
@@ -421,16 +411,19 @@ class NonlinearConstraints:
                 with np.printoptions(**PRINT_OPTIONS):
                     print(f'{fun.__name__}({x}) = {val}')
             if isinstance(constraint, NonlinearConstraint):
-                is_equality = np.abs(constraint.ub - constraint.lb) <= get_arrays_tol(constraint.lb, constraint.ub)
+                lb = _1d_array(constraint.lb, 'The lower bound of the nonlinear constraints must be a vector.')
+                ub = _1d_array(constraint.ub, 'The upper bound of the nonlinear constraints must be a vector.')
+                val, lb, ub = np.broadcast_arrays(val, lb, ub)
+                is_equality = np.abs(ub - lb) <= get_arrays_tol(lb, ub)
                 if np.any(is_equality):
-                    c_eq = np.concatenate((c_eq, val[is_equality] - 0.5 * (constraint.lb[is_equality] + constraint.lb[is_equality])))
+                    c_eq = np.concatenate((c_eq, val[is_equality] - 0.5 * (lb[is_equality] + ub[is_equality])))
                 if not np.all(is_equality):
-                    is_inequality_lb = ~is_equality & (constraint.lb > -np.inf)
-                    is_inequality_ub = ~is_equality & (constraint.ub < np.inf)
+                    is_inequality_lb = ~is_equality & (lb > -np.inf)
+                    is_inequality_ub = ~is_equality & (ub < np.inf)
                     if np.any(is_inequality_lb):
-                        c_ub = np.concatenate((c_ub, constraint.lb[is_inequality_lb] - val[is_inequality_lb]))
+                        c_ub = np.concatenate((c_ub, lb[is_inequality_lb] - val[is_inequality_lb]))
                     if np.any(is_inequality_ub):
-                        c_ub = np.concatenate((c_ub, val[is_inequality_ub] - constraint.ub[is_inequality_ub]))
+                        c_ub = np.concatenate((c_ub, val[is_inequality_ub] - ub[is_inequality_ub]))
             elif constraint['type'] == 'ineq':
                 c_ub = np.concatenate((c_ub, -val))
             else:
@@ -524,7 +517,7 @@ class Problem:
     Optimization problem.
     """
 
-    def __init__(self, obj, x0, bounds, linear, nonlinear, feasibility_tol, scale, store_history, history_size, filter_size, debug):
+    def __init__(self, obj, x0, bounds, linear, nonlinear, callback, feasibility_tol, scale, store_history, history_size, filter_size, debug):
         """
         Initialize the nonlinear problem.
 
@@ -543,6 +536,8 @@ class Problem:
             Linear constraints.
         nonlinear : NonlinearConstraints
             Nonlinear constraints.
+        callback : {callable, None}
+            Callback function.
         feasibility_tol : float
             Tolerance on the constraint violation.
         scale : bool
@@ -574,6 +569,10 @@ class Problem:
         self._obj = obj
         self._linear = linear
         self._nonlinear = nonlinear
+        if callback is not None:
+            if not callable(callback):
+                raise ValueError('The callback must be a callable function.')
+        self._callback = callback
 
         # Check the consistency of the problem.
         x0 = _1d_array(x0, 'The initial guess must be a vector.')
@@ -689,6 +688,16 @@ class Problem:
             self._fun_filter.pop(0)
             self._maxcv_filter.pop(0)
             self._x_filter.pop(0)
+
+        # Evaluate the callback function after updating the filter to ensure
+        # that the current point can be returned by the method.
+        if self._callback is not None:
+            sig = signature(self._callback)
+            if set(sig.parameters) == {'intermediate_result'}:
+                intermediate_result = OptimizeResult(x=x, fun=fun_val)
+                self._callback(intermediate_result)
+            else:
+                self._callback(x)
 
         return fun_val, cub_val, ceq_val
 

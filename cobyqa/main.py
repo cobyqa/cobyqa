@@ -276,7 +276,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
     # Initialize the objective function.
     if not isinstance(args, tuple):
         args = (args,)
-    obj = ObjectiveFunction(fun, callback, verbose, debug, *args)
+    obj = ObjectiveFunction(fun, verbose, debug, *args)
 
     # Initialize the bound constraints.
     if not hasattr(x0, '__len__'):
@@ -290,7 +290,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
     nonlinear = NonlinearConstraints(nonlinear_constraints, verbose, debug)
 
     # Initialize the problem (and remove the fixed variables).
-    pb = Problem(obj, x0, bounds, linear, nonlinear, feasibility_tol, scale, store_history, history_size, filter_size, debug)
+    pb = Problem(obj, x0, bounds, linear, nonlinear, callback, feasibility_tol, scale, store_history, history_size, filter_size, debug)
 
     # Set the default options.
     _set_default_options(options, pb.n)
