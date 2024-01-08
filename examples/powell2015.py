@@ -5,7 +5,8 @@ Solve Example (6.7)--(6.8) of [1]_.
 References
 ----------
 .. [1] M. J. D. Powell. On fast trust region methods for quadratic models with
-   linear constraints. Math. Program. Comput., 7(3):237--267, 2015.
+   linear constraints. *Math. Program. Comput.*, 7(3):237–267, 2015.
+   `doi:10.1007/s12532-015-0084-4 <https://doi.org/10.1007/s12532-015-0084-4>`_.
 """
 import numpy as np
 from cobyqa import minimize
@@ -37,7 +38,7 @@ def _plot_points(x, title=None):
 
 if __name__ == '__main__':
     rng = np.random.default_rng(0)
-    n = 30  # must be even
+    n = 80  # must be even
 
     aub = np.zeros((n // 2, n))
     bub = 2.0 * np.ones(n // 2)

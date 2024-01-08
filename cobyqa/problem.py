@@ -399,12 +399,14 @@ class NonlinearConstraints:
         c_eq = np.empty(0)
         for constraint in self._constraints:
             if isinstance(constraint, NonlinearConstraint):
-                val = constraint.fun(x)
+                fun = constraint.fun
+                val = fun(x)
             else:
+                fun = constraint['fun']
                 args = constraint['args']
                 if not isinstance(args, tuple):
                     args = (args,)
-                val = constraint['fun'](x, *args)
+                val = fun(x, *args)
             val = _1d_array(val, 'The nonlinear constraints must return a vector.')
             val[np.isnan(val)] = BARRIER
             val = np.minimum(val, BARRIER)

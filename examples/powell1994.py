@@ -6,9 +6,10 @@ References
 ----------
 .. [1] M. J. D. Powell. A direct search optimization method that models the
    objective and constraint functions by linear interpolation. In S. Gomez and
-   J. P. Hennart, editors, Advances in Optimization and Numerical Analysis,
-   volume 275 of Mathematics and Its Applications, pages 51–67. Springer,
-   Dordrecht, The Netherlands, 1994.
+   J.-P. Hennart, editors, *Advances in Optimization and Numerical Analysis*,
+   volume 275 of Math. Appl., pages 51–67. Springer, Dordrecht, Netherlands,
+   1994. `doi:10.1007/978-94-015-8330-5_4
+   <https://doi.org/10.1007/978-94-015-8330-5_4>`_.
 """
 import numpy as np
 from cobyqa import minimize

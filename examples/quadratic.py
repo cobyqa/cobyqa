@@ -4,9 +4,9 @@ Solve Example 16.4 of [1]_.
 
 References
 ----------
-.. [1] J. Nocedal and S. J. Wright. Numerical Optimization. Springer Series in
-   Operations Research and Financial Engineering. Springer, New York, NY, USA,
-   second edition, 2006.
+.. [1] J. Nocedal and S. J. Wright. *Numerical Optimization*. Springer Ser.
+   Oper. Res. Financ. Eng. Springer, New York, NY, USA, second edition, 2006.
+   `doi:10.1007/978-0-387-40065-5 <https://doi.org/10.1007/978-0-387-40065-5>`_.
 """
 import numpy as np
 from cobyqa import minimize

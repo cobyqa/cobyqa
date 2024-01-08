@@ -56,8 +56,8 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 benchmarks = [
-    "joblib==1.3.2",
-    "matplotlib",
+    "joblib",
+    "matplotlib>=2.0.0",
     "pdfo==2.0.1",
     "pycutest==1.5.1",
 ]
