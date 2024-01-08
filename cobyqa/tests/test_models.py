@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from scipy.optimize import rosen
+from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, rosen
 
 from cobyqa.models import Interpolation, Quadratic
 from cobyqa.problem import ObjectiveFunction, BoundConstraints, LinearConstraints, NonlinearConstraints, Problem
@@ -107,10 +107,8 @@ class TestQuadratic:
 
 
 def _problem(x0):
-    obj = ObjectiveFunction(rosen, None, False, False, 0, True)
-    bounds = BoundConstraints(np.zeros(x0.size), np.ones(x0.size))
-    linear_ub = LinearConstraints(np.ones((2, x0.size)), np.ones(2), False, True)
-    linear_eq = LinearConstraints(np.ones((2, x0.size)), np.ones(2), True, True)
-    nonlinear_ub = NonlinearConstraints(None, False, False, False, 0, True)
-    nonlinear_eq = NonlinearConstraints(None, True, False, False, 0, True)
-    return Problem(obj, x0, bounds, linear_ub, linear_eq, nonlinear_ub, nonlinear_eq, 1e-8, False, 1, True)
+    obj = ObjectiveFunction(rosen, False, True)
+    bounds = BoundConstraints(Bounds(np.zeros(x0.size), np.ones(x0.size)))
+    linear = LinearConstraints([LinearConstraint(np.ones((2, x0.size)), -np.inf, np.ones(2)), LinearConstraint(np.ones((2, x0.size)), np.ones(2), np.ones(2))], x0.size, True)
+    nonlinear = NonlinearConstraints([], False, True)
+    return Problem(obj, x0, bounds, linear, nonlinear, None, 1e-8, False, False, 1, 1, True)
