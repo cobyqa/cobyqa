@@ -5,6 +5,7 @@ from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, Optimi
 
 from .settings import PRINT_OPTIONS, BARRIER
 from .utils import get_arrays_tol
+from .utils import exact_1d_array
 
 
 class ObjectiveFunction:
@@ -405,7 +406,7 @@ class NonlinearConstraints:
                 if not isinstance(args, tuple):
                     args = (args,)
                 val = fun(x, *args)
-            val = _1d_array(val, 'The nonlinear constraints must return a vector.')
+            val = exact_1d_array(val, 'The nonlinear constraints must return a vector.')
             val[np.isnan(val)] = BARRIER
             val = np.minimum(val, BARRIER)
             val = np.maximum(val, -BARRIER)
@@ -413,9 +414,11 @@ class NonlinearConstraints:
                 with np.printoptions(**PRINT_OPTIONS):
                     print(f'{fun.__name__}({x}) = {val}')
             if isinstance(constraint, NonlinearConstraint):
-                lb = _1d_array(constraint.lb, 'The lower bound of the nonlinear constraints must be a vector.')
-                ub = _1d_array(constraint.ub, 'The upper bound of the nonlinear constraints must be a vector.')
+                lb = np.array(constraint.lb, float)
+                ub = np.array(constraint.ub, float)
                 val, lb, ub = np.broadcast_arrays(val, lb, ub)
+                lb[np.isnan(lb)] = -np.inf
+                ub[np.isnan(ub)] = np.inf
                 is_equality = np.abs(ub - lb) <= get_arrays_tol(lb, ub)
                 if np.any(is_equality):
                     c_eq = np.concatenate((c_eq, val[is_equality] - 0.5 * (lb[is_equality] + ub[is_equality])))
@@ -577,7 +580,7 @@ class Problem:
         self._callback = callback
 
         # Check the consistency of the problem.
-        x0 = _1d_array(x0, 'The initial guess must be a vector.')
+        x0 = exact_1d_array(x0, 'The initial guess must be a vector.')
         n = x0.size
         if bounds.xl.size != n:
             raise ValueError(f'The lower bound must have {n} elements.')
@@ -1019,25 +1022,3 @@ class Problem:
                 merit_min_idx &= (maxcv_filter_shifted <= np.min(maxcv_filter_shifted))
                 i = np.flatnonzero(merit_min_idx)[-1]
         return self.bounds.project(x_filter[i, :]), fun_filter[i], maxcv_filter[i]
-
-
-def _1d_array(x, message):
-    """
-    Preprocess a 1-dimensional array.
-
-    Parameters
-    ----------
-    x : array_like
-        Array to be preprocessed.
-    message : str
-        Error message if `x` cannot be interpreter as a 1-dimensional array.
-
-    Returns
-    -------
-    `numpy.ndarray`
-        Preprocessed array.
-    """
-    x = np.atleast_1d(np.squeeze(x)).astype(float)
-    if x.ndim != 1:
-        raise ValueError(message)
-    return x

@@ -5,7 +5,7 @@ from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, Optimi
 
 from .framework import TrustRegion
 from .problem import ObjectiveFunction, BoundConstraints, LinearConstraints, NonlinearConstraints, Problem
-from .utils import MaxEvalError, TargetSuccess, FeasibleSuccess
+from .utils import MaxEvalError, TargetSuccess, FeasibleSuccess, exact_1d_array
 from .settings import ExitStatus, Options, DEFAULT_OPTIONS, PRINT_OPTIONS
 
 
@@ -567,9 +567,14 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
 
 
 def _get_bounds(bounds, n):
+    """
+    Uniformize the bounds.
+    """
     if bounds is None:
         return Bounds(np.full(n, -np.inf), np.full(n, np.inf))
     elif isinstance(bounds, Bounds):
+        if bounds.lb.shape != (n,) or bounds.ub.shape != (n,):
+            raise ValueError(f'The bounds must have {n} elements.')
         return bounds
     elif hasattr(bounds, '__len__'):
         bounds = np.asarray(bounds)
@@ -581,6 +586,9 @@ def _get_bounds(bounds, n):
 
 
 def _get_constraints(constraints):
+    """
+    Extract the linear and nonlinear constraints.
+    """
     if not hasattr(constraints, '__len__'):
         constraints = (constraints,)
 
@@ -589,9 +597,13 @@ def _get_constraints(constraints):
     nonlinear_constraints = []
     for constraint in constraints:
         if isinstance(constraint, LinearConstraint):
-            linear_constraints.append(LinearConstraint(constraint.A, *np.broadcast_arrays(np.atleast_1d(constraint.lb), np.atleast_1d(constraint.ub))))
+            lb = exact_1d_array(constraint.lb, 'The lower bound of the linear constraints must be a vector.')
+            ub = exact_1d_array(constraint.ub, 'The upper bound of the linear constraints must be a vector.')
+            linear_constraints.append(LinearConstraint(constraint.A, *np.broadcast_arrays(lb, ub)))
         elif isinstance(constraint, NonlinearConstraint):
-            nonlinear_constraints.append(NonlinearConstraint(constraint.fun, *np.broadcast_arrays(np.atleast_1d(constraint.lb), np.atleast_1d(constraint.ub))))
+            lb = exact_1d_array(constraint.lb, 'The lower bound of the nonlinear constraints must be a vector.')
+            ub = exact_1d_array(constraint.ub, 'The upper bound of the nonlinear constraints must be a vector.')
+            nonlinear_constraints.append(NonlinearConstraint(constraint.fun, *np.broadcast_arrays(lb, ub)))
         elif isinstance(constraint, dict):
             if 'type' not in constraint or constraint['type'] not in ('eq', 'ineq'):
                 raise ValueError('The constraint type must be "eq" or "ineq".')
