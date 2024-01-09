@@ -433,7 +433,8 @@ class NonlinearConstraints:
                 c_ub = np.concatenate((c_ub, -val))
             else:
                 c_eq = np.concatenate((c_eq, val))
-        self._n_eval += 1
+        if len(self._constraints) > 0:
+            self._n_eval += 1
         if self._m_ub is None:
             self._m_ub = c_ub.size
         if self._m_eq is None:
@@ -1014,11 +1015,17 @@ class Problem:
             # merit function value. If there is a tie, we select the point
             # with the least maximum constraint violation. If there is still
             # a tie, we select the most recent point.
-            merit_filter = fun_filter + penalty * maxcv_filter_shifted
-            merit_min_idx = merit_filter <= np.min(merit_filter)
-            if np.count_nonzero(merit_min_idx) == 1:
-                i = np.flatnonzero(merit_min_idx)[0]
+            if np.all(~np.isfinite(maxcv_filter_shifted)):
+                if np.all(np.isnan(fun_filter)):
+                    i = 0
+                else:
+                    i = np.nanargmin(fun_filter)
             else:
-                merit_min_idx &= (maxcv_filter_shifted <= np.min(maxcv_filter_shifted))
-                i = np.flatnonzero(merit_min_idx)[-1]
+                merit_filter = fun_filter + penalty * maxcv_filter_shifted
+                merit_min_idx = merit_filter <= np.min(merit_filter)
+                if np.count_nonzero(merit_min_idx) == 1:
+                    i = np.flatnonzero(merit_min_idx)[0]
+                else:
+                    merit_min_idx &= (maxcv_filter_shifted <= np.min(maxcv_filter_shifted))
+                    i = np.flatnonzero(merit_min_idx)[-1]
         return self.bounds.project(x_filter[i, :]), fun_filter[i], maxcv_filter[i]

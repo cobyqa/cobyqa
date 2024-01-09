@@ -83,11 +83,11 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
     options : dict, optional
         Options passed to the solver. Accepted keys are:
 
-            verbose : bool, optional
+            disp : bool, optional
                 Whether to print information about the optimization procedure.
-            max_eval : int, optional
+            maxfev : int, optional
                 Maximum number of function evaluations.
-            max_iter : int, optional
+            maxiter : int, optional
                 Maximum number of iterations.
             target : float, optional
                 Target on the objective function value. The optimization

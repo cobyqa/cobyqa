@@ -28,15 +28,15 @@ class Options(str, Enum):
     FEASIBILITY_TOL = 'feasibility_tol'
     FILTER_SIZE = 'filter_size'
     HISTORY_SIZE = 'history_size'
-    MAX_EVAL = 'max_eval'
-    MAX_ITER = 'max_iter'
+    MAX_EVAL = 'maxfev'
+    MAX_ITER = 'maxiter'
     NPT = 'nb_points'
     RHOBEG = 'radius_init'
     RHOEND = 'radius_final'
     SCALE = 'scale'
     STORE_HISTORY = 'store_history'
     TARGET = 'target'
-    VERBOSE = 'verbose'
+    VERBOSE = 'disp'
 
 
 # Default options.
