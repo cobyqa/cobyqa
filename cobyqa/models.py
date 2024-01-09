@@ -32,7 +32,7 @@ class Interpolation:
         max_radius = 0.5 * np.min(pb.bounds.xu - pb.bounds.xl)
         if options[Options.RHOBEG] > max_radius:
             options[Options.RHOBEG.value] = max_radius
-            options[Options.RHOEND.value] = min(options[Options.RHOEND], max_radius)
+            options[Options.RHOEND.value] = np.min([options[Options.RHOEND], max_radius])
 
         # Set the initial point around which the models are expanded.
         self._x_base = np.copy(pb.x0)
@@ -570,7 +570,7 @@ class Models:
 
             # Stop the iterations if the current interpolation point is nearly
             # feasible and has an objective function value below the target.
-            if self._fun_val[k] < options[Options.TARGET] and pb.maxcv(self.interpolation.point(k), self.cub_val[k, :], self.ceq_val[k, :]) <= options[Options.FEASIBILITY_TOL]:
+            if self._fun_val[k] <= options[Options.TARGET] and pb.maxcv(self.interpolation.point(k), self.cub_val[k, :], self.ceq_val[k, :]) <= options[Options.FEASIBILITY_TOL]:
                 raise TargetSuccess
 
         # Build the initial quadratic models.
@@ -1242,7 +1242,7 @@ class Models:
         error_cub = 0.0
         error_ceq = 0.0
         for k in range(self.npt):
-            error_fun = max(error_fun, np.abs(self.fun(self.interpolation.point(k)) - self.fun_val[k]))
+            error_fun = np.max([error_fun, np.abs(self.fun(self.interpolation.point(k)) - self.fun_val[k])])
             error_cub = np.max(np.abs(self.cub(self.interpolation.point(k)) - self.cub_val[k, :]), initial=error_cub)
             error_ceq = np.max(np.abs(self.ceq(self.interpolation.point(k)) - self.ceq_val[k, :]), initial=error_ceq)
         tol = 10.0 * np.sqrt(np.finfo(float).eps) * max(self.n, self.npt)

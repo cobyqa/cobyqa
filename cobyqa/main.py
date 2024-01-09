@@ -609,7 +609,7 @@ def _get_constraints(constraints):
                 raise ValueError('The constraint type must be "eq" or "ineq".')
             if 'fun' not in constraint or not callable(constraint['fun']):
                 raise ValueError('The constraint function must be callable.')
-            nonlinear_constraints.append({'fun': constraint['fun'], 'type': constraint['type'], 'args': constraints.get('args', ())})
+            nonlinear_constraints.append({'fun': constraint['fun'], 'type': constraint['type'], 'args': constraint.get('args', ())})
         else:
             raise TypeError('The constraints must be instances of scipy.optimize.LinearConstraint, scipy.optimize.NonlinearConstraint, or dict.')
     return linear_constraints, nonlinear_constraints
@@ -627,9 +627,9 @@ def _set_default_options(options, n):
         if options[Options.RHOBEG] < options[Options.RHOEND]:
             raise ValueError('The initial trust-region radius must be greater than or equal to the final trust-region radius.')
     elif Options.RHOBEG in options:
-        options[Options.RHOEND.value] = min(DEFAULT_OPTIONS[Options.RHOEND], options[Options.RHOBEG])
+        options[Options.RHOEND.value] = np.min([DEFAULT_OPTIONS[Options.RHOEND], options[Options.RHOBEG]])
     elif Options.RHOEND in options:
-        options[Options.RHOBEG.value] = max(DEFAULT_OPTIONS[Options.RHOBEG], options[Options.RHOEND])
+        options[Options.RHOBEG.value] = np.max([DEFAULT_OPTIONS[Options.RHOBEG], options[Options.RHOEND]])
     else:
         options[Options.RHOBEG.value] = DEFAULT_OPTIONS[Options.RHOBEG]
         options[Options.RHOEND.value] = DEFAULT_OPTIONS[Options.RHOEND]
@@ -643,7 +643,7 @@ def _set_default_options(options, n):
     options[Options.NPT.value] = int(options[Options.NPT])
     if Options.MAX_EVAL in options and options[Options.MAX_EVAL] <= 0:
         raise ValueError('The maximum number of function evaluations must be positive.')
-    options.setdefault(Options.MAX_EVAL.value, max(DEFAULT_OPTIONS[Options.MAX_EVAL](n), options[Options.NPT] + 1))
+    options.setdefault(Options.MAX_EVAL.value, np.max([DEFAULT_OPTIONS[Options.MAX_EVAL](n), options[Options.NPT] + 1]))
     options[Options.MAX_EVAL.value] = int(options[Options.MAX_EVAL])
     if Options.MAX_ITER in options and options[Options.MAX_ITER] <= 0:
         raise ValueError('The maximum number of iterations must be positive.')

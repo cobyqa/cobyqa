@@ -46,8 +46,6 @@ class ObjectiveFunction:
         """
         Evaluate the objective function.
 
-        This method also applies the barrier function to the function value.
-
         Parameters
         ----------
         x : array_like, shape (n,)
@@ -63,9 +61,6 @@ class ObjectiveFunction:
             f = 0.0
         else:
             f = float(self._fun(x, *self._args))
-            if np.isnan(f):
-                f = BARRIER
-            f = max(min(f, BARRIER), -BARRIER)
             self._n_eval += 1
             if self._verbose:
                 with np.printoptions(**PRINT_OPTIONS):
@@ -341,7 +336,7 @@ class LinearConstraints:
             Maximum constraint violation at `x`.
         """
         x = np.array(x, dtype=float)
-        return max(np.max(self.a_ub @ x - self.b_ub, initial=0.0), np.max(np.abs(self.a_eq @ x - self.b_eq), initial=0.0))
+        return np.max([np.max(self.a_ub @ x - self.b_ub, initial=0.0), np.max(np.abs(self.a_eq @ x - self.b_eq), initial=0.0)])
 
 
 class NonlinearConstraints:
@@ -379,8 +374,6 @@ class NonlinearConstraints:
         """
         Evaluate the constraints.
 
-        This method also applies the barrier function to the function values.
-
         Parameters
         ----------
         x : array_like, shape (n,)
@@ -407,9 +400,6 @@ class NonlinearConstraints:
                     args = (args,)
                 val = fun(x, *args)
             val = exact_1d_array(val, 'The nonlinear constraints must return a vector.')
-            val[np.isnan(val)] = BARRIER
-            val = np.minimum(val, BARRIER)
-            val = np.maximum(val, -BARRIER)
             if self._verbose:
                 with np.printoptions(**PRINT_OPTIONS):
                     print(f'{fun.__name__}({x}) = {val}')
@@ -515,7 +505,7 @@ class NonlinearConstraints:
         """
         if cub_val is None or ceq_val is None:
             cub_val, ceq_val = self(x)
-        return max(np.max(cub_val, initial=0.0), np.max(np.abs(ceq_val), initial=0.0))
+        return np.max([np.max(cub_val, initial=0.0), np.max(np.abs(ceq_val), initial=0.0)])
 
 
 class Problem:
@@ -662,8 +652,18 @@ class Problem:
         """
         # Evaluate the objective and nonlinear constraint functions.
         fun_val = self._obj(self.build_x(x))
+        if np.isnan(fun_val):
+            fun_val = BARRIER
+        fun_val = max(min(fun_val, BARRIER), -BARRIER)
         cub_val, ceq_val = self._nonlinear(self.build_x(x))
+        cub_val[np.isnan(cub_val)] = BARRIER
+        ceq_val[np.isnan(ceq_val)] = BARRIER
+        cub_val = np.minimum(cub_val, BARRIER)
+        ceq_val = np.minimum(ceq_val, BARRIER)
+        cub_val = np.maximum(cub_val, -BARRIER)
+        ceq_val = np.maximum(ceq_val, -BARRIER)
         maxcv_val = self.maxcv(x, cub_val, ceq_val)
+        print(maxcv_val)
         if self._store_history:
             if len(self._fun_history) >= self._history_size:
                 self._fun_history.pop(0)
@@ -676,15 +676,15 @@ class Problem:
             self._x_history.append(x)
 
         # Add the point to the filter if it is not dominated by any point.
-        maxcv_shift = max(maxcv_val - self._feasibility_tol, 0.0)
-        if all(fun_val < fun_filter or maxcv_shift < max(maxcv_filter - self._feasibility_tol, 0.0) for fun_filter, maxcv_filter in zip(self._fun_filter, self._maxcv_filter)):
+        maxcv_shift = np.max([maxcv_val - self._feasibility_tol, 0.0])
+        if all(fun_val < fun_filter or maxcv_shift < np.max([maxcv_filter - self._feasibility_tol, 0.0]) for fun_filter, maxcv_filter in zip(self._fun_filter, self._maxcv_filter)):
             self._fun_filter.append(fun_val)
             self._maxcv_filter.append(maxcv_val)
             self._x_filter.append(np.copy(x))
 
         # Remove the points in the filter that are dominated by the new point.
         for k in range(len(self._fun_filter) - 2, -1, -1):
-            if fun_val <= self._fun_filter[k] and maxcv_shift <= max(self._maxcv_filter[k] - self._feasibility_tol, 0.0):
+            if fun_val <= self._fun_filter[k] and maxcv_shift <= np.max([self._maxcv_filter[k] - self._feasibility_tol, 0.0]):
                 self._fun_filter.pop(k)
                 self._maxcv_filter.pop(k)
                 self._x_filter.pop(k)
@@ -966,7 +966,7 @@ class Problem:
         float
             Maximum constraint violation at `x`.
         """
-        return max(self.bounds.maxcv(x), self.linear.maxcv(x), self._nonlinear.maxcv(x, cub_val, ceq_val))
+        return np.max([self.bounds.maxcv(x), self.linear.maxcv(x), self._nonlinear.maxcv(x, cub_val, ceq_val)])
 
     def best_eval(self, penalty):
         """
