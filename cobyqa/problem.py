@@ -404,9 +404,9 @@ class NonlinearConstraints:
                 with np.printoptions(**PRINT_OPTIONS):
                     print(f'{fun.__name__}({x}) = {val}')
             if isinstance(constraint, NonlinearConstraint):
-                lb = np.array(constraint.lb, float)
-                ub = np.array(constraint.ub, float)
-                val, lb, ub = np.broadcast_arrays(val, lb, ub)
+                val, lb, ub = np.broadcast_arrays(val, constraint.lb, constraint.ub)
+                lb = np.array(lb, float)
+                ub = np.array(ub, float)
                 lb[np.isnan(lb)] = -np.inf
                 ub[np.isnan(ub)] = np.inf
                 is_equality = np.abs(ub - lb) <= get_arrays_tol(lb, ub)

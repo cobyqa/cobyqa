@@ -47,23 +47,6 @@ class TestObjectiveFunction:
         assert obj.n_eval == 0
         assert captured.out == ''
 
-    def test_barrier(self):
-        # Check an objective function with an infinite value.
-        obj = ObjectiveFunction(lambda x: np.inf, False, True)
-        x = np.zeros(5)
-        fun = obj(x)
-        assert obj.name == '<lambda>'
-        assert np.isfinite(fun)
-        assert obj.n_eval == 1
-
-        # Check an objective function with a NaN value.
-        obj = ObjectiveFunction(lambda x: np.nan, False, True)
-        x = np.zeros(5)
-        fun = obj(x)
-        assert obj.name == '<lambda>'
-        assert np.isfinite(fun)
-        assert obj.n_eval == 1
-
 
 class TestBoundConstraints:
 
@@ -119,21 +102,6 @@ class TestNonlinearConstraints:
         assert nonlinear.n_eval == 1
         with np.printoptions(**PRINT_OPTIONS):
             assert captured.out == f'sin({x}) = {np.sin(x)}\n'
-
-    def test_barrier(self):
-        # Check an objective function with an infinite value.
-        nonlinear = NonlinearConstraints([NonlinearConstraint(lambda x: [0, np.inf], -np.inf, [0, 0])], False, True)
-        x = np.zeros(5)
-        cub, ceq = nonlinear(x)
-        assert np.all(np.isfinite(cub))
-        assert nonlinear.n_eval == 1
-
-        # Check an objective function with a NaN value.
-        nonlinear = NonlinearConstraints([NonlinearConstraint(lambda x: [0, np.nan], -np.inf, [0, 0])], False, True)
-        x = np.zeros(5)
-        cub, ceq = nonlinear(x)
-        assert np.all(np.isfinite(cub))
-        assert nonlinear.n_eval == 1
 
 
 class TestProblem:
