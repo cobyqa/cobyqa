@@ -4,9 +4,7 @@ name: compare
 
 on:
   push:
-    branches: [main]
   pull_request:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -37,6 +35,4 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          path: |
-            benchmarks/archives/data
-            benchmarks/archives/perf
+          path: out

@@ -57,10 +57,14 @@ DEFAULT_OPTIONS = {
 }
 
 
-# Printing options
+# Printing options.
 PRINT_OPTIONS = {
     'threshold': 6,
     'edgeitems': 2,
     'linewidth': sys.maxsize,
     'formatter': {'float_kind': lambda x: np.format_float_scientific(x, precision=3, unique=False, pad_left=2)}
 }
+
+
+# Constants.
+BARRIER = 2.0 ** min(100, np.finfo(float).maxexp // 2, -np.finfo(float).minexp // 2)

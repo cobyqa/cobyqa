@@ -3,10 +3,8 @@ from inspect import signature
 import numpy as np
 from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, OptimizeResult
 
-from .settings import PRINT_OPTIONS
+from .settings import PRINT_OPTIONS, BARRIER
 from .utils import get_arrays_tol
-
-BARRIER = 2.0 ** min(100, np.finfo(float).maxexp // 2, -np.finfo(float).minexp // 2)
 
 
 class ObjectiveFunction:
