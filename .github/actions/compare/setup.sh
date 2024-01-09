@@ -14,7 +14,7 @@ python -m pip install --progress-bar=off cobyqa
 
 # Install OptiProfiler
 # TODO: Install OptiProfiler properly when available on PyPI.
-git clone --depth 1 --branch e05e0754d340a7600080b141249098764b8dc803 https://github.com/OptiProfiler/OptiProfiler.git "$GITHUB_WORKSPACE/optiprofiler"
+git clone --depth 1 https://github.com/OptiProfiler/OptiProfiler.git "$GITHUB_WORKSPACE/optiprofiler"
 python -m pip install --progress-bar=off "$GITHUB_WORKSPACE/optiprofiler"
 
 # Download CUTEst and its dependencies
