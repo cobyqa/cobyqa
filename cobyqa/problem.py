@@ -663,7 +663,6 @@ class Problem:
         cub_val = np.maximum(cub_val, -BARRIER)
         ceq_val = np.maximum(ceq_val, -BARRIER)
         maxcv_val = self.maxcv(x, cub_val, ceq_val)
-        print(maxcv_val)
         if self._store_history:
             if len(self._fun_history) >= self._history_size:
                 self._fun_history.pop(0)
