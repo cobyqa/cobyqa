@@ -15,11 +15,16 @@ Codecov
 CodeQL
 conda
 DAMTP
+doi
 dpi
 epub
+ersion
+Financ
 github
 Hennart
 https
+ineq
+infty
 KKT
 krylov
 lincoa
@@ -30,6 +35,9 @@ newuoa
 Nocedal
 nonconvex
 Omojokun
+Oper
+Opti
+optiprofiler
 pdfo
 PDFs
 Pillo
