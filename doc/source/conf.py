@@ -89,7 +89,7 @@ html_theme_options = {
         'text': project,
     },
     'switcher': {
-        'json_url': 'https://www.cobyqa.com/en/latest/_static/switcher.json',
+        'json_url': 'https://www.cobyqa.com/latest/_static/switcher.json',
         'version_match': release,
     },
     'show_version_warning_banner': True,
