@@ -25,7 +25,7 @@ if __name__ == '__main__':
         NonlinearConstraint(cub, -np.inf, [1.0, -3.0]),
     ]
     options = {
-        'verbose': True,
+        'disp': True,
         'feasibility_tol': np.finfo(float).eps,
     }
     minimize(None, x0, constraints=constraints, options=options)

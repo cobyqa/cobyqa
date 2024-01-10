@@ -56,6 +56,6 @@ if __name__ == '__main__':
 
     bounds = Bounds(np.zeros(n), np.inf)
     constraints = LinearConstraint(aub, -np.inf, bub)
-    options = {'verbose': True}
+    options = {'disp': True}
     res = minimize(fun, x0, bounds=bounds, constraints=constraints, options=options)
     _plot_points(res.x, 'Final points')
