@@ -1,16 +1,19 @@
-from OptiProfiler import find_cutest, create_profiles
+from optiprofiler import set_cutest_problem_options, find_cutest_problems, create_profiles
 
 
-def cobyqa_pypi(fun, x0, max_eval):
+def cobyqa_pypi(fun, x0):
     from cobyqa import minimize
-    minimize(fun, x0, options={'max_eval': max_eval})
+
+    minimize(fun, x0)
 
 
-def cobyqa_latest(fun, x0, max_eval):
+def cobyqa_latest(fun, x0):
     from cobyqa_latest import minimize
-    minimize(fun, x0, options={'max_eval': max_eval})
+
+    minimize(fun, x0)
 
 
 if __name__ == '__main__':
-    problem_names = find_cutest('unconstrained', n_max=10)
-    create_profiles([cobyqa_latest, cobyqa_pypi], ['COBYQA Latest', 'COBYQA PyPI'], problem_names, 'plain', n_max=10)
+    set_cutest_problem_options(n_max=10)
+    cutest_problem_names = find_cutest_problems('unconstrained')
+    create_profiles([cobyqa_latest, cobyqa_pypi], ['COBYQA Latest', 'COBYQA PyPI'], cutest_problem_names, benchmark_id='unconstrained')
