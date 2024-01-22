@@ -63,7 +63,7 @@ benchmarks = [
 ]
 doc = [
     "numpydoc==1.6.0",
-    "pydata-sphinx-theme==0.15.1",
+    "pydata-sphinx-theme==0.15.2",
     "Sphinx==7.2.6",
     "sphinx-copybutton==0.5.2",
     "Sphinx-Substitution-Extensions==2022.2.16",
