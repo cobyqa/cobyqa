@@ -503,7 +503,7 @@ class TrustRegion:
         xl -= normal_step
         xu -= normal_step
         if self._constants[Constants.STANDARD_BYRD_OMOJOKUN]:
-            bub.fill(0.0)
+            bub = np.zeros_like(bub)
         else:
             bub = np.maximum(bub - aub @ normal_step, 0.0)
         g_best = self.models.fun_grad(self.x_best) + self.lag_model_hess_prod(normal_step)

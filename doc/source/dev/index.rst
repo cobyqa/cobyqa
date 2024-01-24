@@ -39,3 +39,10 @@ The `subsolvers` module implements the subproblem solvers used by COBYQA.
     :maxdepth: 2
 
     subsolvers
+
+The `utils` module implements the utilities for COBYQA.
+
+.. toctree::
+    :maxdepth: 2
+
+    utils

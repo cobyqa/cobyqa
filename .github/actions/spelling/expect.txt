@@ -121,6 +121,7 @@ SPHINXOPTS
 sqp
 subsolvers
 sumsqu
+tcg
 techreport
 testpypi
 testsetup

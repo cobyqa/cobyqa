@@ -25,8 +25,8 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
             ``fun(x, *args) -> float``
 
         where ``x`` is an array with shape (n,) and `args` is a tuple. If `fun`
-         is ``None``, the objective function is assumed to be the zero function,
-         resulting in a feasibility problem.
+        is ``None``, the objective function is assumed to be the zero function,
+        resulting in a feasibility problem.
     x0 : array_like, shape (n,)
         Initial guess.
     args : tuple, optional
@@ -750,52 +750,74 @@ def _set_default_constants(**kwargs):
     constants[Constants.DECREASE_RADIUS_FACTOR.value] = float(constants[Constants.DECREASE_RADIUS_FACTOR])
     if constants[Constants.DECREASE_RADIUS_FACTOR] <= 0.0 or constants[Constants.DECREASE_RADIUS_FACTOR] >= 1.0:
         raise ValueError('The constant decrease_radius_factor must be in the interval (0, 1).')
-    constants.setdefault(Constants.INCREASE_RADIUS_FACTOR.value, DEFAULT_CONSTANTS[Constants.INCREASE_RADIUS_FACTOR])
-    constants[Constants.INCREASE_RADIUS_FACTOR.value] = float(constants[Constants.INCREASE_RADIUS_FACTOR])
-    if constants[Constants.INCREASE_RADIUS_FACTOR] <= 1.0:
-        raise ValueError('The constant increase_radius_factor must be greater than 1.')
     constants.setdefault(Constants.INCREASE_RADIUS_THRESHOLD.value, DEFAULT_CONSTANTS[Constants.INCREASE_RADIUS_THRESHOLD])
     constants[Constants.INCREASE_RADIUS_THRESHOLD.value] = float(constants[Constants.INCREASE_RADIUS_THRESHOLD])
     if constants[Constants.INCREASE_RADIUS_THRESHOLD] <= 1.0:
         raise ValueError('The constant increase_radius_threshold must be greater than 1.')
-    constants.setdefault(Constants.DECREASE_RADIUS_THRESHOLD.value, DEFAULT_CONSTANTS[Constants.DECREASE_RADIUS_THRESHOLD])
-    constants[Constants.DECREASE_RADIUS_THRESHOLD.value] = float(constants[Constants.DECREASE_RADIUS_THRESHOLD])
-    if constants[Constants.DECREASE_RADIUS_THRESHOLD] <= 1.0 or constants[Constants.DECREASE_RADIUS_THRESHOLD] >= constants[Constants.INCREASE_RADIUS_THRESHOLD]:
-        raise ValueError(f'The constant decrease_radius_threshold must be in the interval (1, {constants[Constants.INCREASE_RADIUS_THRESHOLD]}).')
+    if Constants.INCREASE_RADIUS_FACTOR in constants and constants[Constants.INCREASE_RADIUS_FACTOR] <= 1.0:
+        raise ValueError('The constant increase_radius_factor must be greater than 1.')
+    if Constants.DECREASE_RADIUS_THRESHOLD in constants and constants[Constants.DECREASE_RADIUS_THRESHOLD] <= 1.0:
+        raise ValueError('The constant decrease_radius_threshold must be greater than 1.')
+    if Constants.INCREASE_RADIUS_FACTOR in constants and Constants.DECREASE_RADIUS_THRESHOLD in constants:
+        if constants[Constants.DECREASE_RADIUS_THRESHOLD] >= constants[Constants.INCREASE_RADIUS_FACTOR]:
+            raise ValueError('The constant decrease_radius_threshold must be less than increase_radius_factor.')
+    elif Constants.INCREASE_RADIUS_FACTOR in constants:
+        constants[Constants.DECREASE_RADIUS_THRESHOLD.value] = np.min([DEFAULT_CONSTANTS[Constants.DECREASE_RADIUS_THRESHOLD], 0.5 * (1.0 + constants[Constants.INCREASE_RADIUS_FACTOR])])
+    elif Constants.DECREASE_RADIUS_THRESHOLD in constants:
+        constants[Constants.INCREASE_RADIUS_FACTOR.value] = np.max([DEFAULT_CONSTANTS[Constants.INCREASE_RADIUS_FACTOR], 2.0 * constants[Constants.DECREASE_RADIUS_THRESHOLD]])
+    else:
+        constants[Constants.INCREASE_RADIUS_FACTOR.value] = DEFAULT_CONSTANTS[Constants.INCREASE_RADIUS_FACTOR]
+        constants[Constants.DECREASE_RADIUS_THRESHOLD.value] = DEFAULT_CONSTANTS[Constants.DECREASE_RADIUS_THRESHOLD]
     constants.setdefault(Constants.DECREASE_RESOLUTION_FACTOR.value, DEFAULT_CONSTANTS[Constants.DECREASE_RESOLUTION_FACTOR])
     constants[Constants.DECREASE_RESOLUTION_FACTOR.value] = float(constants[Constants.DECREASE_RESOLUTION_FACTOR])
     if constants[Constants.DECREASE_RESOLUTION_FACTOR] <= 0.0 or constants[Constants.DECREASE_RESOLUTION_FACTOR] >= 1.0:
         raise ValueError('The constant decrease_resolution_factor must be in the interval (0, 1).')
-    constants.setdefault(Constants.LARGE_RESOLUTION_THRESHOLD.value, DEFAULT_CONSTANTS[Constants.LARGE_RESOLUTION_THRESHOLD])
-    constants[Constants.LARGE_RESOLUTION_THRESHOLD.value] = float(constants[Constants.LARGE_RESOLUTION_THRESHOLD])
-    if constants[Constants.LARGE_RESOLUTION_THRESHOLD] <= 1.0:
+    if Constants.LARGE_RESOLUTION_THRESHOLD in constants and constants[Constants.LARGE_RESOLUTION_THRESHOLD] <= 1.0:
         raise ValueError('The constant large_resolution_threshold must be greater than 1.')
-    constants.setdefault(Constants.MODERATE_RESOLUTION_THRESHOLD.value, DEFAULT_CONSTANTS[Constants.MODERATE_RESOLUTION_THRESHOLD])
-    constants[Constants.MODERATE_RESOLUTION_THRESHOLD.value] = float(constants[Constants.MODERATE_RESOLUTION_THRESHOLD])
-    if constants[Constants.MODERATE_RESOLUTION_THRESHOLD] <= 1.0 or constants[Constants.MODERATE_RESOLUTION_THRESHOLD] > constants[Constants.LARGE_RESOLUTION_THRESHOLD]:
-        raise ValueError(f'The constant moderate_resolution_threshold must be in the interval (1, {constants[Constants.LARGE_RESOLUTION_THRESHOLD]}].')
-    constants.setdefault(Constants.LOW_RATIO, DEFAULT_CONSTANTS[Constants.LOW_RATIO])
-    constants[Constants.LOW_RATIO.value] = float(constants[Constants.LOW_RATIO])
-    if constants[Constants.LOW_RATIO] <= 0.0 or constants[Constants.LOW_RATIO] >= 1.0:
+    if Constants.MODERATE_RESOLUTION_THRESHOLD in constants and constants[Constants.MODERATE_RESOLUTION_THRESHOLD] <= 1.0:
+        raise ValueError('The constant moderate_resolution_threshold must be greater than 1.')
+    if Constants.LARGE_RESOLUTION_THRESHOLD in constants and Constants.MODERATE_RESOLUTION_THRESHOLD in constants:
+        if constants[Constants.MODERATE_RESOLUTION_THRESHOLD] > constants[Constants.LARGE_RESOLUTION_THRESHOLD]:
+            raise ValueError('The constant moderate_resolution_threshold must be at most large_resolution_threshold.')
+    elif Constants.LARGE_RESOLUTION_THRESHOLD in constants:
+        constants[Constants.MODERATE_RESOLUTION_THRESHOLD.value] = np.min([DEFAULT_CONSTANTS[Constants.MODERATE_RESOLUTION_THRESHOLD], constants[Constants.LARGE_RESOLUTION_THRESHOLD]])
+    elif Constants.MODERATE_RESOLUTION_THRESHOLD in constants:
+        constants[Constants.LARGE_RESOLUTION_THRESHOLD.value] = np.max([DEFAULT_CONSTANTS[Constants.LARGE_RESOLUTION_THRESHOLD], constants[Constants.MODERATE_RESOLUTION_THRESHOLD]])
+    else:
+        constants[Constants.LARGE_RESOLUTION_THRESHOLD.value] = DEFAULT_CONSTANTS[Constants.LARGE_RESOLUTION_THRESHOLD]
+        constants[Constants.MODERATE_RESOLUTION_THRESHOLD.value] = DEFAULT_CONSTANTS[Constants.MODERATE_RESOLUTION_THRESHOLD]
+    if Constants.LOW_RATIO in constants and (constants[Constants.LOW_RATIO] <= 0.0 or constants[Constants.LOW_RATIO] >= 1.0):
         raise ValueError('The constant low_ratio must be in the interval (0, 1).')
-    constants.setdefault(Constants.HIGH_RATIO.value, DEFAULT_CONSTANTS[Constants.HIGH_RATIO])
-    constants[Constants.HIGH_RATIO.value] = float(constants[Constants.HIGH_RATIO])
-    if constants[Constants.HIGH_RATIO] < constants[Constants.LOW_RATIO] or constants[Constants.HIGH_RATIO] >= 1.0:
-        raise ValueError(f'The constant high_ratio must be in the interval [{constants[Constants.LOW_RATIO]}, 1).')
+    if Constants.HIGH_RATIO in constants and (constants[Constants.HIGH_RATIO] <= 0.0 or constants[Constants.HIGH_RATIO] >= 1.0):
+        raise ValueError('The constant high_ratio must be in the interval (0, 1).')
+    if Constants.LOW_RATIO in constants and Constants.HIGH_RATIO in constants:
+        if constants[Constants.LOW_RATIO] > constants[Constants.HIGH_RATIO]:
+            raise ValueError('The constant low_ratio must be at most high_ratio.')
+    elif Constants.LOW_RATIO in constants:
+        constants[Constants.HIGH_RATIO.value] = np.max([DEFAULT_CONSTANTS[Constants.HIGH_RATIO], constants[Constants.LOW_RATIO]])
+    elif Constants.HIGH_RATIO in constants:
+        constants[Constants.LOW_RATIO.value] = np.min([DEFAULT_CONSTANTS[Constants.LOW_RATIO], constants[Constants.HIGH_RATIO]])
+    else:
+        constants[Constants.LOW_RATIO.value] = DEFAULT_CONSTANTS[Constants.LOW_RATIO]
+        constants[Constants.HIGH_RATIO.value] = DEFAULT_CONSTANTS[Constants.HIGH_RATIO]
     constants.setdefault(Constants.VERY_LOW_RATIO.value, DEFAULT_CONSTANTS[Constants.VERY_LOW_RATIO])
     constants[Constants.VERY_LOW_RATIO.value] = float(constants[Constants.VERY_LOW_RATIO])
     if constants[Constants.VERY_LOW_RATIO] <= 0.0 or constants[Constants.VERY_LOW_RATIO] >= 1.0:
         raise ValueError('The constant very_low_ratio must be in the interval (0, 1).')
-    constants.setdefault(Constants.PENALTY_INCREASE_THRESHOLD.value, DEFAULT_CONSTANTS[Constants.PENALTY_INCREASE_THRESHOLD])
-    constants[Constants.PENALTY_INCREASE_THRESHOLD.value] = float(constants[Constants.PENALTY_INCREASE_THRESHOLD])
-    if constants[Constants.PENALTY_INCREASE_THRESHOLD] < 1.0:
+    if Constants.PENALTY_INCREASE_THRESHOLD in constants and constants[Constants.PENALTY_INCREASE_THRESHOLD] < 1.0:
         raise ValueError('The constant penalty_increase_threshold must be greater than or equal to 1.')
-    constants.setdefault(Constants.PENALTY_INCREASE_FACTOR.value, DEFAULT_CONSTANTS[Constants.PENALTY_INCREASE_FACTOR])
-    constants[Constants.PENALTY_INCREASE_FACTOR.value] = float(constants[Constants.PENALTY_INCREASE_FACTOR])
-    if constants[Constants.PENALTY_INCREASE_FACTOR] <= 1.0:
+    if Constants.PENALTY_INCREASE_FACTOR in constants and constants[Constants.PENALTY_INCREASE_FACTOR] <= 1.0:
         raise ValueError('The constant penalty_increase_factor must be greater than 1.')
-    if constants[Constants.PENALTY_INCREASE_FACTOR] < constants[Constants.PENALTY_INCREASE_THRESHOLD]:
-        raise ValueError('The constant penalty_increase_factor must be greater than or equal to penalty_increase_threshold.')
+    if Constants.PENALTY_INCREASE_THRESHOLD in constants and Constants.PENALTY_INCREASE_FACTOR in constants:
+        if constants[Constants.PENALTY_INCREASE_FACTOR] < constants[Constants.PENALTY_INCREASE_THRESHOLD]:
+            raise ValueError('The constant penalty_increase_factor must be greater than or equal to penalty_increase_threshold.')
+    elif Constants.PENALTY_INCREASE_THRESHOLD in constants:
+        constants[Constants.PENALTY_INCREASE_FACTOR.value] = np.max([DEFAULT_CONSTANTS[Constants.PENALTY_INCREASE_FACTOR], constants[Constants.PENALTY_INCREASE_THRESHOLD]])
+    elif Constants.PENALTY_INCREASE_FACTOR in constants:
+        constants[Constants.PENALTY_INCREASE_THRESHOLD.value] = np.min([DEFAULT_CONSTANTS[Constants.PENALTY_INCREASE_THRESHOLD], constants[Constants.PENALTY_INCREASE_FACTOR]])
+    else:
+        constants[Constants.PENALTY_INCREASE_THRESHOLD.value] = DEFAULT_CONSTANTS[Constants.PENALTY_INCREASE_THRESHOLD]
+        constants[Constants.PENALTY_INCREASE_FACTOR.value] = DEFAULT_CONSTANTS[Constants.PENALTY_INCREASE_FACTOR]
     constants.setdefault(Constants.SHORT_STEP_THRESHOLD.value, DEFAULT_CONSTANTS[Constants.SHORT_STEP_THRESHOLD])
     constants[Constants.SHORT_STEP_THRESHOLD.value] = float(constants[Constants.SHORT_STEP_THRESHOLD])
     if constants[Constants.SHORT_STEP_THRESHOLD] <= 0.0 or constants[Constants.SHORT_STEP_THRESHOLD] >= 1.0:

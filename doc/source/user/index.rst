@@ -13,6 +13,7 @@ For more details on the Python API of COBYQA, see the :ref:`API reference <api>`
 
     installation
     usage
+    releases
 
 .. toctree::
     :caption: Description of the COBYQA method
