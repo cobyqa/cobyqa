@@ -55,12 +55,6 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-benchmarks = [
-    "joblib",
-    "matplotlib>=2.0.0",
-    "pdfo==2.0.1",
-    "pycutest==1.5.1",
-]
 doc = [
     "numpydoc==1.6.0",
     "pydata-sphinx-theme==0.15.2",
