@@ -11,7 +11,7 @@ We provide below release notes for the different versions of COBYQA.
      - Date
      - Remarks
    * - 1.0.1
-     - 2023-01-xx
+     - 2023-01-24
      - This is a bugfix release.
 
        #. The documentation has been improved.
