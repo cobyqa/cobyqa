@@ -16,7 +16,7 @@ python -m pip install --progress-bar=off cobyqa
 # TODO: Install optiprofiler properly when available on PyPI.
 python -m pip install --progress-bar=off numpy
 git clone --depth 1 https://github.com/optiprofiler/optiprofiler.git "$GITHUB_WORKSPACE/optiprofiler"
-python -m pip install --progress-bar=off "$GITHUB_WORKSPACE/optiprofiler"
+python -m pip install --progress-bar=off "$GITHUB_WORKSPACE/optiprofiler[extra]"
 
 # Download CUTEst and its dependencies
 mkdir "$GITHUB_WORKSPACE/cutest"
