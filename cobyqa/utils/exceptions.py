@@ -12,6 +12,13 @@ class TargetSuccess(Exception):
     pass
 
 
+class CallbackSuccess(StopIteration):
+    """
+    Exception raised when the callback function raises a ``StopIteration``.
+    """
+    pass
+
+
 class FeasibleSuccess(Exception):
     """
     Exception raised when a feasible point of a feasible problem is found.

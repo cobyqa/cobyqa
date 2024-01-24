@@ -5,17 +5,17 @@ from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, Optimi
 
 from .framework import TrustRegion
 from .problem import ObjectiveFunction, BoundConstraints, LinearConstraints, NonlinearConstraints, Problem
-from .utils import MaxEvalError, TargetSuccess, FeasibleSuccess, exact_1d_array
-from .settings import ExitStatus, Options, DEFAULT_OPTIONS, PRINT_OPTIONS
+from .utils import MaxEvalError, TargetSuccess, CallbackSuccess, FeasibleSuccess, exact_1d_array
+from .settings import ExitStatus, Options, Constants, DEFAULT_OPTIONS, DEFAULT_CONSTANTS, PRINT_OPTIONS
 
 
-def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, options=None):
+def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, options=None, **kwargs):
     r"""
     Minimize a scalar function using the COBYQA method.
 
-    The COBYQA method is a derivative-free optimization method designed to solve
-    general nonlinear optimization problems. A complete description of the
-    method is given in [3]_.
+    The Constrained Optimization BY Quadratic Approximations (COBYQA) method is
+    a derivative-free optimization method designed to solve general nonlinear
+    optimization problems. A complete description of COBYQA is given in [3]_.
 
     Parameters
     ----------
@@ -24,8 +24,9 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
 
             ``fun(x, *args) -> float``
 
-        where ``x`` is an array with shape (n,) and `args` is a tuple. If None,
-        the objective function is assumed to be the zero function.
+        where ``x`` is an array with shape (n,) and `args` is a tuple. If `fun`
+         is ``None``, the objective function is assumed to be the zero function,
+         resulting in a feasibility problem.
     x0 : array_like, shape (n,)
         Initial guess.
     args : tuple, optional
@@ -40,6 +41,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
            :math:`-\infty` if there is no lower bound, and set ``bounds[i][1]``
            to :math:`\infty` if there is no upper bound.
 
+        The COBYQA method always respect the bound constraints.
     constraints : {`scipy.optimize.LinearConstraint`, `scipy.optimize.NonlinearConstraint`, dict, list}, optional
         General constraints of the problem. It can be one of the cases below.
 
@@ -51,7 +53,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
         #. A dictionary with fields:
 
             type : {'eq', 'ineq'}
-                Whether the constraint is an equality ``fun(x, *args) = 0`` or
+                Whether the constraint is an equality ``fun(x, *args) == 0`` or
                 an inequality ``fun(x, *args) >= 0``.
             fun : callable
                 Constraint function.
@@ -92,13 +94,14 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
             target : float, optional
                 Target on the objective function value. The optimization
                 procedure is terminated when the objective function value of a
-                nearly feasible point is less than or equal to this target.
+                feasible point is less than or equal to this target.
             feasibility_tol : float, optional
-                Tolerance on the constraint violation.
+                Tolerance on the constraint violation. If the maximum constraint
+                violation at a point is less than or equal to this tolerance,
+                the point is considered feasible.
             radius_init : float, optional
                 Initial trust-region radius. Typically, this value should be in
-                the order of one tenth of the greatest expected change to the
-                variables.
+                the order of one tenth of the greatest expected change to `x0`.
             radius_final : float, optional
                 Final trust-region radius. It should indicate the accuracy
                 required in the final values of the variables.
@@ -115,9 +118,14 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
             history_size : int, optional
                 Maximum number of function evaluations to store in the history.
             debug : bool, optional
-                Whether to perform additional checks. This option should be
-                used only for debugging purposes and is highly discouraged to
-                general users.
+                Whether to perform additional checks during the optimization
+                procedure. This option should be used only for debugging
+                purposes and is highly discouraged to general users.
+
+        Other constants (from the keyword arguments) are described below. They
+        are not intended to be changed by general users. They should only be
+        changed by users with a deep understanding of the algorithm, who want to
+        experiment with different settings.
 
     Returns
     -------
@@ -174,6 +182,66 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
               - The bound constraints are infeasible.
             * - -2
               - A linear algebra error occurred.
+
+    Other Parameters
+    ----------------
+    decrease_radius_factor : float, optional
+        Factor by which the trust-region radius is reduced when the reduction
+        ratio is low or negative.
+    increase_radius_factor : float, optional
+        Factor by which the trust-region radius is increased when the reduction
+        ratio is large.
+    increase_radius_threshold : float, optional
+        Threshold that controls the increase of the trust-region radius when
+        the reduction ratio is large.
+    decrease_radius_threshold : float, optional
+        Threshold used to determine whether the trust-region radius should be
+        reduced to the resolution.
+    decrease_resolution_factor : float, optional
+        Factor by which the resolution is reduced when the current value is far
+        from its final value.
+    large_resolution_threshold : float, optional
+        Threshold used to determine whether the resolution is far from its
+        final value.
+    moderate_resolution_threshold : float, optional
+        Threshold used to determine whether the resolution is close to its
+        final value.
+    low_ratio : float, optional
+        Threshold used to determine whether the reduction ratio is low.
+    high_ratio : float, optional
+        Threshold used to determine whether the reduction ratio is high.
+    very_low_ratio : float, optional
+        Threshold used to determine whether the reduction ratio is very low.
+        This is used to determine whether the models should be reset.
+    penalty_increase_threshold : float, optional
+        Threshold used to determine whether the penalty parameter should be
+        increased.
+    penalty_increase_factor : float, optional
+        Factor by which the penalty parameter is increased.
+    short_step_threshold : float, optional
+        Factor used to determine whether the trial step is too short.
+    low_radius_factor : float, optional
+        Factor used to determine which interpolation point should be removed
+        from the interpolation set at each iteration.
+    standard_byrd_omojokun : bool, optional
+        Whether to use the standard Byrd-Omojokun composite-step approach to
+        solve the subproblem or the modified one proposed in [3]_.
+    byrd_omojokun_factor : float, optional
+        Factor by which the trust-region radius is reduced for the computations
+        of the normal step in the Byrd-Omojokun composite-step approach.
+    threshold_ratio_constraints : float, optional
+        Threshold used to determine which constraints should be taken into
+        account when decreasing the penalty parameter.
+    large_shift_factor : float, optional
+        Factor used to determine whether the point around which the quadratic
+        models are built should be updated.
+    large_gradient_factor : float, optional
+        Factor used to determine whether the models should be reset.
+    resolution_factor : float, optional
+        Factor by which the resolution is decreased.
+    improve_tcg : bool, optional
+        Whether to improve the steps computed by the truncated conjugate
+        gradient method when the trust-region boundary is reached.
 
     References
     ----------
@@ -317,6 +385,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
 
     # Set the default options.
     _set_default_options(options, pb.n)
+    constants = _set_default_constants(**kwargs)
 
     # Initialize the models and skip the computations whenever possible.
     if not pb.bounds.is_feasible:
@@ -333,11 +402,11 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
         print(f'Maximum number of iterations: {options[Options.MAX_ITER]}.')
         print()
     try:
-        framework = TrustRegion(pb, options)
+        framework = TrustRegion(pb, options, constants)
     except TargetSuccess:
         # The target on the objective function value has been reached
         return _build_result(pb, 0.0, True, ExitStatus.TARGET_SUCCESS, 0, options)
-    except StopIteration:
+    except CallbackSuccess:
         # The callback raised a StopIteration exception.
         return _build_result(pb, 0.0, True, ExitStatus.CALLBACK_SUCCESS, 0, options)
     except FeasibleSuccess:
@@ -367,7 +436,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
         n_iter += 1
 
         # Update the point around which the quadratic models are built.
-        if np.linalg.norm(framework.x_best - framework.models.interpolation.x_base) >= 10.0 * framework.radius:
+        if np.linalg.norm(framework.x_best - framework.models.interpolation.x_base) >= constants[Constants.LARGE_SHIFT_FACTOR] * framework.radius:
             framework.shift_x_base(options)
 
         # Evaluate the trial step.
@@ -382,8 +451,8 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
         # reduced and whether the geometry of the interpolation set should be
         # improved. Otherwise, we entertain a classical iteration. The criterion
         # for performing an exceptional jump is taken from NEWUOA.
-        if s_norm <= 0.5 * framework.resolution:
-            framework.radius *= 0.1
+        if s_norm <= constants[Constants.SHORT_STEP_THRESHOLD] * framework.resolution:
+            framework.radius *= constants[Constants.DECREASE_RESOLUTION_FACTOR]
             if radius_save > framework.resolution:
                 n_short_steps = 0
                 n_very_short_steps = 0
@@ -403,7 +472,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
                 except np.linalg.LinAlgError:
                     status = ExitStatus.LINALG_ERROR
                     break
-                improve_geometry = dist_new > max(framework.radius, 2.0 * framework.resolution)
+                improve_geometry = dist_new > max(framework.radius, constants[Constants.RESOLUTION_FACTOR] * framework.resolution)
         else:
             # Increase the penalty parameter if necessary.
             same_best_point = framework.increase_penalty(step)
@@ -419,7 +488,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
                     status = ExitStatus.FEASIBLE_SUCCESS
                     success = True
                     break
-                except StopIteration:
+                except CallbackSuccess:
                     status = ExitStatus.CALLBACK_SUCCESS
                     success = True
                     break
@@ -430,7 +499,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
                 # Perform a second-order correction step if necessary.
                 merit_old = framework.merit(framework.x_best, framework.fun_best, framework.cub_best, framework.ceq_best)
                 merit_new = framework.merit(framework.x_best + step, fun_val, cub_val, ceq_val)
-                if pb.type == 'nonlinearly constrained' and merit_new > merit_old and np.linalg.norm(normal_step) > 0.8 ** 2.0 * framework.radius:
+                if pb.type == 'nonlinearly constrained' and merit_new > merit_old and np.linalg.norm(normal_step) > constants[Constants.BYRD_OMOJOKUN_FACTOR] ** 2.0 * framework.radius:
                     soc_step = framework.get_second_order_correction_step(step, options)
                     if np.linalg.norm(soc_step) > 0.0:
                         step += soc_step
@@ -446,7 +515,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
                             status = ExitStatus.FEASIBLE_SUCCESS
                             success = True
                             break
-                        except StopIteration:
+                        except CallbackSuccess:
                             status = ExitStatus.CALLBACK_SUCCESS
                             success = True
                             break
@@ -477,7 +546,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
 
                 # Attempt to replace the models by the alternative ones.
                 if framework.radius <= framework.resolution:
-                    if ratio >= 0.01:
+                    if ratio >= constants[Constants.VERY_LOW_RATIO]:
                         n_alt_models = 0
                     else:
                         n_alt_models += 1
@@ -487,7 +556,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
                         except np.linalg.LinAlgError:
                             status = ExitStatus.LINALG_ERROR
                             break
-                        if np.linalg.norm(grad) < 10.0 * np.linalg.norm(grad_alt):
+                        if np.linalg.norm(grad) < constants[Constants.LARGE_GRADIENT_FACTOR] * np.linalg.norm(grad_alt):
                             n_alt_models = 0
                         if n_alt_models >= 3:
                             try:
@@ -506,8 +575,8 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
                 except np.linalg.LinAlgError:
                     status = ExitStatus.LINALG_ERROR
                     break
-                improve_geometry = ill_conditioned or ratio <= 0.1 and dist_new > max(framework.radius, 2.0 * framework.resolution)
-                reduce_resolution = radius_save <= framework.resolution and ratio <= 0.1 and not improve_geometry
+                improve_geometry = ill_conditioned or ratio <= constants[Constants.LOW_RATIO] and dist_new > max(framework.radius, constants[Constants.RESOLUTION_FACTOR] * framework.resolution)
+                reduce_resolution = radius_save <= framework.resolution and ratio <= constants[Constants.LOW_RATIO] and not improve_geometry
             else:
                 # When increasing the penalty parameter, the best point so far
                 # may change. In this case, we restart the iteration.
@@ -547,7 +616,7 @@ def minimize(fun, x0, args=(), bounds=None, constraints=(), callback=None, optio
                 status = ExitStatus.FEASIBLE_SUCCESS
                 success = True
                 break
-            except StopIteration:
+            except CallbackSuccess:
                 status = ExitStatus.CALLBACK_SUCCESS
                 success = True
                 break
@@ -670,6 +739,96 @@ def _set_default_options(options, n):
     for key in options:
         if key not in Options.__members__.values():
             warnings.warn(f'Unknown option: {key}.', RuntimeWarning, 3)
+
+
+def _set_default_constants(**kwargs):
+    """
+    Set the default constants.
+    """
+    constants = dict(kwargs)
+    constants.setdefault(Constants.DECREASE_RADIUS_FACTOR.value, DEFAULT_CONSTANTS[Constants.DECREASE_RADIUS_FACTOR])
+    constants[Constants.DECREASE_RADIUS_FACTOR.value] = float(constants[Constants.DECREASE_RADIUS_FACTOR])
+    if constants[Constants.DECREASE_RADIUS_FACTOR] <= 0.0 or constants[Constants.DECREASE_RADIUS_FACTOR] >= 1.0:
+        raise ValueError('The constant decrease_radius_factor must be in the interval (0, 1).')
+    constants.setdefault(Constants.INCREASE_RADIUS_FACTOR.value, DEFAULT_CONSTANTS[Constants.INCREASE_RADIUS_FACTOR])
+    constants[Constants.INCREASE_RADIUS_FACTOR.value] = float(constants[Constants.INCREASE_RADIUS_FACTOR])
+    if constants[Constants.INCREASE_RADIUS_FACTOR] <= 1.0:
+        raise ValueError('The constant increase_radius_factor must be greater than 1.')
+    constants.setdefault(Constants.INCREASE_RADIUS_THRESHOLD.value, DEFAULT_CONSTANTS[Constants.INCREASE_RADIUS_THRESHOLD])
+    constants[Constants.INCREASE_RADIUS_THRESHOLD.value] = float(constants[Constants.INCREASE_RADIUS_THRESHOLD])
+    if constants[Constants.INCREASE_RADIUS_THRESHOLD] <= 1.0:
+        raise ValueError('The constant increase_radius_threshold must be greater than 1.')
+    constants.setdefault(Constants.DECREASE_RADIUS_THRESHOLD.value, DEFAULT_CONSTANTS[Constants.DECREASE_RADIUS_THRESHOLD])
+    constants[Constants.DECREASE_RADIUS_THRESHOLD.value] = float(constants[Constants.DECREASE_RADIUS_THRESHOLD])
+    if constants[Constants.DECREASE_RADIUS_THRESHOLD] <= 1.0 or constants[Constants.DECREASE_RADIUS_THRESHOLD] >= constants[Constants.INCREASE_RADIUS_THRESHOLD]:
+        raise ValueError(f'The constant decrease_radius_threshold must be in the interval (1, {constants[Constants.INCREASE_RADIUS_THRESHOLD]}).')
+    constants.setdefault(Constants.DECREASE_RESOLUTION_FACTOR.value, DEFAULT_CONSTANTS[Constants.DECREASE_RESOLUTION_FACTOR])
+    constants[Constants.DECREASE_RESOLUTION_FACTOR.value] = float(constants[Constants.DECREASE_RESOLUTION_FACTOR])
+    if constants[Constants.DECREASE_RESOLUTION_FACTOR] <= 0.0 or constants[Constants.DECREASE_RESOLUTION_FACTOR] >= 1.0:
+        raise ValueError('The constant decrease_resolution_factor must be in the interval (0, 1).')
+    constants.setdefault(Constants.LARGE_RESOLUTION_THRESHOLD.value, DEFAULT_CONSTANTS[Constants.LARGE_RESOLUTION_THRESHOLD])
+    constants[Constants.LARGE_RESOLUTION_THRESHOLD.value] = float(constants[Constants.LARGE_RESOLUTION_THRESHOLD])
+    if constants[Constants.LARGE_RESOLUTION_THRESHOLD] <= 1.0:
+        raise ValueError('The constant large_resolution_threshold must be greater than 1.')
+    constants.setdefault(Constants.MODERATE_RESOLUTION_THRESHOLD.value, DEFAULT_CONSTANTS[Constants.MODERATE_RESOLUTION_THRESHOLD])
+    constants[Constants.MODERATE_RESOLUTION_THRESHOLD.value] = float(constants[Constants.MODERATE_RESOLUTION_THRESHOLD])
+    if constants[Constants.MODERATE_RESOLUTION_THRESHOLD] <= 1.0 or constants[Constants.MODERATE_RESOLUTION_THRESHOLD] > constants[Constants.LARGE_RESOLUTION_THRESHOLD]:
+        raise ValueError(f'The constant moderate_resolution_threshold must be in the interval (1, {constants[Constants.LARGE_RESOLUTION_THRESHOLD]}].')
+    constants.setdefault(Constants.LOW_RATIO, DEFAULT_CONSTANTS[Constants.LOW_RATIO])
+    constants[Constants.LOW_RATIO.value] = float(constants[Constants.LOW_RATIO])
+    if constants[Constants.LOW_RATIO] <= 0.0 or constants[Constants.LOW_RATIO] >= 1.0:
+        raise ValueError('The constant low_ratio must be in the interval (0, 1).')
+    constants.setdefault(Constants.HIGH_RATIO.value, DEFAULT_CONSTANTS[Constants.HIGH_RATIO])
+    constants[Constants.HIGH_RATIO.value] = float(constants[Constants.HIGH_RATIO])
+    if constants[Constants.HIGH_RATIO] < constants[Constants.LOW_RATIO] or constants[Constants.HIGH_RATIO] >= 1.0:
+        raise ValueError(f'The constant high_ratio must be in the interval [{constants[Constants.LOW_RATIO]}, 1).')
+    constants.setdefault(Constants.VERY_LOW_RATIO.value, DEFAULT_CONSTANTS[Constants.VERY_LOW_RATIO])
+    constants[Constants.VERY_LOW_RATIO.value] = float(constants[Constants.VERY_LOW_RATIO])
+    if constants[Constants.VERY_LOW_RATIO] <= 0.0 or constants[Constants.VERY_LOW_RATIO] >= 1.0:
+        raise ValueError('The constant very_low_ratio must be in the interval (0, 1).')
+    constants.setdefault(Constants.PENALTY_INCREASE_THRESHOLD.value, DEFAULT_CONSTANTS[Constants.PENALTY_INCREASE_THRESHOLD])
+    constants[Constants.PENALTY_INCREASE_THRESHOLD.value] = float(constants[Constants.PENALTY_INCREASE_THRESHOLD])
+    if constants[Constants.PENALTY_INCREASE_THRESHOLD] < 1.0:
+        raise ValueError('The constant penalty_increase_threshold must be greater than or equal to 1.')
+    constants.setdefault(Constants.PENALTY_INCREASE_FACTOR.value, DEFAULT_CONSTANTS[Constants.PENALTY_INCREASE_FACTOR])
+    constants[Constants.PENALTY_INCREASE_FACTOR.value] = float(constants[Constants.PENALTY_INCREASE_FACTOR])
+    if constants[Constants.PENALTY_INCREASE_FACTOR] <= 1.0:
+        raise ValueError('The constant penalty_increase_factor must be greater than 1.')
+    if constants[Constants.PENALTY_INCREASE_FACTOR] < constants[Constants.PENALTY_INCREASE_THRESHOLD]:
+        raise ValueError('The constant penalty_increase_factor must be greater than or equal to penalty_increase_threshold.')
+    constants.setdefault(Constants.SHORT_STEP_THRESHOLD.value, DEFAULT_CONSTANTS[Constants.SHORT_STEP_THRESHOLD])
+    constants[Constants.SHORT_STEP_THRESHOLD.value] = float(constants[Constants.SHORT_STEP_THRESHOLD])
+    if constants[Constants.SHORT_STEP_THRESHOLD] <= 0.0 or constants[Constants.SHORT_STEP_THRESHOLD] >= 1.0:
+        raise ValueError('The constant short_step_threshold must be in the interval (0, 1).')
+    constants.setdefault(Constants.LOW_RADIUS_FACTOR.value, DEFAULT_CONSTANTS[Constants.LOW_RADIUS_FACTOR])
+    constants[Constants.LOW_RADIUS_FACTOR.value] = float(constants[Constants.LOW_RADIUS_FACTOR])
+    if constants[Constants.LOW_RADIUS_FACTOR] <= 0.0 or constants[Constants.LOW_RADIUS_FACTOR] >= 1.0:
+        raise ValueError('The constant low_radius_factor must be in the interval (0, 1).')
+    constants.setdefault(Constants.STANDARD_BYRD_OMOJOKUN.value, DEFAULT_CONSTANTS[Constants.STANDARD_BYRD_OMOJOKUN])
+    constants[Constants.STANDARD_BYRD_OMOJOKUN.value] = bool(constants[Constants.STANDARD_BYRD_OMOJOKUN])
+    constants.setdefault(Constants.BYRD_OMOJOKUN_FACTOR.value, DEFAULT_CONSTANTS[Constants.BYRD_OMOJOKUN_FACTOR])
+    constants[Constants.BYRD_OMOJOKUN_FACTOR.value] = float(constants[Constants.BYRD_OMOJOKUN_FACTOR])
+    if constants[Constants.BYRD_OMOJOKUN_FACTOR] <= 0.0 or constants[Constants.BYRD_OMOJOKUN_FACTOR] >= 1.0:
+        raise ValueError('The constant byrd_omojokun_factor must be in the interval (0, 1).')
+    constants.setdefault(Constants.THRESHOLD_RATIO_CONSTRAINTS.value, DEFAULT_CONSTANTS[Constants.THRESHOLD_RATIO_CONSTRAINTS])
+    constants[Constants.THRESHOLD_RATIO_CONSTRAINTS.value] = float(constants[Constants.THRESHOLD_RATIO_CONSTRAINTS])
+    if constants[Constants.THRESHOLD_RATIO_CONSTRAINTS] <= 1.0:
+        raise ValueError('The constant threshold_ratio_constraints must be greater than 1.')
+    constants.setdefault(Constants.LARGE_SHIFT_FACTOR.value, DEFAULT_CONSTANTS[Constants.LARGE_SHIFT_FACTOR])
+    constants[Constants.LARGE_SHIFT_FACTOR.value] = float(constants[Constants.LARGE_SHIFT_FACTOR])
+    if constants[Constants.LARGE_SHIFT_FACTOR] < 0.0:
+        raise ValueError('The constant large_shift_factor must be nonnegative.')
+    constants.setdefault(Constants.LARGE_GRADIENT_FACTOR.value, DEFAULT_CONSTANTS[Constants.LARGE_GRADIENT_FACTOR])
+    constants[Constants.LARGE_GRADIENT_FACTOR.value] = float(constants[Constants.LARGE_GRADIENT_FACTOR])
+    if constants[Constants.LARGE_GRADIENT_FACTOR] <= 1.0:
+        raise ValueError('The constant large_gradient_factor must be greater than 1.')
+    constants.setdefault(Constants.RESOLUTION_FACTOR.value, DEFAULT_CONSTANTS[Constants.RESOLUTION_FACTOR])
+    constants[Constants.RESOLUTION_FACTOR.value] = float(constants[Constants.RESOLUTION_FACTOR])
+    if constants[Constants.RESOLUTION_FACTOR] <= 1.0:
+        raise ValueError('The constant resolution_factor must be greater than 1.')
+    constants.setdefault(Constants.IMPROVE_TCG.value, DEFAULT_CONSTANTS[Constants.IMPROVE_TCG])
+    constants[Constants.IMPROVE_TCG.value] = bool(constants[Constants.IMPROVE_TCG])
+    return constants
 
 
 def _eval(pb, framework, step, options):

@@ -4,7 +4,7 @@ import numpy as np
 from scipy.optimize import lsq_linear
 
 from .models import Models, Quadratic
-from .settings import Options
+from .settings import Options, Constants
 from .subsolvers import cauchy_geometry, spider_geometry, normal_byrd_omojokun, tangential_byrd_omojokun, constrained_tangential_byrd_omojokun
 from .subsolvers.optim import qr_tangential_byrd_omojokun
 from .utils import get_arrays_tol
@@ -15,7 +15,7 @@ class TrustRegion:
     Trust-region framework.
     """
 
-    def __init__(self, pb, options):
+    def __init__(self, pb, options, constants):
         """
         Initialize the trust-region framework.
 
@@ -25,6 +25,8 @@ class TrustRegion:
             Problem to solve.
         options : dict
             Options of the solver.
+        constants : dict
+            Constants of the solver.
 
         Raises
         ------
@@ -41,6 +43,7 @@ class TrustRegion:
         # Initialize the models.
         self._pb = pb
         self._models = Models(self._pb, options)
+        self._constants = constants
 
         # Set the initial penalty parameter.
         self._penalty = 0.0
@@ -143,7 +146,7 @@ class TrustRegion:
             New trust-region radius.
         """
         self._radius = radius
-        if self.radius <= 1.4 * self.resolution:
+        if self.radius <= self._constants[Constants.DECREASE_RADIUS_THRESHOLD] * self.resolution:
             self._radius = self.resolution
 
     @property
@@ -487,24 +490,27 @@ class TrustRegion:
         xu = self._pb.bounds.xu - self.x_best
 
         # Evaluate the normal step.
-        normal_step = normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, 0.8 * self.radius, options[Options.DEBUG])
+        normal_step = normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, self._constants[Constants.BYRD_OMOJOKUN_FACTOR] * self.radius, options[Options.DEBUG], **self._constants)
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(normal_step + tol < xl) or np.any(xu < normal_step - tol):
                 warnings.warn('the normal step does not respect the bound constraint.', RuntimeWarning, 2)
-            if np.linalg.norm(normal_step) > 1.1 * 0.8 * self.radius:
+            if np.linalg.norm(normal_step) > 1.1 * self._constants[Constants.BYRD_OMOJOKUN_FACTOR] * self.radius:
                 warnings.warn('the normal step does not respect the trust-region constraint.', RuntimeWarning, 2)
 
         # Evaluate the tangential step.
         radius = np.sqrt(self.radius ** 2.0 - normal_step @ normal_step)
         xl -= normal_step
         xu -= normal_step
-        bub = np.maximum(bub - aub @ normal_step, 0.0)
+        if self._constants[Constants.STANDARD_BYRD_OMOJOKUN]:
+            bub.fill(0.0)
+        else:
+            bub = np.maximum(bub - aub @ normal_step, 0.0)
         g_best = self.models.fun_grad(self.x_best) + self.lag_model_hess_prod(normal_step)
         if self._pb.type in ['unconstrained', 'bound-constrained']:
-            tangential_step = tangential_byrd_omojokun(g_best, self.lag_model_hess_prod, xl, xu, radius, options[Options.DEBUG])
+            tangential_step = tangential_byrd_omojokun(g_best, self.lag_model_hess_prod, xl, xu, radius, options[Options.DEBUG], **self._constants)
         else:
-            tangential_step = constrained_tangential_byrd_omojokun(g_best, self.lag_model_hess_prod, xl, xu, aub, bub, aeq, radius, options['debug'])
+            tangential_step = constrained_tangential_byrd_omojokun(g_best, self.lag_model_hess_prod, xl, xu, aub, bub, aeq, radius, options['debug'], **self._constants)
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(tangential_step + tol < xl) or np.any(xu < tangential_step - tol):
@@ -634,7 +640,7 @@ class TrustRegion:
         xl = self._pb.bounds.xl - self.x_best
         xu = self._pb.bounds.xu - self.x_best
         radius = np.linalg.norm(step)
-        soc_step = normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, radius, options[Options.DEBUG])
+        soc_step = normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, radius, options[Options.DEBUG], **self._constants)
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
             if np.any(soc_step + tol < xl) or np.any(xu < soc_step - tol):
@@ -689,8 +695,8 @@ class TrustRegion:
         if abs(viol_diff) > np.finfo(float).tiny * abs(sqp_val):
             threshold = max(threshold, sqp_val / viol_diff)
         best_index_save = self.best_index
-        if self._penalty <= 1.5 * threshold:
-            self._penalty = max(2.0 * threshold, 1.0)
+        if self._penalty <= self._constants[Constants.PENALTY_INCREASE_THRESHOLD] * threshold:
+            self._penalty = max(self._constants[Constants.PENALTY_INCREASE_FACTOR] * threshold, 1.0)
             self.set_best_index()
         return best_index_save == self.best_index
 
@@ -751,7 +757,7 @@ class TrustRegion:
             weights = dist_sq
         else:
             sigma = self.models.determinants(x_new)
-            weights = np.maximum(1.0, dist_sq / max(0.1 * self.radius, self.resolution) ** 2.0) ** 3.0
+            weights = np.maximum(1.0, dist_sq / max(self._constants[Constants.LOW_RADIUS_FACTOR] * self.radius, self.resolution) ** 2.0) ** 3.0
             weights[self.best_index] = -1.0  # The best point should never be removed.
         k_max = np.argmax(weights * np.abs(sigma))
         return k_max, np.sqrt(dist_sq[k_max])
@@ -768,12 +774,12 @@ class TrustRegion:
             Reduction ratio.
         """
         s_norm = np.linalg.norm(step)
-        if ratio <= 0.1:
-            self.radius *= 0.5
-        elif ratio <= 0.7:
-            self.radius = max(0.5 * self.radius, s_norm)
+        if ratio <= self._constants[Constants.LOW_RATIO]:
+            self.radius *= self._constants[Constants.DECREASE_RADIUS_FACTOR]
+        elif ratio <= self._constants[Constants.HIGH_RATIO]:
+            self.radius = max(self._constants[Constants.DECREASE_RADIUS_FACTOR] * self.radius, s_norm)
         else:
-            self.radius = min(np.sqrt(2.0) * self.radius, max(0.5 * self.radius, 2.0 * s_norm))
+            self.radius = min(self._constants[Constants.INCREASE_RADIUS_FACTOR] * self.radius, max(self._constants[Constants.DECREASE_RADIUS_FACTOR] * self.radius, self._constants[Constants.INCREASE_RADIUS_THRESHOLD] * s_norm))
 
     def reduce_resolution(self, options):
         """
@@ -784,15 +790,15 @@ class TrustRegion:
         options : dict
             Options of the solver.
         """
-        if 250.0 * options[Options.RHOEND] < self.resolution:
-            self.resolution *= 0.1
-        elif 16.0 * options[Options.RHOEND] < self.resolution:
+        if self._constants[Constants.LARGE_RESOLUTION_THRESHOLD] * options[Options.RHOEND] < self.resolution:
+            self.resolution *= self._constants[Constants.DECREASE_RESOLUTION_FACTOR]
+        elif self._constants[Constants.MODERATE_RESOLUTION_THRESHOLD] * options[Options.RHOEND] < self.resolution:
             self.resolution = np.sqrt(self.resolution * options[Options.RHOEND])
         else:
             self.resolution = options[Options.RHOEND]
 
         # Reduce the trust-region radius.
-        self._radius = max(0.5 * self._radius, self.resolution)
+        self._radius = max(self._constants[Constants.DECREASE_RADIUS_FACTOR] * self._radius, self.resolution)
 
     def shift_x_base(self, options):
         """
@@ -859,7 +865,7 @@ class TrustRegion:
         r_val = np.c_[r_val_ub, r_val_eq]
         c_min = np.nanmin(r_val, axis=0)
         c_max = np.nanmax(r_val, axis=0)
-        indices = c_min < 2.0 * c_max
+        indices = c_min < self._constants[Constants.THRESHOLD_RATIO_CONSTRAINTS] * c_max
         if np.any(indices):
             f_min = np.nanmin(self.models.fun_val)
             f_max = np.nanmax(self.models.fun_val)

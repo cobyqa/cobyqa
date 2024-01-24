@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, rosen
+from scipy.optimize import Bounds, LinearConstraint, rosen
 
-from cobyqa.models import Interpolation, Quadratic
-from cobyqa.problem import ObjectiveFunction, BoundConstraints, LinearConstraints, NonlinearConstraints, Problem
+from ..models import Interpolation, Quadratic
+from ..problem import ObjectiveFunction, BoundConstraints, LinearConstraints, NonlinearConstraints, Problem
 
 
 class TestInterpolation:

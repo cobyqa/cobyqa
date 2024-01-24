@@ -1,6 +1,6 @@
 import pytest
 
-from cobyqa.utils import MaxEvalError
+from .. import MaxEvalError
 
 
 def test_max_eval_error():

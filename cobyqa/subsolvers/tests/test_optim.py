@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from cobyqa.subsolvers import tangential_byrd_omojokun, constrained_tangential_byrd_omojokun, normal_byrd_omojokun
+from .. import tangential_byrd_omojokun, constrained_tangential_byrd_omojokun, normal_byrd_omojokun
 
 
 class TestTangentialByrdOmojokun:

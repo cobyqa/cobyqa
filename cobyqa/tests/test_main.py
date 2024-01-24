@@ -6,7 +6,7 @@ import pytest
 from numpy.testing import assert_allclose
 from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint
 
-from cobyqa import minimize
+from .. import minimize
 
 
 class TestMinimizeBase(ABC):

@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, rosen
 
-from cobyqa.problem import ObjectiveFunction, BoundConstraints, LinearConstraints, NonlinearConstraints, Problem
-from cobyqa.settings import PRINT_OPTIONS
+from ..problem import ObjectiveFunction, BoundConstraints, LinearConstraints, NonlinearConstraints, Problem
+from ..settings import PRINT_OPTIONS
 
 
 class TestObjectiveFunction:

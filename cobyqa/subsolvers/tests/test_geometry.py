@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from cobyqa.subsolvers import cauchy_geometry, spider_geometry
+from .. import cauchy_geometry, spider_geometry
 
 
 class TestCauchyGeometry:

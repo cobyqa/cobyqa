@@ -4,7 +4,7 @@ import numpy as np
 from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, OptimizeResult
 
 from .settings import PRINT_OPTIONS, BARRIER
-from .utils import get_arrays_tol
+from .utils import CallbackSuccess, get_arrays_tol
 from .utils import exact_1d_array
 
 
@@ -649,6 +649,11 @@ class Problem:
             Nonlinear inequality constraint function values.
         `numpy.ndarray`, shape (m_nonlinear_eq,)
             Nonlinear equality constraint function values.
+
+        Raises
+        ------
+        `cobyqa.utils.CallbackSuccess`
+            If the callback function raises a ``StopIteration``.
         """
         # Evaluate the objective and nonlinear constraint functions.
         fun_val = self._obj(self.build_x(x))
@@ -698,11 +703,14 @@ class Problem:
         # that the current point can be returned by the method.
         if self._callback is not None:
             sig = signature(self._callback)
-            if set(sig.parameters) == {'intermediate_result'}:
-                intermediate_result = OptimizeResult(x=x, fun=fun_val)
-                self._callback(intermediate_result)
-            else:
-                self._callback(x)
+            try:
+                if set(sig.parameters) == {'intermediate_result'}:
+                    intermediate_result = OptimizeResult(x=x, fun=fun_val)
+                    self._callback(intermediate_result)
+                else:
+                    self._callback(x)
+            except StopIteration as exc:
+                raise CallbackSuccess from exc
 
         return fun_val, cub_val, ceq_val
 

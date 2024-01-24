@@ -2,7 +2,7 @@ import inspect
 
 import numpy as np
 
-from cobyqa.utils import get_arrays_tol
+from ..utils import get_arrays_tol
 
 
 def cauchy_geometry(const, grad, curv, xl, xu, delta, debug):
@@ -57,8 +57,9 @@ def cauchy_geometry(const, grad, curv, xl, xu, delta, debug):
     References
     ----------
     .. [1] T. M. Ragonneau. *Model-Based Derivative-Free Optimization Methods
-       and Software*. PhD thesis, The Hong Kong Polytechnic University, Hong
-       Kong, China, 2022.
+       and Software*. PhD thesis, Department of Applied Mathematics, The Hong
+       Kong Polytechnic University, Hong Kong, China, 2022. URL:
+       https://theses.lib.polyu.edu.hk/handle/200/12294.
     """
     if debug:
         assert isinstance(const, float)
@@ -144,8 +145,9 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
     References
     ----------
     .. [1] T. M. Ragonneau. *Model-Based Derivative-Free Optimization Methods
-       and Software*. PhD thesis, The Hong Kong Polytechnic University, Hong
-       Kong, China, 2022.
+       and Software*. PhD thesis, Department of Applied Mathematics, The Hong
+       Kong Polytechnic University, Hong Kong, China, 2022. URL:
+       https://theses.lib.polyu.edu.hk/handle/200/12294.
     """
     if debug:
         assert isinstance(const, float)

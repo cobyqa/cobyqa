@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from cobyqa.utils import get_arrays_tol
+from .. import get_arrays_tol
 
 
 class TestGetArraysTol:
