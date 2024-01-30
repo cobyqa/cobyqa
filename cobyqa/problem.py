@@ -61,7 +61,7 @@ class ObjectiveFunction:
         if self._fun is None:
             f = 0.0
         else:
-            f = float(self._fun(x, *self._args))
+            f = float(np.squeeze(self._fun(x, *self._args)))
             self._n_eval += 1
             if self._verbose:
                 with np.printoptions(**PRINT_OPTIONS):
