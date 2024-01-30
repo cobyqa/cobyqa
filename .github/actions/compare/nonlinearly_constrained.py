@@ -1,5 +1,5 @@
 import numpy as np
-from optiprofiler import set_cutest_problem_options, find_cutest_problems, create_profiles
+from optiprofiler import set_cutest_problem_options, find_cutest_problems, run_benchmark
 
 
 def cobyqa_pypi(fun, x0, xl, xu, aub, bub, aeq, beq, cub, ceq):
@@ -41,4 +41,4 @@ def cobyqa_latest(fun, x0, xl, xu, aub, bub, aeq, beq, cub, ceq):
 if __name__ == '__main__':
     set_cutest_problem_options(n_max=10)
     cutest_problem_names = find_cutest_problems('quadratic other')
-    create_profiles([cobyqa_latest, cobyqa_pypi], ['COBYQA Latest', 'COBYQA PyPI'], cutest_problem_names, benchmark_id='nonlinear')
+    run_benchmark([cobyqa_latest, cobyqa_pypi], ['COBYQA Latest', 'COBYQA PyPI'], cutest_problem_names, benchmark_id='nonlinear')
