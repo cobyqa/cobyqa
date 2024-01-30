@@ -1,3 +1,4 @@
+from contextlib import suppress
 from inspect import signature
 
 import numpy as np
@@ -89,7 +90,13 @@ class ObjectiveFunction:
         str
             Name of the objective function.
         """
-        return self._fun.__name__ if self._fun is not None else ''
+        name = ''
+        if self._fun is not None:
+            try:
+                name = self._fun.__name__
+            except AttributeError:
+                name = 'fun'
+        return name
 
 
 class BoundConstraints:
@@ -402,7 +409,9 @@ class NonlinearConstraints:
             val = exact_1d_array(val, 'The nonlinear constraints must return a vector.')
             if self._verbose:
                 with np.printoptions(**PRINT_OPTIONS):
-                    print(f'{fun.__name__}({x}) = {val}')
+                    with suppress(AttributeError):
+                        fun_name = fun.__name__
+                        print(f'{fun_name}({x}) = {val}')
             if isinstance(constraint, NonlinearConstraint):
                 val, lb, ub = np.broadcast_arrays(val, constraint.lb, constraint.ub)
                 lb = np.array(lb, float)
