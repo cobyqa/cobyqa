@@ -5,7 +5,7 @@ Solve Example (6.7)--(6.8) of [1]_.
 References
 ----------
 .. [1] M. J. D. Powell. On fast trust region methods for quadratic models with
-   linear constraints. *Math. Program. Comput.*, 7(3):237–267, 2015.
+   linear constraints. *Math. Program. Comput.*, 7(3):237--267, 2015.
    `doi:10.1007/s12532-015-0084-4
    <https://doi.org/10.1007/s12532-015-0084-4>`_.
 """
