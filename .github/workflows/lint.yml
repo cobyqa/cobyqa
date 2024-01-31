@@ -1,0 +1,25 @@
+# Python code linting
+
+name: lint
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  flake8-lint:
+    name: Lint using flake8
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: flake8 Lint
+        uses: py-actions/flake8@v2
