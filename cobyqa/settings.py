@@ -9,6 +9,7 @@ class ExitStatus(Enum):
     """
     Exit statuses.
     """
+
     RADIUS_SUCCESS = 0
     TARGET_SUCCESS = 1
     FIXED_SUCCESS = 2
@@ -24,46 +25,48 @@ class Options(str, Enum):
     """
     Options.
     """
-    DEBUG = 'debug'
-    FEASIBILITY_TOL = 'feasibility_tol'
-    FILTER_SIZE = 'filter_size'
-    HISTORY_SIZE = 'history_size'
-    MAX_EVAL = 'maxfev'
-    MAX_ITER = 'maxiter'
-    NPT = 'nb_points'
-    RHOBEG = 'radius_init'
-    RHOEND = 'radius_final'
-    SCALE = 'scale'
-    STORE_HISTORY = 'store_history'
-    TARGET = 'target'
-    VERBOSE = 'disp'
+
+    DEBUG = "debug"
+    FEASIBILITY_TOL = "feasibility_tol"
+    FILTER_SIZE = "filter_size"
+    HISTORY_SIZE = "history_size"
+    MAX_EVAL = "maxfev"
+    MAX_ITER = "maxiter"
+    NPT = "nb_points"
+    RHOBEG = "radius_init"
+    RHOEND = "radius_final"
+    SCALE = "scale"
+    STORE_HISTORY = "store_history"
+    TARGET = "target"
+    VERBOSE = "disp"
 
 
 class Constants(str, Enum):
     """
     Constants.
     """
-    DECREASE_RADIUS_FACTOR = 'decrease_radius_factor'
-    INCREASE_RADIUS_FACTOR = 'increase_radius_factor'
-    INCREASE_RADIUS_THRESHOLD = 'increase_radius_threshold'
-    DECREASE_RADIUS_THRESHOLD = 'decrease_radius_threshold'
-    DECREASE_RESOLUTION_FACTOR = 'decrease_resolution_factor'
-    LARGE_RESOLUTION_THRESHOLD = 'large_resolution_threshold'
-    MODERATE_RESOLUTION_THRESHOLD = 'moderate_resolution_threshold'
-    LOW_RATIO = 'low_ratio'
-    HIGH_RATIO = 'high_ratio'
-    VERY_LOW_RATIO = 'very_low_ratio'
-    PENALTY_INCREASE_THRESHOLD = 'penalty_increase_threshold'
-    PENALTY_INCREASE_FACTOR = 'penalty_increase_factor'
-    SHORT_STEP_THRESHOLD = 'short_step_threshold'
-    LOW_RADIUS_FACTOR = 'low_radius_factor'
-    STANDARD_BYRD_OMOJOKUN = 'standard_byrd_omojokun'
-    BYRD_OMOJOKUN_FACTOR = 'byrd_omojokun_factor'
-    THRESHOLD_RATIO_CONSTRAINTS = 'threshold_ratio_constraints'
-    LARGE_SHIFT_FACTOR = 'large_shift_factor'
-    LARGE_GRADIENT_FACTOR = 'large_gradient_factor'
-    RESOLUTION_FACTOR = 'resolution_factor'
-    IMPROVE_TCG = 'improve_tcg'
+
+    DECREASE_RADIUS_FACTOR = "decrease_radius_factor"
+    INCREASE_RADIUS_FACTOR = "increase_radius_factor"
+    INCREASE_RADIUS_THRESHOLD = "increase_radius_threshold"
+    DECREASE_RADIUS_THRESHOLD = "decrease_radius_threshold"
+    DECREASE_RESOLUTION_FACTOR = "decrease_resolution_factor"
+    LARGE_RESOLUTION_THRESHOLD = "large_resolution_threshold"
+    MODERATE_RESOLUTION_THRESHOLD = "moderate_resolution_threshold"
+    LOW_RATIO = "low_ratio"
+    HIGH_RATIO = "high_ratio"
+    VERY_LOW_RATIO = "very_low_ratio"
+    PENALTY_INCREASE_THRESHOLD = "penalty_increase_threshold"
+    PENALTY_INCREASE_FACTOR = "penalty_increase_factor"
+    SHORT_STEP_THRESHOLD = "short_step_threshold"
+    LOW_RADIUS_FACTOR = "low_radius_factor"
+    STANDARD_BYRD_OMOJOKUN = "standard_byrd_omojokun"
+    BYRD_OMOJOKUN_FACTOR = "byrd_omojokun_factor"
+    THRESHOLD_RATIO_CONSTRAINTS = "threshold_ratio_constraints"
+    LARGE_SHIFT_FACTOR = "large_shift_factor"
+    LARGE_GRADIENT_FACTOR = "large_gradient_factor"
+    RESOLUTION_FACTOR = "resolution_factor"
+    IMPROVE_TCG = "improve_tcg"
 
 
 # Default options.
@@ -110,11 +113,16 @@ DEFAULT_CONSTANTS = {
 
 # Printing options.
 PRINT_OPTIONS = {
-    'threshold': 6,
-    'edgeitems': 2,
-    'linewidth': sys.maxsize,
-    'formatter': {'float_kind': lambda x: np.format_float_scientific(x, precision=3, unique=False, pad_left=2)}
+    "threshold": 6,
+    "edgeitems": 2,
+    "linewidth": sys.maxsize,
+    "formatter": {
+        "float_kind": lambda x: np.format_float_scientific(
+            x, precision=3, unique=False, pad_left=2
+        )
+    },
 }
 
 # Constants.
-BARRIER = 2.0 ** min(100, np.finfo(float).maxexp // 2, -np.finfo(float).minexp // 2)
+BARRIER = 2.0 ** min(100, np.finfo(float).maxexp // 2,
+                     -np.finfo(float).minexp // 2)

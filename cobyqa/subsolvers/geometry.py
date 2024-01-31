@@ -7,20 +7,22 @@ from ..utils import get_arrays_tol
 
 def cauchy_geometry(const, grad, curv, xl, xu, delta, debug):
     r"""
-    Maximize approximately the absolute value of a quadratic function subject to
-    bound constraints in a trust region.
+    Maximize approximately the absolute value of a quadratic function subject
+    to bound constraints in a trust region.
 
     This function solves approximately
 
     .. math::
 
-        \max_{s \in \R^n} \quad \bigg\lvert c + \transpose{g} s + \frac{1}{2} \transpose{s} H s \bigg\rvert \quad \text{s.t.} \quad
+        \max_{s \in \R^n} \quad \bigg\lvert c + \transpose{g} s + \frac{1}{2}
+        \transpose{s} H s \bigg\rvert \quad \text{s.t.} \quad
         \left\{ \begin{array}{l}
             \xl \le s \le \xu,\\
             \lVert s \rVert \le \Delta,
         \end{array} \right.
 
-    by maximizing the objective function along the constrained Cauchy direction.
+    by maximizing the objective function along the constrained Cauchy
+    direction.
 
     Parameters
     ----------
@@ -80,7 +82,9 @@ def cauchy_geometry(const, grad, curv, xl, xu, delta, debug):
     # function itself or its negative, and we choose the solution that provides
     # the largest function value.
     step1, q_val1 = _cauchy_geom(const, grad, curv, xl, xu, delta, debug)
-    step2, q_val2 = _cauchy_geom(-const, -grad, lambda x: -curv(x), xl, xu, delta, debug)
+    step2, q_val2 = _cauchy_geom(
+        -const, -grad, lambda x: -curv(x), xl, xu, delta, debug
+    )
     step = step1 if abs(q_val1) >= abs(q_val2) else step2
 
     if debug:
@@ -92,14 +96,15 @@ def cauchy_geometry(const, grad, curv, xl, xu, delta, debug):
 
 def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
     r"""
-    Maximize approximately the absolute value of a quadratic function subject to
-    bound constraints in a trust region.
+    Maximize approximately the absolute value of a quadratic function subject
+    to bound constraints in a trust region.
 
     This function solves approximately
 
     .. math::
 
-        \max_{s \in \R^n} \quad \bigg\lvert c + \transpose{g} s + \frac{1}{2} \transpose{s} H s \bigg\rvert \quad \text{s.t.} \quad
+        \max_{s \in \R^n} \quad \bigg\lvert c + \transpose{g} s + \frac{1}{2}
+        \transpose{s} H s \bigg\rvert \quad \text{s.t.} \quad
         \left\{ \begin{array}{l}
             \xl \le s \le \xu,\\
             \lVert s \rVert \le \Delta,
@@ -138,8 +143,8 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
 
     Notes
     -----
-    This function is described as the second alternative in Section 6.5 of [1]_.
-    It is assumed that the origin is feasible with respect to the bound
+    This function is described as the second alternative in Section 6.5 of
+    [1]_. It is assumed that the origin is feasible with respect to the bound
     constraints and that `delta` is finite and positive.
 
     References
@@ -153,7 +158,8 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
         assert isinstance(const, float)
         assert isinstance(grad, np.ndarray) and grad.ndim == 1
         assert inspect.signature(curv).bind(grad)
-        assert isinstance(xpt, np.ndarray) and xpt.ndim == 2 and xpt.shape[0] == grad.size
+        assert (isinstance(xpt, np.ndarray) and xpt.ndim == 2
+                and xpt.shape[0] == grad.size)
         assert isinstance(xl, np.ndarray) and xl.shape == grad.shape
         assert isinstance(xu, np.ndarray) and xu.shape == grad.shape
         assert isinstance(delta, float)
@@ -194,11 +200,21 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
         # of the quadratic function along the positive and negative directions.
         grad_step = grad @ xpt[:, k]
         curv_step = curv(xpt[:, k])
-        if grad_step >= 0.0 and curv_step < -np.finfo(float).tiny * grad_step or grad_step <= 0.0 and curv_step > -np.finfo(float).tiny * grad_step:
+        if (
+            grad_step >= 0.0
+            and curv_step < -np.finfo(float).tiny * grad_step
+            or grad_step <= 0.0
+            and curv_step > -np.finfo(float).tiny * grad_step
+        ):
             alpha_quad_pos = max(-grad_step / curv_step, 0.0)
         else:
             alpha_quad_pos = np.inf
-        if grad_step >= 0.0 and curv_step > np.finfo(float).tiny * grad_step or grad_step <= 0.0 and curv_step < np.finfo(float).tiny * grad_step:
+        if (
+            grad_step >= 0.0
+            and curv_step > np.finfo(float).tiny * grad_step
+            or grad_step <= 0.0
+            and curv_step < np.finfo(float).tiny * grad_step
+        ):
             alpha_quad_neg = min(-grad_step / curv_step, 0.0)
         else:
             alpha_quad_neg = -np.inf
@@ -214,15 +230,25 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
         # step in some extreme cases.
         alpha_pos = min(alpha_tr, alpha_bd_pos)
         alpha_neg = max(-alpha_tr, alpha_bd_neg)
-        q_val_pos = const + alpha_pos * grad_step + 0.5 * alpha_pos ** 2.0 * curv_step
-        q_val_neg = const + alpha_neg * grad_step + 0.5 * alpha_neg ** 2.0 * curv_step
+        q_val_pos = (const + alpha_pos * grad_step
+                     + 0.5 * alpha_pos**2.0 * curv_step)
+        q_val_neg = (const + alpha_neg * grad_step
+                     + 0.5 * alpha_neg**2.0 * curv_step)
         if alpha_quad_pos < alpha_pos:
-            q_val_quad_pos = const + alpha_quad_pos * grad_step + 0.5 * alpha_quad_pos ** 2.0 * curv_step
+            q_val_quad_pos = (
+                const
+                + alpha_quad_pos * grad_step
+                + 0.5 * alpha_quad_pos**2.0 * curv_step
+            )
             if abs(q_val_quad_pos) > abs(q_val_pos):
                 alpha_pos = alpha_quad_pos
                 q_val_pos = q_val_quad_pos
         if alpha_quad_neg > alpha_neg:
-            q_val_quad_neg = const + alpha_quad_neg * grad_step + 0.5 * alpha_quad_neg ** 2.0 * curv_step
+            q_val_quad_neg = (
+                const
+                + alpha_quad_neg * grad_step
+                + 0.5 * alpha_quad_neg**2.0 * curv_step
+            )
             if abs(q_val_quad_neg) > abs(q_val_neg):
                 alpha_neg = alpha_quad_neg
                 q_val_neg = q_val_quad_neg
@@ -257,7 +283,9 @@ def _cauchy_geom(const, grad, curv, xl, xu, delta, debug):
         while True:
             # Calculate the Cauchy step for the directions in the working set.
             g_norm = np.linalg.norm(grad[working])
-            delta_reduced = np.sqrt(delta ** 2.0 - cauchy_step[~working] @ cauchy_step[~working])
+            delta_reduced = np.sqrt(
+                delta**2.0 - cauchy_step[~working] @ cauchy_step[~working]
+            )
             if g_norm > np.finfo(float).tiny * abs(delta_reduced):
                 mu = max(delta_reduced / g_norm, 0.0)
             else:
@@ -302,7 +330,7 @@ def _cauchy_geom(const, grad, curv, xl, xu, delta, debug):
         # Calculate the solution and the corresponding function value.
         alpha = min(alpha_tr, alpha_quad, alpha_bd)
         step = np.clip(alpha * cauchy_step, xl, xu)
-        q_val = const + alpha * grad_step + 0.5 * alpha ** 2.0 * curv_step
+        q_val = const + alpha * grad_step + 0.5 * alpha**2.0 * curv_step
     else:
         # This case is never reached in exact arithmetic. It prevents this
         # function to return a step that decreases the objective function.

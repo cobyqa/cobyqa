@@ -32,18 +32,34 @@ class Interpolation:
         max_radius = 0.5 * np.min(pb.bounds.xu - pb.bounds.xl)
         if options[Options.RHOBEG] > max_radius:
             options[Options.RHOBEG.value] = max_radius
-            options[Options.RHOEND.value] = np.min([options[Options.RHOEND], max_radius])
+            options[Options.RHOEND.value] = np.min(
+                [options[Options.RHOEND], max_radius]
+            )
 
         # Set the initial point around which the models are expanded.
         self._x_base = np.copy(pb.x0)
-        very_close_xl_idx = (self.x_base <= pb.bounds.xl + 0.5 * options[Options.RHOBEG])
+        very_close_xl_idx = (self.x_base <= pb.bounds.xl
+                             + 0.5 * options[Options.RHOBEG])
         self.x_base[very_close_xl_idx] = pb.bounds.xl[very_close_xl_idx]
-        close_xl_idx = (pb.bounds.xl + 0.5 * options[Options.RHOBEG] < self.x_base) & (self.x_base <= pb.bounds.xl + options[Options.RHOBEG])
-        self.x_base[close_xl_idx] = np.minimum(pb.bounds.xl[close_xl_idx] + options[Options.RHOBEG], pb.bounds.xu[close_xl_idx])
-        very_close_xu_idx = (self.x_base >= pb.bounds.xu - 0.5 * options[Options.RHOBEG])
+        close_xl_idx = (pb.bounds.xl
+                        + 0.5 * options[Options.RHOBEG] < self.x_base) & (
+            self.x_base <= pb.bounds.xl + options[Options.RHOBEG]
+        )
+        self.x_base[close_xl_idx] = np.minimum(
+            pb.bounds.xl[close_xl_idx] + options[Options.RHOBEG],
+            pb.bounds.xu[close_xl_idx],
+        )
+        very_close_xu_idx = (self.x_base >= pb.bounds.xu
+                             - 0.5 * options[Options.RHOBEG])
         self.x_base[very_close_xu_idx] = pb.bounds.xu[very_close_xu_idx]
-        close_xu_idx = (self.x_base < pb.bounds.xu - 0.5 * options[Options.RHOBEG]) & (pb.bounds.xu - options[Options.RHOBEG] <= self.x_base)
-        self.x_base[close_xu_idx] = np.maximum(pb.bounds.xu[close_xu_idx] - options[Options.RHOBEG], pb.bounds.xl[close_xu_idx])
+        close_xu_idx = (self.x_base < pb.bounds.xu
+                        - 0.5 * options[Options.RHOBEG]) & (
+            pb.bounds.xu - options[Options.RHOBEG] <= self.x_base
+        )
+        self.x_base[close_xu_idx] = np.maximum(
+            pb.bounds.xu[close_xu_idx] - options[Options.RHOBEG],
+            pb.bounds.xl[close_xu_idx],
+        )
 
         # Set the initial interpolation set.
         self._xpt = np.zeros((pb.n, options[Options.NPT]))
@@ -114,7 +130,8 @@ class Interpolation:
             New interpolation points.
         """
         if self._debug:
-            assert xpt.shape == (self.n, self.npt), 'The shape of `xpt` is not valid.'
+            assert xpt.shape == (self.n, self.npt), \
+                "The shape of `xpt` is not valid."
         self._xpt = xpt
 
     @property
@@ -140,7 +157,8 @@ class Interpolation:
             New base point around which the models are expanded.
         """
         if self._debug:
-            assert x_base.shape == (self.n,), 'The shape of `x_base` is not valid.'
+            assert x_base.shape == (self.n,), \
+                "The shape of `x_base` is not valid."
         self._x_base = x_base
 
     def point(self, k):
@@ -160,7 +178,7 @@ class Interpolation:
             `k`-th interpolation point.
         """
         if self._debug:
-            assert 0 <= k < self.npt, 'The index `k` is not valid.'
+            assert 0 <= k < self.npt, "The index `k` is not valid."
         return self.x_base + self.xpt[:, k]
 
 
@@ -200,10 +218,17 @@ class Quadratic:
         """
         self._debug = debug
         if self._debug:
-            assert values.shape == (interpolation.npt,), 'The shape of `values` is not valid.'
+            assert values.shape == (
+                interpolation.npt,
+            ), "The shape of `values` is not valid."
         if interpolation.npt < interpolation.n + 1:
-            raise ValueError(f'The number of interpolation points must be at least {interpolation.n + 1}.')
-        self._const, self._grad, self._i_hess, _ = self._get_model(interpolation, values)
+            raise ValueError(
+                f"The number of interpolation points must be at "
+                f"least {interpolation.n + 1}."
+            )
+        self._const, self._grad, self._i_hess, _ = self._get_model(
+            interpolation, values
+        )
         self._e_hess = np.zeros((self.n, self.n))
 
     def __call__(self, x, interpolation):
@@ -223,9 +248,17 @@ class Quadratic:
             Value of the quadratic model at `x`.
         """
         if self._debug:
-            assert x.shape == (self.n,), 'The shape of `x` is not valid.'
+            assert x.shape == (self.n,), "The shape of `x` is not valid."
         x_diff = x - interpolation.x_base
-        return self._const + self._grad @ x_diff + 0.5 * (self._i_hess @ (interpolation.xpt.T @ x_diff) ** 2.0 + x_diff @ self._e_hess @ x_diff)
+        return (
+            self._const
+            + self._grad @ x_diff
+            + 0.5
+            * (
+                self._i_hess @ (interpolation.xpt.T @ x_diff) ** 2.0
+                + x_diff @ self._e_hess @ x_diff
+            )
+        )
 
     @property
     def n(self):
@@ -268,7 +301,7 @@ class Quadratic:
             Gradient of the quadratic model at `x`.
         """
         if self._debug:
-            assert x.shape == (self.n,), 'The shape of `x` is not valid.'
+            assert x.shape == (self.n,), "The shape of `x` is not valid."
         x_diff = x - interpolation.x_base
         return self._grad + self.hess_prod(x_diff, interpolation)
 
@@ -286,7 +319,9 @@ class Quadratic:
         `numpy.ndarray`, shape (n, n)
             Hessian matrix of the quadratic model.
         """
-        return self._e_hess + interpolation.xpt @ (self._i_hess[:, np.newaxis] * interpolation.xpt.T)
+        return self._e_hess + interpolation.xpt @ (
+            self._i_hess[:, np.newaxis] * interpolation.xpt.T
+        )
 
     def hess_prod(self, v, interpolation):
         """
@@ -304,11 +339,14 @@ class Quadratic:
         Returns
         -------
         `numpy.ndarray`, shape (n,)
-            Right product of the Hessian matrix of the quadratic model with `v`.
+            Right product of the Hessian matrix of the quadratic model with
+            `v`.
         """
         if self._debug:
-            assert v.shape == (self.n,), 'The shape of `v` is not valid.'
-        return self._e_hess @ v + interpolation.xpt @ (self._i_hess * (interpolation.xpt.T @ v))
+            assert v.shape == (self.n,), "The shape of `v` is not valid."
+        return self._e_hess @ v + interpolation.xpt @ (
+            self._i_hess * (interpolation.xpt.T @ v)
+        )
 
     def curv(self, v, interpolation):
         """
@@ -328,8 +366,9 @@ class Quadratic:
             Curvature of the quadratic model along `v`.
         """
         if self._debug:
-            assert v.shape == (self.n,), 'The shape of `v` is not valid.'
-        return v @ self._e_hess @ v + self._i_hess @ (interpolation.xpt.T @ v) ** 2.0
+            assert v.shape == (self.n,), "The shape of `v` is not valid."
+        return (v @ self._e_hess @ v
+                + self._i_hess @ (interpolation.xpt.T @ v) ** 2.0)
 
     def update(self, interpolation, k_new, dir_old, values_diff):
         """
@@ -358,9 +397,12 @@ class Quadratic:
             If the interpolation system is ill-defined.
         """
         if self._debug:
-            assert 0 <= k_new < self.npt, 'The index `k_new` is not valid.'
-            assert dir_old.shape == (self.n,), 'The shape of `dir_old` is not valid.'
-            assert values_diff.shape == (self.npt,), 'The shape of `values_diff` is not valid.'
+            assert 0 <= k_new < self.npt, "The index `k_new` is not valid."
+            assert dir_old.shape == (self.n,), \
+                "The shape of `dir_old` is not valid."
+            assert values_diff.shape == (
+                self.npt,
+            ), "The shape of `values_diff` is not valid."
 
         # Forward the k_new-th element of the implicit Hessian matrix to the
         # explicit Hessian matrix. This must be done because the implicit
@@ -370,7 +412,9 @@ class Quadratic:
         self._i_hess[k_new] = 0.0
 
         # Update the quadratic model.
-        const, grad, i_hess, ill_conditioned = self._get_model(interpolation, values_diff)
+        const, grad, i_hess, ill_conditioned = self._get_model(
+            interpolation, values_diff
+        )
         self._const += const
         self._grad += grad
         self._i_hess += i_hess
@@ -388,11 +432,15 @@ class Quadratic:
             Point that will replace ``interpolation.x_base``.
         """
         if self._debug:
-            assert new_x_base.shape == (self.n,), 'The shape of `new_x_base` is not valid.'
+            assert new_x_base.shape == (
+                self.n,
+            ), "The shape of `new_x_base` is not valid."
         self._const = self(new_x_base, interpolation)
         self._grad = self.grad(new_x_base, interpolation)
         shift = new_x_base - interpolation.x_base
-        update = np.outer(shift, (interpolation.xpt - 0.5 * shift[:, np.newaxis]) @ self._i_hess)
+        update = np.outer(
+            shift, (interpolation.xpt
+                    - 0.5 * shift[:, np.newaxis]) @ self._i_hess)
         self._e_hess += update + update.T
 
     @staticmethod
@@ -444,39 +492,44 @@ class Quadratic:
             If the interpolation system is ill-defined.
         """
         n, npt = interpolation.xpt.shape
-        assert rhs.shape == (npt + n + 1,), 'The shape of `rhs` is not valid.'
+        assert rhs.shape == (npt + n + 1,), "The shape of `rhs` is not valid."
 
-        # Compute the scaled directions from the base point to the interpolation
-        # points. We scale the directions to avoid numerical difficulties.
-        scale = np.max([np.linalg.norm(interpolation.xpt[:, k]) for k in range(npt)], initial=np.finfo(float).eps)
+        # Compute the scaled directions from the base point to the
+        # interpolation points. We scale the directions to avoid numerical
+        # difficulties.
+        scale = np.max(
+            [np.linalg.norm(interpolation.xpt[:, k]) for k in range(npt)],
+            initial=np.finfo(float).eps,
+        )
         xpt_scale = interpolation.xpt / scale
 
         # Build the left-hand side matrix of the interpolation system. The
         # matrix below stores diag(left_scaling) * W * diag(right_scaling),
         # where W is the theoretical matrix of the interpolation system. The
-        # left and right scaling matrices are chosen to keep the elements in the
-        # matrix well-balanced.
+        # left and right scaling matrices are chosen to keep the elements in
+        # the matrix well-balanced.
         a = Quadratic.build_system(xpt_scale)
 
         # Build the left and right scaling diagonal matrices.
         left_scaling = np.empty(npt + n + 1)
         right_scaling = np.empty(npt + n + 1)
-        left_scaling[:npt] = 1.0 / scale ** 2.0
-        left_scaling[npt] = scale ** 2.0
+        left_scaling[:npt] = 1.0 / scale**2.0
+        left_scaling[npt] = scale**2.0
         left_scaling[npt + 1:] = scale
-        right_scaling[:npt] = 1.0 / scale ** 2.0
-        right_scaling[npt] = scale ** 2.0
+        right_scaling[:npt] = 1.0 / scale**2.0
+        right_scaling[npt] = scale**2.0
         right_scaling[npt + 1:] = scale
 
         # Build the solution.
         ill_conditioned = False
         rhs_scale = right_scaling * rhs
         if not (np.all(np.isfinite(a)) and np.all(np.isfinite(rhs_scale))):
-            raise np.linalg.LinAlgError('The interpolation system is ill-defined.')
+            raise np.linalg.LinAlgError("The interpolation system is "
+                                        "ill-defined.")
         try:
             with warnings.catch_warnings():
-                warnings.simplefilter('error', LinAlgWarning)
-                left_scaled_solution = solve(a, rhs_scale, assume_a='sym')
+                warnings.simplefilter("error", LinAlgWarning)
+                left_scaled_solution = solve(a, rhs_scale, assume_a="sym")
         except (np.linalg.LinAlgError, LinAlgWarning):
             left_scaled_solution = lstsq(a, rhs_scale)[0]
             ill_conditioned = True
@@ -508,9 +561,19 @@ class Quadratic:
         `numpy.linalg.LinAlgError`
             If the interpolation system is ill-defined.
         """
-        assert values.shape == (interpolation.npt,), 'The shape of `values` is not valid.'
+        assert values.shape == (
+            interpolation.npt,
+        ), "The shape of `values` is not valid."
         n, npt = interpolation.xpt.shape
-        x, ill_conditioned = Quadratic.solve_system(interpolation, np.block([values, np.zeros(n + 1)]))
+        x, ill_conditioned = Quadratic.solve_system(
+            interpolation,
+            np.block(
+                [
+                    values,
+                    np.zeros(n + 1),
+                ]
+            ),
+        )
         return x[npt], x[npt + 1:], x[:npt], ill_conditioned
 
 
@@ -535,8 +598,8 @@ class Models:
         `cobyqa.utils.MaxEvalError`
             If the maximum number of evaluations is reached.
         `cobyqa.utils.TargetSuccess`
-            If a nearly feasible point has been found with an objective function
-            value below the target.
+            If a nearly feasible point has been found with an objective
+            function value below the target.
         `cobyqa.utils.FeasibleSuccess`
             If a feasible point has been found for a feasibility problem.
         `numpy.linalg.LinAlgError`
@@ -561,26 +624,46 @@ class Models:
                 self.ceq_val[k, :] = ceq_init
             else:
                 x_eval = self.interpolation.point(k)
-                self.fun_val[k], self.cub_val[k, :], self.ceq_val[k, :] = pb(x_eval)
+                self.fun_val[k], self.cub_val[k, :], self.ceq_val[k, :] = pb(
+                    x_eval)
 
             # Stop the iterations if the problem is a feasibility problem and
             # the current interpolation point is feasible.
-            if pb.is_feasibility and pb.maxcv(self.interpolation.point(k), self.cub_val[k, :], self.ceq_val[k, :]) <= options[Options.FEASIBILITY_TOL]:
+            if (
+                pb.is_feasibility
+                and pb.maxcv(
+                    self.interpolation.point(k), self.cub_val[k, :],
+                    self.ceq_val[k, :]
+                )
+                <= options[Options.FEASIBILITY_TOL]
+            ):
                 raise FeasibleSuccess
 
             # Stop the iterations if the current interpolation point is nearly
             # feasible and has an objective function value below the target.
-            if self._fun_val[k] <= options[Options.TARGET] and pb.maxcv(self.interpolation.point(k), self.cub_val[k, :], self.ceq_val[k, :]) <= options[Options.FEASIBILITY_TOL]:
+            if (
+                self._fun_val[k] <= options[Options.TARGET]
+                and pb.maxcv(
+                    self.interpolation.point(k), self.cub_val[k, :],
+                    self.ceq_val[k, :]
+                )
+                <= options[Options.FEASIBILITY_TOL]
+            ):
                 raise TargetSuccess
 
         # Build the initial quadratic models.
-        self._fun = Quadratic(self.interpolation, self._fun_val, options[Options.DEBUG])
+        self._fun = Quadratic(self.interpolation, self._fun_val,
+                              options[Options.DEBUG])
         self._cub = np.empty(self.m_nonlinear_ub, dtype=Quadratic)
         self._ceq = np.empty(self.m_nonlinear_eq, dtype=Quadratic)
         for i in range(self.m_nonlinear_ub):
-            self._cub[i] = Quadratic(self.interpolation, self.cub_val[:, i], options[Options.DEBUG])
+            self._cub[i] = Quadratic(
+                self.interpolation, self.cub_val[:, i], options[Options.DEBUG]
+            )
         for i in range(self.m_nonlinear_eq):
-            self._ceq[i] = Quadratic(self.interpolation, self.ceq_val[:, i], options[Options.DEBUG])
+            self._ceq[i] = Quadratic(
+                self.interpolation, self.ceq_val[:, i], options[Options.DEBUG]
+            )
         if self._debug:
             self._check_interpolation_conditions()
 
@@ -686,7 +769,8 @@ class Models:
 
     def fun(self, x):
         """
-        Evaluate the quadratic model of the objective function at a given point.
+        Evaluate the quadratic model of the objective function at a given
+        point.
 
         Parameters
         ----------
@@ -700,7 +784,7 @@ class Models:
             Value of the quadratic model of the objective function at `x`.
         """
         if self._debug:
-            assert x.shape == (self.n,), 'The shape of `x` is not valid.'
+            assert x.shape == (self.n,), "The shape of `x` is not valid."
         return self._fun(x, self.interpolation)
 
     def fun_grad(self, x):
@@ -720,7 +804,7 @@ class Models:
             Gradient of the quadratic model of the objective function at `x`.
         """
         if self._debug:
-            assert x.shape == (self.n,), 'The shape of `x` is not valid.'
+            assert x.shape == (self.n,), "The shape of `x` is not valid."
         return self._fun.grad(x, self.interpolation)
 
     def fun_hess(self):
@@ -753,7 +837,7 @@ class Models:
             objective function with `v`.
         """
         if self._debug:
-            assert v.shape == (self.n,), 'The shape of `v` is not valid.'
+            assert v.shape == (self.n,), "The shape of `v` is not valid."
         return self._fun.hess_prod(v, self.interpolation)
 
     def fun_curv(self, v):
@@ -774,7 +858,7 @@ class Models:
             `v`.
         """
         if self._debug:
-            assert v.shape == (self.n,), 'The shape of `v` is not valid.'
+            assert v.shape == (self.n,), "The shape of `v` is not valid."
         return self._fun.curv(v, self.interpolation)
 
     def fun_alt_grad(self, x):
@@ -785,8 +869,8 @@ class Models:
         Parameters
         ----------
         x : `numpy.ndarray`, shape (n,)
-            Point at which to evaluate the gradient of the alternative quadratic
-            model of the objective function.
+            Point at which to evaluate the gradient of the alternative
+            quadratic model of the objective function.
 
         Returns
         -------
@@ -800,14 +884,14 @@ class Models:
             If the interpolation system is ill-defined.
         """
         if self._debug:
-            assert x.shape == (self.n,), 'The shape of `x` is not valid.'
+            assert x.shape == (self.n,), "The shape of `x` is not valid."
         model = Quadratic(self.interpolation, self.fun_val, self._debug)
         return model.grad(x, self.interpolation)
 
     def cub(self, x, mask=None):
         """
-        Evaluate the quadratic models of the nonlinear inequality functions at a
-        given point.
+        Evaluate the quadratic models of the nonlinear inequality functions at
+        a given point.
 
         Parameters
         ----------
@@ -820,12 +904,16 @@ class Models:
         Returns
         -------
         `numpy.ndarray`
-            Values of the quadratic model of the nonlinear inequality functions.
+            Values of the quadratic model of the nonlinear inequality
+            functions.
         """
         if self._debug:
-            assert x.shape == (self.n,), 'The shape of `x` is not valid.'
-            assert mask is None or mask.shape == (self.m_nonlinear_ub,), 'The shape of `mask` is not valid.'
-        return np.array([model(x, self.interpolation) for model in self._get_cub(mask)])
+            assert x.shape == (self.n,), "The shape of `x` is not valid."
+            assert mask is None or mask.shape == (
+                self.m_nonlinear_ub,
+            ), "The shape of `mask` is not valid."
+        return np.array([model(x, self.interpolation)
+                         for model in self._get_cub(mask)])
 
     def cub_grad(self, x, mask=None):
         """
@@ -847,9 +935,15 @@ class Models:
             functions.
         """
         if self._debug:
-            assert x.shape == (self.n,), 'The shape of `x` is not valid.'
-            assert mask is None or mask.shape == (self.m_nonlinear_ub,), 'The shape of `mask` is not valid.'
-        return np.reshape([model.grad(x, self.interpolation) for model in self._get_cub(mask)], (-1, self.n))
+            assert x.shape == (self.n,), "The shape of `x` is not valid."
+            assert mask is None or mask.shape == (
+                self.m_nonlinear_ub,
+            ), "The shape of `mask` is not valid."
+        return np.reshape(
+            [model.grad(x, self.interpolation)
+             for model in self._get_cub(mask)],
+            (-1, self.n),
+        )
 
     def cub_hess(self, mask=None):
         """
@@ -864,12 +958,17 @@ class Models:
         Returns
         -------
         `numpy.ndarray`
-            Hessian matrices of the quadratic models of the nonlinear inequality
-            functions.
+            Hessian matrices of the quadratic models of the nonlinear
+            inequality functions.
         """
         if self._debug:
-            assert mask is None or mask.shape == (self.m_nonlinear_ub,), 'The shape of `mask` is not valid.'
-        return np.reshape([model.hess(self.interpolation) for model in self._get_cub(mask)], (-1, self.n, self.n))
+            assert mask is None or mask.shape == (
+                self.m_nonlinear_ub,
+            ), "The shape of `mask` is not valid."
+        return np.reshape(
+            [model.hess(self.interpolation) for model in self._get_cub(mask)],
+            (-1, self.n, self.n),
+        )
 
     def cub_hess_prod(self, v, mask=None):
         """
@@ -891,9 +990,15 @@ class Models:
             the nonlinear inequality functions with `v`.
         """
         if self._debug:
-            assert v.shape == (self.n,), 'The shape of `v` is not valid.'
-            assert mask is None or mask.shape == (self.m_nonlinear_ub,), 'The shape of `mask` is not valid.'
-        return np.reshape([model.hess_prod(v, self.interpolation) for model in self._get_cub(mask)], (-1, self.n))
+            assert v.shape == (self.n,), "The shape of `v` is not valid."
+            assert mask is None or mask.shape == (
+                self.m_nonlinear_ub,
+            ), "The shape of `mask` is not valid."
+        return np.reshape(
+            [model.hess_prod(v, self.interpolation)
+             for model in self._get_cub(mask)],
+            (-1, self.n),
+        )
 
     def cub_curv(self, v, mask=None):
         """
@@ -915,9 +1020,14 @@ class Models:
             functions along `v`.
         """
         if self._debug:
-            assert v.shape == (self.n,), 'The shape of `v` is not valid.'
-            assert mask is None or mask.shape == (self.m_nonlinear_ub,), 'The shape of `mask` is not valid.'
-        return np.array([model.curv(v, self.interpolation) for model in self._get_cub(mask)])
+            assert v.shape == (self.n,), "The shape of `v` is not valid."
+            assert mask is None or mask.shape == (
+                self.m_nonlinear_ub,
+            ), "The shape of `mask` is not valid."
+        return np.array(
+            [model.curv(v, self.interpolation)
+             for model in self._get_cub(mask)]
+        )
 
     def ceq(self, x, mask=None):
         """
@@ -938,9 +1048,12 @@ class Models:
             Values of the quadratic model of the nonlinear equality functions.
         """
         if self._debug:
-            assert x.shape == (self.n,), 'The shape of `x` is not valid.'
-            assert mask is None or mask.shape == (self.m_nonlinear_eq,), 'The shape of `mask` is not valid.'
-        return np.array([model(x, self.interpolation) for model in self._get_ceq(mask)])
+            assert x.shape == (self.n,), "The shape of `x` is not valid."
+            assert mask is None or mask.shape == (
+                self.m_nonlinear_eq,
+            ), "The shape of `mask` is not valid."
+        return np.array([model(x, self.interpolation)
+                         for model in self._get_ceq(mask)])
 
     def ceq_grad(self, x, mask=None):
         """
@@ -962,9 +1075,15 @@ class Models:
             functions.
         """
         if self._debug:
-            assert x.shape == (self.n,), 'The shape of `x` is not valid.'
-            assert mask is None or mask.shape == (self.m_nonlinear_eq,), 'The shape of `mask` is not valid.'
-        return np.reshape([model.grad(x, self.interpolation) for model in self._get_ceq(mask)], (-1, self.n))
+            assert x.shape == (self.n,), "The shape of `x` is not valid."
+            assert mask is None or mask.shape == (
+                self.m_nonlinear_eq,
+            ), "The shape of `mask` is not valid."
+        return np.reshape(
+            [model.grad(x, self.interpolation)
+             for model in self._get_ceq(mask)],
+            (-1, self.n),
+        )
 
     def ceq_hess(self, mask=None):
         """
@@ -983,8 +1102,13 @@ class Models:
             functions.
         """
         if self._debug:
-            assert mask is None or mask.shape == (self.m_nonlinear_eq,), 'The shape of `mask` is not valid.'
-        return np.reshape([model.hess(self.interpolation) for model in self._get_ceq(mask)], (-1, self.n, self.n))
+            assert mask is None or mask.shape == (
+                self.m_nonlinear_eq,
+            ), "The shape of `mask` is not valid."
+        return np.reshape(
+            [model.hess(self.interpolation) for model in self._get_ceq(mask)],
+            (-1, self.n, self.n),
+        )
 
     def ceq_hess_prod(self, v, mask=None):
         """
@@ -1006,9 +1130,15 @@ class Models:
             the nonlinear equality functions with `v`.
         """
         if self._debug:
-            assert v.shape == (self.n,), 'The shape of `v` is not valid.'
-            assert mask is None or mask.shape == (self.m_nonlinear_eq,), 'The shape of `mask` is not valid.'
-        return np.reshape([model.hess_prod(v, self.interpolation) for model in self._get_ceq(mask)], (-1, self.n))
+            assert v.shape == (self.n,), "The shape of `v` is not valid."
+            assert mask is None or mask.shape == (
+                self.m_nonlinear_eq,
+            ), "The shape of `mask` is not valid."
+        return np.reshape(
+            [model.hess_prod(v, self.interpolation)
+             for model in self._get_ceq(mask)],
+            (-1, self.n),
+        )
 
     def ceq_curv(self, v, mask=None):
         """
@@ -1030,15 +1160,20 @@ class Models:
             functions along `v`.
         """
         if self._debug:
-            assert v.shape == (self.n,), 'The shape of `v` is not valid.'
-            assert mask is None or mask.shape == (self.m_nonlinear_eq,), 'The shape of `mask` is not valid.'
-        return np.array([model.curv(v, self.interpolation) for model in self._get_ceq(mask)])
+            assert v.shape == (self.n,), "The shape of `v` is not valid."
+            assert mask is None or mask.shape == (
+                self.m_nonlinear_eq,
+            ), "The shape of `mask` is not valid."
+        return np.array(
+            [model.curv(v, self.interpolation)
+             for model in self._get_ceq(mask)]
+        )
 
     def reset_models(self):
         """
-        Set the quadratic models of the objective function, nonlinear inequality
-        constraints, and nonlinear equality constraints to the alternative
-        quadratic models.
+        Set the quadratic models of the objective function, nonlinear
+        inequality constraints, and nonlinear equality constraints to the
+        alternative quadratic models.
 
         Raises
         ------
@@ -1047,9 +1182,13 @@ class Models:
         """
         self._fun = Quadratic(self.interpolation, self.fun_val, self._debug)
         for i in range(self.m_nonlinear_ub):
-            self._cub[i] = Quadratic(self.interpolation, self.cub_val[:, i], self._debug)
+            self._cub[i] = Quadratic(
+                self.interpolation, self.cub_val[:, i], self._debug
+            )
         for i in range(self.m_nonlinear_eq):
-            self._ceq[i] = Quadratic(self.interpolation, self.ceq_val[:, i], self._debug)
+            self._ceq[i] = Quadratic(
+                self.interpolation, self.ceq_val[:, i], self._debug
+            )
         if self._debug:
             self._check_interpolation_conditions()
 
@@ -1082,11 +1221,17 @@ class Models:
             If the interpolation system is ill-defined.
         """
         if self._debug:
-            assert 0 <= k_new < self.npt, 'The index `k_new` is not valid.'
-            assert x_new.shape == (self.n,), 'The shape of `x_new` is not valid.'
-            assert isinstance(fun_val, float), 'The function value is not valid.'
-            assert cub_val.shape == (self.m_nonlinear_ub,), 'The shape of `cub_val` is not valid.'
-            assert ceq_val.shape == (self.m_nonlinear_eq,), 'The shape of `ceq_val` is not valid.'
+            assert 0 <= k_new < self.npt, "The index `k_new` is not valid."
+            assert x_new.shape == (self.n,), \
+                "The shape of `x_new` is not valid."
+            assert isinstance(fun_val, float), \
+                "The function value is not valid."
+            assert cub_val.shape == (
+                self.m_nonlinear_ub,
+            ), "The shape of `cub_val` is not valid."
+            assert ceq_val.shape == (
+                self.m_nonlinear_eq,
+            ), "The shape of `ceq_val` is not valid."
 
         # Compute the updates in the interpolation conditions.
         fun_diff = np.zeros(self.npt)
@@ -1106,11 +1251,16 @@ class Models:
         self.interpolation.xpt[:, k_new] = x_new - self.interpolation.x_base
 
         # Update the quadratic models.
-        ill_conditioned = self._fun.update(self.interpolation, k_new, dir_old, fun_diff)
+        ill_conditioned = self._fun.update(
+            self.interpolation, k_new, dir_old, fun_diff)
         for i in range(self.m_nonlinear_ub):
-            ill_conditioned = ill_conditioned or self._cub[i].update(self.interpolation, k_new, dir_old, cub_diff[:, i])
+            ill_conditioned = ill_conditioned or self._cub[i].update(
+                self.interpolation, k_new, dir_old, cub_diff[:, i]
+            )
         for i in range(self.m_nonlinear_eq):
-            ill_conditioned = ill_conditioned or self._ceq[i].update(self.interpolation, k_new, dir_old, ceq_diff[:, i])
+            ill_conditioned = ill_conditioned or self._ceq[i].update(
+                self.interpolation, k_new, dir_old, ceq_diff[:, i]
+            )
         if self._debug:
             self._check_interpolation_conditions()
         return ill_conditioned
@@ -1152,13 +1302,16 @@ class Models:
            2004.
         """
         if self._debug:
-            assert x_new.shape == (self.n,), 'The shape of `x_new` is not valid.'
-            assert k_new is None or 0 <= k_new < self.npt, 'The index `k_new` is not valid.'
+            assert x_new.shape == (self.n,), \
+                "The shape of `x_new` is not valid."
+            assert (
+                k_new is None or 0 <= k_new < self.npt
+            ), "The index `k_new` is not valid."
 
         # Compute the values independent of k_new.
         shift = x_new - self.interpolation.x_base
         new_col = np.empty(self.npt + self.n + 1)
-        new_col[:self.npt] = 0.5 * (self.interpolation.xpt.T @ shift) ** 2.0
+        new_col[: self.npt] = 0.5 * (self.interpolation.xpt.T @ shift) ** 2.0
         new_col[self.npt] = 1.0
         new_col[self.npt + 1:] = shift
         inv_new_col = Quadratic.solve_system(self.interpolation, new_col)[0]
@@ -1167,12 +1320,17 @@ class Models:
         # Define a function to compute the value of alpha.
         def get_alpha(k_idx):
             coord_vec = np.squeeze(np.eye(1, self.npt + self.n + 1, k_idx))
-            return Quadratic.solve_system(self.interpolation, coord_vec)[0][k_idx]
+            return Quadratic.solve_system(
+                self.interpolation, coord_vec)[0][k_idx]
 
         # Compute the values that depend on k.
-        alpha = np.array([get_alpha(k_idx) for k_idx in range(self.npt)]) if k_new is None else get_alpha(k_new)
-        tau = inv_new_col[:self.npt] if k_new is None else inv_new_col[k_new]
-        return alpha * beta + tau ** 2.0
+        alpha = (
+            np.array([get_alpha(k_idx) for k_idx in range(self.npt)])
+            if k_new is None
+            else get_alpha(k_new)
+        )
+        tau = inv_new_col[: self.npt] if k_new is None else inv_new_col[k_new]
+        return alpha * beta + tau**2.0
 
     def shift_x_base(self, new_x_base, options):
         """
@@ -1186,7 +1344,9 @@ class Models:
             Options of the solver.
         """
         if self._debug:
-            assert new_x_base.shape == (self.n,), 'The shape of `new_x_base` is not valid.'
+            assert new_x_base.shape == (
+                self.n,
+            ), "The shape of `new_x_base` is not valid."
 
         # Update the models.
         self._fun.shift_x_base(self.interpolation, new_x_base)
@@ -1242,13 +1402,42 @@ class Models:
         error_cub = 0.0
         error_ceq = 0.0
         for k in range(self.npt):
-            error_fun = np.max([error_fun, np.abs(self.fun(self.interpolation.point(k)) - self.fun_val[k])])
-            error_cub = np.max(np.abs(self.cub(self.interpolation.point(k)) - self.cub_val[k, :]), initial=error_cub)
-            error_ceq = np.max(np.abs(self.ceq(self.interpolation.point(k)) - self.ceq_val[k, :]), initial=error_ceq)
+            error_fun = np.max(
+                [
+                    error_fun,
+                    np.abs(self.fun(self.interpolation.point(k))
+                           - self.fun_val[k]),
+                ]
+            )
+            error_cub = np.max(
+                np.abs(self.cub(self.interpolation.point(k))
+                       - self.cub_val[k, :]),
+                initial=error_cub,
+            )
+            error_ceq = np.max(
+                np.abs(self.ceq(self.interpolation.point(k))
+                       - self.ceq_val[k, :]),
+                initial=error_ceq,
+            )
         tol = 10.0 * np.sqrt(np.finfo(float).eps) * max(self.n, self.npt)
         if error_fun > tol * np.max(np.abs(self.fun_val), initial=1.0):
-            warnings.warn('The interpolation conditions for the objective function are not satisfied.', RuntimeWarning, 2)
+            warnings.warn(
+                "The interpolation conditions for the objective"
+                "function are not satisfied.",
+                RuntimeWarning,
+                2,
+            )
         if error_cub > tol * np.max(np.abs(self.cub_val), initial=1.0):
-            warnings.warn('The interpolation conditions for the inequality constraint function are not satisfied.', RuntimeWarning, 2)
+            warnings.warn(
+                "The interpolation conditions for the inequality"
+                "constraint function are not satisfied.",
+                RuntimeWarning,
+                2,
+            )
         if error_ceq > tol * np.max(np.abs(self.ceq_val), initial=1.0):
-            warnings.warn('The interpolation conditions for the equality constraint function are not satisfied.', RuntimeWarning, 2)
+            warnings.warn(
+                "The interpolation conditions for the equality"
+                "constraint function are not satisfied.",
+                RuntimeWarning,
+                2,
+            )

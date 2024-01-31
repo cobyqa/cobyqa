@@ -14,9 +14,9 @@ def _get_sys_info():
         Useful system information.
     """
     return {
-        'python': sys.version.replace(os.linesep, ' '),
-        'executable': sys.executable,
-        'machine': platform.platform(),
+        "python": sys.version.replace(os.linesep, " "),
+        "executable": sys.executable,
+        "machine": platform.platform(),
     }
 
 
@@ -29,7 +29,7 @@ def _get_deps_info():
     dict
         Versions of the dependencies.
     """
-    deps = ['cobyqa', 'numpy', 'scipy', 'setuptools', 'pip']
+    deps = ["cobyqa", "numpy", "scipy", "setuptools", "pip"]
     deps_info = {}
     for module in deps:
         try:
@@ -45,13 +45,23 @@ def show_versions():
 
     When reporting issues, please include this information.
     """
-    print('System settings')
-    print('---------------')
+    print("System settings")
+    print("---------------")
     sys_info = _get_sys_info()
-    print('\n'.join(f'{k:>{max(map(len, sys_info.keys())) + 1}}: {v}' for k, v in sys_info.items()))
+    print(
+        "\n".join(
+            f"{k:>{max(map(len, sys_info.keys())) + 1}}: {v}"
+            for k, v in sys_info.items()
+        )
+    )
 
     print()
-    print('Python dependencies')
-    print('-------------------')
+    print("Python dependencies")
+    print("-------------------")
     deps_info = _get_deps_info()
-    print('\n'.join(f'{k:>{max(map(len, deps_info.keys())) + 1}}: {v}' for k, v in deps_info.items()))
+    print(
+        "\n".join(
+            f"{k:>{max(map(len, deps_info.keys())) + 1}}: {v}"
+            for k, v in deps_info.items()
+        )
+    )

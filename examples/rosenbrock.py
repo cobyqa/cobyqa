@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Minimize the Rosenbrock function subject to simple bounds and randomly generated
-linear inequality and equality constraints.
+Minimize the Rosenbrock function subject to simple bounds and randomly
+generated linear inequality and equality constraints.
 """
 import numpy as np
 from cobyqa import minimize
 from scipy.optimize import Bounds, LinearConstraint, rosen
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     rng = np.random.default_rng(0)
     n, m_linear_ub, m_linear_eq = 10, 3, 2
 

@@ -63,9 +63,7 @@ doc = [
     "Sphinx-Substitution-Extensions==2022.2.16",
     "sphinxcontrib-bibtex==2.6.2",
 ]
-examples = [
-    "matplotlib",
-]
+examples = ["matplotlib"]
 tests = [
     "pytest>=6.1.0",
     "pytest-cov",

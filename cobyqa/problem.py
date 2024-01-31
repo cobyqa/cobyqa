@@ -2,7 +2,8 @@ from contextlib import suppress
 from inspect import signature
 
 import numpy as np
-from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, OptimizeResult
+from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, \
+    OptimizeResult
 
 from .settings import PRINT_OPTIONS, BARRIER
 from .utils import CallbackSuccess, get_arrays_tol
@@ -65,7 +66,7 @@ class ObjectiveFunction:
             self._n_eval += 1
             if self._verbose:
                 with np.printoptions(**PRINT_OPTIONS):
-                    print(f'{self.name}({x}) = {f}')
+                    print(f"{self.name}({x}) = {f}")
         return f
 
     @property
@@ -90,12 +91,12 @@ class ObjectiveFunction:
         str
             Name of the objective function.
         """
-        name = ''
+        name = ""
         if self._fun is not None:
             try:
                 name = self._fun.__name__
             except AttributeError:
-                name = 'fun'
+                name = "fun"
         return name
 
 
@@ -154,7 +155,8 @@ class BoundConstraints:
         int
             Number of bound constraints.
         """
-        return np.count_nonzero(self.xl > -np.inf) + np.count_nonzero(self.xu < np.inf)
+        return (np.count_nonzero(self.xl > -np.inf)
+                + np.count_nonzero(self.xu < np.inf))
 
     @property
     def is_feasible(self):
@@ -166,7 +168,11 @@ class BoundConstraints:
         bool
             Whether the bound constraints are feasible.
         """
-        return np.all(self.xl <= self.xu) and np.all(self.xl < np.inf) and np.all(self.xu > -np.inf)
+        return (
+            np.all(self.xl <= self.xu)
+            and np.all(self.xl < np.inf)
+            and np.all(self.xu > -np.inf)
+        )
 
     def maxcv(self, x):
         """
@@ -232,19 +238,42 @@ class LinearConstraints:
         self._a_eq = np.empty((0, n))
         self._b_eq = np.empty(0)
         for constraint in constraints:
-            is_equality = np.abs(constraint.ub - constraint.lb) <= get_arrays_tol(constraint.lb, constraint.ub)
+            is_equality = (np.abs(constraint.ub - constraint.lb)
+                           <= get_arrays_tol(
+                constraint.lb, constraint.ub
+            ))
             if np.any(is_equality):
                 self._a_eq = np.vstack((self.a_eq, constraint.A[is_equality]))
-                self._b_eq = np.concatenate((self.b_eq, 0.5 * (constraint.lb[is_equality] + constraint.ub[is_equality])))
+                self._b_eq = np.concatenate(
+                    (
+                        self.b_eq,
+                        0.5 * (constraint.lb[is_equality]
+                               + constraint.ub[is_equality]),
+                    )
+                )
             if not np.all(is_equality):
-                self._a_ub = np.vstack((self.a_ub, constraint.A[~is_equality], -constraint.A[~is_equality]))
-                self._b_ub = np.concatenate((self.b_ub, constraint.ub[~is_equality], -constraint.lb[~is_equality]))
+                self._a_ub = np.vstack(
+                    (
+                        self.a_ub,
+                        constraint.A[~is_equality],
+                        -constraint.A[~is_equality],
+                    )
+                )
+                self._b_ub = np.concatenate(
+                    (
+                        self.b_ub,
+                        constraint.ub[~is_equality],
+                        -constraint.lb[~is_equality],
+                    )
+                )
 
         # Check the constraints.
         if self._a_ub.shape[0] != self._b_ub.size:
-            raise ValueError(f'The linear inequality constraints are inconsistent.')
+            raise ValueError("The linear inequality constraints are "
+                             "inconsistent.")
         if self._a_eq.shape[0] != self._b_eq.size:
-            raise ValueError(f'The linear equality constraints are inconsistent.')
+            raise ValueError("The linear equality constraints are "
+                             "inconsistent.")
 
         # Remove the ill-defined constraints.
         self.a_ub[np.isnan(self.a_ub)] = 0.0
@@ -343,7 +372,12 @@ class LinearConstraints:
             Maximum constraint violation at `x`.
         """
         x = np.array(x, dtype=float)
-        return np.max([np.max(self.a_ub @ x - self.b_ub, initial=0.0), np.max(np.abs(self.a_eq @ x - self.b_eq), initial=0.0)])
+        return np.max(
+            [
+                np.max(self.a_ub @ x - self.b_ub, initial=0.0),
+                np.max(np.abs(self.a_eq @ x - self.b_eq), initial=0.0),
+            ]
+        )
 
 
 class NonlinearConstraints:
@@ -367,7 +401,8 @@ class NonlinearConstraints:
         if debug:
             assert isinstance(constraints, list)
             for constraint in constraints:
-                assert isinstance(constraint, NonlinearConstraint) or isinstance(constraint, dict)
+                assert (isinstance(constraint, NonlinearConstraint)
+                        or isinstance(constraint, dict))
             assert isinstance(verbose, bool)
             assert isinstance(debug, bool)
 
@@ -401,34 +436,49 @@ class NonlinearConstraints:
                 fun = constraint.fun
                 val = fun(x)
             else:
-                fun = constraint['fun']
-                args = constraint['args']
+                fun = constraint["fun"]
+                args = constraint["args"]
                 if not isinstance(args, tuple):
                     args = (args,)
                 val = fun(x, *args)
-            val = exact_1d_array(val, 'The nonlinear constraints must return a vector.')
+            val = exact_1d_array(
+                val, "The nonlinear constraints must return a vector."
+            )
             if self._verbose:
                 with np.printoptions(**PRINT_OPTIONS):
                     with suppress(AttributeError):
                         fun_name = fun.__name__
-                        print(f'{fun_name}({x}) = {val}')
+                        print(f"{fun_name}({x}) = {val}")
             if isinstance(constraint, NonlinearConstraint):
-                val, lb, ub = np.broadcast_arrays(val, constraint.lb, constraint.ub)
+                val, lb, ub = np.broadcast_arrays(val, constraint.lb,
+                                                  constraint.ub)
                 lb = np.array(lb, float)
                 ub = np.array(ub, float)
                 lb[np.isnan(lb)] = -np.inf
                 ub[np.isnan(ub)] = np.inf
                 is_equality = np.abs(ub - lb) <= get_arrays_tol(lb, ub)
                 if np.any(is_equality):
-                    c_eq = np.concatenate((c_eq, val[is_equality] - 0.5 * (lb[is_equality] + ub[is_equality])))
+                    c_eq = np.concatenate(
+                        (
+                            c_eq,
+                            val[is_equality]
+                            - 0.5 * (lb[is_equality] + ub[is_equality]),
+                        )
+                    )
                 if not np.all(is_equality):
                     is_inequality_lb = ~is_equality & (lb > -np.inf)
                     is_inequality_ub = ~is_equality & (ub < np.inf)
                     if np.any(is_inequality_lb):
-                        c_ub = np.concatenate((c_ub, lb[is_inequality_lb] - val[is_inequality_lb]))
+                        c_ub = np.concatenate(
+                            (c_ub, lb[is_inequality_lb]
+                             - val[is_inequality_lb])
+                        )
                     if np.any(is_inequality_ub):
-                        c_ub = np.concatenate((c_ub, val[is_inequality_ub] - ub[is_inequality_ub]))
-            elif constraint['type'] == 'ineq':
+                        c_ub = np.concatenate(
+                            (c_ub, val[is_inequality_ub]
+                             - ub[is_inequality_ub])
+                        )
+            elif constraint["type"] == "ineq":
                 c_ub = np.concatenate((c_ub, -val))
             else:
                 c_eq = np.concatenate((c_eq, val))
@@ -456,7 +506,9 @@ class NonlinearConstraints:
             If the number of nonlinear inequality constraints is unknown.
         """
         if self._m_ub is None:
-            raise ValueError('The number of nonlinear inequality constraints is unknown.')
+            raise ValueError(
+                "The number of nonlinear inequality constraints is unknown."
+            )
         else:
             return self._m_ub
 
@@ -476,7 +528,9 @@ class NonlinearConstraints:
             If the number of nonlinear equality constraints is unknown.
         """
         if self._m_eq is None:
-            raise ValueError('The number of nonlinear equality constraints is unknown.')
+            raise ValueError(
+                "The number of nonlinear equality constraints is unknown."
+            )
         else:
             return self._m_eq
 
@@ -514,7 +568,12 @@ class NonlinearConstraints:
         """
         if cub_val is None or ceq_val is None:
             cub_val, ceq_val = self(x)
-        return np.max([np.max(cub_val, initial=0.0), np.max(np.abs(ceq_val), initial=0.0)])
+        return np.max(
+            [
+                np.max(cub_val, initial=0.0),
+                np.max(np.abs(ceq_val), initial=0.0),
+            ]
+        )
 
 
 class Problem:
@@ -522,7 +581,21 @@ class Problem:
     Optimization problem.
     """
 
-    def __init__(self, obj, x0, bounds, linear, nonlinear, callback, feasibility_tol, scale, store_history, history_size, filter_size, debug):
+    def __init__(
+        self,
+        obj,
+        x0,
+        bounds,
+        linear,
+        nonlinear,
+        callback,
+        feasibility_tol,
+        scale,
+        store_history,
+        history_size,
+        filter_size,
+        debug,
+    ):
         """
         Initialize the nonlinear problem.
 
@@ -576,52 +649,94 @@ class Problem:
         self._nonlinear = nonlinear
         if callback is not None:
             if not callable(callback):
-                raise ValueError('The callback must be a callable function.')
+                raise ValueError("The callback must be a callable function.")
         self._callback = callback
 
         # Check the consistency of the problem.
-        x0 = exact_1d_array(x0, 'The initial guess must be a vector.')
+        x0 = exact_1d_array(x0, "The initial guess must be a vector.")
         n = x0.size
         if bounds.xl.size != n:
-            raise ValueError(f'The lower bound must have {n} elements.')
+            raise ValueError(f"The lower bound must have {n} elements.")
         if bounds.xu.size != n:
-            raise ValueError(f'The upper bound must have {n} elements.')
+            raise ValueError(f"The upper bound must have {n} elements.")
         if linear.a_ub.shape[1] != n:
-            raise ValueError(f'The left-hand side matrix of the linear inequality constraints must have {n} columns.')
+            raise ValueError(
+                f"The left-hand side matrix of the linear "
+                f"inequality constraints must have {n} columns."
+            )
         if linear.a_eq.shape[1] != n:
-            raise ValueError(f'The left-hand side matrix of the linear equality constraints must have {n} columns.')
+            raise ValueError(
+                f"The left-hand side matrix of the linear "
+                f"equality constraints must have {n} columns."
+            )
 
         # Check which variables are fixed.
         tol = get_arrays_tol(bounds.xl, bounds.xu)
-        self._fixed_idx = (bounds.xl <= bounds.xu) & (np.abs(bounds.xl - bounds.xu) < tol)
-        self._fixed_val = 0.5 * (bounds.xl[self._fixed_idx] + bounds.xu[self._fixed_idx])
-        self._fixed_val = np.clip(self._fixed_val, bounds.xl[self._fixed_idx], bounds.xu[self._fixed_idx])
+        self._fixed_idx = (bounds.xl <= bounds.xu) & (
+            np.abs(bounds.xl - bounds.xu) < tol
+        )
+        self._fixed_val = 0.5 * (
+            bounds.xl[self._fixed_idx] + bounds.xu[self._fixed_idx]
+        )
+        self._fixed_val = np.clip(
+            self._fixed_val, bounds.xl[self._fixed_idx],
+            bounds.xu[self._fixed_idx]
+        )
 
         # Set the bound constraints.
         self._orig_bounds = bounds
-        self._bounds = BoundConstraints(Bounds(bounds.xl[~self._fixed_idx], bounds.xu[~self._fixed_idx]))
+        self._bounds = BoundConstraints(
+            Bounds(bounds.xl[~self._fixed_idx], bounds.xu[~self._fixed_idx])
+        )
 
         # Set the initial guess.
         self._x0 = self._bounds.project(x0[~self._fixed_idx])
 
         # Set the linear constraints.
         b_eq = linear.b_eq - linear.a_eq[:, self._fixed_idx] @ self._fixed_val
-        self._linear = LinearConstraints([
-            LinearConstraint(linear.a_ub[:, ~self._fixed_idx], -np.inf, linear.b_ub - linear.a_ub[:, self._fixed_idx] @ self._fixed_val),
-            LinearConstraint(linear.a_eq[:, ~self._fixed_idx], b_eq, b_eq),
-        ], self.n, debug)
+        self._linear = LinearConstraints(
+            [
+                LinearConstraint(
+                    linear.a_ub[:, ~self._fixed_idx],
+                    -np.inf,
+                    linear.b_ub
+                    - linear.a_ub[:, self._fixed_idx] @ self._fixed_val,
+                ),
+                LinearConstraint(linear.a_eq[:, ~self._fixed_idx], b_eq, b_eq),
+            ],
+            self.n,
+            debug,
+        )
 
         # Scale the problem if necessary.
-        scale = scale and self._bounds.is_feasible and np.all(np.isfinite(self._bounds.xl)) and np.all(np.isfinite(self._bounds.xu))
+        scale = (
+            scale
+            and self._bounds.is_feasible
+            and np.all(np.isfinite(self._bounds.xl))
+            and np.all(np.isfinite(self._bounds.xu))
+        )
         if scale:
             self._scaling_factor = 0.5 * (self._bounds.xu - self._bounds.xl)
             self._scaling_shift = 0.5 * (self._bounds.xu + self._bounds.xl)
-            self._bounds = BoundConstraints(Bounds(-np.ones(self.n), np.ones(self.n)))
+            self._bounds = BoundConstraints(Bounds(
+                -np.ones(self.n), np.ones(self.n)))
             b_eq = self._linear.b_eq - self._linear.a_eq @ self._scaling_shift
-            self._linear = LinearConstraints([
-                LinearConstraint(self._linear.a_ub @ np.diag(self._scaling_factor), -np.inf, self._linear.b_ub - self._linear.a_ub @ self._scaling_shift),
-                LinearConstraint(self._linear.a_eq @ np.diag(self._scaling_factor), b_eq, b_eq),
-            ], self.n, debug)
+            self._linear = LinearConstraints(
+                [
+                    LinearConstraint(
+                        self._linear.a_ub @ np.diag(self._scaling_factor),
+                        -np.inf,
+                        self._linear.b_ub
+                        - self._linear.a_ub @ self._scaling_shift,
+                    ),
+                    LinearConstraint(
+                        self._linear.a_eq @ np.diag(self._scaling_factor),
+                        b_eq, b_eq
+                    ),
+                ],
+                self.n,
+                debug,
+            )
             self._x0 = (self._x0 - self._scaling_shift) / self._scaling_factor
         else:
             self._scaling_factor = np.ones(self.n)
@@ -690,14 +805,30 @@ class Problem:
 
         # Add the point to the filter if it is not dominated by any point.
         maxcv_shift = np.max([maxcv_val - self._feasibility_tol, 0.0])
-        if all(fun_val < fun_filter or maxcv_shift < np.max([maxcv_filter - self._feasibility_tol, 0.0]) for fun_filter, maxcv_filter in zip(self._fun_filter, self._maxcv_filter)):
+        if all(
+            fun_val < fun_filter
+            or maxcv_shift
+            < np.max(
+                [
+                    maxcv_filter - self._feasibility_tol,
+                    0.0,
+                ]
+            )
+            for fun_filter, maxcv_filter in zip(self._fun_filter,
+                                                self._maxcv_filter)
+        ):
             self._fun_filter.append(fun_val)
             self._maxcv_filter.append(maxcv_val)
             self._x_filter.append(np.copy(x))
 
         # Remove the points in the filter that are dominated by the new point.
         for k in range(len(self._fun_filter) - 2, -1, -1):
-            if fun_val <= self._fun_filter[k] and maxcv_shift <= np.max([self._maxcv_filter[k] - self._feasibility_tol, 0.0]):
+            if fun_val <= self._fun_filter[k] and maxcv_shift <= np.max(
+                [
+                    self._maxcv_filter[k] - self._feasibility_tol,
+                    0.0,
+                ]
+            ):
                 self._fun_filter.pop(k)
                 self._maxcv_filter.pop(k)
                 self._x_filter.pop(k)
@@ -713,7 +844,7 @@ class Problem:
         if self._callback is not None:
             sig = signature(self._callback)
             try:
-                if set(sig.parameters) == {'intermediate_result'}:
+                if set(sig.parameters) == {"intermediate_result"}:
                     intermediate_result = OptimizeResult(x=x, fun=fun_val)
                     self._callback(intermediate_result)
                 else:
@@ -916,20 +1047,20 @@ class Problem:
         """
         try:
             if self.m_nonlinear_ub > 0 or self.m_nonlinear_eq > 0:
-                return 'nonlinearly constrained'
+                return "nonlinearly constrained"
             elif self.m_linear_ub > 0 or self.m_linear_eq > 0:
-                return 'linearly constrained'
+                return "linearly constrained"
             elif self.m_bounds > 0:
-                return 'bound-constrained'
+                return "bound-constrained"
             else:
-                return 'unconstrained'
+                return "unconstrained"
         except ValueError:
             # The number of nonlinear constraints is not known. It may be zero
             # if the user provided a nonlinear inequality and/or equality
             # constraint function that returns an empty array. However, as this
-            # is not known before the first call to the function, we assume that
-            # the problem is nonlinearly constrained.
-            return 'nonlinearly constrained'
+            # is not known before the first call to the function, we assume
+            # that the problem is nonlinearly constrained.
+            return "nonlinearly constrained"
 
     @property
     def is_feasibility(self):
@@ -941,7 +1072,7 @@ class Problem:
         bool
             Whether the problem is a feasibility problem.
         """
-        return self.fun_name == ''
+        return self.fun_name == ""
 
     def build_x(self, x):
         """
@@ -959,7 +1090,8 @@ class Problem:
         """
         x_full = np.empty(self.n_orig)
         x_full[self._fixed_idx] = self._fixed_val
-        x_full[~self._fixed_idx] = x * self._scaling_factor + self._scaling_shift
+        x_full[~self._fixed_idx] = (x * self._scaling_factor
+                                    + self._scaling_shift)
         return self._orig_bounds.project(x_full)
 
     def maxcv(self, x, cub_val=None, ceq_val=None):
@@ -982,7 +1114,13 @@ class Problem:
         float
             Maximum constraint violation at `x`.
         """
-        return np.max([self.bounds.maxcv(x), self.linear.maxcv(x), self._nonlinear.maxcv(x, cub_val, ceq_val)])
+        return np.max(
+            [
+                self.bounds.maxcv(x),
+                self.linear.maxcv(x),
+                self._nonlinear.maxcv(x, cub_val, ceq_val),
+            ]
+        )
 
     def best_eval(self, penalty):
         """
@@ -1012,19 +1150,25 @@ class Problem:
         # Find the best point in the filter.
         fun_filter = np.array(self._fun_filter)
         maxcv_filter = np.array(self._maxcv_filter)
-        maxcv_filter_shifted = np.maximum(maxcv_filter - self._feasibility_tol, 0.0)
+        maxcv_filter_shifted = np.maximum(maxcv_filter - self._feasibility_tol,
+                                          0.0)
         x_filter = np.array(self._x_filter)
-        feasible_idx = maxcv_filter_shifted < max(np.finfo(float).eps, 2.0 * np.min(maxcv_filter_shifted))
+        feasible_idx = maxcv_filter_shifted < max(
+            np.finfo(float).eps, 2.0 * np.min(maxcv_filter_shifted)
+        )
         if np.any(feasible_idx):
             # At least one point is nearly feasible. We select the one with
             # the least objective function value. If there is a tie, we
             # select the point with the least maximum constraint violation.
             # If there is still a tie, we select the most recent point.
-            fun_min_idx = feasible_idx & (fun_filter <= np.min(fun_filter[feasible_idx]))
+            fun_min_idx = feasible_idx & (
+                fun_filter <= np.min(fun_filter[feasible_idx])
+            )
             if np.count_nonzero(fun_min_idx) == 1:
                 i = np.flatnonzero(fun_min_idx)[0]
             else:
-                fun_min_idx &= (maxcv_filter_shifted <= np.min(maxcv_filter_shifted))
+                fun_min_idx &= maxcv_filter_shifted <= np.min(
+                    maxcv_filter_shifted)
                 i = np.flatnonzero(fun_min_idx)[-1]
         else:
             # No feasible point is found. We select the one with the least
@@ -1042,6 +1186,9 @@ class Problem:
                 if np.count_nonzero(merit_min_idx) == 1:
                     i = np.flatnonzero(merit_min_idx)[0]
                 else:
-                    merit_min_idx &= (maxcv_filter_shifted <= np.min(maxcv_filter_shifted))
+                    merit_min_idx &= maxcv_filter_shifted <= np.min(
+                        maxcv_filter_shifted
+                    )
                     i = np.flatnonzero(merit_min_idx)[-1]
-        return self.bounds.project(x_filter[i, :]), fun_filter[i], maxcv_filter[i]
+        return (self.bounds.project(x_filter[i, :]), fun_filter[i],
+                maxcv_filter[i])

@@ -6,7 +6,8 @@ References
 ----------
 .. [1] M. J. D. Powell. On fast trust region methods for quadratic models with
    linear constraints. *Math. Program. Comput.*, 7(3):237–267, 2015.
-   `doi:10.1007/s12532-015-0084-4 <https://doi.org/10.1007/s12532-015-0084-4>`_.
+   `doi:10.1007/s12532-015-0084-4
+   <https://doi.org/10.1007/s12532-015-0084-4>`_.
 """
 import numpy as np
 from cobyqa import minimize
@@ -20,23 +21,23 @@ def fun(x):
         for j in range(i):
             norm = np.hypot(x[2 * i] - x[2 * j], x[2 * i + 1] - x[2 * j + 1])
             f += min(1.0 / norm, 1e3) if norm > 1e-3 else 1e3
-    f /= x.size ** 2.0
+    f /= x.size**2.0
     return f
 
 
 def _plot_points(x, title=None):
     fig, ax = plt.subplots(dpi=300)
-    ax.plot([0.0, 0.0, 2.0, 0.0], [0.0, 2.0, 0.0, 0.0], color='black')
-    ax.scatter(x[::2], x[1::2], s=25, color='black')
-    ax.set_aspect('equal', 'box')
-    ax.axis('off')
+    ax.plot([0.0, 0.0, 2.0, 0.0], [0.0, 2.0, 0.0, 0.0], color="black")
+    ax.scatter(x[::2], x[1::2], s=25, color="black")
+    ax.set_aspect("equal", "box")
+    ax.axis("off")
     if title is not None:
-        ax.set_title(f'{title.strip()} ($n = {x.size}$)', fontsize=20)
+        ax.set_title(f"{title.strip()} ($n = {x.size}$)", fontsize=20)
     fig.tight_layout()
     fig.show()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     rng = np.random.default_rng(0)
     n = 80  # must be even
 
@@ -52,10 +53,11 @@ if __name__ == '__main__':
             x0_odd = 2.0 - x0_odd
         x0[2 * i] = x0_even
         x0[2 * i + 1] = x0_odd
-    _plot_points(x0, 'Initial points')
+    _plot_points(x0, "Initial points")
 
     bounds = Bounds(np.zeros(n), np.inf)
     constraints = LinearConstraint(aub, -np.inf, bub)
-    options = {'disp': True}
-    res = minimize(fun, x0, bounds=bounds, constraints=constraints, options=options)
-    _plot_points(res.x, 'Final points')
+    options = {"disp": True}
+    res = minimize(fun, x0, bounds=bounds, constraints=constraints,
+                   options=options)
+    _plot_points(res.x, "Final points")

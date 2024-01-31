@@ -1,5 +1,6 @@
 import numpy as np
-from optiprofiler import set_cutest_problem_options, find_cutest_problems, run_benchmark
+from optiprofiler import set_cutest_problem_options, find_cutest_problems, \
+    run_benchmark
 
 
 def cobyqa_pypi(fun, x0, xl, xu, aub, bub, aeq, beq, cub, ceq):
@@ -13,10 +14,14 @@ def cobyqa_pypi(fun, x0, xl, xu, aub, bub, aeq, beq, cub, ceq):
         constraints.append(LinearConstraint(aeq, beq, beq))
     cub_x0 = cub(x0)
     if cub_x0.size > 0:
-        constraints.append(NonlinearConstraint(cub, -np.inf, np.zeros(cub_x0.size)))
+        constraints.append(NonlinearConstraint(
+            cub, -np.inf, np.zeros(cub_x0.size)))
     ceq_x0 = ceq(x0)
     if ceq_x0.size > 0:
-        constraints.append(NonlinearConstraint(ceq, np.zeros(ceq_x0.size), np.zeros(ceq_x0.size)))
+        constraints.append(
+            NonlinearConstraint(
+                ceq, np.zeros(ceq_x0.size), np.zeros(ceq_x0.size))
+        )
     minimize(fun, x0, bounds=Bounds(xl, xu), constraints=constraints)
 
 
@@ -31,14 +36,21 @@ def cobyqa_latest(fun, x0, xl, xu, aub, bub, aeq, beq, cub, ceq):
         constraints.append(LinearConstraint(aeq, beq, beq))
     cub_x0 = cub(x0)
     if cub_x0.size > 0:
-        constraints.append(NonlinearConstraint(cub, -np.inf, np.zeros(cub_x0.size)))
+        constraints.append(NonlinearConstraint(
+            cub, -np.inf, np.zeros(cub_x0.size)))
     ceq_x0 = ceq(x0)
     if ceq_x0.size > 0:
-        constraints.append(NonlinearConstraint(ceq, np.zeros(ceq_x0.size), np.zeros(ceq_x0.size)))
+        constraints.append(NonlinearConstraint(
+            ceq, np.zeros(ceq_x0.size), np.zeros(ceq_x0.size)))
     minimize(fun, x0, bounds=Bounds(xl, xu), constraints=constraints)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     set_cutest_problem_options(n_max=10)
-    cutest_problem_names = find_cutest_problems('quadratic other')
-    run_benchmark([cobyqa_latest, cobyqa_pypi], ['COBYQA Latest', 'COBYQA PyPI'], cutest_problem_names, benchmark_id='nonlinear')
+    cutest_problem_names = find_cutest_problems("quadratic other")
+    run_benchmark(
+        [cobyqa_latest, cobyqa_pypi],
+        ["COBYQA Latest", "COBYQA PyPI"],
+        cutest_problem_names,
+        benchmark_id="nonlinear",
+    )
