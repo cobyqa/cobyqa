@@ -40,7 +40,7 @@ class Interpolation:
         # Set the initial point around which the models are expanded.
         self._x_base = np.copy(pb.x0)
         very_close_xl_idx = (
-                self.x_base <= pb.bounds.xl + 0.5 * options[Options.RHOBEG]
+            self.x_base <= pb.bounds.xl + 0.5 * options[Options.RHOBEG]
         )
         self.x_base[very_close_xl_idx] = pb.bounds.xl[very_close_xl_idx]
         close_xl_idx = (

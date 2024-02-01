@@ -677,8 +677,8 @@ class Problem:
         # Check which variables are fixed.
         tol = get_arrays_tol(bounds.xl, bounds.xu)
         self._fixed_idx = (
-                (bounds.xl <= bounds.xu)
-                & (np.abs(bounds.xl - bounds.xu) < tol)
+            (bounds.xl <= bounds.xu)
+            & (np.abs(bounds.xl - bounds.xu) < tol)
         )
         self._fixed_val = 0.5 * (
             bounds.xl[self._fixed_idx] + bounds.xu[self._fixed_idx]
