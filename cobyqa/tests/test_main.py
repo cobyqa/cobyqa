@@ -13,13 +13,15 @@ class TestMinimizeBase(ABC):
 
     @staticmethod
     def arwhead(x):
-        return np.sum((x[:-1] ** 2.0 + x[-1] ** 2.0) ** 2.0
-                      - 4.0 * x[:-1] + 3.0)
+        return np.sum(
+            (x[:-1] ** 2.0 + x[-1] ** 2.0) ** 2.0 - 4.0 * x[:-1] + 3.0
+        )
 
     @staticmethod
     def rosen(x):
-        return np.sum(100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0
-                      + (1.0 - x[:-1]) ** 2.0)
+        return np.sum(
+            100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1.0 - x[:-1]) ** 2.0
+        )
 
     @staticmethod
     def rothyp(x):
@@ -212,8 +214,11 @@ class TestMinimizeBoundConstrained(TestMinimizeBase):
     )
     @pytest.mark.parametrize("n", [2, 5, 10])
     def test_tough(self, fun, n, x0, xl, xu):
-        minimize(fun=getattr(self, fun + "_tough"), x0=x0,
-                 bounds=Bounds(xl, xu))
+        minimize(
+            fun=getattr(self, fun + "_tough"),
+            x0=x0,
+            bounds=Bounds(xl, xu),
+        )
 
     @pytest.mark.parametrize(
         "fun", ["arwhead", "rosen", "rothyp", "sphere", "sumsqu", "trid"]
@@ -246,8 +251,14 @@ class TestMinimizeBoundConstrained(TestMinimizeBase):
             bounds=Bounds(xl_restricted, xu_restricted),
             options={"debug": True},
         )
-        self.assert_result(res, n, x_best_restricted, fun_best_restricted, 0,
-                           0.0)
+        self.assert_result(
+            res,
+            n,
+            x_best_restricted,
+            fun_best_restricted,
+            0,
+            0.0,
+        )
 
     @pytest.mark.parametrize("n", [2, 5, 10])
     @pytest.mark.parametrize(
@@ -303,8 +314,14 @@ class TestMinimizeLinearInequalityConstrained(TestMinimizeBase):
             constraints=LinearConstraint(aub, -np.inf, bub),
             options={"debug": True},
         )
-        self.assert_result(res, n, x_best, fun_best, 0,
-                           np.sqrt(np.finfo(float).eps))
+        self.assert_result(
+            res,
+            n,
+            x_best,
+            fun_best,
+            0,
+            np.sqrt(np.finfo(float).eps),
+        )
 
         res = minimize(
             fun=getattr(self, fun),
@@ -313,8 +330,14 @@ class TestMinimizeLinearInequalityConstrained(TestMinimizeBase):
             constraints=LinearConstraint(aub, -np.inf, bub),
             options={"debug": True},
         )
-        self.assert_result(res, n, x_best, fun_best, 0,
-                           np.sqrt(np.finfo(float).eps))
+        self.assert_result(
+            res,
+            n,
+            x_best,
+            fun_best,
+            0,
+            np.sqrt(np.finfo(float).eps),
+        )
 
     @pytest.mark.parametrize("n", [2, 5, 10])
     @pytest.mark.parametrize("fun", ["sphere", "sumsqu"])
@@ -342,7 +365,12 @@ class TestMinimizeLinearInequalityConstrained(TestMinimizeBase):
             options={"debug": True, "target": fun_best + 1.0},
         )
         self.assert_result(
-            res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps)
+            res,
+            n,
+            x_best,
+            fun_best + 1.0,
+            1,
+            np.sqrt(np.finfo(float).eps),
         )
 
         res = minimize(
@@ -353,7 +381,12 @@ class TestMinimizeLinearInequalityConstrained(TestMinimizeBase):
             options={"debug": True, "target": fun_best + 1.0},
         )
         self.assert_result(
-            res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps)
+            res,
+            n,
+            x_best,
+            fun_best + 1.0,
+            1,
+            np.sqrt(np.finfo(float).eps),
         )
 
 
@@ -401,8 +434,14 @@ class TestMinimizeLinearEqualityConstrained(TestMinimizeBase):
             constraints=LinearConstraint(aeq, beq, beq),
             options={"debug": True},
         )
-        self.assert_result(res, n, x_best, fun_best, 0,
-                           np.sqrt(np.finfo(float).eps))
+        self.assert_result(
+            res,
+            n,
+            x_best,
+            fun_best,
+            0,
+            np.sqrt(np.finfo(float).eps),
+        )
 
         res = minimize(
             fun=getattr(self, fun),
@@ -411,8 +450,14 @@ class TestMinimizeLinearEqualityConstrained(TestMinimizeBase):
             constraints=LinearConstraint(aeq, beq, beq),
             options={"debug": True},
         )
-        self.assert_result(res, n, x_best, fun_best, 0,
-                           np.sqrt(np.finfo(float).eps))
+        self.assert_result(
+            res,
+            n,
+            x_best,
+            fun_best,
+            0,
+            np.sqrt(np.finfo(float).eps),
+        )
 
     @pytest.mark.parametrize("n", [2, 5, 10])
     @pytest.mark.parametrize("fun", ["arwhead", "sphere", "sumsqu"])
@@ -440,7 +485,12 @@ class TestMinimizeLinearEqualityConstrained(TestMinimizeBase):
             options={"debug": True, "target": fun_best + 1.0},
         )
         self.assert_result(
-            res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps)
+            res,
+            n,
+            x_best,
+            fun_best + 1.0,
+            1,
+            np.sqrt(np.finfo(float).eps),
         )
 
         res = minimize(
@@ -451,7 +501,12 @@ class TestMinimizeLinearEqualityConstrained(TestMinimizeBase):
             options={"debug": True, "target": fun_best + 1.0},
         )
         self.assert_result(
-            res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps)
+            res,
+            n,
+            x_best,
+            fun_best + 1.0,
+            1,
+            np.sqrt(np.finfo(float).eps),
         )
 
 
@@ -496,8 +551,14 @@ class TestMinimizeNonlinearInequalityConstrained(TestMinimizeBase):
             constraints=NonlinearConstraint(cub, -np.inf, 0.0),
             options={"debug": True},
         )
-        self.assert_result(res, n, x_best, fun_best, 0,
-                           np.sqrt(np.finfo(float).eps))
+        self.assert_result(
+            res,
+            n,
+            x_best,
+            fun_best,
+            0,
+            np.sqrt(np.finfo(float).eps),
+        )
 
         res = minimize(
             fun=getattr(self, fun),
@@ -506,8 +567,14 @@ class TestMinimizeNonlinearInequalityConstrained(TestMinimizeBase):
             constraints=NonlinearConstraint(cub, -np.inf, 0.0),
             options={"debug": True},
         )
-        self.assert_result(res, n, x_best, fun_best, 0,
-                           np.sqrt(np.finfo(float).eps))
+        self.assert_result(
+            res,
+            n,
+            x_best,
+            fun_best,
+            0,
+            np.sqrt(np.finfo(float).eps),
+        )
 
     @pytest.mark.parametrize("n", [2, 5, 10])
     @pytest.mark.parametrize("fun", ["sphere", "sumsqu"])
@@ -535,7 +602,12 @@ class TestMinimizeNonlinearInequalityConstrained(TestMinimizeBase):
             options={"debug": True, "target": fun_best + 1.0},
         )
         self.assert_result(
-            res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps)
+            res,
+            n,
+            x_best,
+            fun_best + 1.0,
+            1,
+            np.sqrt(np.finfo(float).eps),
         )
 
         res = minimize(
@@ -546,7 +618,12 @@ class TestMinimizeNonlinearInequalityConstrained(TestMinimizeBase):
             options={"debug": True, "target": fun_best + 1.0},
         )
         self.assert_result(
-            res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps)
+            res,
+            n,
+            x_best,
+            fun_best + 1.0,
+            1,
+            np.sqrt(np.finfo(float).eps),
         )
 
 
@@ -591,8 +668,14 @@ class TestMinimizeNonlinearEqualityConstrained(TestMinimizeBase):
             constraints=NonlinearConstraint(ceq, 0.0, 0.0),
             options={"debug": True},
         )
-        self.assert_result(res, n, x_best, fun_best, 0,
-                           np.sqrt(np.finfo(float).eps))
+        self.assert_result(
+            res,
+            n,
+            x_best,
+            fun_best,
+            0,
+            np.sqrt(np.finfo(float).eps),
+        )
 
         res = minimize(
             fun=getattr(self, fun),
@@ -601,8 +684,14 @@ class TestMinimizeNonlinearEqualityConstrained(TestMinimizeBase):
             constraints=NonlinearConstraint(ceq, 0.0, 0.0),
             options={"debug": True},
         )
-        self.assert_result(res, n, x_best, fun_best, 0,
-                           np.sqrt(np.finfo(float).eps))
+        self.assert_result(
+            res,
+            n,
+            x_best,
+            fun_best,
+            0,
+            np.sqrt(np.finfo(float).eps),
+        )
 
     @pytest.mark.parametrize("n", [2, 5, 10])
     @pytest.mark.parametrize("fun", ["sphere", "sumsqu"])
@@ -630,7 +719,12 @@ class TestMinimizeNonlinearEqualityConstrained(TestMinimizeBase):
             options={"debug": True, "target": fun_best + 1.0},
         )
         self.assert_result(
-            res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps)
+            res,
+            n,
+            x_best,
+            fun_best + 1.0,
+            1,
+            np.sqrt(np.finfo(float).eps),
         )
 
         res = minimize(
@@ -641,5 +735,10 @@ class TestMinimizeNonlinearEqualityConstrained(TestMinimizeBase):
             options={"debug": True, "target": fun_best + 1.0},
         )
         self.assert_result(
-            res, n, x_best, fun_best + 1.0, 1, np.sqrt(np.finfo(float).eps)
+            res,
+            n,
+            x_best,
+            fun_best + 1.0,
+            1,
+            np.sqrt(np.finfo(float).eps),
         )

@@ -127,9 +127,12 @@ class TestQuadratic:
             # Check the interpolation conditions.
             tol = 10.0 * np.sqrt(np.finfo(float).eps) * options["nb_points"]
             for k in range(options["nb_points"]):
-                assert abs(
-                    quadratic(interpolation.point(k), interpolation)
-                    - values[k]) < tol
+                assert (
+                    abs(
+                        quadratic(interpolation.point(k), interpolation)
+                        - values[k]
+                    ) < tol
+                )
 
             # Check the Hessian matrix.
             hess = quadratic.hess(interpolation)
@@ -139,8 +142,7 @@ class TestQuadratic:
                     np.linalg.norm(
                         quadratic.hess_prod(coord_vec, interpolation)
                         - hess[:, i]
-                    )
-                    < tol
+                    ) < tol
                 )
 
             # Check the curvature.
@@ -149,8 +151,7 @@ class TestQuadratic:
                 abs(
                     quadratic.curv(v, interpolation)
                     - v @ quadratic.hess_prod(v, interpolation)
-                )
-                < tol
+                ) < tol
             )
 
 
@@ -167,6 +168,16 @@ def _problem(x0):
     )
     nonlinear = NonlinearConstraints([], False, True)
     return Problem(
-        obj, x0, bounds, linear, nonlinear, None, 1e-8, False, False, 1, 1,
-        True
+        obj,
+        x0,
+        bounds,
+        linear,
+        nonlinear,
+        None,
+        1e-8,
+        False,
+        False,
+        1,
+        1,
+        True,
     )

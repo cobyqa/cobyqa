@@ -73,7 +73,9 @@ class TestLinearConstraints:
 
     def test_simple(self):
         linear = LinearConstraints(
-            [LinearConstraint(np.ones((2, 5)), -np.inf, np.ones(2))], 5, True
+            [LinearConstraint(np.ones((2, 5)), -np.inf, np.ones(2))],
+            5,
+            True,
         )
         assert linear.m_ub == 2
         assert linear.m_eq == 0
@@ -84,8 +86,9 @@ class TestLinearConstraints:
     def test_exceptions(self):
         with pytest.raises(ValueError):
             LinearConstraints(
-                [LinearConstraint(np.ones((2, 5)), -np.inf, np.ones(3))], 5,
-                True
+                [LinearConstraint(np.ones((2, 5)), -np.inf, np.ones(3))],
+                5,
+                True,
             )
 
 
@@ -94,7 +97,9 @@ class TestNonlinearConstraints:
     def test_simple(self, capsys):
         # Check a constraint function with verbose=False.
         nonlinear = NonlinearConstraints(
-            [NonlinearConstraint(np.sin, -np.inf, np.zeros(5))], False, True
+            [NonlinearConstraint(np.sin, -np.inf, np.zeros(5))],
+            False,
+            True,
         )
         x = np.zeros(5)
         cub, ceq = nonlinear(x)
@@ -109,7 +114,9 @@ class TestNonlinearConstraints:
 
         # Check a constraint function with verbose=True.
         nonlinear = NonlinearConstraints(
-            [NonlinearConstraint(np.sin, np.zeros(5), np.zeros(5))], True, True
+            [NonlinearConstraint(np.sin, np.zeros(5), np.zeros(5))],
+            True,
+            True,
         )
         cub, ceq = nonlinear(x)
         captured = capsys.readouterr()
@@ -142,8 +149,18 @@ class TestProblem:
             True,
         )
         pb = Problem(
-            obj, x0, bounds, linear, nonlinear, None, 1e-8, False, False, 1, 1,
-            True
+            obj,
+            x0,
+            bounds,
+            linear,
+            nonlinear,
+            None,
+            1e-8,
+            False,
+            False,
+            1,
+            1,
+            True,
         )
         fun_x0, cub_x0, ceq_x0 = pb(pb.x0)
         assert pb.n == 5
@@ -157,8 +174,9 @@ class TestProblem:
         assert pb.type == "nonlinearly constrained"
         assert pb.fun_name == "rosen"
         assert not pb.is_feasibility
-        assert (pb.maxcv(pb.x0, cub_x0, ceq_x0) < 1.0
-                + 50.0 * np.finfo(float).eps)
+        assert (
+            pb.maxcv(pb.x0, cub_x0, ceq_x0) < 1.0 + 50.0 * np.finfo(float).eps
+        )
         assert fun_x0 == rosen(x0)
         assert np.all(cub_x0 == np.sin(x0))
         assert np.all(ceq_x0 == np.sin(x0))
@@ -167,10 +185,7 @@ class TestProblem:
         obj = ObjectiveFunction(rosen, False, True)
         x0 = np.zeros(5)
         bounds = BoundConstraints(
-            Bounds(
-                np.block([np.zeros(4), 1.0]),
-                np.ones(5),
-            )
+            Bounds(np.block([np.zeros(4), 1.0]), np.ones(5))
         )
         linear = LinearConstraints(
             [
@@ -182,8 +197,18 @@ class TestProblem:
         )
         nonlinear = NonlinearConstraints([], False, True)
         pb = Problem(
-            obj, x0, bounds, linear, nonlinear, None, 1e-8, False, False, 1, 1,
-            True
+            obj,
+            x0,
+            bounds,
+            linear,
+            nonlinear,
+            None,
+            1e-8,
+            False,
+            False,
+            1,
+            1,
+            True,
         )
         pb(pb.x0)
         assert pb.n == 4
