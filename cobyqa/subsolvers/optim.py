@@ -598,8 +598,7 @@ def constrained_tangential_byrd_omojokun(
             grad_sd = -np.sqrt(max(step_sq * grad_sq - grad_step**2.0, 0.0))
             sd = (
                 q[:, n_act:]
-                @ (q[:, n_act:].T
-                @ (grad_step * step - step_sq * grad))
+                @ (q[:, n_act:].T @ (grad_step * step - step_sq * grad))
             )
             if (
                 grad_sd >= -1e-8 * reduct
