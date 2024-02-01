@@ -239,8 +239,7 @@ def linkcode_resolve(domain, info):
         fn = Path(inspect.getsourcefile(obj)).resolve(True)
     except TypeError:
         return None
-    else:
-        fn = fn.relative_to(Path(cobyqa.__file__).resolve(True).parent)
+    fn = fn.relative_to(Path(cobyqa.__file__).resolve(True).parent)
 
     # Ignore re-exports as their source files are not within the repository.
     module = inspect.getmodule(obj)
@@ -257,5 +256,4 @@ def linkcode_resolve(domain, info):
     repository = "https://github.com/cobyqa/cobyqa"
     if "dev" in release:
         return f"{repository}/blob/main/cobyqa/{fn}{lines}"
-    else:
-        return f"{repository}/blob/v{release}/cobyqa/{fn}{lines}"
+    return f"{repository}/blob/v{release}/cobyqa/{fn}{lines}"

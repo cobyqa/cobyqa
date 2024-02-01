@@ -19,19 +19,19 @@ from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint
 def fun(x, no):
     if no == "A":
         return 10.0 * (x[0] + 1.0) ** 2.0 + x[1] ** 2.0
-    elif no == "B":
+    if no == "B":
         return x[0] * x[1]
-    elif no == "C":
+    if no == "C":
         return x[0] * x[1] * x[2]
-    elif no == "D":
+    if no == "D":
         return (x[0] ** 2.0 - x[1]) ** 2.0 + (1.0 + x[0]) ** 2.0
-    elif no == "E":
+    if no == "E":
         return 10.0 * (x[0] ** 2.0 - x[1]) ** 2.0 + (1.0 + x[0]) ** 2.0
-    elif no == "F":
+    if no == "F":
         return -x[0] - x[1]
-    elif no == "G":
+    if no == "G":
         return x[2]
-    elif no == "H":
+    if no == "H":
         return (
             x[0] ** 2.0
             + x[1] ** 2.0
@@ -42,7 +42,7 @@ def fun(x, no):
             - 21.0 * x[2]
             + 7.0 * x[3]
         )
-    elif no == "I":
+    if no == "I":
         return (
             (x[0] - 10.0) ** 2.0
             + 5.0 * (x[1] - 12.0) ** 2.0
@@ -55,7 +55,7 @@ def fun(x, no):
             - 10.0 * x[5]
             - 8.0 * x[6]
         )
-    elif no == "J":
+    if no == "J":
         return -0.5 * (
             x[0] * x[3]
             - x[1] * x[2]
