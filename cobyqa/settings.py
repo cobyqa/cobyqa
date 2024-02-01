@@ -118,11 +118,17 @@ PRINT_OPTIONS = {
     "linewidth": sys.maxsize,
     "formatter": {
         "float_kind": lambda x: np.format_float_scientific(
-            x, precision=3, unique=False, pad_left=2
+            x,
+            precision=3,
+            unique=False,
+            pad_left=2,
         )
     },
 }
 
 # Constants.
-BARRIER = 2.0 ** min(100, np.finfo(float).maxexp // 2,
-                     -np.finfo(float).minexp // 2)
+BARRIER = 2.0 ** min(
+    100,
+    np.finfo(float).maxexp // 2,
+    -np.finfo(float).minexp // 2,
+)
