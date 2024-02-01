@@ -55,9 +55,11 @@ if __name__ == "__main__":
         x0[2 * i + 1] = x0_odd
     _plot_points(x0, "Initial points")
 
-    bounds = Bounds(np.zeros(n), np.inf)
-    constraints = LinearConstraint(aub, -np.inf, bub)
-    options = {"disp": True}
-    res = minimize(fun, x0, bounds=bounds, constraints=constraints,
-                   options=options)
+    res = minimize(
+        fun,
+        x0,
+        bounds=Bounds(np.zeros(n), np.inf),
+        constraints=LinearConstraint(aub, -np.inf, bub),
+        options={"disp": True},
+    )
     _plot_points(res.x, "Final points")

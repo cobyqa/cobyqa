@@ -28,8 +28,9 @@ version = re.sub(r"(\.dev\d+).*?$", r"\1", version)
 release = cobyqa.__version__
 
 # Retrieve statistics.
-archive = urlopen("https://raw.githubusercontent.com/cobyqa/stats/main/"
-                  "archives/total.json")
+archive = urlopen(
+    "https://raw.githubusercontent.com/cobyqa/stats/main/archives/total.json",
+)
 downloads = json.loads(archive.read())
 
 
@@ -97,8 +98,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": f'GitHub ({downloads["github"]:,} downloads)',
-            "url": f'https://github.com/{html_context["github_user"]}/'
-            f'{html_context["github_repo"]}',
+            "url": 'https://github.com/cobyqa/cobyqa',
             "icon": "fa-brands fa-github",
         },
         {
@@ -254,12 +254,8 @@ def linkcode_resolve(domain, info):
     except OSError:
         lines = ""
 
-    repository = (
-        f'https://github.com/{html_context["github_user"]}/'
-        f'{html_context["github_repo"]}'
-    )
+    repository = "https://github.com/cobyqa/cobyqa"
     if "dev" in release:
-        return (f'{repository}/blob/{html_context["github_version"]}/'
-                f'cobyqa/{fn}{lines}')
+        return f"{repository}/blob/main/cobyqa/{fn}{lines}"
     else:
         return f"{repository}/blob/v{release}/cobyqa/{fn}{lines}"
