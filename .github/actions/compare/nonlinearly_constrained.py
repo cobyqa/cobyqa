@@ -1,6 +1,9 @@
 import numpy as np
-from optiprofiler import set_cutest_problem_options, find_cutest_problems, \
-    run_benchmark
+from optiprofiler import (
+    set_cutest_problem_options,
+    find_cutest_problems,
+    run_benchmark,
+)
 
 
 def cobyqa_pypi(fun, x0, xl, xu, aub, bub, aeq, beq, cub, ceq):
@@ -15,13 +18,17 @@ def cobyqa_pypi(fun, x0, xl, xu, aub, bub, aeq, beq, cub, ceq):
     cub_x0 = cub(x0)
     if cub_x0.size > 0:
         constraints.append(NonlinearConstraint(
-            cub, -np.inf, np.zeros(cub_x0.size)))
+            cub,
+            -np.inf,
+            np.zeros(cub_x0.size),
+        ))
     ceq_x0 = ceq(x0)
     if ceq_x0.size > 0:
-        constraints.append(
-            NonlinearConstraint(
-                ceq, np.zeros(ceq_x0.size), np.zeros(ceq_x0.size))
-        )
+        constraints.append(NonlinearConstraint(
+            ceq,
+            np.zeros(ceq_x0.size),
+            np.zeros(ceq_x0.size),
+        ))
     minimize(fun, x0, bounds=Bounds(xl, xu), constraints=constraints)
 
 
@@ -37,11 +44,17 @@ def cobyqa_latest(fun, x0, xl, xu, aub, bub, aeq, beq, cub, ceq):
     cub_x0 = cub(x0)
     if cub_x0.size > 0:
         constraints.append(NonlinearConstraint(
-            cub, -np.inf, np.zeros(cub_x0.size)))
+            cub,
+            -np.inf,
+            np.zeros(cub_x0.size),
+        ))
     ceq_x0 = ceq(x0)
     if ceq_x0.size > 0:
         constraints.append(NonlinearConstraint(
-            ceq, np.zeros(ceq_x0.size), np.zeros(ceq_x0.size)))
+            ceq,
+            np.zeros(ceq_x0.size),
+            np.zeros(ceq_x0.size),
+        ))
     minimize(fun, x0, bounds=Bounds(xl, xu), constraints=constraints)
 
 

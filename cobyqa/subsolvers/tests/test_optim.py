@@ -18,7 +18,12 @@ class TestTangentialByrdOmojokun:
             rng = np.random.default_rng(seed)
             grad, hess, xl, xu, delta = _tangential_subproblem(rng, n)
             step = tangential_byrd_omojokun(
-                grad, lambda s: hess @ s, xl, xu, delta, True
+                grad,
+                lambda s: hess @ s,
+                xl,
+                xu,
+                delta,
+                True,
             )
 
             # Check whether the solution is valid and feasible.
@@ -28,8 +33,7 @@ class TestTangentialByrdOmojokun:
             assert np.all(step <= xu)
             assert np.linalg.norm(step) < delta + tol
 
-            # Check whether the solution decreases the objective function
-            # value.
+            # Check whether the objective function value decreases.
             assert grad @ step + 0.5 * step @ hess @ step <= 0.0
 
     @pytest.mark.parametrize("n", [1, 2, 10, 50])
@@ -40,12 +44,23 @@ class TestTangentialByrdOmojokun:
             rng = np.random.default_rng(seed)
             grad, hess, xl, xu, delta = _tangential_subproblem(rng, n)
             step = tangential_byrd_omojokun(
-                grad, lambda s: hess @ s, xl, xu, delta, True
+                grad,
+                lambda s: hess @ s,
+                xl,
+                xu,
+                delta,
+                True,
             )
 
             # Solve the same subproblem without the improving strategy.
             step_base = tangential_byrd_omojokun(
-                grad, lambda s: hess @ s, xl, xu, delta, True, improve=False
+                grad,
+                lambda s: hess @ s,
+                xl,
+                xu,
+                delta,
+                True,
+                improve_tcg=False,
             )
 
             # Check whether the solution is valid and feasible.
@@ -71,7 +86,12 @@ class TestTangentialByrdOmojokun:
             xl_wrong = np.copy(xl)
             xl_wrong[0] = 0.1
             tangential_byrd_omojokun(
-                grad, lambda s: hess @ s, xl_wrong, xu, delta, True
+                grad,
+                lambda s: hess @ s,
+                xl_wrong,
+                xu,
+                delta,
+                True,
             )
 
         # We must have 0 <= xu.
@@ -79,18 +99,35 @@ class TestTangentialByrdOmojokun:
             xu_wrong = np.copy(xu)
             xu_wrong[0] = -0.1
             tangential_byrd_omojokun(
-                grad, lambda s: hess @ s, xl, xu_wrong, delta, True
+                grad,
+                lambda s: hess @ s,
+                xl,
+                xu_wrong,
+                delta,
+                True,
             )
 
         # We must have delta < inf.
         with pytest.raises(AssertionError):
-            tangential_byrd_omojokun(grad, lambda s: hess @ s, xl, xu, np.inf,
-                                     True)
+            tangential_byrd_omojokun(
+                grad,
+                lambda s: hess @ s,
+                xl,
+                xu,
+                np.inf,
+                True,
+            )
 
         # We must have delta > 0.
         with pytest.raises(AssertionError):
-            tangential_byrd_omojokun(grad, lambda s: hess @ s, xl, xu, -1.0,
-                                     True)
+            tangential_byrd_omojokun(
+                grad,
+                lambda s: hess @ s,
+                xl,
+                xu,
+                -1.0,
+                True,
+            )
 
 
 class TestConstrainedTangentialByrdOmojokun:
@@ -108,7 +145,15 @@ class TestConstrainedTangentialByrdOmojokun:
             aeq = rng.standard_normal((m_eq, n))
             bub = rng.random(m_ub)
             step = constrained_tangential_byrd_omojokun(
-                grad, lambda s: hess @ s, xl, xu, aub, bub, aeq, delta, True
+                grad,
+                lambda s: hess @ s,
+                xl,
+                xu,
+                aub,
+                bub,
+                aeq,
+                delta,
+                True,
             )
 
             # Check whether the solution is valid and feasible.
@@ -120,8 +165,7 @@ class TestConstrainedTangentialByrdOmojokun:
             assert np.all(np.abs(aeq @ step) < tol)
             assert np.linalg.norm(step) < delta + tol
 
-            # Check whether the solution decreases the objective function
-            # value.
+            # Check whether the objective function value decreases.
             assert grad @ step + 0.5 * step @ hess @ step <= 0.0
 
     @pytest.mark.parametrize("n", [1, 2, 10, 50])
@@ -137,7 +181,15 @@ class TestConstrainedTangentialByrdOmojokun:
             aeq = rng.standard_normal((m_eq, n))
             bub = rng.random(m_ub)
             step = constrained_tangential_byrd_omojokun(
-                grad, lambda s: hess @ s, xl, xu, aub, bub, aeq, delta, True
+                grad,
+                lambda s: hess @ s,
+                xl,
+                xu,
+                aub,
+                bub,
+                aeq,
+                delta,
+                True,
             )
 
             # Solve the same subproblem without the improving strategy.
@@ -151,7 +203,7 @@ class TestConstrainedTangentialByrdOmojokun:
                 aeq,
                 delta,
                 True,
-                improve=False,
+                improve_tcg=False,
             )
 
             # Check whether the solution is valid and feasible.
@@ -182,8 +234,15 @@ class TestConstrainedTangentialByrdOmojokun:
             xl_wrong = np.copy(xl)
             xl_wrong[0] = 0.1
             constrained_tangential_byrd_omojokun(
-                grad, lambda s: hess @ s, xl_wrong, xu, aub, bub, aeq, delta,
-                True
+                grad,
+                lambda s: hess @ s,
+                xl_wrong,
+                xu,
+                aub,
+                bub,
+                aeq,
+                delta,
+                True,
             )
 
         # We must have 0 <= xu.
@@ -191,8 +250,15 @@ class TestConstrainedTangentialByrdOmojokun:
             xu_wrong = np.copy(xu)
             xu_wrong[0] = -0.1
             constrained_tangential_byrd_omojokun(
-                grad, lambda s: hess @ s, xl, xu_wrong, aub, bub, aeq, delta,
-                True
+                grad,
+                lambda s: hess @ s,
+                xl,
+                xu_wrong,
+                aub,
+                bub,
+                aeq,
+                delta,
+                True,
             )
 
         # We must have 0 <= bub.
@@ -200,20 +266,43 @@ class TestConstrainedTangentialByrdOmojokun:
             bub_wrong = np.copy(bub)
             bub_wrong[0] = -0.1
             constrained_tangential_byrd_omojokun(
-                grad, lambda s: hess @ s, xl, xu, aub, bub_wrong, aeq, delta,
-                True
+                grad,
+                lambda s: hess @ s,
+                xl,
+                xu,
+                aub,
+                bub_wrong,
+                aeq,
+                delta,
+                True,
             )
 
         # We must have delta < inf.
         with pytest.raises(AssertionError):
             constrained_tangential_byrd_omojokun(
-                grad, lambda s: hess @ s, xl, xu, aub, bub, aeq, np.inf, True
+                grad,
+                lambda s: hess @ s,
+                xl,
+                xu,
+                aub,
+                bub,
+                aeq,
+                np.inf,
+                True,
             )
 
         # We must have delta > 0.
         with pytest.raises(AssertionError):
             constrained_tangential_byrd_omojokun(
-                grad, lambda s: hess @ s, xl, xu, aub, bub, aeq, -1.0, True
+                grad,
+                lambda s: hess @ s,
+                xl,
+                xu,
+                aub,
+                bub,
+                aeq,
+                -1.0,
+                True,
             )
 
 
@@ -227,10 +316,22 @@ class TestNormalByrdOmojokun:
         for seed in range(100):
             # Construct and solve a random subproblem.
             rng = np.random.default_rng(seed)
-            aub, bub, aeq, beq, xl, xu, delta = _normal_subproblem(rng, n,
-                                                                   m_ub, m_eq)
-            step = normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta,
-                                        True)
+            aub, bub, aeq, beq, xl, xu, delta = _normal_subproblem(
+                rng,
+                n,
+                m_ub,
+                m_eq,
+            )
+            step = normal_byrd_omojokun(
+                aub,
+                bub,
+                aeq,
+                beq,
+                xl,
+                xu,
+                delta,
+                True,
+            )
 
             # Check whether the solution is valid and feasible.
             assert step.shape == (n,)
@@ -239,8 +340,7 @@ class TestNormalByrdOmojokun:
             assert np.all(step <= xu)
             assert np.linalg.norm(step) < delta + tol
 
-            # Check whether the solution decreases the objective function
-            # value.
+            # Check whether the objective function value decreases.
             resid_ub = np.maximum(aub @ step - bub, 0.0)
             resid_ub_zero = np.maximum(-bub, 0.0)
             resid_eq = aeq @ step - beq
@@ -257,14 +357,34 @@ class TestNormalByrdOmojokun:
         for seed in range(100):
             # Construct and solve a random subproblem.
             rng = np.random.default_rng(seed)
-            aub, bub, aeq, beq, xl, xu, delta = _normal_subproblem(rng, n,
-                                                                   m_ub, m_eq)
-            step = normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta,
-                                        True)
+            aub, bub, aeq, beq, xl, xu, delta = _normal_subproblem(
+                rng,
+                n,
+                m_ub,
+                m_eq,
+            )
+            step = normal_byrd_omojokun(
+                aub,
+                bub,
+                aeq,
+                beq,
+                xl,
+                xu,
+                delta,
+                True,
+            )
 
             # Solve the same subproblem without the improving strategy.
             step_base = normal_byrd_omojokun(
-                aub, bub, aeq, beq, xl, xu, delta, True, improve=False
+                aub,
+                bub,
+                aeq,
+                beq,
+                xl,
+                xu,
+                delta,
+                True,
+                improve_tcg=False,
             )
 
             # Check whether the solution is valid and feasible.

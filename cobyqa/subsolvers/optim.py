@@ -103,8 +103,10 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
     while k < np.count_nonzero(free_bd):
         # Stop the computations if sd is not a descent direction.
         grad_sd = grad @ sd
-        if (grad_sd >= -10.0 * np.finfo(float).eps
-                * n * max(1.0, np.linalg.norm(grad))):
+        if (
+            grad_sd
+            >= -10.0 * np.finfo(float).eps * n * max(1.0, np.linalg.norm(grad))
+        ):
             break
 
         # Set alpha_tr to the step size for the trust-region constraint.
@@ -133,15 +135,20 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
             break
 
         # Set alpha_bd to the step size for the bound constraints.
-        i_xl = ((xl > -np.inf)
-                & (sd < -np.finfo(float).tiny * np.abs(xl - step)))
+        i_xl = (
+            (xl > -np.inf) & (sd < -np.finfo(float).tiny * np.abs(xl - step))
+        )
         i_xu = (xu < np.inf) & (sd > np.finfo(float).tiny * np.abs(xu - step))
         all_alpha_xl = np.full_like(step, np.inf)
         all_alpha_xu = np.full_like(step, np.inf)
-        all_alpha_xl[i_xl] = np.maximum((xl[i_xl] - step[i_xl]) / sd[i_xl],
-                                        0.0)
-        all_alpha_xu[i_xu] = np.maximum((xu[i_xu] - step[i_xu]) / sd[i_xu],
-                                        0.0)
+        all_alpha_xl[i_xl] = np.maximum(
+            (xl[i_xl] - step[i_xl]) / sd[i_xl],
+            0.0,
+        )
+        all_alpha_xu[i_xu] = np.maximum(
+            (xu[i_xu] - step[i_xu]) / sd[i_xu],
+            0.0,
+        )
         alpha_xl = np.min(all_alpha_xl)
         alpha_xu = np.min(all_alpha_xu)
         alpha_bd = min(alpha_xl, alpha_xu)
@@ -150,7 +157,9 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
         alpha = min(alpha, alpha_bd)
         if alpha > 0.0:
             step[free_bd] = np.clip(
-                step[free_bd] + alpha * sd[free_bd], xl[free_bd], xu[free_bd]
+                step[free_bd] + alpha * sd[free_bd],
+                xl[free_bd],
+                xu[free_bd],
             )
             grad += alpha * hess_sd
             reduct -= alpha * (grad_sd + 0.5 * alpha * curv_sd)
@@ -203,8 +212,11 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
             grad_sd = -np.sqrt(max(step_sq * grad_sq - grad_step**2.0, 0.0))
             sd[free_bd] = grad_step * step[free_bd] - step_sq * grad[free_bd]
             sd[~free_bd] = 0.0
-            if grad_sd >= -1e-8 * reduct or np.any(
-                grad_sd >= -np.finfo(float).tiny * np.abs(sd[free_bd])
+            if (
+                grad_sd >= -1e-8 * reduct
+                or np.any(
+                    grad_sd >= -np.finfo(float).tiny * np.abs(sd[free_bd])
+                )
             ):
                 break
             sd[free_bd] /= -grad_sd
@@ -220,20 +232,26 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
             temp_xu[free_bd] = (
                 step[free_bd] ** 2.0 + sd[free_bd] ** 2.0 - xu[free_bd] ** 2.0
             )
-            temp_xl[temp_xl > 0.0] = (np.sqrt(temp_xl[temp_xl > 0.0])
-                                      - sd[temp_xl > 0.0])
-            temp_xu[temp_xu > 0.0] = (np.sqrt(temp_xu[temp_xu > 0.0])
-                                      + sd[temp_xu > 0.0])
+            temp_xl[temp_xl > 0.0] = (
+                np.sqrt(temp_xl[temp_xl > 0.0]) - sd[temp_xl > 0.0]
+            )
+            temp_xu[temp_xu > 0.0] = (
+                np.sqrt(temp_xu[temp_xu > 0.0]) + sd[temp_xu > 0.0]
+            )
             dist_xl = np.maximum(step - xl, 0.0)
             dist_xu = np.maximum(xu - step, 0.0)
             i_xl = temp_xl > np.finfo(float).tiny * dist_xl
             i_xu = temp_xu > np.finfo(float).tiny * dist_xu
             all_t_xl = np.ones(n)
             all_t_xu = np.ones(n)
-            all_t_xl[i_xl] = np.minimum(all_t_xl[i_xl],
-                                        dist_xl[i_xl] / temp_xl[i_xl])
-            all_t_xu[i_xu] = np.minimum(all_t_xu[i_xu],
-                                        dist_xu[i_xu] / temp_xu[i_xu])
+            all_t_xl[i_xl] = np.minimum(
+                all_t_xl[i_xl],
+                dist_xl[i_xl] / temp_xl[i_xl],
+            )
+            all_t_xu[i_xu] = np.minimum(
+                all_t_xu[i_xu],
+                dist_xu[i_xu] / temp_xu[i_xu],
+            )
             t_xl = np.min(all_t_xl)
             t_xu = np.min(all_t_xu)
             t_bd = min(t_xl, t_xu)
@@ -256,8 +274,9 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
                 grad_step * t_samples
                 - grad_sd
                 - t_samples * curv_step
-                + sin_values * (t_samples * curv_step_sd
-                                - 0.5 * (curv_sd - curv_step))
+                + sin_values * (
+                    t_samples * curv_step_sd - 0.5 * (curv_sd - curv_step)
+                )
             )
             if np.all(all_reduct <= 0.0):
                 # No reduction in the objective function is obtained.
@@ -266,13 +285,13 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
             # Accept the angle that provides the largest reduction in the
             # objective function, and update the iterate.
             i_max = np.argmax(all_reduct)
-            cos_value = (1.0 - t_samples[i_max] ** 2.0) / (
-                1.0 + t_samples[i_max] ** 2.0
+            cos_value = (
+                (1.0 - t_samples[i_max] ** 2.0)
+                / (1.0 + t_samples[i_max] ** 2.0)
             )
-            step[free_bd] = (cos_value * step[free_bd]
-                             + sin_values[i_max] * sd[free_bd])
-            # assert np.all(xl - 1e-15 <= step)
-            # assert np.all(step <= xu + 1e-15)
+            step[free_bd] = (
+                cos_value * step[free_bd] + sin_values[i_max] * sd[free_bd]
+            )
             grad += (cos_value - 1.0) * hess_step + sin_values[i_max] * hess_sd
             reduct += all_reduct[i_max]
 
@@ -293,9 +312,10 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
 
         # Ensure that the alternative iteration improves the objective
         # function.
-        if grad_orig @ step + 0.5 * step @ hess_prod(
-            step
-        ) > grad_orig @ step_base + 0.5 * step_base @ hess_prod(step_base):
+        if (
+            grad_orig @ step + 0.5 * step @ hess_prod(step)
+            > grad_orig @ step_base + 0.5 * step_base @ hess_prod(step_base)
+        ):
             step = step_base
 
     if debug:
@@ -306,7 +326,16 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
 
 
 def constrained_tangential_byrd_omojokun(
-    grad, hess_prod, xl, xu, aub, bub, aeq, delta, debug, **kwargs
+    grad,
+    hess_prod,
+    xl,
+    xu,
+    aub,
+    bub,
+    aeq,
+    delta,
+    debug,
+    **kwargs,
 ):
     r"""
     Minimize approximately a quadratic function subject to bound and linear
@@ -428,8 +457,10 @@ def constrained_tangential_byrd_omojokun(
     while k < n - n_act:
         # Stop the computations if sd is not a descent direction.
         grad_sd = grad @ sd
-        if (grad_sd >= -10.0 * np.finfo(float).eps * n
-                * max(1.0, np.linalg.norm(grad))):
+        if (
+            grad_sd
+            >= -10.0 * np.finfo(float).eps * n * max(1.0, np.linalg.norm(grad))
+        ):
             break
 
         # Set alpha_tr to the step size for the trust-region constraint.
@@ -459,17 +490,25 @@ def constrained_tangential_byrd_omojokun(
 
         # Set alpha_bd to the step size for the bound constraints.
         i_xl = (
-            free_xl & (xl > -np.inf)
+            free_xl
+            & (xl > -np.inf)
             & (sd < -np.finfo(float).tiny * np.abs(xl - step))
         )
-        i_xu = (free_xu & (xu < np.inf)
-                & (sd > np.finfo(float).tiny * np.abs(xu - step)))
+        i_xu = (
+            free_xu
+            & (xu < np.inf)
+            & (sd > np.finfo(float).tiny * np.abs(xu - step))
+        )
         all_alpha_xl = np.full_like(step, np.inf)
         all_alpha_xu = np.full_like(step, np.inf)
-        all_alpha_xl[i_xl] = np.maximum((xl[i_xl] - step[i_xl]) / sd[i_xl],
-                                        0.0)
-        all_alpha_xu[i_xu] = np.maximum((xu[i_xu] - step[i_xu]) / sd[i_xu],
-                                        0.0)
+        all_alpha_xl[i_xl] = np.maximum(
+            (xl[i_xl] - step[i_xl]) / sd[i_xl],
+            0.0,
+        )
+        all_alpha_xu[i_xu] = np.maximum(
+            (xu[i_xu] - step[i_xu]) / sd[i_xu],
+            0.0,
+        )
         alpha_xl = np.min(all_alpha_xl)
         alpha_xu = np.min(all_alpha_xu)
         alpha_bd = min(alpha_xl, alpha_xu)
@@ -511,8 +550,13 @@ def constrained_tangential_byrd_omojokun(
             else:
                 i_new = np.argmin(all_alpha_ub)
                 free_ub[i_new] = False
-            n_act, q = qr_tangential_byrd_omojokun(aub, aeq, free_xl, free_xu,
-                                                   free_ub)
+            n_act, q = qr_tangential_byrd_omojokun(
+                aub,
+                aeq,
+                free_xl,
+                free_xu,
+                free_ub,
+            )
             sd = -q[:, n_act:] @ (q[:, n_act:].T @ grad)
             k = 0
         else:
@@ -530,8 +574,13 @@ def constrained_tangential_byrd_omojokun(
             if alpha_ub <= alpha:
                 i_new = _argmin(all_alpha_ub)
                 free_ub[i_new] = False
-            n_act, q = qr_tangential_byrd_omojokun(aub, aeq, free_xl, free_xu,
-                                                   free_ub)
+            n_act, q = qr_tangential_byrd_omojokun(
+                aub,
+                aeq,
+                free_xl,
+                free_xu,
+                free_ub,
+            )
             boundary_reached = True
             break
 
@@ -547,10 +596,14 @@ def constrained_tangential_byrd_omojokun(
             grad_sq = grad_proj @ grad_proj
             grad_step = grad_proj @ step_proj
             grad_sd = -np.sqrt(max(step_sq * grad_sq - grad_step**2.0, 0.0))
-            sd = q[:, n_act:] @ (q[:, n_act:].T @ (grad_step * step
-                                                   - step_sq * grad))
-            if grad_sd >= -1e-8 * reduct or np.any(
-                grad_sd >= -np.finfo(float).tiny * np.abs(sd)
+            sd = (
+                q[:, n_act:]
+                @ (q[:, n_act:].T
+                @ (grad_step * step - step_sq * grad))
+            )
+            if (
+                grad_sd >= -1e-8 * reduct
+                or np.any(grad_sd >= -np.finfo(float).tiny * np.abs(sd))
             ):
                 break
             sd /= -grad_sd
@@ -563,24 +616,38 @@ def constrained_tangential_byrd_omojokun(
             temp_xu = np.zeros(n)
             dist_xl = np.maximum(step - xl, 0.0)
             dist_xu = np.maximum(xu - step, 0.0)
-            temp_xl[free_xl] = sd[free_xl] ** 2.0 - dist_xl[free_xl] * (
-                dist_xl[free_xl] - 2.0 * step_proj[free_xl]
+            temp_xl[free_xl] = (
+                sd[free_xl] ** 2.0
+                - dist_xl[free_xl] * (
+                    dist_xl[free_xl]
+                    - 2.0 * step_proj[free_xl]
+                )
             )
-            temp_xu[free_xu] = sd[free_xu] ** 2.0 - dist_xu[free_xu] * (
-                dist_xu[free_xu] + 2.0 * step_proj[free_xu]
+            temp_xu[free_xu] = (
+                sd[free_xu] ** 2.0
+                - dist_xu[free_xu] * (
+                    dist_xu[free_xu]
+                    + 2.0 * step_proj[free_xu]
+                )
             )
-            temp_xl[temp_xl > 0.0] = (np.sqrt(temp_xl[temp_xl > 0.0])
-                                      - sd[temp_xl > 0.0])
-            temp_xu[temp_xu > 0.0] = (np.sqrt(temp_xu[temp_xu > 0.0])
-                                      + sd[temp_xu > 0.0])
+            temp_xl[temp_xl > 0.0] = (
+                np.sqrt(temp_xl[temp_xl > 0.0]) - sd[temp_xl > 0.0]
+            )
+            temp_xu[temp_xu > 0.0] = (
+                np.sqrt(temp_xu[temp_xu > 0.0]) + sd[temp_xu > 0.0]
+            )
             i_xl = temp_xl > np.finfo(float).tiny * dist_xl
             i_xu = temp_xu > np.finfo(float).tiny * dist_xu
             all_t_xl = np.ones(n)
             all_t_xu = np.ones(n)
-            all_t_xl[i_xl] = np.minimum(all_t_xl[i_xl],
-                                        dist_xl[i_xl] / temp_xl[i_xl])
-            all_t_xu[i_xu] = np.minimum(all_t_xu[i_xu],
-                                        dist_xu[i_xu] / temp_xu[i_xu])
+            all_t_xl[i_xl] = np.minimum(
+                all_t_xl[i_xl],
+                dist_xl[i_xl] / temp_xl[i_xl],
+            )
+            all_t_xu[i_xu] = np.minimum(
+                all_t_xu[i_xu],
+                dist_xu[i_xu] / temp_xu[i_xu],
+            )
             t_xl = np.min(all_t_xl)
             t_xu = np.min(all_t_xu)
             t_bd = min(t_xl, t_xu)
@@ -590,16 +657,19 @@ def constrained_tangential_byrd_omojokun(
             temp_ub = np.zeros_like(resid)
             aub_step = aub @ step_proj
             aub_sd = aub @ sd
-            temp_ub[free_ub] = aub_sd[free_ub] ** 2.0 - resid[free_ub] * (
-                resid[free_ub] + 2.0 * aub_step[free_ub]
+            temp_ub[free_ub] = (
+                aub_sd[free_ub] ** 2.0
+                - resid[free_ub] * (resid[free_ub] + 2.0 * aub_step[free_ub])
             )
             temp_ub[temp_ub > 0.0] = (
                 np.sqrt(temp_ub[temp_ub > 0.0]) + aub_sd[temp_ub > 0.0]
             )
             i_ub = temp_ub > np.finfo(float).tiny * resid
             all_t_ub = np.ones_like(resid)
-            all_t_ub[i_ub] = np.minimum(all_t_ub[i_ub],
-                                        resid[i_ub] / temp_ub[i_ub])
+            all_t_ub[i_ub] = np.minimum(
+                all_t_ub[i_ub],
+                resid[i_ub] / temp_ub[i_ub],
+            )
             t_ub = np.min(all_t_ub, initial=1.0)
             t_min = min(t_bd, t_ub)
 
@@ -620,8 +690,7 @@ def constrained_tangential_byrd_omojokun(
             all_reduct = sin_values * (
                 grad_step * t_samples
                 - grad_sd
-                - sin_values
-                * (
+                - sin_values * (
                     0.5 * t_samples**2.0 * curv_step
                     - 2.0 * t_samples * curv_step_sd
                     + 0.5 * curv_sd
@@ -634,18 +703,20 @@ def constrained_tangential_byrd_omojokun(
             # Accept the angle that provides the largest reduction in the
             # objective function, and update the iterate.
             i_max = np.argmax(all_reduct)
-            cos_value = (1.0 - t_samples[i_max] ** 2.0) / (
-                1.0 + t_samples[i_max] ** 2.0
+            cos_value = (
+                (1.0 - t_samples[i_max] ** 2.0)
+                / (1.0 + t_samples[i_max] ** 2.0)
             )
             step = np.clip(
                 step + (cos_value - 1.0) * step_proj + sin_values[i_max] * sd,
-                xl, xu
+                xl,
+                xu,
             )
             grad += (cos_value - 1.0) * hess_step + sin_values[i_max] * hess_sd
             resid = np.maximum(
                 0.0,
                 resid - (cos_value - 1.0) * aub_step
-                - sin_values[i_max] * aub_sd
+                - sin_values[i_max] * aub_sd,
             )
             reduct += all_reduct[i_max]
 
@@ -665,16 +736,21 @@ def constrained_tangential_byrd_omojokun(
                     i_new = _argmin(all_t_ub)
                     free_ub[i_new] = False
                 n_act, q = qr_tangential_byrd_omojokun(
-                    aub, aeq, free_xl, free_xu, free_ub
+                    aub,
+                    aeq,
+                    free_xl,
+                    free_xu,
+                    free_ub,
                 )
             else:
                 break
 
         # Ensure that the alternative iteration improves the objective
         # function.
-        if grad_orig @ step + 0.5 * step @ hess_prod(
-            step
-        ) > grad_orig @ step_base + 0.5 * step_base @ hess_prod(step_base):
+        if (
+            grad_orig @ step + 0.5 * step @ hess_prod(step)
+            > grad_orig @ step_base + 0.5 * step_base @ hess_prod(step_base)
+        ):
             step = step_base
 
     if debug:
@@ -785,8 +861,13 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
     free_xu = (xu > 0.0) | (grad[:n] > 0.0)
     free_slack = bub < 0.0
     free_ub = (bub > 0.0) | (aub @ grad[:n] - grad[n:] > 0.0)
-    n_act, q = qr_normal_byrd_omojokun(aub, free_xl, free_xu, free_slack,
-                                       free_ub)
+    n_act, q = qr_normal_byrd_omojokun(
+        aub,
+        free_xl,
+        free_xu,
+        free_slack,
+        free_ub,
+    )
 
     # Calculate an upper bound on the norm of the slack variables. It is not
     # used in the original algorithm, but it may prevent undesired behaviors
@@ -804,8 +885,10 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
     while k < n + m_linear_ub - n_act:
         # Stop the computations if sd is not a descent direction.
         grad_sd = grad @ sd
-        if (grad_sd >= -10.0 * np.finfo(float).eps * n
-                * max(1.0, np.linalg.norm(grad))):
+        if (
+            grad_sd
+            >= -10.0 * np.finfo(float).eps * n * max(1.0, np.linalg.norm(grad))
+        ):
             break
 
         # Set alpha_tr to the step size for the trust-region constraint.
@@ -851,17 +934,25 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
             & (xu < np.inf)
             & (sd[:n] > np.finfo(float).tiny * np.abs(xu - step))
         )
-        i_slack = free_slack & (sd[n:] < -np.finfo(float).tiny
-                                * np.abs(grad[n:]))
+        i_slack = (
+            free_slack
+            & (sd[n:] < -np.finfo(float).tiny * np.abs(grad[n:]))
+        )
         all_alpha_xl = np.full_like(step, np.inf)
         all_alpha_xu = np.full_like(step, np.inf)
         all_alpha_slack = np.full_like(bub, np.inf)
-        all_alpha_xl[i_xl] = np.maximum((xl[i_xl] - step[i_xl]) / sd[:n][i_xl],
-                                        0.0)
-        all_alpha_xu[i_xu] = np.maximum((xu[i_xu] - step[i_xu]) / sd[:n][i_xu],
-                                        0.0)
+        all_alpha_xl[i_xl] = np.maximum(
+            (xl[i_xl] - step[i_xl]) / sd[:n][i_xl],
+            0.0,
+        )
+        all_alpha_xu[i_xu] = np.maximum(
+            (xu[i_xu] - step[i_xu]) / sd[:n][i_xu],
+            0.0,
+        )
         all_alpha_slack[i_slack] = np.maximum(
-            -grad[n:][i_slack] / sd[n:][i_slack], 0.0)
+            -grad[n:][i_slack] / sd[n:][i_slack],
+            0.0,
+        )
         alpha_xl = np.min(all_alpha_xl)
         alpha_xu = np.min(all_alpha_xu)
         alpha_slack = np.min(all_alpha_slack, initial=np.inf)
@@ -931,8 +1022,10 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
     if kwargs.get("improve_tcg", True) and boundary_reached:
         step_base = np.copy(step)
         free_bd = free_xl & free_xu
-        grad = (aub.T @ np.maximum(aub @ step - bub, 0.0)
-                + aeq.T @ (aeq @ step - beq))
+        grad = (
+            aub.T @ np.maximum(aub @ step - bub, 0.0)
+            + aeq.T @ (aeq @ step - beq)
+        )
         sd = np.zeros(n)
         while np.count_nonzero(free_bd) > 0:
             # Check whether a substantial reduction in the objective function
@@ -943,8 +1036,11 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
             grad_sd = -np.sqrt(max(step_sq * grad_sq - grad_step**2.0, 0.0))
             sd[free_bd] = grad_step * step[free_bd] - step_sq * grad[free_bd]
             sd[~free_bd] = 0.0
-            if grad_sd >= -1e-8 * reduct or np.any(
-                grad_sd >= -np.finfo(float).tiny * np.abs(sd[free_bd])
+            if (
+                grad_sd >= -1e-8 * reduct
+                or np.any(
+                    grad_sd >= -np.finfo(float).tiny * np.abs(sd[free_bd])
+                )
             ):
                 break
             sd[free_bd] /= -grad_sd
@@ -960,20 +1056,26 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
             temp_xu[free_bd] = (
                 step[free_bd] ** 2.0 + sd[free_bd] ** 2.0 - xu[free_bd] ** 2.0
             )
-            temp_xl[temp_xl > 0.0] = np.sqrt(
-                temp_xl[temp_xl > 0.0]) - sd[temp_xl > 0.0]
-            temp_xu[temp_xu > 0.0] = np.sqrt(
-                temp_xu[temp_xu > 0.0]) + sd[temp_xu > 0.0]
+            temp_xl[temp_xl > 0.0] = (
+                np.sqrt(temp_xl[temp_xl > 0.0]) - sd[temp_xl > 0.0]
+            )
+            temp_xu[temp_xu > 0.0] = (
+                np.sqrt(temp_xu[temp_xu > 0.0]) + sd[temp_xu > 0.0]
+            )
             dist_xl = np.maximum(step - xl, 0.0)
             dist_xu = np.maximum(xu - step, 0.0)
             i_xl = temp_xl > np.finfo(float).tiny * dist_xl
             i_xu = temp_xu > np.finfo(float).tiny * dist_xu
             all_t_xl = np.ones(n)
             all_t_xu = np.ones(n)
-            all_t_xl[i_xl] = np.minimum(all_t_xl[i_xl],
-                                        dist_xl[i_xl] / temp_xl[i_xl])
-            all_t_xu[i_xu] = np.minimum(all_t_xu[i_xu],
-                                        dist_xu[i_xu] / temp_xu[i_xu])
+            all_t_xl[i_xl] = np.minimum(
+                all_t_xl[i_xl],
+                dist_xl[i_xl] / temp_xl[i_xl],
+            )
+            all_t_xu[i_xu] = np.minimum(
+                all_t_xu[i_xu],
+                dist_xu[i_xu] / temp_xu[i_xu],
+            )
             t_xl = np.min(all_t_xl)
             t_xu = np.min(all_t_xu)
             t_bd = min(t_xl, t_xu)
@@ -992,7 +1094,9 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
             for i in range(n_samples):
                 sin_value = 2.0 * t_samples[i] / (1.0 + t_samples[i] ** 2.0)
                 step_alt = np.clip(
-                    step + sin_value * (sd - t_samples[i] * step_proj), xl, xu
+                    step + sin_value * (sd - t_samples[i] * step_proj),
+                    xl,
+                    xu,
                 )
                 resid_ub_alt = np.maximum(aub @ step_alt - bub, 0.0)
                 resid_eq_alt = aeq @ step_alt - beq
@@ -1009,14 +1113,17 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
             # Accept the angle that provides the largest reduction in the
             # objective function, and update the iterate.
             i_max = np.argmax(all_reduct)
-            cos_value = (1.0 - t_samples[i_max] ** 2.0) / (
-                1.0 + t_samples[i_max] ** 2.0
+            cos_value = (
+                (1.0 - t_samples[i_max] ** 2.0)
+                / (1.0 + t_samples[i_max] ** 2.0)
             )
-            sin_value = 2.0 * t_samples[i_max] / (
-                    1.0 + t_samples[i_max] ** 2.0)
+            sin_value = (
+                2.0 * t_samples[i_max] / (1.0 + t_samples[i_max] ** 2.0)
+            )
             step[free_bd] = cos_value * step[free_bd] + sin_value * sd[free_bd]
-            grad = aub.T @ np.maximum(aub @ step - bub, 0.0) + aeq.T @ (
-                aeq @ step - beq
+            grad = (
+                aub.T @ np.maximum(aub @ step - bub, 0.0)
+                + aeq.T @ (aeq @ step - beq)
             )
             reduct += all_reduct[i_max]
 
@@ -1058,12 +1165,12 @@ def qr_tangential_byrd_omojokun(aub, aeq, free_xl, free_xu, free_ub):
     n = free_xl.size
     identity = np.eye(n)
     q, r, _ = qr(
-        np.r_[
-            aeq,
-            aub[~free_ub, :],
-            -identity[~free_xl, :],
-            identity[~free_xu, :]
-        ].T,
+        np.block([
+            [aeq],
+            [aub[~free_ub, :]],
+            [-identity[~free_xl, :]],
+            [identity[~free_xu, :]],
+        ]).T,
         pivoting=True,
     )
     n_act = np.count_nonzero(
@@ -1081,24 +1188,24 @@ def qr_normal_byrd_omojokun(aub, free_xl, free_xu, free_slack, free_ub):
     identity_n = np.eye(n)
     identity_m = np.eye(m_linear_ub)
     q, r, _ = qr(
-        np.r_[
-            np.c_[
+        np.block([
+            [
                 aub[~free_ub, :],
                 -identity_m[~free_ub, :],
             ],
-            np.c_[
+            [
                 np.zeros((m_linear_ub - np.count_nonzero(free_slack), n)),
                 -identity_m[~free_slack, :],
             ],
-            np.c_[
+            [
                 -identity_n[~free_xl, :],
                 np.zeros((n - np.count_nonzero(free_xl), m_linear_ub)),
             ],
-            np.c_[
+            [
                 identity_n[~free_xu, :],
                 np.zeros((n - np.count_nonzero(free_xu), m_linear_ub)),
             ],
-        ].T,
+        ]).T,
         pivoting=True,
     )
     n_act = np.count_nonzero(

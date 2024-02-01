@@ -14,7 +14,13 @@ class TestCauchyGeometry:
             rng = np.random.default_rng(seed)
             const, grad, hess, xl, xu, delta = _subproblem(rng, n)
             step = cauchy_geometry(
-                const, grad, lambda s: s @ hess @ s, xl, xu, delta, True
+                const,
+                grad,
+                lambda s: s @ hess @ s,
+                xl,
+                xu,
+                delta,
+                True,
             )
 
             # Check whether the solution is valid and feasible.
@@ -24,10 +30,10 @@ class TestCauchyGeometry:
             assert np.all(step <= xu)
             assert np.linalg.norm(step) < delta + tol
 
-            # Check whether the solution increases the objective function
-            # value.
-            assert (abs(const + step @ grad + 0.5 * step @ hess @ step)
-                    >= abs(const))
+            # Check whether the objective function value decreases.
+            assert abs(
+                const + step @ grad + 0.5 * step @ hess @ step
+            ) >= abs(const)
 
     def test_exception(self):
         # Construct a random subproblem.
@@ -39,7 +45,13 @@ class TestCauchyGeometry:
             xl_wrong = np.copy(xl)
             xl_wrong[0] = 0.1
             cauchy_geometry(
-                const, grad, lambda s: s @ hess @ s, xl_wrong, xu, delta, True
+                const,
+                grad,
+                lambda s: s @ hess @ s,
+                xl_wrong,
+                xu,
+                delta,
+                True,
             )
 
         # We must have 0 <= xu.
@@ -47,18 +59,38 @@ class TestCauchyGeometry:
             xu_wrong = np.copy(xu)
             xu_wrong[0] = -0.1
             cauchy_geometry(
-                const, grad, lambda s: s @ hess @ s, xl, xu_wrong, delta, True
+                const,
+                grad,
+                lambda s: s @ hess @ s,
+                xl,
+                xu_wrong,
+                delta,
+                True,
             )
 
         # We must have delta < inf.
         with pytest.raises(AssertionError):
-            cauchy_geometry(const, grad, lambda s: s @ hess @ s, xl, xu,
-                            np.inf, True)
+            cauchy_geometry(
+                const,
+                grad,
+                lambda s: s @ hess @ s,
+                xl,
+                xu,
+                np.inf,
+                True,
+            )
 
         # We must have delta > 0.
         with pytest.raises(AssertionError):
-            cauchy_geometry(const, grad, lambda s: s @ hess @ s, xl, xu, -1.0,
-                            True)
+            cauchy_geometry(
+                const,
+                grad,
+                lambda s: s @ hess @ s,
+                xl,
+                xu,
+                -1.0,
+                True,
+            )
 
 
 class TestSpiderGeometry:
@@ -82,7 +114,14 @@ class TestSpiderGeometry:
             const, grad, hess, xl, xu, delta = _subproblem(rng, n)
             xpt = rng.standard_normal((n, npt))
             step = spider_geometry(
-                const, grad, lambda s: s @ hess @ s, xpt, xl, xu, delta, True
+                const,
+                grad,
+                lambda s: s @ hess @ s,
+                xpt,
+                xl,
+                xu,
+                delta,
+                True,
             )
 
             # Check whether the solution is valid and feasible.
@@ -118,8 +157,14 @@ class TestSpiderGeometry:
             xl_wrong = np.copy(xl)
             xl_wrong[0] = 0.1
             spider_geometry(
-                const, grad, lambda s: s @ hess @ s, xpt, xl_wrong, xu, delta,
-                True
+                const,
+                grad,
+                lambda s: s @ hess @ s,
+                xpt,
+                xl_wrong,
+                xu,
+                delta,
+                True,
             )
 
         # We must have 0 <= xu.
@@ -127,20 +172,40 @@ class TestSpiderGeometry:
             xu_wrong = np.copy(xu)
             xu_wrong[0] = -0.1
             spider_geometry(
-                const, grad, lambda s: s @ hess @ s, xpt, xl, xu_wrong, delta,
-                True
+                const,
+                grad,
+                lambda s: s @ hess @ s,
+                xpt,
+                xl,
+                xu_wrong,
+                delta,
+                True,
             )
 
         # We must have delta < inf.
         with pytest.raises(AssertionError):
             spider_geometry(
-                const, grad, lambda s: s @ hess @ s, xpt, xl, xu, np.inf, True
+                const,
+                grad,
+                lambda s: s @ hess @ s,
+                xpt,
+                xl,
+                xu,
+                np.inf,
+                True,
             )
 
         # We must have delta > 0.
         with pytest.raises(AssertionError):
             spider_geometry(
-                const, grad, lambda s: s @ hess @ s, xpt, xl, xu, -1.0, True
+                const,
+                grad,
+                lambda s: s @ hess @ s,
+                xpt,
+                xl,
+                xu,
+                -1.0,
+                True,
             )
 
 

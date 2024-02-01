@@ -1,5 +1,8 @@
-from optiprofiler import set_cutest_problem_options, find_cutest_problems, \
-    run_benchmark
+from optiprofiler import (
+    set_cutest_problem_options,
+    find_cutest_problems,
+    run_benchmark,
+)
 
 
 def cobyqa_pypi(fun, x0):

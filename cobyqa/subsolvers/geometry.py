@@ -83,7 +83,13 @@ def cauchy_geometry(const, grad, curv, xl, xu, delta, debug):
     # the largest function value.
     step1, q_val1 = _cauchy_geom(const, grad, curv, xl, xu, delta, debug)
     step2, q_val2 = _cauchy_geom(
-        -const, -grad, lambda x: -curv(x), xl, xu, delta, debug
+        -const,
+        -grad,
+        lambda x: -curv(x),
+        xl,
+        xu,
+        delta,
+        debug,
     )
     step = step1 if abs(q_val1) >= abs(q_val2) else step2
 
@@ -158,8 +164,11 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
         assert isinstance(const, float)
         assert isinstance(grad, np.ndarray) and grad.ndim == 1
         assert inspect.signature(curv).bind(grad)
-        assert (isinstance(xpt, np.ndarray) and xpt.ndim == 2
-                and xpt.shape[0] == grad.size)
+        assert (
+            isinstance(xpt, np.ndarray)
+            and xpt.ndim == 2
+            and xpt.shape[0] == grad.size
+        )
         assert isinstance(xl, np.ndarray) and xl.shape == grad.shape
         assert isinstance(xu, np.ndarray) and xu.shape == grad.shape
         assert isinstance(delta, float)
@@ -230,10 +239,12 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
         # step in some extreme cases.
         alpha_pos = min(alpha_tr, alpha_bd_pos)
         alpha_neg = max(-alpha_tr, alpha_bd_neg)
-        q_val_pos = (const + alpha_pos * grad_step
-                     + 0.5 * alpha_pos**2.0 * curv_step)
-        q_val_neg = (const + alpha_neg * grad_step
-                     + 0.5 * alpha_neg**2.0 * curv_step)
+        q_val_pos = (
+            const + alpha_pos * grad_step + 0.5 * alpha_pos**2.0 * curv_step
+        )
+        q_val_neg = (
+            const + alpha_neg * grad_step + 0.5 * alpha_neg**2.0 * curv_step
+        )
         if alpha_quad_pos < alpha_pos:
             q_val_quad_pos = (
                 const
