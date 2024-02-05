@@ -587,10 +587,7 @@ class TrustRegion:
         radius = np.sqrt(self.radius**2.0 - normal_step @ normal_step)
         xl -= normal_step
         xu -= normal_step
-        if self._constants[Constants.STANDARD_BYRD_OMOJOKUN]:
-            bub = np.zeros_like(bub)
-        else:
-            bub = np.maximum(bub - aub @ normal_step, 0.0)
+        bub = np.maximum(bub - aub @ normal_step, 0.0)
         g_best = (
             self.models.fun_grad(self.x_best)
             + self.lag_model_hess_prod(normal_step)

@@ -256,9 +256,6 @@ def minimize(
     low_radius_factor : float, optional
         Factor used to determine which interpolation point should be removed
         from the interpolation set at each iteration.
-    standard_byrd_omojokun : bool, optional
-        Whether to use the standard Byrd-Omojokun composite-step approach to
-        solve the subproblem or the modified one proposed in [3]_.
     byrd_omojokun_factor : float, optional
         Factor by which the trust-region radius is reduced for the computations
         of the normal step in the Byrd-Omojokun composite-step approach.
@@ -1287,13 +1284,6 @@ def _set_default_constants(**kwargs):
         raise ValueError(
             "The constant low_radius_factor must be in the interval (0, 1)."
         )
-    constants.setdefault(
-        Constants.STANDARD_BYRD_OMOJOKUN.value,
-        DEFAULT_CONSTANTS[Constants.STANDARD_BYRD_OMOJOKUN],
-    )
-    constants[Constants.STANDARD_BYRD_OMOJOKUN.value] = bool(
-        constants[Constants.STANDARD_BYRD_OMOJOKUN]
-    )
     constants.setdefault(
         Constants.BYRD_OMOJOKUN_FACTOR.value,
         DEFAULT_CONSTANTS[Constants.BYRD_OMOJOKUN_FACTOR],

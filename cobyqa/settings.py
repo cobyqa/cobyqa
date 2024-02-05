@@ -60,7 +60,6 @@ class Constants(str, Enum):
     PENALTY_INCREASE_FACTOR = "penalty_increase_factor"
     SHORT_STEP_THRESHOLD = "short_step_threshold"
     LOW_RADIUS_FACTOR = "low_radius_factor"
-    STANDARD_BYRD_OMOJOKUN = "standard_byrd_omojokun"
     BYRD_OMOJOKUN_FACTOR = "byrd_omojokun_factor"
     THRESHOLD_RATIO_CONSTRAINTS = "threshold_ratio_constraints"
     LARGE_SHIFT_FACTOR = "large_shift_factor"
@@ -102,7 +101,6 @@ DEFAULT_CONSTANTS = {
     Constants.PENALTY_INCREASE_FACTOR.value: 2.0,
     Constants.SHORT_STEP_THRESHOLD.value: 0.5,
     Constants.LOW_RADIUS_FACTOR.value: 0.1,
-    Constants.STANDARD_BYRD_OMOJOKUN.value: False,
     Constants.BYRD_OMOJOKUN_FACTOR.value: 0.8,
     Constants.THRESHOLD_RATIO_CONSTRAINTS.value: 2.0,
     Constants.LARGE_SHIFT_FACTOR.value: 10.0,
