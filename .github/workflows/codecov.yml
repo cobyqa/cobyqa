@@ -31,7 +31,7 @@ jobs:
         run: bash .github/actions/codecov/generate_coverage.sh
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         if: ${{ github.event_name != 'pull_request' }}
         with:
           fail_ci_if_error: true
