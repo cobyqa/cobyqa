@@ -64,7 +64,7 @@ rst_prolog = f"""
 .. |release| replace:: {release}
 .. |year| replace:: {datetime.now().year}
 .. |pypi_downloads| replace:: {downloads['pypi']:,}
-.. |github_downloads| replace:: {downloads['github']:,}
+.. |conda_downloads| replace:: {downloads['conda']:,}
 .. |total_downloads| replace:: {sum(downloads.values()):,}
 """
 
@@ -97,7 +97,7 @@ html_theme_options = {
     "show_version_warning_banner": True,
     "icon_links": [
         {
-            "name": f'GitHub ({downloads["github"]:,} downloads)',
+            "name": f'GitHub',
             "url": 'https://github.com/cobyqa/cobyqa',
             "icon": "fa-brands fa-github",
         },
