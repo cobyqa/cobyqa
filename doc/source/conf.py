@@ -97,12 +97,12 @@ html_theme_options = {
     "show_version_warning_banner": True,
     "icon_links": [
         {
-            "name": f'GitHub',
-            "url": 'https://github.com/cobyqa/cobyqa',
+            "name": "GitHub",
+            "url": "https://github.com/cobyqa/cobyqa",
             "icon": "fa-brands fa-github",
         },
         {
-            "name": f'PyPI ({downloads["pypi"]:,} downloads)',
+            "name": f"PyPI ({downloads['pypi']:,} downloads)",
             "url": "https://pypi.org/project/cobyqa",
             "icon": "fa-solid fa-box",
         },
@@ -111,7 +111,7 @@ html_theme_options = {
     "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
     "navbar_align": "left",
     "navigation_depth": 1,
-    # 'announcement': '<p></p>',
+    # "announcement": "<p></p>",
 }
 
 html_title = f"{project} v{version} Manual"
