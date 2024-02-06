@@ -18,6 +18,11 @@ class TestObjectiveFunction:
         x = np.asarray(x)
         return np.sum(c * (x[1:] - x[:-1]**2.0)**2.0 + (1.0 - x[:-1])**2.0)
 
+    class Rosen:
+
+        def __call__(self, x):
+            return TestObjectiveFunction.rosen(x)
+
     def test_simple(self, capsys):
         obj = ObjectiveFunction(self.rosen, False, True)
         x = [1.5, 1.5]
@@ -38,6 +43,10 @@ class TestObjectiveFunction:
         assert obj([1.5, 1.5]) == 0.0
         assert obj.n_eval == 0
         assert obj.name == ""
+
+    def test_wrapper(self):
+        obj = ObjectiveFunction(self.Rosen(), False, True)
+        assert obj.name == "fun"
 
     def test_verbose(self, capsys):
         obj = ObjectiveFunction(self.rosen, True, True)
