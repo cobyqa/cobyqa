@@ -1,11 +1,11 @@
 import numpy as np
-# import pytest
-from scipy.optimize import Bounds
+import pytest
+from scipy.optimize import Bounds, LinearConstraint
 
 from ..problem import (
     ObjectiveFunction,
     BoundConstraints,
-    # LinearConstraints,
+    LinearConstraints,
     # NonlinearConstraints,
     # Problem,
 )
@@ -67,6 +67,7 @@ class TestBoundConstraints:
         np.testing.assert_array_equal(constraints.xu, bounds.ub)
         assert constraints.m == 4
         assert constraints.is_feasible
+        assert constraints.maxcv([0.5, 0.5]) == 0.0
         assert constraints.maxcv(constraints.xl) == 0.0
         assert constraints.maxcv(constraints.xu) == 0.0
         x = [2.0, 2.0]
@@ -90,3 +91,47 @@ class TestBoundConstraints:
         x = [2.0, 2.0]
         np.testing.assert_array_equal(constraints.project(x), x)
         np.testing.assert_allclose(constraints.maxcv(x), 1.0)
+
+
+class TestLinearConstraints:
+
+    def test_simple(self):
+        linear_constraints = [
+            LinearConstraint([[1.0, 1.0]], [0.0], [1.0]),
+            LinearConstraint([[2.0, 1.0]], [1.0], [1.0]),
+        ]
+        constraints = LinearConstraints(linear_constraints, 2, True)
+        np.testing.assert_array_equal(
+            constraints.a_ub,
+            [[1.0, 1.0], [-1.0, -1.0]],
+        )
+        np.testing.assert_array_equal(constraints.b_ub, [1.0, 0.0])
+        np.testing.assert_array_equal(constraints.a_eq, [[2.0, 1.0]])
+        np.testing.assert_array_equal(constraints.b_eq, [1.0])
+        assert constraints.m_ub == 2
+        assert constraints.m_eq == 1
+        np.testing.assert_allclose(constraints.maxcv([0.5, 0.0]), 0.0)
+
+    def test_nan(self):
+        linear_constraints = [LinearConstraint([[1.0, np.nan]], [0.0], [1.0])]
+        constraints = LinearConstraints(linear_constraints, 2, True)
+        np.testing.assert_array_equal(
+            constraints.a_ub,
+            [[1.0, 0.0], [-1.0, 0.0]],
+        )
+        np.testing.assert_array_equal(constraints.b_ub, [1.0, 0.0])
+        assert constraints.m_ub == 2
+        assert constraints.m_eq == 0
+        linear_constraints = [LinearConstraint([[1.0, 1.0]], [np.nan], [1.0])]
+        constraints = LinearConstraints(linear_constraints, 2, True)
+        np.testing.assert_array_equal(constraints.a_ub, [[1.0, 1.0]])
+        np.testing.assert_array_equal(constraints.b_ub, [1.0])
+        assert constraints.m_ub == 1
+        assert constraints.m_eq == 0
+        linear_constraints = [LinearConstraint([[1.0, 1.0]], [0.0], [np.nan])]
+        constraints = LinearConstraints(linear_constraints, 2, True)
+        np.testing.assert_array_equal(constraints.a_ub, [[-1.0, -1.0]])
+        np.testing.assert_array_equal(constraints.b_ub, [0.0])
+        assert constraints.m_ub == 1
+        assert constraints.m_eq == 0
+

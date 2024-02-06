@@ -253,8 +253,7 @@ class LinearConstraints:
                 self._b_eq = np.concatenate((
                     self.b_eq,
                     0.5 * (
-                        constraint.lb[is_equality]
-                        + constraint.ub[is_equality]
+                        constraint.lb[is_equality] + constraint.ub[is_equality]
                     ),
                 ))
             if not np.all(is_equality):
@@ -270,13 +269,15 @@ class LinearConstraints:
                 ))
 
         # Check the constraints.
-        if self._a_ub.shape[0] != self._b_ub.size:
+        if self._a_ub.shape[1] != n:
             raise ValueError(
-                "The linear inequality constraints are inconsistent."
+                f"The left-hand side matrix of the linear inequality "
+                f"constraints must have {n} columns."
             )
-        if self._a_eq.shape[0] != self._b_eq.size:
+        if self._a_eq.shape[1] != n:
             raise ValueError(
-                "The linear equality constraints are inconsistent."
+                f"The left-hand side matrix of the linear equality "
+                f"constraints must have {n} columns."
             )
 
         # Remove the ill-defined constraints.
