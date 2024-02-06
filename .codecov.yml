@@ -15,3 +15,4 @@ github_checks:
 ignore:
   - '**/tests/*.py'
   - 'cobyqa/utils/versions.py'
+  - 'cobyqa/settings.py'
