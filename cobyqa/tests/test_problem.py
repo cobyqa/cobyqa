@@ -1,12 +1,13 @@
 import numpy as np
-import pytest
+# import pytest
+from scipy.optimize import Bounds
 
 from ..problem import (
     ObjectiveFunction,
     BoundConstraints,
-    LinearConstraints,
-    NonlinearConstraints,
-    Problem,
+    # LinearConstraints,
+    # NonlinearConstraints,
+    # Problem,
 )
 from ..settings import PRINT_OPTIONS
 
@@ -59,4 +60,33 @@ class TestObjectiveFunction:
 
 class TestBoundConstraints:
 
-    pass
+    def test_simple(self):
+        bounds = Bounds([0.0, 0.0], [1.0, 1.0])
+        constraints = BoundConstraints(bounds)
+        np.testing.assert_array_equal(constraints.xl, bounds.lb)
+        np.testing.assert_array_equal(constraints.xu, bounds.ub)
+        assert constraints.m == 4
+        assert constraints.is_feasible
+        assert constraints.maxcv(constraints.xl) == 0.0
+        assert constraints.maxcv(constraints.xu) == 0.0
+        x = [2.0, 2.0]
+        assert np.all(constraints.project(x) >= constraints.xl)
+        assert np.all(constraints.project(x) <= constraints.xu)
+
+    def test_nan(self):
+        bounds = Bounds([np.nan, 0.0], [1.0, 1.0])
+        constraints = BoundConstraints(bounds)
+        np.testing.assert_array_equal(constraints.xl, [-np.inf, 0.0])
+        assert constraints.m == 3
+        bounds = Bounds([0.0, 0.0], [1.0, np.nan])
+        constraints = BoundConstraints(bounds)
+        np.testing.assert_array_equal(constraints.xu, [1.0, np.inf])
+        assert constraints.m == 3
+
+    def test_infeasible(self):
+        bounds = Bounds([2.0, 0.0], [1.0, 1.0])
+        constraints = BoundConstraints(bounds)
+        assert not constraints.is_feasible
+        x = [2.0, 2.0]
+        np.testing.assert_array_equal(constraints.project(x), x)
+        np.testing.assert_allclose(constraints.maxcv(x), 1.0)
