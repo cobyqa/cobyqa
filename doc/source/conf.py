@@ -79,6 +79,8 @@ html_theme = "pydata_sphinx_theme"
 
 html_static_path = ["_static"]
 
+html_js_files = ["custom-icons.js"]
+
 html_context = {
     "github_user": "cobyqa",
     "github_repo": "cobyqa",
@@ -104,7 +106,12 @@ html_theme_options = {
         {
             "name": f"PyPI ({downloads['pypi']:,} downloads)",
             "url": "https://pypi.org/project/cobyqa",
-            "icon": "fa-solid fa-box",
+            "icon": "fa-custom fa-pypi",
+        },
+        {
+            "name": f"conda-forge ({downloads['conda']:,} downloads)",
+            "url": "https://anaconda.org/conda-forge/cobyqa",
+            "icon": "fa-custom fa-anaconda",
         },
     ],
     "navbar_persistent": ["search-button"],
