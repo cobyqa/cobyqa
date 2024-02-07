@@ -10,6 +10,7 @@ from ..problem import (
     Problem,
 )
 from ..settings import PRINT_OPTIONS
+from ..utils import CallbackSuccess
 
 
 class BaseTest:
@@ -286,16 +287,185 @@ class TestProblem(BaseTest):
         np.testing.assert_allclose(maxcv_best, problem.maxcv(x))
 
     def test_scale(self):
-        pass
+        obj = ObjectiveFunction(self.rosen, False, True)
+        bounds = BoundConstraints(Bounds([0.0, 0.0], [1.0, 1.0]))
+        linear_constraints = LinearConstraints(
+            [LinearConstraint([[1.0, 1.0]], [0.0], [1.0])],
+            2,
+            True,
+        )
+        nonlinear_constraints = NonlinearConstraints(
+            [NonlinearConstraint(np.cos, [-0.5, -0.5], [0.0, 0.0])],
+            False,
+            True,
+        )
+        problem = Problem(
+            obj,
+            [0.0, 0.0],
+            bounds,
+            linear_constraints,
+            nonlinear_constraints,
+            None,
+            0.0,
+            True,
+            False,
+            0,
+            1,
+            True,
+        )
+        np.testing.assert_array_equal(problem.bounds.xl, [-1.0, -1.0])
+        np.testing.assert_array_equal(problem.bounds.xu, [1.0, 1.0])
+        np.testing.assert_allclose(problem.x0, [-1.0, -1.0])
+        np.testing.assert_allclose(
+            problem.linear.a_ub,
+            [[0.5, 0.5], [-0.5, -0.5]],
+        )
+        np.testing.assert_allclose(problem.linear.b_ub, [0.0, 1.0])
+        x = np.array([0.5, 0.5])
+        fun, c_ub, _ = problem(2.0 * x - 1.0)
+        np.testing.assert_allclose(fun, self.rosen(x))
+        np.testing.assert_allclose(
+            c_ub,
+            np.block([-0.5 - np.cos(x), np.cos(x)]),
+        )
 
     def test_barrier(self):
-        pass
+        obj = ObjectiveFunction(lambda x: np.nan, False, True)
+        bounds = BoundConstraints(Bounds([0.0, 0.0], [1.0, 1.0]))
+        linear_constraints = LinearConstraints([], 2, True)
+        nonlinear_constraints = NonlinearConstraints(
+            [
+                NonlinearConstraint(lambda x: np.nan, [0.0], [1.0]),
+                NonlinearConstraint(lambda x: np.nan, [0.0], [0.0]),
+            ],
+            False,
+            True,
+        )
+        problem = Problem(
+            obj,
+            [0.0, 0.0],
+            bounds,
+            linear_constraints,
+            nonlinear_constraints,
+            None,
+            0.0,
+            False,
+            False,
+            0,
+            1,
+            True,
+        )
+        fun, c_ub, c_eq = problem([0.5, 0.5])
+        assert np.isfinite(fun)
+        assert np.all(np.isfinite(c_ub))
+        assert np.all(np.isfinite(c_eq))
+
+    def test_history(self):
+        obj = ObjectiveFunction(self.rosen, False, True)
+        bounds = BoundConstraints(Bounds([0.0, 0.0], [1.0, 1.0]))
+        linear_constraints = LinearConstraints([], 2, True)
+        nonlinear_constraints = NonlinearConstraints(
+            [NonlinearConstraint(np.cos, [-0.5, -0.5], [0.0, 0.0])],
+            False,
+            True,
+        )
+        problem = Problem(
+            obj,
+            [0.0, 0.0],
+            bounds,
+            linear_constraints,
+            nonlinear_constraints,
+            None,
+            0.0,
+            False,
+            True,
+            2,
+            1,
+            True,
+        )
+        x = [0.5, 0.5]
+        problem(x)
+        np.testing.assert_array_equal(problem.fun_history, [self.rosen(x)])
+        np.testing.assert_allclose(
+            problem.maxcv_history,
+            [nonlinear_constraints.maxcv(x)],
+        )
+        problem(x)
+        np.testing.assert_array_equal(
+            problem.fun_history,
+            2 * [self.rosen(x)],
+        )
+        np.testing.assert_allclose(
+            problem.maxcv_history,
+            2 * [nonlinear_constraints.maxcv(x)],
+        )
+        problem(x)
+        np.testing.assert_array_equal(
+            problem.fun_history,
+            2 * [self.rosen(x)],
+        )
+        np.testing.assert_allclose(
+            problem.maxcv_history,
+            2 * [nonlinear_constraints.maxcv(x)],
+        )
 
     def test_filter(self):
-        pass
+        obj = ObjectiveFunction(self.rosen, False, True)
+        bounds = BoundConstraints(Bounds([0.0, 0.0], [1.0, 1.0]))
+        linear_constraints = LinearConstraints(
+            [LinearConstraint([[1.0, 1.0]], [1.0], [1.0])],
+            2,
+            True,
+        )
+        nonlinear_constraints = NonlinearConstraints([], False, True)
+        problem = Problem(
+            obj,
+            [0.0, 0.0],
+            bounds,
+            linear_constraints,
+            nonlinear_constraints,
+            None,
+            0.0,
+            False,
+            False,
+            0,
+            2,
+            True,
+        )
+        problem([1.0, 1.0])
+        x, _, _ = problem.best_eval(1e3)
+        np.testing.assert_allclose(x, [1.0, 1.0])
+        problem([0.5, 0.5])
+        x, _, _ = problem.best_eval(1e3)
+        np.testing.assert_allclose(x, [0.5, 0.5])
 
     def test_callback(self):
-        pass
+        obj = ObjectiveFunction(self.rosen, False, True)
+        bounds = BoundConstraints(Bounds([0.0, 0.0], [1.0, 1.0]))
+        linear_constraints = LinearConstraints([], 2, True)
+        nonlinear_constraints = NonlinearConstraints([], False, True)
+
+        def callback(intermediate_result):
+            if intermediate_result.fun < 1e-3:
+                raise StopIteration
+
+        problem = Problem(
+            obj,
+            [0.0, 0.0],
+            bounds,
+            linear_constraints,
+            nonlinear_constraints,
+            callback,
+            0.0,
+            False,
+            False,
+            0,
+            2,
+            True,
+        )
+        problem([0.0, 0.0])
+        with pytest.raises(CallbackSuccess):
+            problem([1.0, 1.0])
 
     def test_type(self):
         pass
@@ -304,7 +474,26 @@ class TestProblem(BaseTest):
         pass
 
     def test_best_eval(self):
-        pass
+        obj = ObjectiveFunction(self.rosen, False, True)
+        bounds = BoundConstraints(Bounds([0.0, 0.0], [1.0, 1.0]))
+        linear_constraints = LinearConstraints([], 2, True)
+        nonlinear_constraints = NonlinearConstraints([], False, True)
+        problem = Problem(
+            obj,
+            [0.0, 0.0],
+            bounds,
+            linear_constraints,
+            nonlinear_constraints,
+            None,
+            0.0,
+            False,
+            False,
+            0,
+            2,
+            True,
+        )
+        x, _, _ = problem.best_eval(1e3)
+        np.testing.assert_array_equal(x, [0.0, 0.0])
 
     def test_verbose(self):
         pass
