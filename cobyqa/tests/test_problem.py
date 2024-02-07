@@ -1,12 +1,12 @@
 import numpy as np
 import pytest
-from scipy.optimize import Bounds, LinearConstraint
+from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint
 
 from ..problem import (
     ObjectiveFunction,
     BoundConstraints,
     LinearConstraints,
-    # NonlinearConstraints,
+    NonlinearConstraints,
     # Problem,
 )
 from ..settings import PRINT_OPTIONS
@@ -144,12 +144,29 @@ class TestLinearConstraints:
         np.testing.assert_array_equal(constraints.b_ub, [0.0])
         assert constraints.m_ub == 1
 
-    def test_exceptions(self):
-        linear_constraints = [
-            LinearConstraint([[1.0, 1.0]], [0.0], [1.0]),
-            LinearConstraint([[3.0, 2.0, 1.0]], [1.0], [1.0]),
+
+class TestNonlinearConstraint:
+
+    def test_simple(self):
+        nonlinear_constraints = [
+            NonlinearConstraint(np.cos, -np.inf, [0.0, 0.0]),
+            NonlinearConstraint(np.sin, [1.0, 1.0], [1.0, 1.0]),
+            {'fun': np.tan, 'type': 'ineq', 'args': ()},
+            {'fun': lambda x: np.inner(x, x) - 1.0, 'type': 'eq', 'args': ()},
         ]
-        with pytest.raises(ValueError):
-            LinearConstraints(linear_constraints, 2, True)
-        with pytest.raises(ValueError):
-            LinearConstraints(linear_constraints, 3, True)
+        constraints = NonlinearConstraints(nonlinear_constraints, False, True)
+        assert constraints.n_eval == 0
+        x = [0.5, 0.5]
+        c_ub, c_eq = constraints(x)
+        np.testing.assert_allclose(c_ub, np.block([np.cos(x), -np.tan(x)]))
+        np.testing.assert_allclose(
+            c_eq,
+            np.block([np.sin(x) - 1.0, np.inner(x, x) - 1.0]),
+        )
+        assert constraints.n_eval == 1
+        assert constraints.m_ub == 4
+        assert constraints.m_eq == 3
+        np.testing.assert_allclose(
+            constraints.maxcv(x, c_ub, c_eq),
+            max(np.max(c_eq), np.max(np.abs(c_ub))),
+        )

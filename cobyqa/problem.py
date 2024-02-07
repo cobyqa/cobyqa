@@ -268,18 +268,6 @@ class LinearConstraints:
                     -constraint.lb[~is_equality],
                 ))
 
-        # Check the constraints.
-        if self._a_ub.shape[1] != n:
-            raise ValueError(
-                f"The left-hand side matrix of the linear inequality "
-                f"constraints must have {n} columns."
-            )
-        if self._a_eq.shape[1] != n:
-            raise ValueError(
-                f"The left-hand side matrix of the linear equality "
-                f"constraints must have {n} columns."
-            )
-
         # Remove the ill-defined constraints.
         self.a_ub[np.isnan(self.a_ub)] = 0.0
         self.a_eq[np.isnan(self.a_eq)] = 0.0
