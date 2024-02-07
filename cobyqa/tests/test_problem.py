@@ -135,3 +135,21 @@ class TestLinearConstraints:
         assert constraints.m_ub == 1
         assert constraints.m_eq == 0
 
+    def test_inf(self):
+        linear_constraints = [
+            LinearConstraint([[1.0, 1.0]], [0.0], [np.inf]),
+        ]
+        constraints = LinearConstraints(linear_constraints, 2, True)
+        np.testing.assert_array_equal(constraints.a_ub, [[-1.0, -1.0]])
+        np.testing.assert_array_equal(constraints.b_ub, [0.0])
+        assert constraints.m_ub == 1
+
+    def test_exceptions(self):
+        linear_constraints = [
+            LinearConstraint([[1.0, 1.0]], [0.0], [1.0]),
+            LinearConstraint([[3.0, 2.0, 1.0]], [1.0], [1.0]),
+        ]
+        with pytest.raises(ValueError):
+            LinearConstraints(linear_constraints, 2, True)
+        with pytest.raises(ValueError):
+            LinearConstraints(linear_constraints, 3, True)
