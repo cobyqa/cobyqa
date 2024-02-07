@@ -149,7 +149,7 @@ class TestNonlinearConstraint:
 
     def test_simple(self):
         nonlinear_constraints = [
-            NonlinearConstraint(np.cos, -np.inf, [0.0, 0.0]),
+            NonlinearConstraint(np.cos, [-0.5, -0.5], [0.0, 0.0]),
             NonlinearConstraint(np.sin, [1.0, 1.0], [1.0, 1.0]),
             {'fun': np.tan, 'type': 'ineq', 'args': ()},
             {'fun': lambda x: np.inner(x, x) - 1.0, 'type': 'eq', 'args': ()},
@@ -158,15 +158,40 @@ class TestNonlinearConstraint:
         assert constraints.n_eval == 0
         x = [0.5, 0.5]
         c_ub, c_eq = constraints(x)
-        np.testing.assert_allclose(c_ub, np.block([np.cos(x), -np.tan(x)]))
+        np.testing.assert_allclose(
+            c_ub,
+            np.block([-0.5 - np.cos(x), np.cos(x), -np.tan(x)]),
+        )
         np.testing.assert_allclose(
             c_eq,
             np.block([np.sin(x) - 1.0, np.inner(x, x) - 1.0]),
         )
         assert constraints.n_eval == 1
-        assert constraints.m_ub == 4
+        assert constraints.m_ub == 6
         assert constraints.m_eq == 3
         np.testing.assert_allclose(
             constraints.maxcv(x, c_ub, c_eq),
-            max(np.max(c_eq), np.max(np.abs(c_ub))),
+            max(np.max(np.abs(c_eq)), np.max(c_ub)),
         )
+
+    def test_args(self):
+        nonlinear_constraints = [
+            {'fun': lambda x, c: c * np.cos(x), 'type': 'ineq', 'args': 2.0},
+            {'fun': lambda x, c: c * np.sin(x), 'type': 'eq', 'args': 2.0},
+        ]
+        constraints = NonlinearConstraints(nonlinear_constraints, False, True)
+        x = [0.5, 0.5]
+        c_ub, c_eq = constraints(x)
+        np.testing.assert_allclose(c_ub, np.block([-2.0 * np.cos(x)]))
+        np.testing.assert_allclose(c_eq, np.block([2.0 * np.sin(x)]))
+
+    def test_verbose(self, capsys):
+        nonlinear_constraints = [
+            NonlinearConstraint(np.cos, [-0.5, -0.5], [0.0, 0.0]),
+        ]
+        constraints = NonlinearConstraints(nonlinear_constraints, True, True)
+        x = np.array([1.5, 1.5])
+        constraints(x)
+        captured = capsys.readouterr()
+        with np.printoptions(**PRINT_OPTIONS):
+            assert captured.out == f"cos({x}) = {np.cos(x)}\n"
