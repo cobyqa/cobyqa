@@ -173,6 +173,10 @@ class TestNonlinearConstraint:
             constraints.maxcv(x, c_ub, c_eq),
             max(np.max(np.abs(c_eq)), np.max(c_ub)),
         )
+        np.testing.assert_array_equal(
+            constraints.maxcv(x, c_ub, c_eq),
+            constraints.maxcv(x),
+        )
 
     def test_args(self):
         nonlinear_constraints = [
@@ -195,3 +199,14 @@ class TestNonlinearConstraint:
         captured = capsys.readouterr()
         with np.printoptions(**PRINT_OPTIONS):
             assert captured.out == f"cos({x}) = {np.cos(x)}\n"
+
+    def test_exceptions(self):
+        nonlinear_constraints = [
+            NonlinearConstraint(np.cos, [-0.5, -0.5], [0.0, 0.0]),
+            NonlinearConstraint(np.sin, [1.0, 1.0], [1.0, 1.0]),
+        ]
+        constraints = NonlinearConstraints(nonlinear_constraints, False, True)
+        with pytest.raises(ValueError):
+            constraints.m_ub
+        with pytest.raises(ValueError):
+            constraints.m_eq
