@@ -429,7 +429,7 @@ class TestProblem(BaseTest):
             False,
             False,
             0,
-            2,
+            1,
             True,
         )
         problem([1.0, 1.0])
