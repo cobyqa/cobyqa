@@ -13,9 +13,6 @@ COBYQA: Constrained Optimization BY Quadratic Approximations
 .. image:: https://img.shields.io/pypi/v/cobyqa?logo=pypi&style=for-the-badge
     :target: https://pypi.org/project/cobyqa/
 
-.. image:: https://img.shields.io/pypi/pyversions/cobyqa?logo=pypi&style=for-the-badge
-    :target: https://pypi.org/project/cobyqa/
-
 .. image:: https://img.shields.io/pypi/dm/cobyqa?logo=pypi&style=for-the-badge
     :target: https://pypi.org/project/cobyqa/
 
