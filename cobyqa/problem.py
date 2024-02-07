@@ -642,25 +642,18 @@ class Problem:
         self._nonlinear = nonlinear
         if callback is not None:
             if not callable(callback):
-                raise ValueError("The callback must be a callable function.")
+                raise TypeError("The callback must be a callable function.")
         self._callback = callback
 
         # Check the consistency of the problem.
         x0 = exact_1d_array(x0, "The initial guess must be a vector.")
         n = x0.size
         if bounds.xl.size != n:
-            raise ValueError(f"The lower bound must have {n} elements.")
-        if bounds.xu.size != n:
-            raise ValueError(f"The upper bound must have {n} elements.")
+            raise ValueError(f"The bounds must have {n} elements.")
         if linear.a_ub.shape[1] != n:
             raise ValueError(
-                f"The left-hand side matrix of the linear inequality "
-                f"constraints must have {n} columns."
-            )
-        if linear.a_eq.shape[1] != n:
-            raise ValueError(
-                f"The left-hand side matrix of the linear equality "
-                f"constraints must have {n} columns."
+                f"The left-hand side matrices of the linear constraints must "
+                f"have {n} columns."
             )
 
         # Check which variables are fixed.

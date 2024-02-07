@@ -284,3 +284,84 @@ class TestProblem(BaseTest):
         np.testing.assert_array_equal(x_best, x)
         np.testing.assert_allclose(fun_best, self.rosen(x))
         np.testing.assert_allclose(maxcv_best, problem.maxcv(x))
+
+    def test_scale(self):
+        pass
+
+    def test_barrier(self):
+        pass
+
+    def test_filter(self):
+        pass
+
+    def test_callback(self):
+        pass
+
+    def test_type(self):
+        pass
+
+    def test_feasibility_problem(self):
+        pass
+
+    def test_best_eval(self):
+        pass
+
+    def test_verbose(self):
+        pass
+
+    def test_exceptions(self):
+        obj = ObjectiveFunction(self.rosen, False, True)
+        bounds = BoundConstraints(Bounds([0.0, 0.0], [1.0, 1.0]))
+        linear_constraints = LinearConstraints([], 2, True)
+        nonlinear_constraints = NonlinearConstraints([], False, True)
+        with pytest.raises(TypeError):
+            Problem(
+                obj,
+                [0.0, 0.0],
+                bounds,
+                linear_constraints,
+                nonlinear_constraints,
+                1.0,
+                0.0,
+                False,
+                False,
+                0,
+                1,
+                True,
+            )
+        wrong_bounds = BoundConstraints(Bounds([0.0], [1.0]))
+        with pytest.raises(ValueError):
+            Problem(
+                obj,
+                [0.0, 0.0],
+                wrong_bounds,
+                linear_constraints,
+                nonlinear_constraints,
+                None,
+                0.0,
+                False,
+                False,
+                0,
+                1,
+                True,
+            )
+        wrong_linear_constraints = LinearConstraints(
+            [LinearConstraint(1.0, 1.0, 1.0)],
+            1,
+            True,
+        )
+        with pytest.raises(ValueError):
+            Problem(
+                obj,
+                [0.0, 0.0],
+                bounds,
+                wrong_linear_constraints,
+                nonlinear_constraints,
+                None,
+                0.0,
+                False,
+                False,
+                0,
+                1,
+                True,
+            )
