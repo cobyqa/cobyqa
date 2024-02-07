@@ -15,10 +15,10 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
 
     .. math::
 
-        \min_{s \in \R^n} \quad \transpose{g} s + \frac{1}{2} \transpose{s} H s
-        \quad \text{s.t.} \quad
+        \min_{s \in \mathbb{R}^n} \quad g^{\mathsf{T}} s + \frac{1}{2}
+        s^{\mathsf{T}} H s \quad \text{s.t.} \quad
         \left\{ \begin{array}{l}
-            \xl \le s \le \xu,\\
+            l \le s \le u\\
             \lVert s \rVert \le \Delta,
         \end{array} \right.
 
@@ -35,9 +35,9 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
 
         returns the product :math:`H s`.
     xl : `numpy.ndarray`, shape (n,)
-        Lower bounds :math:`\xl` as shown above.
+        Lower bounds :math:`l` as shown above.
     xu : `numpy.ndarray`, shape (n,)
-        Upper bounds :math:`\xu` as shown above.
+        Upper bounds :math:`u` as shown above.
     delta : float
         Trust-region radius :math:`\Delta` as shown above.
     debug : bool
@@ -345,11 +345,12 @@ def constrained_tangential_byrd_omojokun(
 
     .. math::
 
-        \min_{s \in \R^n} \quad \transpose{g} s + \frac{1}{2} \transpose{s} H s
-        \quad \text{s.t.} \quad
+        \min_{s \in \mathbb{R}^n} \quad g^{\mathsf{T}} s + \frac{1}{2}
+        s^{\mathsf{T}} H s \quad \text{s.t.} \quad
         \left\{ \begin{array}{l}
-            \xl \le s \le \xu,\\
-            \aub s \le \bub, ~ \aeq s = 0,\\
+            l \le s \le u,\\
+            A_{\scriptscriptstyle I} s \le b_{\scriptscriptstyle I},\\
+            A_{\scriptscriptstyle E} s = 0,\\
             \lVert s \rVert \le \Delta,
         \end{array} \right.
 
@@ -366,15 +367,15 @@ def constrained_tangential_byrd_omojokun(
 
         returns the product :math:`H s`.
     xl : `numpy.ndarray`, shape (n,)
-        Lower bounds :math:`\xl` as shown above.
+        Lower bounds :math:`l` as shown above.
     xu : `numpy.ndarray`, shape (n,)
-        Upper bounds :math:`\xu` as shown above.
+        Upper bounds :math:`u` as shown above.
     aub : `numpy.ndarray`, shape (m_linear_ub, n)
-        Coefficient matrix :math:`\aub` as shown above.
+        Coefficient matrix :math:`A_{\scriptscriptstyle I}` as shown above.
     bub : `numpy.ndarray`, shape (m_linear_ub,)
-        Right-hand side :math:`\bub` as shown above.
+        Right-hand side :math:`b_{\scriptscriptstyle I}` as shown above.
     aeq : `numpy.ndarray`, shape (m_linear_eq, n)
-        Coefficient matrix :math:`\aeq` as shown above.
+        Coefficient matrix :math:`A_{\scriptscriptstyle E}` as shown above.
     delta : float
         Trust-region radius :math:`\Delta` as shown above.
     debug : bool
@@ -771,11 +772,13 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
 
     .. math::
 
-        \min_{s \in \R^n} \quad \frac{1}{2} \big( \lVert \max \{ \aub s - \bub,
-        0 \} \rVert^2 + \lVert \aeq s - \beq \rVert^2 \big) \quad \text{s.t.}
+        \min_{s \in \mathbb{R}^n} \quad \frac{1}{2} \big( \lVert \max \{
+        A_{\scriptscriptstyle I} s - b_{\scriptscriptstyle I}, 0 \} \rVert^2 +
+        \lVert A_{\scriptscriptstyle E} s - b_{\scriptscriptstyle E} \rVert^2
+        \big) \quad \text{s.t.}
         \quad
         \left\{ \begin{array}{l}
-            \xl \le s \le \xu,\\
+            l \le s \le u,\\
             \lVert s \rVert \le \Delta,
         \end{array} \right.
 
@@ -784,17 +787,17 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
     Parameters
     ----------
     aub : `numpy.ndarray`, shape (m_linear_ub, n)
-        Matrix :math:`\aub` as shown above.
+        Matrix :math:`A_{\scriptscriptstyle I}` as shown above.
     bub : `numpy.ndarray`, shape (m_linear_ub,)
-        Vector :math:`\bub` as shown above.
+        Vector :math:`b_{\scriptscriptstyle I}` as shown above.
     aeq : `numpy.ndarray`, shape (m_linear_eq, n)
-        Matrix :math:`\aeq` as shown above.
+        Matrix :math:`A_{\scriptscriptstyle E}` as shown above.
     beq : `numpy.ndarray`, shape (m_linear_eq,)
-        Vector :math:`\beq` as shown above.
+        Vector :math:`b_{\scriptscriptstyle E}` as shown above.
     xl : `numpy.ndarray`, shape (n,)
-        Lower bounds :math:`\xl` as shown above.
+        Lower bounds :math:`l` as shown above.
     xu : `numpy.ndarray`, shape (n,)
-        Upper bounds :math:`\xu` as shown above.
+        Upper bounds :math:`u` as shown above.
     delta : float
         Trust-region radius :math:`\Delta` as shown above.
     debug : bool

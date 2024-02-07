@@ -138,44 +138,10 @@ latex_elements = {
     "fontenc": r"\usepackage[LGR,T1]{fontenc}",
     "preamble": r"""
 \usepackage[bb=dsfontserif]{mathalpha}
-\newcommand{\R}{\mathbb{R}}
-\newcommand{\transpose}[1]{#1^{\mathsf{T}}}
-\newcommand{\aeq}{A_{\scriptscriptstyle \mathcal{E}}}
-\newcommand{\aub}{A_{\scriptscriptstyle \mathcal{I}}}
-\newcommand{\beq}{b_{\scriptscriptstyle \mathcal{E}}}
-\newcommand{\bub}{b_{\scriptscriptstyle \mathcal{I}}}
-\newcommand{\ceq}{c_{\scriptscriptstyle \mathcal{E}}}
-\newcommand{\cub}{c_{\scriptscriptstyle \mathcal{I}}}
-\newcommand{\obj}{f}
-\newcommand{\xbd}{\mathcal{X}}
-\newcommand{\xl}{l}
-\newcommand{\xu}{u}
 
 % Increase the default table of content depth.
 \setcounter{tocdepth}{2}
     """,
-}
-
-
-# -- Math support for HTML outputs -------------------------------------------
-
-mathjax3_config = {
-    "tex": {
-        "macros": {
-            "R": r"\mathbb{R}",
-            "transpose": [r"#1^{\mathsf{T}}", 1],
-            "aeq": r"A_{\scriptscriptstyle \mathcal{E}}",
-            "aub": r"A_{\scriptscriptstyle \mathcal{I}}",
-            "beq": r"b_{\scriptscriptstyle \mathcal{E}}",
-            "bub": r"b_{\scriptscriptstyle \mathcal{I}}",
-            "ceq": r"c_{\scriptscriptstyle \mathcal{E}}",
-            "cub": r"c_{\scriptscriptstyle \mathcal{I}}",
-            "obj": r"f",
-            "xbd": r"\mathcal{X}",
-            "xl": r"l",
-            "xu": r"u",
-        }
-    }
 }
 
 

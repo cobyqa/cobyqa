@@ -18,23 +18,29 @@ Using only functions values, and no derivatives, it aims at solving problems of 
 
 .. math::
 
-    \min_{x \in \xbd} \quad \obj ( x ) \quad \text{s.t.} \quad
+    \min_{x \in \mathcal{X}} \quad f ( x ) \quad \text{s.t.} \quad
     \begin{cases}
-        \aub x \le \bub, ~ \aeq x = \beq,\\
-        \cub ( x ) \le 0, ~ \ceq ( x ) = 0,
+        b_l \le A x \le b_u,\\
+        c_l \le c ( x ) \le c_u,
     \end{cases}
 
-where :math:`\xbd = \{ x \in \R^n : \xl \le x \le \xu \}`.
+where :math:`\mathcal{X} = \{ x \in \mathbb{R}^n : l \le x \le u \}`.
 COBYQA always respect the bound constraints throughout the optimization process.
-Hence, the nonlinear functions :math:`\obj`, :math:`\cub`, and :math:`\ceq` do not need to be well-defined outside :math:`\xbd`.
+Hence, the nonlinear functions :math:`f` and :math:`c` do not need to be well-defined outside :math:`\mathcal{X}`.
 In essence, COBYQA is a derivative-free trust-region SQP method based on quadratic models obtained by underdetermined interpolation.
 For a more detailed description of the algorithm, see the :ref:`framework description <framework>`.
 
-To install COBYQA, run in your terminal
+To install COBYQA using ``pip``, run in your terminal
 
 .. code-block:: bash
 
     pip install cobyqa
+
+If you are using ``conda``, you can install COBYQA from the `conda-forge <https://anaconda.org/conda-forge/cobyqa>`_ channel by running
+
+.. code-block:: bash
+
+    conda install conda-forge::cobyqa
 
 For more details on the installation and the usage of COBYQA, see the :ref:`user guide <user>`.
 

@@ -14,10 +14,10 @@ def cauchy_geometry(const, grad, curv, xl, xu, delta, debug):
 
     .. math::
 
-        \max_{s \in \R^n} \quad \bigg\lvert c + \transpose{g} s + \frac{1}{2}
-        \transpose{s} H s \bigg\rvert \quad \text{s.t.} \quad
+        \max_{s \in \mathbb{R}^n} \quad \bigg\lvert c + g^{\mathsf{T}} s +
+        \frac{1}{2} s^{\mathsf{T}} H s \bigg\rvert \quad \text{s.t.} \quad
         \left\{ \begin{array}{l}
-            \xl \le s \le \xu,\\
+            l \le s \le u,\\
             \lVert s \rVert \le \Delta,
         \end{array} \right.
 
@@ -35,11 +35,11 @@ def cauchy_geometry(const, grad, curv, xl, xu, delta, debug):
 
             ``curv(s) -> float``
 
-        returns :math:`\transpose{s} H s`.
+        returns :math:`s^{\mathsf{T}} H s`.
     xl : `numpy.ndarray`, shape (n,)
-        Lower bounds :math:`\xl` as shown above.
+        Lower bounds :math:`l` as shown above.
     xu : `numpy.ndarray`, shape (n,)
-        Upper bounds :math:`\xu` as shown above.
+        Upper bounds :math:`u` as shown above.
     delta : float
         Trust-region radius :math:`\Delta` as shown above.
     debug : bool
@@ -109,10 +109,10 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
 
     .. math::
 
-        \max_{s \in \R^n} \quad \bigg\lvert c + \transpose{g} s + \frac{1}{2}
-        \transpose{s} H s \bigg\rvert \quad \text{s.t.} \quad
+        \max_{s \in \mathbb{R}^n} \quad \bigg\lvert c + g^{\mathsf{T}} s +
+        \frac{1}{2} s^{\mathsf{T}} H s \bigg\rvert \quad \text{s.t.} \quad
         \left\{ \begin{array}{l}
-            \xl \le s \le \xu,\\
+            l \le s \le u,\\
             \lVert s \rVert \le \Delta,
         \end{array} \right.
 
@@ -129,14 +129,14 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
 
             ``curv(s) -> float``
 
-        returns :math:`\transpose{s} H s`.
+        returns :math:`s^{\mathsf{T}} H s`.
     xpt : `numpy.ndarray`, shape (n, npt)
         Points defining the straight lines. The straight lines considered are
         the ones passing through the origin and the points in `xpt`.
     xl : `numpy.ndarray`, shape (n,)
-        Lower bounds :math:`\xl` as shown above.
+        Lower bounds :math:`l` as shown above.
     xu : `numpy.ndarray`, shape (n,)
-        Upper bounds :math:`\xu` as shown above.
+        Upper bounds :math:`u` as shown above.
     delta : float
         Trust-region radius :math:`\Delta` as shown above.
     debug : bool

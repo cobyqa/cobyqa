@@ -19,11 +19,11 @@ COBYQA: Constrained Optimization BY Quadratic Approximations
 .. image:: https://img.shields.io/pypi/dm/cobyqa?logo=pypi&style=for-the-badge
     :target: https://pypi.org/project/cobyqa/
 
-.. image:: https://img.shields.io/pypi/format/cobyqa?logo=pypi&style=for-the-badge
-    :target: https://pypi.org/project/cobyqa/
+.. image:: https://img.shields.io/conda/v/conda-forge/cobyqa?logo=anaconda&style=for-the-badge&label=conda-forge
+    :target: https://anaconda.org/conda-forge/cobyqa
 
-.. image:: https://img.shields.io/pypi/status/cobyqa?logo=pypi&style=for-the-badge
-    :target: https://pypi.org/project/cobyqa/
+.. image:: https://img.shields.io/conda/d/conda-forge/cobyqa?logo=anaconda&style=for-the-badge&label=downloads
+    :target: https://anaconda.org/conda-forge/cobyqa
 
 COBYQA, an acronym for *Constrained Optimization BY Quadratic Approximations*, is designed to supersede `COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_ as a general derivative-free optimization solver.
 It can handle unconstrained, bound-constrained, linearly constrained, and nonlinearly constrained problems.
@@ -45,19 +45,25 @@ The following Python packages are required by COBYQA:
 * `NumPy <https://www.numpy.org>`_ 1.17.0 or higher, and
 * `SciPy <https://www.scipy.org>`_ 1.10.0 or higher.
 
-If you install COBYQA using ``pip`` (see below), these dependencies will be installed automatically.
+If you install COBYQA using ``pip`` or ``conda`` (see below), these dependencies will be installed automatically.
 More dependencies are required to run the test suite and some examples given in the folder ``examples``.
 See the relevant sections below for more details.
 
 User installation
 ~~~~~~~~~~~~~~~~~
 
-The easiest way to install COBYQA is using ``pip``.
-In a terminal or command window type
+The easiest way to install COBYQA is using ``pip`` or ``conda``.
+To install it using ``pip``, run in a terminal or command window
 
 .. code:: bash
 
     pip install cobyqa
+
+If you are using ``conda``, you can install COBYQA from the `conda-forge <https://anaconda.org/conda-forge/cobyqa>`_ channel by running
+
+.. code:: bash
+
+    conda install conda-forge::cobyqa
 
 To check your installation, you can execute
 
@@ -65,7 +71,7 @@ To check your installation, you can execute
 
     python -c "import cobyqa; cobyqa.show_versions()"
 
-If your python launcher is not ``python``, you can replace it with the appropriate command (similarly for ``pip``).
+If your python launcher is not ``python``, you can replace it with the appropriate command (similarly for ``pip`` and ``conda``).
 For example, you may need to use ``python3`` instead of ``python`` and ``pip3`` instead of ``pip``.
 
 Testing
