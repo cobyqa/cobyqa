@@ -770,6 +770,7 @@ class Problem:
             If the callback function raises a ``StopIteration``.
         """
         # Evaluate the objective and nonlinear constraint functions.
+        x = np.asarray(x, dtype=float)
         fun_val = self._obj(self.build_x(x))
         if np.isnan(fun_val):
             fun_val = BARRIER

@@ -435,6 +435,9 @@ class TestProblem(BaseTest):
         problem([1.0, 1.0])
         x, _, _ = problem.best_eval(1e3)
         np.testing.assert_allclose(x, [1.0, 1.0])
+        problem([0.25, 0.75])
+        x, _, _ = problem.best_eval(1e3)
+        np.testing.assert_allclose(x, [0.25, 0.75])
         problem([0.5, 0.5])
         x, _, _ = problem.best_eval(1e3)
         np.testing.assert_allclose(x, [0.5, 0.5])
@@ -467,8 +470,88 @@ class TestProblem(BaseTest):
         with pytest.raises(CallbackSuccess):
             problem([1.0, 1.0])
 
+        def callback(xk):
+            if np.all(xk > 0.5):
+                raise CallbackSuccess
+
+        problem = Problem(
+            obj,
+            [0.0, 0.0],
+            bounds,
+            linear_constraints,
+            nonlinear_constraints,
+            callback,
+            0.0,
+            False,
+            False,
+            0,
+            2,
+            True,
+        )
+        problem([0.0, 0.0])
+        with pytest.raises(CallbackSuccess):
+            problem([1.0, 1.0])
+
     def test_type(self):
-        pass
+        obj = ObjectiveFunction(self.rosen, False, True)
+        bounds = BoundConstraints(Bounds(2 * [-np.inf], 2 * [np.inf]))
+        linear_constraints = LinearConstraints([], 2, True)
+        nonlinear_constraints = NonlinearConstraints([], False, True)
+        problem = Problem(
+            obj,
+            [0.0, 0.0],
+            bounds,
+            linear_constraints,
+            nonlinear_constraints,
+            None,
+            0.0,
+            False,
+            False,
+            0,
+            1,
+            True,
+        )
+        assert problem.type == "nonlinearly constrained"
+        problem(problem.x0)
+        assert problem.type == "unconstrained"
+        bounds = BoundConstraints(Bounds([0.0, 0.0], [1.0, 1.0]))
+        problem = Problem(
+            obj,
+            [0.0, 0.0],
+            bounds,
+            linear_constraints,
+            nonlinear_constraints,
+            None,
+            0.0,
+            False,
+            False,
+            0,
+            1,
+            True,
+        )
+        problem(problem.x0)
+        assert problem.type == "bound-constrained"
+        linear_constraints = LinearConstraints(
+            [LinearConstraint([[1.0, 1.0]], [0.0], [1.0])],
+            2,
+            True,
+        )
+        problem = Problem(
+            obj,
+            [0.0, 0.0],
+            bounds,
+            linear_constraints,
+            nonlinear_constraints,
+            None,
+            0.0,
+            False,
+            False,
+            0,
+            1,
+            True,
+        )
+        problem(problem.x0)
+        assert problem.type == "linearly constrained"
 
     def test_feasibility_problem(self):
         pass
