@@ -1141,9 +1141,9 @@ class Problem:
             0.0,
         )
         x_filter = np.array(self._x_filter)
-        feasible_idx = maxcv_filter_shifted < max(
+        feasible_idx = maxcv_filter_shifted <= min(
             np.finfo(float).eps,
-            2.0 * np.min(maxcv_filter_shifted),
+            np.min(maxcv_filter_shifted),
         )
         if np.any(feasible_idx):
             # At least one point is nearly feasible. We select the one with
@@ -1158,7 +1158,8 @@ class Problem:
                 i = np.flatnonzero(fun_min_idx)[0]
             else:
                 fun_min_idx &= (
-                    maxcv_filter_shifted <= np.min(maxcv_filter_shifted)
+                    maxcv_filter_shifted
+                    <= np.min(maxcv_filter_shifted[fun_min_idx])
                 )
                 i = np.flatnonzero(fun_min_idx)[-1]
         else:
@@ -1178,7 +1179,8 @@ class Problem:
                     i = np.flatnonzero(merit_min_idx)[0]
                 else:
                     merit_min_idx &= (
-                        maxcv_filter_shifted <= np.min(maxcv_filter_shifted)
+                        maxcv_filter_shifted
+                        <= np.min(maxcv_filter_shifted[merit_min_idx])
                     )
                     i = np.flatnonzero(merit_min_idx)[-1]
         return (
