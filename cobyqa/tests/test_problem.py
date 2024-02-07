@@ -7,12 +7,12 @@ from ..problem import (
     BoundConstraints,
     LinearConstraints,
     NonlinearConstraints,
-    # Problem,
+    Problem,
 )
 from ..settings import PRINT_OPTIONS
 
 
-class TestObjectiveFunction:
+class BaseTest:
 
     @staticmethod
     def rosen(x, c=100.0):
@@ -22,7 +22,10 @@ class TestObjectiveFunction:
     class Rosen:
 
         def __call__(self, x):
-            return TestObjectiveFunction.rosen(x)
+            return BaseTest.rosen(x)
+
+
+class TestObjectiveFunction(BaseTest):
 
     def test_simple(self, capsys):
         obj = ObjectiveFunction(self.rosen, False, True)
@@ -210,3 +213,74 @@ class TestNonlinearConstraint:
             constraints.m_ub
         with pytest.raises(ValueError):
             constraints.m_eq
+
+
+class TestProblem(BaseTest):
+
+    def test_simple(self):
+        obj = ObjectiveFunction(self.rosen, False, True)
+        bounds = BoundConstraints(Bounds([0.0, 0.0], [1.0, 1.0]))
+        linear_constraints = LinearConstraints(
+            [LinearConstraint([[1.0, 1.0]], [0.0], [1.0])],
+            2,
+            True,
+        )
+        nonlinear_constraints = NonlinearConstraints(
+            [NonlinearConstraint(np.cos, [-0.5, -0.5], [0.0, 0.0])],
+            False,
+            True,
+        )
+        problem = Problem(
+            obj,
+            [0.0, 0.0],
+            bounds,
+            linear_constraints,
+            nonlinear_constraints,
+            None,
+            0.0,
+            False,
+            False,
+            0,
+            1,
+            True,
+        )
+        assert problem.n_eval == 0
+        x = [0.5, 0.5]
+        fun, c_ub, c_eq = problem(x)
+        np.testing.assert_allclose(fun, self.rosen(x))
+        np.testing.assert_allclose(
+            c_ub,
+            np.block([-0.5 - np.cos(x), np.cos(x)]),
+        )
+        assert c_eq.size == 0
+        assert problem.n == 2
+        assert problem.n_orig == 2
+        np.testing.assert_array_equal(problem.x0, [0.0, 0.0])
+        assert problem.n_eval == 1
+        assert problem.fun_name == "rosen"
+        np.testing.assert_array_equal(problem.bounds.xl, [0.0, 0.0])
+        np.testing.assert_array_equal(problem.bounds.xu, [1.0, 1.0])
+        np.testing.assert_array_equal(
+            problem.linear.a_ub,
+            [[1.0, 1.0], [-1.0, -1.0]],
+        )
+        np.testing.assert_array_equal(problem.linear.b_ub, [1.0, 0.0])
+        assert problem.linear.a_eq.size == 0
+        assert problem.linear.b_eq.size == 0
+        assert problem.m_bounds == 4
+        assert problem.m_linear_ub == 2
+        assert problem.m_linear_eq == 0
+        assert problem.m_nonlinear_ub == 4
+        assert problem.m_nonlinear_eq == 0
+        assert problem.fun_history.size == 0
+        assert problem.maxcv_history.size == 0
+        assert problem.type == "nonlinearly constrained"
+        assert not problem.is_feasibility
+        np.testing.assert_allclose(
+            problem.maxcv(x),
+            max(bounds.maxcv(x), linear_constraints.maxcv(x), np.max(c_ub)),
+        )
+        x_best, fun_best, maxcv_best = problem.best_eval(0.0)
+        np.testing.assert_array_equal(x_best, x)
+        np.testing.assert_allclose(fun_best, self.rosen(x))
+        np.testing.assert_allclose(maxcv_best, problem.maxcv(x))
