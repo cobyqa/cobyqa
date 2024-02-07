@@ -72,8 +72,8 @@ Statistics
 
 As of |today|, COBYQA has been downloaded |total_downloads| times, including
 
-- |github_downloads| times on `GitHub <https://hanadigital.github.io/grev/?user=cobyqa&repo=cobyqa>`_, and
-- |pypi_downloads| times on `PyPI <https://pypistats.org/packages/cobyqa>`_ (`mirror downloads <https://pypistats.org/faqs>`_ excluded).
+- |pypi_downloads| times on `PyPI <https://pypistats.org/packages/cobyqa>`_ (`mirror downloads <https://pypistats.org/faqs>`_ excluded), and
+- |conda_downloads| times on `conda-forge <https://anaconda.org/conda-forge/cobyqa>`_.
 
 Acknowledgments
 ---------------

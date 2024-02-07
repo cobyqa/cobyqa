@@ -64,7 +64,7 @@ rst_prolog = f"""
 .. |release| replace:: {release}
 .. |year| replace:: {datetime.now().year}
 .. |pypi_downloads| replace:: {downloads['pypi']:,}
-.. |github_downloads| replace:: {downloads['github']:,}
+.. |conda_downloads| replace:: {downloads['conda']:,}
 .. |total_downloads| replace:: {sum(downloads.values()):,}
 """
 
@@ -78,6 +78,8 @@ suppress_warnings = ["epub.unknown_project_files"]
 html_theme = "pydata_sphinx_theme"
 
 html_static_path = ["_static"]
+
+html_js_files = ["custom-icons.js"]
 
 html_context = {
     "github_user": "cobyqa",
@@ -97,21 +99,26 @@ html_theme_options = {
     "show_version_warning_banner": True,
     "icon_links": [
         {
-            "name": f'GitHub ({downloads["github"]:,} downloads)',
-            "url": 'https://github.com/cobyqa/cobyqa',
+            "name": "GitHub",
+            "url": "https://github.com/cobyqa/cobyqa",
             "icon": "fa-brands fa-github",
         },
         {
-            "name": f'PyPI ({downloads["pypi"]:,} downloads)',
+            "name": f"PyPI ({downloads['pypi']:,} downloads)",
             "url": "https://pypi.org/project/cobyqa",
-            "icon": "fa-solid fa-box",
+            "icon": "fa-custom fa-pypi",
+        },
+        {
+            "name": f"conda-forge ({downloads['conda']:,} downloads)",
+            "url": "https://anaconda.org/conda-forge/cobyqa",
+            "icon": "fa-custom fa-anaconda",
         },
     ],
     "navbar_persistent": ["search-button"],
     "navbar_end": ["version-switcher", "theme-switcher", "navbar-icon-links"],
     "navbar_align": "left",
     "navigation_depth": 1,
-    # 'announcement': '<p></p>',
+    # "announcement": "<p></p>",
 }
 
 html_title = f"{project} v{version} Manual"
