@@ -34,14 +34,14 @@ jobs:
             exit 0
           else
             echo "# Flake8 linting" > output_flake8.md
-            echo "" >> output_flake8.md
+            echo "The following issues were found:" >> output_flake8.md
             echo "\`\`\`" >> output_flake8.md
-            echo "OUTPUT_FLAKE8" >> output_flake_8.md
+            echo "$OUTPUT_FLAKE8" >> output_flake8.md
             echo "\`\`\`" >> output_flake8.md
             exit 1
           fi
 
-      - name: Comment on commit
+      - name: Comment the flake8 output on commit
         uses: peter-evans/commit-comment@v3
         if: failure()
         with:
