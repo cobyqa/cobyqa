@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, rosen
 
-from ..models import Interpolation, Quadratic
+from ..models import Interpolation, Quadratic, Models
 from ..problem import (
     ObjectiveFunction,
     BoundConstraints,
@@ -11,6 +11,7 @@ from ..problem import (
     Problem,
 )
 from ..settings import Options
+from ..utils import MaxEvalError, FeasibleSuccess, TargetSuccess
 
 
 class TestInterpolation:
@@ -20,7 +21,7 @@ class TestInterpolation:
         options = {
             Options.RHOBEG.value: 0.5,
             Options.RHOEND.value: 1e-6,
-            Options.NPT: ((problem.n + 1) * (problem.n + 2)) // 2,
+            Options.NPT.value: ((problem.n + 1) * (problem.n + 2)) // 2,
             Options.DEBUG.value: True,
         }
         interpolation = Interpolation(problem, options)
@@ -49,7 +50,7 @@ class TestInterpolation:
         options = {
             Options.RHOBEG.value: 0.5,
             Options.RHOEND.value: 1e-6,
-            Options.NPT: ((problem.n + 1) * (problem.n + 2)) // 2,
+            Options.NPT.value: ((problem.n + 1) * (problem.n + 2)) // 2,
             Options.DEBUG.value: True,
         }
         interpolation = Interpolation(problem, options)
@@ -95,7 +96,7 @@ class TestQuadratic:
         options = {
             Options.RHOBEG.value: 0.5,
             Options.RHOEND.value: 1e-6,
-            Options.NPT: ((problem.n + 1) * (problem.n + 2)) // 2,
+            Options.NPT.value: ((problem.n + 1) * (problem.n + 2)) // 2,
             Options.DEBUG.value: True,
         }
         interpolation = Interpolation(problem, options)
@@ -133,13 +134,109 @@ class TestQuadratic:
         options = {
             Options.RHOBEG.value: 0.5,
             Options.RHOEND.value: 1e-6,
-            Options.NPT: problem.n,
+            Options.NPT.value: problem.n,
             Options.DEBUG.value: True,
         }
         interpolation = Interpolation(problem, options)
         values = np.zeros(interpolation.npt)
         with pytest.raises(ValueError):
-            model = Quadratic(interpolation, values, True)
+            Quadratic(interpolation, values, True)
+
+
+class TestModels:
+
+    def test_simple(self):
+        problem = get_problem([0.5, 0.5])
+        options = {
+            Options.RHOBEG.value: 0.5,
+            Options.RHOEND.value: 1e-6,
+            Options.NPT.value: 2 * problem.n + 1,
+            Options.MAX_EVAL.value: 1000,
+            Options.FEASIBILITY_TOL.value: 1e-8,
+            Options.TARGET.value: 0.0,
+            Options.DEBUG.value: True,
+        }
+        models = Models(problem, options)
+        assert models.n == problem.n
+        assert models.npt == options[Options.NPT]
+        assert models.m_nonlinear_ub == problem.m_nonlinear_ub
+        assert models.m_nonlinear_eq == problem.m_nonlinear_eq
+
+    def test_max_eval(self):
+        problem = get_problem([0.5, 0.5])
+        options = {
+            Options.RHOBEG.value: 0.5,
+            Options.RHOEND.value: 1e-6,
+            Options.NPT.value: 2 * problem.n + 1,
+            Options.MAX_EVAL.value: problem.n,
+            Options.FEASIBILITY_TOL.value: 1e-8,
+            Options.TARGET.value: 0.0,
+            Options.DEBUG.value: True,
+        }
+        with pytest.raises(MaxEvalError):
+            Models(problem, options)
+
+    def test_feasibility_problem(self):
+        obj = ObjectiveFunction(None, False, True)
+        bounds = BoundConstraints(Bounds(2 * [-np.inf], 2 * [np.inf]))
+        linear_constraints = LinearConstraints([], 2, True)
+        nonlinear_constraints = NonlinearConstraints([], False, True)
+        problem = Problem(
+            obj,
+            [0.0, 0.0],
+            bounds,
+            linear_constraints,
+            nonlinear_constraints,
+            None,
+            0.0,
+            False,
+            False,
+            0,
+            1,
+            True,
+        )
+        options = {
+            Options.RHOBEG.value: 0.5,
+            Options.RHOEND.value: 1e-6,
+            Options.NPT.value: 2 * problem.n + 1,
+            Options.MAX_EVAL.value: 1000,
+            Options.FEASIBILITY_TOL.value: 1e-8,
+            Options.TARGET.value: 0.0,
+            Options.DEBUG.value: True,
+        }
+        with pytest.raises(FeasibleSuccess):
+            Models(problem, options)
+
+    def test_target(self):
+        obj = ObjectiveFunction(rosen, False, True)
+        bounds = BoundConstraints(Bounds(2 * [-np.inf], 2 * [np.inf]))
+        linear_constraints = LinearConstraints([], 2, True)
+        nonlinear_constraints = NonlinearConstraints([], False, True)
+        problem = Problem(
+            obj,
+            [0.0, 0.0],
+            bounds,
+            linear_constraints,
+            nonlinear_constraints,
+            None,
+            0.0,
+            False,
+            False,
+            0,
+            1,
+            True,
+        )
+        options = {
+            Options.RHOBEG.value: 0.5,
+            Options.RHOEND.value: 1e-6,
+            Options.NPT.value: 2 * problem.n + 1,
+            Options.MAX_EVAL.value: 1000,
+            Options.FEASIBILITY_TOL.value: 1e-8,
+            Options.TARGET.value: 1.0,
+            Options.DEBUG.value: True,
+        }
+        with pytest.raises(TargetSuccess):
+            Models(problem, options)
 
 
 def get_problem(x0):
