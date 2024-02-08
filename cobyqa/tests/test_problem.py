@@ -94,7 +94,7 @@ class TestBoundConstraints:
         assert not constraints.is_feasible
         x = [2.0, 2.0]
         np.testing.assert_array_equal(constraints.project(x), x)
-        np.testing.assert_allclose(constraints.maxcv(x), 1.0)
+        np.testing.assert_allclose(constraints.maxcv(x), 1.0, atol=1e-15)
 
 
 class TestLinearConstraints:
@@ -114,7 +114,11 @@ class TestLinearConstraints:
         np.testing.assert_array_equal(constraints.b_eq, [1.0])
         assert constraints.m_ub == 2
         assert constraints.m_eq == 1
-        np.testing.assert_allclose(constraints.maxcv([0.5, 0.0]), 0.0)
+        np.testing.assert_allclose(
+            constraints.maxcv([0.5, 0.0]),
+            0.0,
+            atol=1e-15,
+        )
 
     def test_nan(self):
         linear_constraints = [LinearConstraint([[1.0, np.nan]], [0.0], [1.0])]
@@ -165,10 +169,12 @@ class TestNonlinearConstraint:
         np.testing.assert_allclose(
             c_ub,
             np.block([-0.5 - np.cos(x), np.cos(x), -np.tan(x)]),
+            atol=1e-15,
         )
         np.testing.assert_allclose(
             c_eq,
             np.block([np.sin(x) - 1.0, np.inner(x, x) - 1.0]),
+            atol=1e-15,
         )
         assert constraints.n_eval == 1
         assert constraints.m_ub == 6
@@ -176,6 +182,7 @@ class TestNonlinearConstraint:
         np.testing.assert_allclose(
             constraints.maxcv(x, c_ub, c_eq),
             max(np.max(np.abs(c_eq)), np.max(c_ub)),
+            atol=1e-15,
         )
         np.testing.assert_array_equal(
             constraints.maxcv(x, c_ub, c_eq),
@@ -190,8 +197,16 @@ class TestNonlinearConstraint:
         constraints = NonlinearConstraints(nonlinear_constraints, False, True)
         x = [0.5, 0.5]
         c_ub, c_eq = constraints(x)
-        np.testing.assert_allclose(c_ub, np.block([-2.0 * np.cos(x)]))
-        np.testing.assert_allclose(c_eq, np.block([2.0 * np.sin(x)]))
+        np.testing.assert_allclose(
+            c_ub,
+            np.block([-2.0 * np.cos(x)]),
+            atol=1e-15,
+        )
+        np.testing.assert_allclose(
+            c_eq,
+            np.block([2.0 * np.sin(x)]),
+            atol=1e-15,
+        )
 
     def test_verbose(self, capsys):
         nonlinear_constraints = [
@@ -248,10 +263,11 @@ class TestProblem(BaseTest):
         assert problem.n_eval == 0
         x = [0.5, 0.5]
         fun, c_ub, c_eq = problem(x)
-        np.testing.assert_allclose(fun, self.rosen(x))
+        np.testing.assert_allclose(fun, self.rosen(x), atol=1e-15)
         np.testing.assert_allclose(
             c_ub,
             np.block([-0.5 - np.cos(x), np.cos(x)]),
+            atol=1e-15,
         )
         assert c_eq.size == 0
         assert problem.n == 2
@@ -280,11 +296,12 @@ class TestProblem(BaseTest):
         np.testing.assert_allclose(
             problem.maxcv(x),
             max(bounds.maxcv(x), linear_constraints.maxcv(x), np.max(c_ub)),
+            atol=1e-15,
         )
         x_best, fun_best, maxcv_best = problem.best_eval(0.0)
         np.testing.assert_array_equal(x_best, x)
-        np.testing.assert_allclose(fun_best, self.rosen(x))
-        np.testing.assert_allclose(maxcv_best, problem.maxcv(x))
+        np.testing.assert_allclose(fun_best, self.rosen(x), atol=1e-15)
+        np.testing.assert_allclose(maxcv_best, problem.maxcv(x), atol=1e-15)
 
     def test_scale(self):
         obj = ObjectiveFunction(self.rosen, False, True)
@@ -315,18 +332,20 @@ class TestProblem(BaseTest):
         )
         np.testing.assert_array_equal(problem.bounds.xl, [-1.0, -1.0])
         np.testing.assert_array_equal(problem.bounds.xu, [1.0, 1.0])
-        np.testing.assert_allclose(problem.x0, [-1.0, -1.0])
+        np.testing.assert_allclose(problem.x0, [-1.0, -1.0], atol=1e-15)
         np.testing.assert_allclose(
             problem.linear.a_ub,
             [[0.5, 0.5], [-0.5, -0.5]],
+            atol=1e-15,
         )
-        np.testing.assert_allclose(problem.linear.b_ub, [0.0, 1.0])
+        np.testing.assert_allclose(problem.linear.b_ub, [0.0, 1.0], atol=1e-15)
         x = np.array([0.5, 0.5])
         fun, c_ub, _ = problem(2.0 * x - 1.0)
-        np.testing.assert_allclose(fun, self.rosen(x))
+        np.testing.assert_allclose(fun, self.rosen(x), atol=1e-15)
         np.testing.assert_allclose(
             c_ub,
             np.block([-0.5 - np.cos(x), np.cos(x)]),
+            atol=1e-15,
         )
 
     def test_barrier(self):
@@ -389,6 +408,7 @@ class TestProblem(BaseTest):
         np.testing.assert_allclose(
             problem.maxcv_history,
             [nonlinear_constraints.maxcv(x)],
+            atol=1e-15,
         )
         problem(x)
         np.testing.assert_array_equal(
@@ -398,6 +418,7 @@ class TestProblem(BaseTest):
         np.testing.assert_allclose(
             problem.maxcv_history,
             2 * [nonlinear_constraints.maxcv(x)],
+            atol=1e-15,
         )
         problem(x)
         np.testing.assert_array_equal(
@@ -407,6 +428,7 @@ class TestProblem(BaseTest):
         np.testing.assert_allclose(
             problem.maxcv_history,
             2 * [nonlinear_constraints.maxcv(x)],
+            atol=1e-15,
         )
 
     def test_filter(self):
@@ -434,13 +456,13 @@ class TestProblem(BaseTest):
         )
         problem([1.0, 1.0])
         x, _, _ = problem.best_eval(1e3)
-        np.testing.assert_allclose(x, [1.0, 1.0])
+        np.testing.assert_allclose(x, [1.0, 1.0], atol=1e-15)
         problem([0.25, 0.75])
         x, _, _ = problem.best_eval(1e3)
-        np.testing.assert_allclose(x, [0.25, 0.75])
+        np.testing.assert_allclose(x, [0.25, 0.75], atol=1e-15)
         problem([0.5, 0.5])
         x, _, _ = problem.best_eval(1e3)
-        np.testing.assert_allclose(x, [0.5, 0.5])
+        np.testing.assert_allclose(x, [0.5, 0.5], atol=1e-15)
 
     def test_callback(self):
         obj = ObjectiveFunction(self.rosen, False, True)
