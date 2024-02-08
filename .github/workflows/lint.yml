@@ -26,7 +26,7 @@ jobs:
 
       - name: Lint with flake8
         id: flake8
-        run: echo "OUTPUT_FLAKE8=$(python -m flake8 .)" >> "$GITHUB_OUTPUT" || true
+        run: echo "OUTPUT_FLAKE8=$(python -m flake8 . || true)" >> "$GITHUB_OUTPUT"
 
       - name: Comment on commit
         uses: peter-evans/commit-comment@v3
