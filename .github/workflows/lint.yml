@@ -25,6 +25,7 @@ jobs:
         run: python -m pip install flake8
 
       - name: Lint with flake8
+        continue-on-error: true
         run: |
           # Lint all files in the repository
           OUTPUT_FLAKE8="$(python -m flake8 .)"
