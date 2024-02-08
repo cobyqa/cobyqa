@@ -107,14 +107,13 @@ class TestMinimize:
         res_alt = minimize(
             self.fun,
             self.x0,
-            constraints=constraints,
+            constraints=constraints_alt,
             options=self.options,
         )
         np.testing.assert_array_equal(res.x, res_alt.x)
         assert res.status == res_alt.status, res
         assert res.nfev == res_alt.nfev, res
         assert res.nit == res_alt.nit, res
-
 
     def test_minimize_args(self):
         constraints = NonlinearConstraint(self.con, 0.0, 0.0)
