@@ -870,7 +870,7 @@ def _get_constraints(constraints):
     """
     Extract the linear and nonlinear constraints.
     """
-    if not hasattr(constraints, "__len__"):
+    if isinstance(constraints, dict) or not hasattr(constraints, "__len__"):
         constraints = (constraints,)
 
     # Extract the linear and nonlinear constraints.
