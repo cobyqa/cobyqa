@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, rosen
 
-from ..models import Interpolation
+from ..models import Interpolation, Quadratic
 from ..problem import (
     ObjectiveFunction,
     BoundConstraints,
@@ -59,6 +59,12 @@ class TestInterpolation:
         problem = get_problem([0.7, 0.5])
         interpolation = Interpolation(problem, options)
         np.testing.assert_allclose(interpolation.x_base, [0.5, 0.5])
+
+
+class TestQuadratic:
+
+    def test_simple(self):
+        pass
 
 
 def get_problem(x0):
