@@ -26,13 +26,20 @@ jobs:
 
       - name: Lint with flake8
         run: |
-          echo "# Flake8 linting" > output_flake8.txt
-          echo "\`\`\`" >> output_flake8.txt
-          python -m flake8 . >> output_flake8.txt || true
-          echo "\`\`\`" >> output_flake8.txt
+          # Lint all files in the repository
+          OUTPUT_FLAKE8="$(python -m flake8 .)"
+          EXIT_CODE=$?
+          
+          # Save the output to a file
+          echo "# Flake8 linting" > output_flake8.md
+          echo "" >> output_flake8.md
+          echo "\`\`\`" >> output_flake8.md
+          echo "OUTPUT_FLAKE8" >> output_flake_8.md
+          echo "\`\`\`" >> output_flake8.md
+          return $EXIT_CODE
 
       - name: Comment on commit
         uses: peter-evans/commit-comment@v3
         if: failure()
         with:
-          body-path: output_flake8.txt
+          body-path: output_flake8.md
