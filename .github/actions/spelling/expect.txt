@@ -34,6 +34,7 @@ cov
 cumsum
 currentmodule
 curv
+DArray
 dsfontserif
 dtype
 edgeitems
