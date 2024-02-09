@@ -95,29 +95,32 @@ The following figure shows the cumulative downloads of COBYQA.
 
     # Download the raw statistics from GitHub.
     base_url = "https://raw.githubusercontent.com/cobyqa/stats/main/archives/"
-    conda = json.loads(urlopen(base_url + "conda.json").read())
     pypi = json.loads(urlopen(base_url + "pypi.json").read())
+    conda = json.loads(urlopen(base_url + "conda.json").read())
 
-    # Keep only the mirror-excluded statistics for PyPI.
-    pypi = [{"date": d["date"], "downloads": d["downloads"]} for d in pypi if d["category"] == "without_mirrors"]
+    # Extract the download statistics by excluding the mirror downloads.
+    pypi = {d["date"]: d["downloads"] for d in pypi if d["category"] == "without_mirrors"}
+    conda = {d["date"]: d["downloads"] for d in conda}
 
-    # Combine the daily statistics into a single list.
-    download_dates = []
-    daily_downloads = []
-    for src in [conda, pypi]:
-        for d in src:
-            download_date = datetime.strptime(d["date"], "%Y-%m-%d").date()
-            try:
-                # If the date is already in the list, add the downloads.
-                i = download_dates.index(download_date)
-                daily_downloads[i] += d["downloads"]
-            except ValueError:
-                # Otherwise, add the date and downloads.
-                download_dates.append(download_date)
-                daily_downloads.append(d["downloads"])
-    daily_downloads = [d for _, d in sorted(zip(download_dates, daily_downloads))]
-    download_dates = sorted(download_dates)
-    cumulative_downloads = [sum(daily_downloads[:i]) for i in range(1, len(daily_downloads) + 1)]
+    # Get the download dates.
+    pypi_download_dates = [datetime.strptime(d, "%Y-%m-%d").date() for d in pypi]
+    conda_download_dates = [datetime.strptime(d, "%Y-%m-%d").date() for d in conda]
+    all_download_dates = sorted(set(pypi_download_dates + conda_download_dates))
+
+    # Compute the cumulative download statistics.
+    pypi_download_count = []
+    conda_download_count = []
+    for download_date in all_download_dates:
+        if download_date in pypi_download_dates:
+            pypi_download_count.append(pypi[download_date.strftime("%Y-%m-%d")])
+        else:
+            pypi_download_count.append(0)
+        if download_date in conda_download_dates:
+            conda_download_count.append(conda[download_date.strftime("%Y-%m-%d")])
+        else:
+            conda_download_count.append(0)
+    pypi_download_cumulative = [sum(pypi_download_count[:i]) for i in range(1, len(pypi_download_count) + 1)]
+    conda_download_cumulative = [sum(conda_download_count[:i]) for i in range(1, len(conda_download_count) + 1)]
 
     # Plot the cumulative downloads.
     fig, ax = plt.subplots()
@@ -125,11 +128,12 @@ The following figure shows the cumulative downloads of COBYQA.
     ax.xaxis.set_major_locator(mdates.YearLocator())
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
     ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: f"{int(y):,}"))
-    ax.plot(download_dates, cumulative_downloads)
-    ax.set_xlim(date(2023, 1, 9), download_dates[-1])
-    ax.set_ylim(0, cumulative_downloads[-1])
+    ax.fill_between(all_download_dates, pypi_download_cumulative, label="PyPI")
+    ax.fill_between(all_download_dates, pypi_download_cumulative, [pypi_download + conda_download for pypi_download, conda_download in zip(pypi_download_cumulative, conda_download_cumulative)], label="conda-forge")
+    ax.set_xlim(date(2023, 1, 9), all_download_dates[-1])
+    ax.set_ylim(0, pypi_download_cumulative[-1] + conda_download_cumulative[-1])
+    ax.legend(loc="upper left")
     ax.set_title("Cumulative downloads of COBYQA")
-    plt.show()
 
 Acknowledgments
 ---------------
