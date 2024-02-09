@@ -38,6 +38,7 @@ downloads = json.loads(archive.read())
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
+    "matplotlib.sphinxext.plot_directive",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.linkcode",
