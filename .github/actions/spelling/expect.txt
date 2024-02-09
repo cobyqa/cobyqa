@@ -3,7 +3,6 @@ ABDEF
 allclose
 arange
 archdefs
-arwhead
 asarray
 astype
 atleast
@@ -31,7 +30,6 @@ codeql
 Comput
 copybutton
 cov
-cumsum
 currentmodule
 curv
 DArray
@@ -68,7 +66,6 @@ mastsif
 mathalpha
 mathbb
 mathcal
-mathjax
 mathsf
 matplotlib
 maxcv
@@ -76,6 +73,7 @@ maxdepth
 maxexp
 maxfev
 maxiter
+mdates
 mindepth
 minexp
 MYARCH
@@ -108,7 +106,6 @@ RHOBEG
 RHOEND
 rosen
 rosenbrock
-rothyp
 rst
 rvert
 scipy
@@ -118,10 +115,10 @@ sifdecode
 SOURCEDIR
 SPHINXBUILD
 sphinxcontrib
+sphinxext
 SPHINXOPTS
 sqp
 subsolvers
-sumsqu
 tcg
 techreport
 testpypi
@@ -132,8 +129,11 @@ usepackage
 usr
 vec
 whl
-xbd
+xaxis
+xlim
 xnew
 xpt
+yaxis
+ylim
 Yrc
 zaikunzhang
