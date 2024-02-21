@@ -1349,6 +1349,11 @@ def _set_default_constants(**kwargs):
     constants[Constants.IMPROVE_TCG.value] = bool(
         constants[Constants.IMPROVE_TCG]
     )
+
+    # Check whether they are any unknown options.
+    for key in kwargs:
+        if key not in Constants.__members__.values():
+            warnings.warn(f"Unknown constant: {key}.", RuntimeWarning, 3)
     return constants
 
 
