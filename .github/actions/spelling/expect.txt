@@ -36,8 +36,11 @@ DArray
 dsfontserif
 dtype
 edgeitems
+eig
 endblock
 endfor
+ersion
+Financ
 finfo
 flatnonzero
 fontsize
@@ -49,6 +52,8 @@ htmlhelp
 htmlzip
 idx
 incollection
+ineq
+infty
 intersphinx
 jac
 keyprefix
@@ -88,6 +93,8 @@ npt
 numpydoc
 objname
 omojokun
+Oper
+Opti
 optim
 papersize
 phdthesis
