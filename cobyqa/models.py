@@ -1,7 +1,7 @@
 import warnings
 
 import numpy as np
-from scipy.linalg import LinAlgWarning, lstsq, solve
+from scipy.linalg import eigh
 
 from .settings import Options
 from .utils import MaxEvalError, TargetSuccess, FeasibleSuccess
@@ -522,20 +522,29 @@ class Quadratic:
         right_scaling[npt] = scale**2.0
         right_scaling[npt + 1:] = scale
 
-        # Build the solution.
-        ill_conditioned = False
-        rhs_scale = right_scaling * rhs
-        if not (np.all(np.isfinite(a)) and np.all(np.isfinite(rhs_scale))):
+        # Build the solution. After a discussion with Mike Saunders and Alexis
+        # Montoison during their visit to the Hong Kong Polytechnic University
+        # in 2024, we decided to use the eigendecomposition of the symmetric
+        # matrix a. This is more stable than the previously employed LBL
+        # decomposition, and allows us to directly detect ill-conditioning of
+        # the system and to build the least-squares solution if necessary.
+        # Numerical experiments have shown that this strategy improves the
+        # performance of the solver.
+        rhs_scaled = right_scaling * rhs
+        if not (np.all(np.isfinite(a)) and np.all(np.isfinite(rhs_scaled))):
             raise np.linalg.LinAlgError(
                 "The interpolation system is ill-defined."
             )
-        try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("error", LinAlgWarning)
-                left_scaled_solution = solve(a, rhs_scale, assume_a="sym")
-        except (np.linalg.LinAlgError, LinAlgWarning):
-            left_scaled_solution = lstsq(a, rhs_scale)[0]
-            ill_conditioned = True
+        eig_values, eig_vectors = eigh(a, check_finite=False)
+        large_eig_values = np.abs(eig_values) > np.finfo(float).eps
+        ill_conditioned = not np.all(large_eig_values)
+        left_scaled_solution = (
+                eig_vectors[:, large_eig_values]
+                @ (
+                    (1.0 / eig_values[large_eig_values])
+                    * (eig_vectors[:, large_eig_values].T @ rhs_scaled)
+                )
+        )
         return left_scaled_solution * right_scaling, ill_conditioned
 
     @staticmethod
