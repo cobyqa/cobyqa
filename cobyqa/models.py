@@ -470,31 +470,32 @@ class Quadratic:
         return a
 
     @staticmethod
-    def solve_system(interpolation, rhs):
+    def solve_systems(interpolation, rhs):
         """
-        Solve the interpolation system.
+        Solve the interpolation systems.
 
         Parameters
         ----------
         interpolation : `cobyqa.models.Interpolation`
             Interpolation set.
-        rhs : `numpy.ndarray`, shape (npt + n + 1,)
-            Right-hand side vector of the interpolation system.
+        rhs : `numpy.ndarray`, shape (npt + n + 1, m)
+            Right-hand side vectors of the ``m`` interpolation systems.
 
         Returns
         -------
-        `numpy.ndarray`, shape (npt + n + 1,)
-            Solution of the interpolation system.
-        bool
-            Whether the interpolation system is ill-conditioned.
+        `numpy.ndarray`, shape (npt + n + 1, m)
+            Solutions of the interpolation systems.
+        `numpy.ndarray`, shape (m, )
+            Whether the interpolation systems are ill-conditioned.
 
         Raises
         ------
         `numpy.linalg.LinAlgError`
-            If the interpolation system is ill-defined.
+            If the interpolation systems are ill-defined.
         """
         n, npt = interpolation.xpt.shape
-        assert rhs.shape == (npt + n + 1,), "The shape of `rhs` is not valid."
+        assert rhs.ndim == 2 and rhs.shape[0] == npt + n + 1, \
+            "The shape of `rhs` is not valid."
 
         # Compute the scaled directions from the base point to the
         # interpolation points. We scale the directions to avoid numerical
@@ -530,22 +531,23 @@ class Quadratic:
         # the system and to build the least-squares solution if necessary.
         # Numerical experiments have shown that this strategy improves the
         # performance of the solver.
-        rhs_scaled = right_scaling * rhs
+        rhs_scaled = rhs * right_scaling[:, np.newaxis]
         if not (np.all(np.isfinite(a)) and np.all(np.isfinite(rhs_scaled))):
             raise np.linalg.LinAlgError(
                 "The interpolation system is ill-defined."
             )
         eig_values, eig_vectors = eigh(a, check_finite=False)
         large_eig_values = np.abs(eig_values) > np.finfo(float).eps
-        ill_conditioned = not np.all(large_eig_values)
-        left_scaled_solution = (
-                eig_vectors[:, large_eig_values]
-                @ (
-                    (1.0 / eig_values[large_eig_values])
-                    * (eig_vectors[:, large_eig_values].T @ rhs_scaled)
-                )
+        eig_vectors = eig_vectors[:, large_eig_values]
+        inv_eig_values = 1.0 / eig_values[large_eig_values]
+        ill_conditioned = ~np.all(large_eig_values, 0)
+        left_scaled_solutions = eig_vectors @ (
+                (eig_vectors.T @ rhs_scaled) * inv_eig_values[:, np.newaxis]
         )
-        return left_scaled_solution * right_scaling, ill_conditioned
+        return (
+            left_scaled_solutions * right_scaling[:, np.newaxis],
+            ill_conditioned,
+        )
 
     @staticmethod
     def _get_model(interpolation, values):
@@ -576,14 +578,14 @@ class Quadratic:
         assert values.shape == (interpolation.npt,), \
             "The shape of `values` is not valid."
         n, npt = interpolation.xpt.shape
-        x, ill_conditioned = Quadratic.solve_system(
+        x, ill_conditioned = Quadratic.solve_systems(
             interpolation,
-            np.block([
+            np.block([[
                 values,
                 np.zeros(n + 1),
-            ]),
+            ]]).T,
         )
-        return x[npt], x[npt + 1:], x[:npt], ill_conditioned
+        return x[npt, 0], x[npt + 1:, 0], x[:npt, 0], ill_conditioned
 
 
 class Models:
@@ -1340,25 +1342,30 @@ class Models:
 
         # Compute the values independent of k_new.
         shift = x_new - self.interpolation.x_base
-        new_col = np.empty(self.npt + self.n + 1)
-        new_col[: self.npt] = 0.5 * (self.interpolation.xpt.T @ shift) ** 2.0
-        new_col[self.npt] = 1.0
-        new_col[self.npt + 1:] = shift
-        inv_new_col = Quadratic.solve_system(self.interpolation, new_col)[0]
-        beta = 0.5 * (shift @ shift) ** 2.0 - new_col @ inv_new_col
-
-        # Define a function to compute the value of alpha.
-        def get_alpha(k_idx):
-            coord_vec = np.squeeze(np.eye(1, self.npt + self.n + 1, k_idx))
-            return Quadratic.solve_system(
-                self.interpolation, coord_vec)[0][k_idx]
+        new_col = np.empty((self.npt + self.n + 1, 1))
+        new_col[: self.npt, 0] = (
+                0.5 * (self.interpolation.xpt.T @ shift) ** 2.0
+        )
+        new_col[self.npt, 0] = 1.0
+        new_col[self.npt + 1:, 0] = shift
+        inv_new_col = Quadratic.solve_systems(self.interpolation, new_col)[0]
+        beta = 0.5 * (shift @ shift) ** 2.0 - new_col[:, 0] @ inv_new_col[:, 0]
 
         # Compute the values that depend on k.
-        alpha = (
-            np.array([get_alpha(k_idx) for k_idx in range(self.npt)])
-            if k_new is None else get_alpha(k_new)
-        )
-        tau = inv_new_col[: self.npt] if k_new is None else inv_new_col[k_new]
+        if k_new is None:
+            coord_vec = np.eye(self.npt + self.n + 1, self.npt)
+            alpha = np.diag(Quadratic.solve_systems(
+                self.interpolation,
+                coord_vec,
+            )[0])
+            tau = inv_new_col[:self.npt, 0]
+        else:
+            coord_vec = np.eye(self.npt + self.n + 1, 1, -k_new)
+            alpha = Quadratic.solve_systems(
+                self.interpolation,
+                coord_vec,
+            )[0][k_new, 0]
+            tau = inv_new_col[k_new, 0]
         return alpha * beta + tau**2.0
 
     def shift_x_base(self, new_x_base, options):
