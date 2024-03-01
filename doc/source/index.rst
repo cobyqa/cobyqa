@@ -130,7 +130,6 @@ The following figure shows the cumulative downloads of COBYQA.
     ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: f"{int(y):,}"))
     ax.plot(all_download_dates, pypi_download_cumulative, label="PyPI")
     ax.plot(all_download_dates, conda_download_cumulative, label="conda-forge")
-    ax.fill_between(all_download_dates, [pypi_download + conda_download for pypi_download, conda_download in zip(pypi_download_cumulative, conda_download_cumulative)], color='gray', alpha=0.2, label="Total")
     ax.set_xlim(date(2023, 1, 9), all_download_dates[-1])
     ax.set_ylim(0, pypi_download_cumulative[-1] + conda_download_cumulative[-1])
     ax.legend(loc="upper left")
