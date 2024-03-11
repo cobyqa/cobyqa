@@ -12,6 +12,12 @@ We provide below release notes for the different versions of COBYQA.
    * - Version
      - Date
      - Remarks
+   * - 1.1.0
+     - 2024-03-11
+     - This is an improvement release.
+
+       #. The computations of the quadratic models have been improved. Instead of using an LBL factorization to solve the KKT conditions, we now employ an eigendecomposition-based method, improving the stability of COBYQA.
+       #. Passing unknown constants to the `minimize` function now raises a warning.
    * - 1.0.2
      - 2024-02-08
      - This is a bugfix release.
@@ -27,4 +33,4 @@ We provide below release notes for the different versions of COBYQA.
        #. Constants can now be modified by the user.
    * - 1.0.0
      - 2023-01-09
-     - Initial release.
+     - This is the initial release.
