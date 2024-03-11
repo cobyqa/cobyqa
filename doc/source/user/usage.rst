@@ -112,6 +112,44 @@ To solve the problem using COBYQA, run:
 
 This should display the desired output ``[0.7071 0.7071]``.
 
+Finally, to see how to supply linear and nonlinear constraints simultaneously, we solve Problem (G) of :cite:`uu-Powell_1994`, defined as
+
+.. math::
+
+    \begin{aligned}
+        \min_{x \in \mathbb{R}^3}   & \quad x_3\\
+        \text{s.t.}                 & \quad 5x_1 - x_2 + x_3 \ge 0,\\
+                                    & \quad -5x_1 - x_2 + x_3 \ge 0,\\
+                                    & \quad x_1^2 + x_2^2 + 4x_2 \le x_3.
+    \end{aligned}
+
+To solve the problem using COBYQA, run:
+
+.. code-block:: python
+
+    import numpy as np
+    from cobyqa import minimize
+    from scipy.optimize import LinearConstraint, NonlinearConstraint
+
+    def fun(x):
+        return x[2]
+
+    def cub(x):
+        return x[0]**2 + x[1]**2 + 4.0*x[1] - x[2]
+
+    x0 = [1.0, 1.0, 1.0]
+    constraints = [
+        LinearConstraint([
+            [5.0, -1.0, 1.0],
+            [-5.0, -1.0, 1.0],
+        ], [0.0, 0.0], np.inf),
+        NonlinearConstraint(cub, -np.inf, 0.0),
+    ]
+    res = minimize(fun, x0, constraints=constraints)
+    print(res.x)
+
+This should display the desired output ``[0., -3., -3.]``.
+
 .. bibliography::
     :labelprefix: UU
     :keyprefix: uu-

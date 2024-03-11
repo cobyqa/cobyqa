@@ -330,7 +330,7 @@ def minimize(
     Its objective function can be implemented as:
 
     >>> def fun(x):
-    ...     return (x[0] - 1.0) ** 2.0 + (x[1] - 2.5) ** 2.0
+    ...     return (x[0] - 1.0)**2 + (x[1] - 2.5)**2
 
     This problem can be solved using `minimize` as:
 
@@ -345,8 +345,8 @@ def minimize(
     >>> res.x
     array([1.4, 1.7])
 
-    Finally, to see how nonlinear constraints are handled, we solve Problem (F)
-    of [2]_, defined as
+    To see how nonlinear constraints are handled, we solve Problem (F) of [2]_,
+    defined as
 
     .. math::
 
@@ -364,7 +364,7 @@ def minimize(
     ...     return -x[0] - x[1]
     >>>
     >>> def cub(x):
-    ...     return [x[0] ** 2.0 - x[1], x[0] ** 2.0 + x[1] ** 2.0]
+    ...     return [x[0]**2 - x[1], x[0]**2 + x[1]**2]
 
     This problem can be solved using `minimize` as:
 
@@ -373,6 +373,41 @@ def minimize(
     >>> res = minimize(fun, x0, constraints=constraints)
     >>> res.x
     array([0.707, 0.707])
+
+    Finally, to see how to supply linear and nonlinear constraints
+    simultaneously, we solve Problem (G) of [2]_, defined as
+
+    .. math::
+
+        \begin{aligned}
+            \min_{x \in \mathbb{R}^3}   & \quad x_3\\
+            \text{s.t.}                 & \quad 5x_1 - x_2 + x_3 \ge 0,\\
+                                        & \quad -5x_1 - x_2 + x_3 \ge 0,\\
+                                        & \quad x_1^2 + x_2^2 + 4x_2 \le x_3.
+        \end{aligned}
+
+    Its objective and nonlinear constraint functions can be implemented as:
+
+    >>> def fun(x):
+    ...     return x[2]
+    >>>
+    >>> def cub(x):
+    ...     return x[0]**2 + x[1]**2 + 4.0*x[1] - x[2]
+
+    This problem can be solved using `minimize` as:
+
+    >>> x0 = [1.0, 1.0, 1.0]
+    >>> constraints = [
+    ...     LinearConstraint(
+    ...         [[5.0, -1.0, 1.0], [-5.0, -1.0, 1.0]],
+    ...         [0.0, 0.0],
+    ...         np.inf,
+    ...     ),
+    ...     NonlinearConstraint(cub, -np.inf, 0.0),
+    ... ]
+    >>> res = minimize(fun, x0, constraints=constraints)
+    >>> res.x
+    array([ 0., -3., -3.])
     """
     # Get basic options that are needed for the initialization.
     if options is None:
