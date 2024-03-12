@@ -12,6 +12,15 @@ We provide below release notes for the different versions of COBYQA.
    * - Version
      - Date
      - Remarks
+   * - 1.1.1
+     - 2024-03-12
+     - This is a bugfix release.
+
+       #. The objective function values and maximum constraint violations are now those without extreme barriers.
+       #. If the returned objective function value or the maximum constraint violation is NaN, the optimization procedure is now considered unsuccessful.
+   * - Version
+     - Date
+     - Remarks
    * - 1.1.0
      - 2024-03-11
      - This is an improvement release.

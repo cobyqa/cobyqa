@@ -1,9 +1,14 @@
 [
     {
-        "name": "1.1.0 (stable)",
-        "version": "1.1.0",
-        "url": "https://www.cobyqa.com/v1.1.0/",
+        "name": "1.1.1 (stable)",
+        "version": "1.1.1",
+        "url": "https://www.cobyqa.com/v1.1.1/",
         "preferred": true
+    },
+    {
+        "name": "1.1.0",
+        "version": "1.1.0",
+        "url": "https://www.cobyqa.com/v1.1.0/"
     },
     {
         "name": "1.0.2",
