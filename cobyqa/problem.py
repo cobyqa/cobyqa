@@ -771,60 +771,78 @@ class Problem:
         """
         # Evaluate the objective and nonlinear constraint functions.
         x = np.asarray(x, dtype=float)
-        fun_val = self._obj(self.build_x(x))
-        if np.isnan(fun_val):
-            fun_val = BARRIER
-        fun_val = max(min(fun_val, BARRIER), -BARRIER)
-        cub_val, ceq_val = self._nonlinear(self.build_x(x))
-        cub_val[np.isnan(cub_val)] = BARRIER
-        ceq_val[np.isnan(ceq_val)] = BARRIER
-        cub_val = np.minimum(cub_val, BARRIER)
-        ceq_val = np.minimum(ceq_val, BARRIER)
-        cub_val = np.maximum(cub_val, -BARRIER)
-        ceq_val = np.maximum(ceq_val, -BARRIER)
+        x_full = self.build_x(x)
+        fun_val = self._obj(x_full)
+        cub_val, ceq_val = self._nonlinear(x_full)
         maxcv_val = self.maxcv(x, cub_val, ceq_val)
         if self._store_history:
-            if len(self._fun_history) >= self._history_size:
-                self._fun_history.pop(0)
             self._fun_history.append(fun_val)
-            if len(self._maxcv_history) >= self._history_size:
-                self._maxcv_history.pop(0)
             self._maxcv_history.append(maxcv_val)
-            if len(self._x_history) >= self._history_size:
-                self._x_history.pop(0)
             self._x_history.append(x)
+            if len(self._fun_history) > self._history_size:
+                self._fun_history.pop(0)
+                self._maxcv_history.pop(0)
+                self._x_history.pop(0)
 
         # Add the point to the filter if it is not dominated by any point.
-        maxcv_shift = np.max([maxcv_val - self._feasibility_tol, 0.0])
-        if all(
-            fun_val < fun_filter
-            or maxcv_shift < np.max([
-                maxcv_filter - self._feasibility_tol,
-                0.0,
-            ]) for fun_filter, maxcv_filter in zip(
-                self._fun_filter,
-                self._maxcv_filter,
+        if np.isnan(fun_val) and np.isnan(maxcv_val):
+            include_point = len(self._fun_filter) == 0
+        elif np.isnan(fun_val):
+            include_point = all(
+                np.isnan(fun_filter) and maxcv_val < maxcv_filter
+                or np.isnan(maxcv_filter)
+                for fun_filter, maxcv_filter in zip(
+                    self._fun_filter,
+                    self._maxcv_filter,
+                )
             )
-        ):
+        elif np.isnan(maxcv_val):
+            include_point = all(
+                np.isnan(maxcv_filter) and fun_val < fun_filter
+                or np.isnan(fun_filter)
+                for fun_filter, maxcv_filter in zip(
+                    self._fun_filter,
+                    self._maxcv_filter,
+                )
+            )
+        else:
+            include_point = all(
+                fun_val < fun_filter or maxcv_val < maxcv_filter
+                for fun_filter, maxcv_filter in zip(
+                    self._fun_filter,
+                    self._maxcv_filter,
+                )
+            )
+        if include_point:
             self._fun_filter.append(fun_val)
             self._maxcv_filter.append(maxcv_val)
-            self._x_filter.append(np.copy(x))
+            self._x_filter.append(x)
 
-        # Remove the points in the filter that are dominated by the new point.
-        for k in range(len(self._fun_filter) - 2, -1, -1):
-            if fun_val <= self._fun_filter[k] and maxcv_shift <= np.max([
-                self._maxcv_filter[k] - self._feasibility_tol,
-                0.0,
-            ]):
-                self._fun_filter.pop(k)
-                self._maxcv_filter.pop(k)
-                self._x_filter.pop(k)
+            # Remove the points in the filter that are dominated by the new
+            # point. We must iterate in reverse order to avoid problems when
+            # removing elements from the list.
+            for k in range(len(self._fun_filter) - 2, -1, -1):
+                if np.isnan(fun_val):
+                    remove_point = np.isnan(self._fun_filter[k])
+                elif np.isnan(maxcv_val):
+                    remove_point = np.isnan(self._maxcv_filter[k])
+                else:
+                    remove_point = (
+                        np.isnan(self._fun_filter[k])
+                        or np.isnan(self._maxcv_filter[k])
+                        or fun_val <= self._fun_filter[k]
+                        and maxcv_val <= self._maxcv_filter[k]
+                    )
+                if remove_point:
+                    self._fun_filter.pop(k)
+                    self._maxcv_filter.pop(k)
+                    self._x_filter.pop(k)
 
-        # Keep only the most recent points in the filter.
-        if len(self._fun_filter) > self._filter_size:
-            self._fun_filter.pop(0)
-            self._maxcv_filter.pop(0)
-            self._x_filter.pop(0)
+            # Keep only the most recent points in the filter.
+            if len(self._fun_filter) > self._filter_size:
+                self._fun_filter.pop(0)
+                self._maxcv_filter.pop(0)
+                self._x_filter.pop(0)
 
         # Evaluate the callback function after updating the filter to ensure
         # that the current point can be returned by the method.
@@ -832,13 +850,21 @@ class Problem:
             sig = signature(self._callback)
             try:
                 if set(sig.parameters) == {"intermediate_result"}:
-                    intermediate_result = OptimizeResult(x=x, fun=fun_val)
+                    intermediate_result = OptimizeResult(x=x_full, fun=fun_val)
                     self._callback(intermediate_result)
                 else:
-                    self._callback(x)
+                    self._callback(x_full)
             except StopIteration as exc:
                 raise CallbackSuccess from exc
 
+        # Apply the extreme barriers and return.
+        if np.isnan(fun_val):
+            fun_val = BARRIER
+        cub_val[np.isnan(cub_val)] = BARRIER
+        ceq_val[np.isnan(ceq_val)] = BARRIER
+        fun_val = max(min(fun_val, BARRIER), -BARRIER)
+        cub_val = np.maximum(np.minimum(cub_val, BARRIER), -BARRIER)
+        ceq_val = np.maximum(np.minimum(ceq_val, BARRIER), -BARRIER)
         return fun_val, cub_val, ceq_val
 
     @property
@@ -1136,53 +1162,74 @@ class Problem:
         # Find the best point in the filter.
         fun_filter = np.array(self._fun_filter)
         maxcv_filter = np.array(self._maxcv_filter)
-        maxcv_filter_shifted = np.maximum(
-            maxcv_filter - self._feasibility_tol,
-            0.0,
-        )
         x_filter = np.array(self._x_filter)
-        feasible_idx = maxcv_filter_shifted <= min(
-            np.finfo(float).eps,
-            np.min(maxcv_filter_shifted),
-        )
-        if np.any(feasible_idx):
-            # At least one point is nearly feasible. We select the one with
-            # the least objective function value. If there is a tie, we
-            # select the point with the least maximum constraint violation.
-            # If there is still a tie, we select the most recent point.
-            fun_min_idx = (
-                feasible_idx
-                & (fun_filter <= np.min(fun_filter[feasible_idx]))
-            )
-            if np.count_nonzero(fun_min_idx) == 1:
-                i = np.flatnonzero(fun_min_idx)[0]
-            else:
-                fun_min_idx &= (
-                    maxcv_filter_shifted
-                    <= np.min(maxcv_filter_shifted[fun_min_idx])
+        finite_idx = np.isfinite(maxcv_filter)
+        if np.any(finite_idx):
+            # At least one point has a finite maximum constraint violation.
+            feasible_idx = maxcv_filter <= self._feasibility_tol
+            if np.any(feasible_idx) and not np.all(
+                    np.isnan(fun_filter[feasible_idx])
+            ):
+                # At least one point is feasible and has a well-defined
+                # objective function value. We select the point with the least
+                # objective function value. If there is a tie, we select the
+                # point with the least maximum constraint violation. If there
+                # is still a tie, we select the most recent point.
+                fun_min_idx = feasible_idx & (
+                        fun_filter <= np.nanmin(fun_filter[feasible_idx])
                 )
-                i = np.flatnonzero(fun_min_idx)[-1]
-        else:
-            # No feasible point is found. We select the one with the least
-            # merit function value. If there is a tie, we select the point
-            # with the least maximum constraint violation. If there is still
-            # a tie, we select the most recent point.
-            if np.all(~np.isfinite(maxcv_filter_shifted)):
-                if np.all(np.isnan(fun_filter)):
-                    i = 0
-                else:
-                    i = np.nanargmin(fun_filter)
-            else:
-                merit_filter = fun_filter + penalty * maxcv_filter_shifted
-                merit_min_idx = merit_filter <= np.min(merit_filter)
-                if np.count_nonzero(merit_min_idx) == 1:
-                    i = np.flatnonzero(merit_min_idx)[0]
-                else:
-                    merit_min_idx &= (
-                        maxcv_filter_shifted
-                        <= np.min(maxcv_filter_shifted[merit_min_idx])
+                if np.count_nonzero(fun_min_idx) > 1:
+                    fun_min_idx &= (
+                            maxcv_filter <= np.min(maxcv_filter[fun_min_idx])
                     )
+                i = np.flatnonzero(fun_min_idx)[-1]
+            elif np.any(feasible_idx):
+                # At least one point is feasible but no feasible point has a
+                # well-defined objective function value. We select the most
+                # recent feasible point.
+                i = np.flatnonzero(feasible_idx)[-1]
+            else:
+                # No point is feasible. We first compute the merit function
+                # value for each point.
+                merit_filter = np.full_like(fun_filter, np.nan)
+                merit_filter[finite_idx] = (
+                        fun_filter[finite_idx]
+                        + penalty * maxcv_filter[finite_idx]
+                )
+                if np.all(np.isnan(merit_filter)):
+                    # No point has a well-defined merit function value. In
+                    # other words, among the points with a well-defined maximum
+                    # constraint violation, none has a well-defined objective
+                    # function value. We select the point with the least
+                    # maximum constraint violation. If there is a tie, we
+                    # select the most recent point.
+                    min_maxcv_idx = maxcv_filter <= np.nanmin(maxcv_filter)
+                    i = np.flatnonzero(min_maxcv_idx)[-1]
+                else:
+                    # At least one point has a well-defined merit function
+                    # value. We select the point with the least merit function
+                    # value. If there is a tie, we select the point with the
+                    # least maximum constraint violation. If there is still a
+                    # tie, we select the point with the least objective
+                    # function value. If there is still a tie, we select the
+                    # most recent point.
+                    merit_min_idx = merit_filter <= np.nanmin(merit_filter)
+                    if np.count_nonzero(merit_min_idx) > 1:
+                        merit_min_idx &= maxcv_filter <= np.min(maxcv_filter[merit_min_idx])
+                    if np.count_nonzero(merit_min_idx) > 1:
+                        merit_min_idx &= fun_filter <= np.min(fun_filter[merit_min_idx])
                     i = np.flatnonzero(merit_min_idx)[-1]
+        elif not np.all(np.isnan(fun_filter)):
+            # No maximum constraint violation is well-defined but at least one
+            # point has a well-defined objective function value. We select the
+            # point with the least objective function value. If there is a tie,
+            # we select the most recent point.
+            fun_min_idx = fun_filter <= np.nanmin(fun_filter)
+            i = np.flatnonzero(fun_min_idx)[-1]
+        else:
+            # No point has a well-defined maximum constraint violation or
+            # objective function value. We select the most recent point.
+            i = len(fun_filter) - 1
         return (
             self.bounds.project(x_filter[i, :]),
             fun_filter[i],

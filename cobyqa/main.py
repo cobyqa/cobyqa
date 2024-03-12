@@ -68,7 +68,8 @@ def minimize(
         Bound constraints of the problem. It can be one of the cases below.
 
         #. An instance of `scipy.optimize.Bounds`. For the time being, the
-           argument ``keep_feasible`` is disregarded.
+           argument ``keep_feasible`` is disregarded, and all the constraints
+           are considered unrelaxable and will be enforced.
         #. An array with shape (n, 2). The bound constraints for ``x[i]`` are
            ``bounds[i][0] <= x[i] <= bounds[i][1]``. Set ``bounds[i][0]`` to
            :math:`-\infty` if there is no lower bound, and set ``bounds[i][1]``
@@ -1417,6 +1418,7 @@ def _build_result(pb, penalty, success, status, n_iter, options):
     """
     # Build the result.
     x, fun, maxcv = pb.best_eval(penalty)
+    success = success and np.isfinite(fun) and np.isfinite(maxcv)
     if status not in [ExitStatus.TARGET_SUCCESS, ExitStatus.FEASIBLE_SUCCESS]:
         success = success and maxcv <= options[Options.FEASIBILITY_TOL]
     result = OptimizeResult()
