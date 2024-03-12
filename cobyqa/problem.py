@@ -1215,9 +1215,14 @@ class Problem:
                     # most recent point.
                     merit_min_idx = merit_filter <= np.nanmin(merit_filter)
                     if np.count_nonzero(merit_min_idx) > 1:
-                        merit_min_idx &= maxcv_filter <= np.min(maxcv_filter[merit_min_idx])
+                        merit_min_idx &= (
+                            maxcv_filter
+                            <= np.min(maxcv_filter[merit_min_idx]))
+
                     if np.count_nonzero(merit_min_idx) > 1:
-                        merit_min_idx &= fun_filter <= np.min(fun_filter[merit_min_idx])
+                        merit_min_idx &= (
+                            fun_filter <= np.min(fun_filter[merit_min_idx])
+                        )
                     i = np.flatnonzero(merit_min_idx)[-1]
         elif not np.all(np.isnan(fun_filter)):
             # No maximum constraint violation is well-defined but at least one
