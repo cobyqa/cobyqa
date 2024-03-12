@@ -599,7 +599,7 @@ def minimize(
         # If the trial step is too short, we do not attempt to evaluate the
         # objective and constraint functions. Instead, we reduce the
         # trust-region radius and check whether the resolution should be
-        # reduced and whether the geometry of the interpolation set should be
+        # enhanced and whether the geometry of the interpolation set should be
         # improved. Otherwise, we entertain a classical iteration. The
         # criterion for performing an exceptional jump is taken from NEWUOA.
         if (
@@ -615,8 +615,8 @@ def minimize(
                 n_very_short_steps += 1
                 if s_norm > 0.1 * framework.resolution:
                     n_very_short_steps = 0
-            reduce_resolution = n_short_steps >= 5 or n_very_short_steps >= 3
-            if reduce_resolution:
+            enhance_resolution = n_short_steps >= 5 or n_very_short_steps >= 3
+            if enhance_resolution:
                 n_short_steps = 0
                 n_very_short_steps = 0
                 improve_geometry = False
@@ -773,7 +773,7 @@ def minimize(
                 # Update the Lagrange multipliers.
                 framework.set_multipliers(framework.x_best + step)
 
-                # Check whether the resolution should be reduced.
+                # Check whether the resolution should be enhanced.
                 try:
                     k_new, dist_new = framework.get_index_to_remove()
                 except np.linalg.LinAlgError:
@@ -789,7 +789,7 @@ def minimize(
                         * framework.resolution,
                     )
                 )
-                reduce_resolution = (
+                enhance_resolution = (
                     radius_save <= framework.resolution
                     and ratio <= constants[Constants.LOW_RATIO]
                     and not improve_geometry
@@ -797,16 +797,16 @@ def minimize(
             else:
                 # When increasing the penalty parameter, the best point so far
                 # may change. In this case, we restart the iteration.
-                reduce_resolution = False
+                enhance_resolution = False
                 improve_geometry = False
 
         # Reduce the resolution if necessary.
-        if reduce_resolution:
+        if enhance_resolution:
             if framework.resolution <= options[Options.RHOEND]:
                 success = True
                 status = ExitStatus.RADIUS_SUCCESS
                 break
-            framework.reduce_resolution(options)
+            framework.enhance_resolution(options)
             framework.decrease_penalty()
 
             if verbose:

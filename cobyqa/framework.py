@@ -1067,9 +1067,9 @@ class TrustRegion:
                 ),
             )
 
-    def reduce_resolution(self, options):
+    def enhance_resolution(self, options):
         """
-        Reduce the resolution of the trust-region framework.
+        Enhance the resolution of the trust-region framework.
 
         Parameters
         ----------
