@@ -851,7 +851,7 @@ class Problem:
             try:
                 if set(sig.parameters) == {"intermediate_result"}:
                     intermediate_result = OptimizeResult(x=x_full, fun=fun_val)
-                    self._callback(intermediate_result)
+                    self._callback(intermediate_result=intermediate_result)
                 else:
                     self._callback(x_full)
             except StopIteration as exc:
