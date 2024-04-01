@@ -1,5 +1,4 @@
 from optiprofiler import (
-    set_cutest_problem_options,
     find_cutest_problems,
     run_benchmark,
 )
@@ -20,8 +19,7 @@ def cobyqa_latest(fun, x0, xl, xu):
 
 
 if __name__ == "__main__":
-    set_cutest_problem_options(n_max=10)
-    cutest_problem_names = find_cutest_problems("bound")
+    cutest_problem_names = find_cutest_problems("bound", n_max=10)
     run_benchmark(
         [cobyqa_latest, cobyqa_pypi],
         ["COBYQA Latest", "COBYQA PyPI"],
