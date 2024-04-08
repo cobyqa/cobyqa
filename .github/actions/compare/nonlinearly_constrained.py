@@ -58,7 +58,12 @@ def cobyqa_latest(fun, x0, xl, xu, aub, bub, aeq, beq, cub, ceq):
 
 
 if __name__ == "__main__":
-    cutest_problem_names = find_cutest_problems("nonlinear", n_max=10)
+    cutest_problem_names = find_cutest_problems(
+        "nonlinear",
+        n_max=10,
+        m_linear_max=50,
+        m_nonlinear_max=50,
+    )
     run_benchmark(
         [cobyqa_latest, cobyqa_pypi],
         ["COBYQA Latest", "COBYQA PyPI"],
