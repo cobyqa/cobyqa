@@ -59,7 +59,7 @@ doc = [
     "matplotlib==3.8.4",
     "numpydoc==1.7.0",
     "pydata-sphinx-theme==0.15.2",
-    "Sphinx==7.2.6",
+    "Sphinx==7.3.7",
     "sphinx-copybutton==0.5.2",
     "Sphinx-Substitution-Extensions==2024.2.25",
     "sphinxcontrib-bibtex==2.6.2",
