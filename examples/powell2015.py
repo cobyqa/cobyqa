@@ -9,9 +9,10 @@ References
    `doi:10.1007/s12532-015-0084-4
    <https://doi.org/10.1007/s12532-015-0084-4>`_.
 """
+from contextlib import suppress
+
 import numpy as np
 from cobyqa import minimize
-from matplotlib import pyplot as plt
 from scipy.optimize import Bounds, LinearConstraint
 
 
@@ -26,20 +27,23 @@ def fun(x):
 
 
 def _plot_points(x, title=None):
-    fig, ax = plt.subplots(dpi=300)
-    ax.plot([0.0, 0.0, 2.0, 0.0], [0.0, 2.0, 0.0, 0.0], color="black")
-    ax.scatter(x[::2], x[1::2], s=25, color="black")
-    ax.set_aspect("equal", "box")
-    ax.axis("off")
-    if title is not None:
-        ax.set_title(f"{title.strip()} ($n = {x.size}$)", fontsize=20)
-    fig.tight_layout()
-    fig.show()
+    with suppress(ImportError):
+        import matplotlib.pyplot as plt
+
+        fig, ax = plt.subplots(dpi=300)
+        ax.plot([0.0, 0.0, 2.0, 0.0], [0.0, 2.0, 0.0, 0.0], color="black")
+        ax.scatter(x[::2], x[1::2], s=25, color="black")
+        ax.set_aspect("equal", "box")
+        ax.axis("off")
+        if title is not None:
+            ax.set_title(f"{title.strip()} ($n = {x.size}$)", fontsize=20)
+        fig.tight_layout()
+        plt.show()
 
 
 if __name__ == "__main__":
     rng = np.random.default_rng(0)
-    n = 80  # must be even
+    n = 10  # must be even
 
     aub = np.zeros((n // 2, n))
     bub = 2.0 * np.ones(n // 2)
