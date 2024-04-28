@@ -66,4 +66,5 @@ if __name__ == "__main__":
         constraints=LinearConstraint(aub, -np.inf, bub),
         options={"disp": True},
     )
+    print(res)
     _plot_points(res.x, "Final points")
