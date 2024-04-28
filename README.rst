@@ -43,8 +43,7 @@ The following Python packages are required by COBYQA:
 * `SciPy <https://www.scipy.org>`_ 1.10.0 or higher.
 
 If you install COBYQA using ``pip`` or ``conda`` (see below), these dependencies will be installed automatically.
-More dependencies are required to run the test suite and some examples given in the folder ``examples``.
-See the relevant sections below for more details.
+
 
 User installation
 ~~~~~~~~~~~~~~~~~
@@ -88,8 +87,7 @@ Examples
 --------
 
 The folder ``examples`` contains a few examples of how to use COBYQA.
-To run ``powell2015.py``, you first need to install ``matplotlib``.
-These files contains headers explaining what problems they solve.
+These files contain headers explaining what problems they solve.
 
 Support
 -------
