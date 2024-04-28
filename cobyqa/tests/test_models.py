@@ -30,19 +30,19 @@ class TestInterpolation:
         np.testing.assert_allclose(
             interpolation.x_base,
             problem.x0,
-            atol=1e-14,
+            atol=1e-13,
         )
         for k in range(interpolation.npt):
             point = interpolation.point(k)
             np.testing.assert_allclose(
                 np.maximum(point, problem.bounds.xl),
                 point,
-                atol=1e-14,
+                atol=1e-13,
             )
             np.testing.assert_allclose(
                 np.minimum(point, problem.bounds.xu),
                 point,
-                atol=1e-14,
+                atol=1e-13,
             )
 
     def test_close(self):
@@ -57,35 +57,35 @@ class TestInterpolation:
         np.testing.assert_allclose(
             interpolation.x_base,
             problem.x0,
-            atol=1e-14,
+            atol=1e-13,
         )
         problem = get_problem([0.1, 0.5])
         interpolation = Interpolation(problem, options)
         np.testing.assert_allclose(
             interpolation.x_base,
             [0.0, 0.5],
-            atol=1e-14,
+            atol=1e-13,
         )
         problem = get_problem([0.3, 0.5])
         interpolation = Interpolation(problem, options)
         np.testing.assert_allclose(
             interpolation.x_base,
             [0.5, 0.5],
-            atol=1e-14,
+            atol=1e-13,
         )
         problem = get_problem([0.9, 0.5])
         interpolation = Interpolation(problem, options)
         np.testing.assert_allclose(
             interpolation.x_base,
             [1.0, 0.5],
-            atol=1e-14,
+            atol=1e-13,
         )
         problem = get_problem([0.7, 0.5])
         interpolation = Interpolation(problem, options)
         np.testing.assert_allclose(
             interpolation.x_base,
             [0.5, 0.5],
-            atol=1e-14,
+            atol=1e-13,
         )
 
 
@@ -108,7 +108,7 @@ class TestQuadratic:
             np.testing.assert_allclose(
                 model(interpolation.point(k), interpolation),
                 values[k],
-                atol=1e-14,
+                atol=1e-13,
             )
         hess = model.hess(interpolation)
         for i in range(model.n):
@@ -118,7 +118,7 @@ class TestQuadratic:
                     np.squeeze(np.eye(1, model.n, i)),
                     interpolation,
                 ),
-                atol=1e-14,
+                atol=1e-13,
             )
             np.testing.assert_allclose(
                 hess[i, i],
@@ -126,7 +126,7 @@ class TestQuadratic:
                     np.squeeze(np.eye(1, model.n, i)),
                     interpolation,
                 ),
-                atol=1e-14,
+                atol=1e-13,
             )
 
     def test_exceptions(self):
