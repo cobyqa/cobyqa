@@ -7,6 +7,9 @@ from .settings import Options
 from .utils import MaxEvalError, TargetSuccess, FeasibleSuccess
 
 
+EPS = np.finfo(float).eps
+
+
 class Interpolation:
     """
     Interpolation set.
@@ -502,7 +505,7 @@ class Quadratic:
         # difficulties.
         scale = np.max(
             [np.linalg.norm(interpolation.xpt[:, k]) for k in range(npt)],
-            initial=np.finfo(float).eps,
+            initial=EPS,
         )
         xpt_scale = interpolation.xpt / scale
 
@@ -537,7 +540,7 @@ class Quadratic:
                 "The interpolation system is ill-defined."
             )
         eig_values, eig_vectors = eigh(a, check_finite=False)
-        large_eig_values = np.abs(eig_values) > np.finfo(float).eps
+        large_eig_values = np.abs(eig_values) > EPS
         eig_vectors = eig_vectors[:, large_eig_values]
         inv_eig_values = 1.0 / eig_values[large_eig_values]
         ill_conditioned = ~np.all(large_eig_values, 0)
@@ -1455,7 +1458,7 @@ class Models:
                 ),
                 initial=error_ceq,
             )
-        tol = 10.0 * np.sqrt(np.finfo(float).eps) * max(self.n, self.npt)
+        tol = 10.0 * np.sqrt(EPS) * max(self.n, self.npt)
         if error_fun > tol * np.max(np.abs(self.fun_val), initial=1.0):
             warnings.warn(
                 "The interpolation conditions for the objective function are "

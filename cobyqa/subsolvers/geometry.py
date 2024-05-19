@@ -5,6 +5,9 @@ import numpy as np
 from ..utils import get_arrays_tol
 
 
+TINY = np.finfo(float).tiny
+
+
 def cauchy_geometry(const, grad, curv, xl, xu, delta, debug):
     r"""
     Maximize approximately the absolute value of a quadratic function subject
@@ -186,7 +189,7 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
     for k in range(xpt.shape[1]):
         # Set alpha_tr to the step size for the trust-region constraint.
         s_norm = np.linalg.norm(xpt[:, k])
-        if s_norm > np.finfo(float).tiny * delta:
+        if s_norm > TINY * delta:
             alpha_tr = max(delta / s_norm, 0.0)
         else:
             # The current straight line is basically zero.
@@ -194,10 +197,10 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
 
         # Set alpha_xl to the step size for the lower-bound constraint and
         # alpha_xu to the step size for the upper-bound constraint.
-        i_xl_pos = (xl > -np.inf) & (xpt[:, k] > -np.finfo(float).tiny * xl)
-        i_xl_neg = (xl > -np.inf) & (xpt[:, k] < np.finfo(float).tiny * xl)
-        i_xu_pos = (xu < np.inf) & (xpt[:, k] > np.finfo(float).tiny * xu)
-        i_xu_neg = (xu < np.inf) & (xpt[:, k] < -np.finfo(float).tiny * xu)
+        i_xl_pos = (xl > -np.inf) & (xpt[:, k] > -TINY * xl)
+        i_xl_neg = (xl > -np.inf) & (xpt[:, k] < TINY * xl)
+        i_xu_pos = (xu < np.inf) & (xpt[:, k] > TINY * xu)
+        i_xu_neg = (xu < np.inf) & (xpt[:, k] < -TINY * xu)
         alpha_xl_pos = np.max(xl[i_xl_pos] / xpt[i_xl_pos, k], initial=-np.inf)
         alpha_xl_neg = np.min(xl[i_xl_neg] / xpt[i_xl_neg, k], initial=np.inf)
         alpha_xu_neg = np.max(xu[i_xu_neg] / xpt[i_xu_neg, k], initial=-np.inf)
@@ -211,18 +214,18 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
         curv_step = curv(xpt[:, k])
         if (
             grad_step >= 0.0
-            and curv_step < -np.finfo(float).tiny * grad_step
+            and curv_step < -TINY * grad_step
             or grad_step <= 0.0
-            and curv_step > -np.finfo(float).tiny * grad_step
+            and curv_step > -TINY * grad_step
         ):
             alpha_quad_pos = max(-grad_step / curv_step, 0.0)
         else:
             alpha_quad_pos = np.inf
         if (
             grad_step >= 0.0
-            and curv_step > np.finfo(float).tiny * grad_step
+            and curv_step > TINY * grad_step
             or grad_step <= 0.0
-            and curv_step < np.finfo(float).tiny * grad_step
+            and curv_step < TINY * grad_step
         ):
             alpha_quad_neg = min(-grad_step / curv_step, 0.0)
         else:
@@ -297,7 +300,7 @@ def _cauchy_geom(const, grad, curv, xl, xu, delta, debug):
             delta_reduced = np.sqrt(
                 delta**2.0 - cauchy_step[~working] @ cauchy_step[~working]
             )
-            if g_norm > np.finfo(float).tiny * abs(delta_reduced):
+            if g_norm > TINY * abs(delta_reduced):
                 mu = max(delta_reduced / g_norm, 0.0)
             else:
                 break
@@ -318,7 +321,7 @@ def _cauchy_geom(const, grad, curv, xl, xu, delta, debug):
     if grad_step >= 0.0:
         # Set alpha_tr to the step size for the trust-region constraint.
         s_norm = np.linalg.norm(cauchy_step)
-        if s_norm > np.finfo(float).tiny * delta:
+        if s_norm > TINY * delta:
             alpha_tr = max(delta / s_norm, 0.0)
         else:
             # The Cauchy step is basically zero.
@@ -326,14 +329,14 @@ def _cauchy_geom(const, grad, curv, xl, xu, delta, debug):
 
         # Set alpha_quad to the step size for the maximization problem.
         curv_step = curv(cauchy_step)
-        if curv_step < -np.finfo(float).tiny * grad_step:
+        if curv_step < -TINY * grad_step:
             alpha_quad = max(-grad_step / curv_step, 0.0)
         else:
             alpha_quad = np.inf
 
         # Set alpha_bd to the step size for the bound constraints.
-        i_xl = (xl > -np.inf) & (cauchy_step < np.finfo(float).tiny * xl)
-        i_xu = (xu < np.inf) & (cauchy_step > np.finfo(float).tiny * xu)
+        i_xl = (xl > -np.inf) & (cauchy_step < TINY * xl)
+        i_xu = (xu < np.inf) & (cauchy_step > TINY * xu)
         alpha_xl = np.min(xl[i_xl] / cauchy_step[i_xl], initial=np.inf)
         alpha_xu = np.min(xu[i_xu] / cauchy_step[i_xu], initial=np.inf)
         alpha_bd = min(alpha_xl, alpha_xu)
