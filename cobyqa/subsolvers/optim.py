@@ -207,6 +207,8 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
     # Attempt to improve the solution on the trust-region boundary.
     if kwargs.get("improve_tcg", True) and boundary_reached:
         step_base = np.copy(step)
+        step_comparator = grad_orig @ step_base + 0.5 * step_base @ hess_prod(step_base)
+
         while np.count_nonzero(free_bd) > 0:
             # Check whether a substantial reduction in the objective function
             # is possible, and set the search direction.
@@ -318,7 +320,7 @@ def tangential_byrd_omojokun(grad, hess_prod, xl, xu, delta, debug, **kwargs):
         # function.
         if (
             grad_orig @ step + 0.5 * step @ hess_prod(step)
-            > grad_orig @ step_base + 0.5 * step_base @ hess_prod(step_base)
+            > step_comparator
         ):
             step = step_base
 
