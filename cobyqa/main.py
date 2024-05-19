@@ -76,7 +76,7 @@ def minimize(
            to :math:`\infty` if there is no upper bound.
 
         The COBYQA method always respect the bound constraints.
-    constraints : {Constraint, dict, list}, optional
+    constraints : {Constraint, list}, optional
         General constraints of the problem. It can be one of the cases below.
 
         #. An instance of `scipy.optimize.LinearConstraint`. The argument
@@ -84,15 +84,6 @@ def minimize(
         #. An instance of `scipy.optimize.NonlinearConstraint`. The arguments
            ``jac``, ``hess``, ``keep_feasible``, ``finite_diff_rel_step``, and
            ``finite_diff_jac_sparsity`` are disregarded.
-        #. A dictionary with fields:
-
-            type : {'eq', 'ineq'}
-                Whether the constraint is an equality ``fun(x, *args) == 0`` or
-                an inequality ``fun(x, *args) >= 0``.
-            fun : callable
-                Constraint function.
-            args : tuple, optional
-                Extra arguments passed to the constraint function.
 
         #. A list, each of whose elements are described in the cases above.
 
