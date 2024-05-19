@@ -186,27 +186,48 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
     # Iterate through the straight lines.
     step = np.zeros_like(grad)
     q_val = const
+    s_norm = np.linalg.norm(xpt, axis=0)
+
+    # Set alpha_xl to the step size for the lower-bound constraint and
+    # alpha_xu to the step size for the upper-bound constraint.
+
+    # xl.shape = (N,)
+    # xpt.shape = (N, M)
+    # i_xl_pos.shape = (M, N)
+    i_xl_pos = ((xl > -np.inf) & (xpt.T > -TINY * xl))
+    i_xl_neg = ((xl > -np.inf) & (xpt.T < TINY * xl))
+    i_xu_pos = ((xu < np.inf) & (xpt.T > TINY * xu))
+    i_xu_neg = ((xu < np.inf) & (xpt.T < -TINY * xu))
+
+    # (M, N)
+    alpha_xl_pos = np.atleast_2d(np.broadcast_to(xl, i_xl_pos.shape)[i_xl_pos] / xpt.T[i_xl_pos])
+    # (M,)
+    alpha_xl_pos = np.max(alpha_xl_pos, axis=1, initial=-np.inf)
+    # make sure it's (M,)
+    alpha_xl_pos = np.broadcast_to(np.atleast_1d(alpha_xl_pos), xpt.shape[1])
+
+    alpha_xl_neg = np.atleast_2d(np.broadcast_to(xl, i_xl_neg.shape)[i_xl_neg] / xpt.T[i_xl_neg])
+    alpha_xl_neg = np.max(alpha_xl_neg, axis=1, initial=np.inf)
+    alpha_xl_neg = np.broadcast_to(np.atleast_1d(alpha_xl_neg), xpt.shape[1])
+
+    alpha_xu_neg = np.atleast_2d(np.broadcast_to(xu, i_xu_neg.shape)[i_xu_neg] / xpt.T[i_xu_neg])
+    alpha_xu_neg = np.max(alpha_xu_neg, axis=1, initial=-np.inf)
+    alpha_xu_neg = np.broadcast_to(np.atleast_1d(alpha_xu_neg), xpt.shape[1])
+
+    alpha_xu_pos = np.atleast_2d(np.broadcast_to(xu, i_xu_pos.shape)[i_xu_pos] / xpt.T[i_xu_pos])
+    alpha_xu_pos = np.max(alpha_xu_pos, axis=1, initial=np.inf)
+    alpha_xu_pos = np.broadcast_to(np.atleast_1d(alpha_xu_pos), xpt.shape[1])
+
     for k in range(xpt.shape[1]):
         # Set alpha_tr to the step size for the trust-region constraint.
-        s_norm = np.linalg.norm(xpt[:, k])
-        if s_norm > TINY * delta:
-            alpha_tr = max(delta / s_norm, 0.0)
+        if s_norm[k] > TINY * delta:
+            alpha_tr = max(delta / s_norm[k], 0.0)
         else:
             # The current straight line is basically zero.
             continue
 
-        # Set alpha_xl to the step size for the lower-bound constraint and
-        # alpha_xu to the step size for the upper-bound constraint.
-        i_xl_pos = (xl > -np.inf) & (xpt[:, k] > -TINY * xl)
-        i_xl_neg = (xl > -np.inf) & (xpt[:, k] < TINY * xl)
-        i_xu_pos = (xu < np.inf) & (xpt[:, k] > TINY * xu)
-        i_xu_neg = (xu < np.inf) & (xpt[:, k] < -TINY * xu)
-        alpha_xl_pos = np.max(xl[i_xl_pos] / xpt[i_xl_pos, k], initial=-np.inf)
-        alpha_xl_neg = np.min(xl[i_xl_neg] / xpt[i_xl_neg, k], initial=np.inf)
-        alpha_xu_neg = np.max(xu[i_xu_neg] / xpt[i_xu_neg, k], initial=-np.inf)
-        alpha_xu_pos = np.min(xu[i_xu_pos] / xpt[i_xu_pos, k], initial=np.inf)
-        alpha_bd_pos = max(min(alpha_xu_pos, alpha_xl_neg), 0.0)
-        alpha_bd_neg = min(max(alpha_xl_pos, alpha_xu_neg), 0.0)
+        alpha_bd_pos = max(min(alpha_xu_pos[k], alpha_xl_neg[k]), 0.0)
+        alpha_bd_neg = min(max(alpha_xl_pos[k], alpha_xu_neg[k]), 0.0)
 
         # Set alpha_quad_pos and alpha_quad_neg to the step size to the extrema
         # of the quadratic function along the positive and negative directions.
