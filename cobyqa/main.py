@@ -577,7 +577,8 @@ def minimize(
         if (
             np.linalg.norm(
                 framework.x_best - framework.models.interpolation.x_base
-            ) >= constants[Constants.LARGE_SHIFT_FACTOR] * framework.radius
+            )
+            >= constants[Constants.LARGE_SHIFT_FACTOR] * framework.radius
         ):
             framework.shift_x_base(options)
 
@@ -658,10 +659,7 @@ def minimize(
                     framework.ceq_best,
                 )
                 merit_new = framework.merit(
-                    framework.x_best + step,
-                    fun_val,
-                    cub_val,
-                    ceq_val
+                    framework.x_best + step, fun_val, cub_val, ceq_val
                 )
                 if (
                     pb.type == "nonlinearly constrained"
@@ -671,8 +669,7 @@ def minimize(
                     * framework.radius
                 ):
                     soc_step = framework.get_second_order_correction_step(
-                        step,
-                        options
+                        step, options
                     )
                     if np.linalg.norm(soc_step) > 0.0:
                         step += soc_step
@@ -721,11 +718,7 @@ def minimize(
                 # Update the interpolation set.
                 try:
                     ill_conditioned = framework.models.update_interpolation(
-                        k_new,
-                        framework.x_best + step,
-                        fun_val,
-                        cub_val,
-                        ceq_val
+                        k_new, framework.x_best + step, fun_val, cub_val, ceq_val
                     )
                 except np.linalg.LinAlgError:
                     status = ExitStatus.LINALG_ERROR
@@ -802,9 +795,7 @@ def minimize(
 
             if verbose:
                 maxcv_val = pb.maxcv(
-                    framework.x_best,
-                    framework.cub_best,
-                    framework.ceq_best
+                    framework.x_best, framework.cub_best, framework.ceq_best
                 )
                 _print_step(
                     f"New trust-region radius: {framework.resolution}",
@@ -913,29 +904,35 @@ def _get_constraints(constraints):
                 constraint.ub,
                 "The upper bound of the linear constraints must be a vector.",
             )
-            linear_constraints.append(LinearConstraint(
-                constraint.A,
-                *np.broadcast_arrays(lb, ub),
-            ))
+            linear_constraints.append(
+                LinearConstraint(
+                    constraint.A,
+                    *np.broadcast_arrays(lb, ub),
+                )
+            )
         elif isinstance(constraint, NonlinearConstraint):
             lb = exact_1d_array(
                 constraint.lb,
-                "The lower bound of the " "nonlinear constraints must be a "
+                "The lower bound of the "
+                "nonlinear constraints must be a "
                 "vector.",
             )
             ub = exact_1d_array(
                 constraint.ub,
-                "The upper bound of the " "nonlinear constraints must be a "
+                "The upper bound of the "
+                "nonlinear constraints must be a "
                 "vector.",
             )
-            nonlinear_constraints.append(NonlinearConstraint(
-                constraint.fun,
-                *np.broadcast_arrays(lb, ub),
-            ))
+            nonlinear_constraints.append(
+                NonlinearConstraint(
+                    constraint.fun,
+                    *np.broadcast_arrays(lb, ub),
+                )
+            )
         elif isinstance(constraint, dict):
-            if (
-                "type" not in constraint
-                or constraint["type"] not in ("eq", "ineq")
+            if "type" not in constraint or constraint["type"] not in (
+                "eq",
+                "ineq",
             ):
                 raise ValueError('The constraint type must be "eq" or "ineq".')
             if "fun" not in constraint or not callable(constraint["fun"]):
@@ -971,24 +968,26 @@ def _set_default_options(options, n):
                 "than or equal to the final trust-region radius."
             )
     elif Options.RHOBEG in options:
-        options[Options.RHOEND.value] = np.min([
-            DEFAULT_OPTIONS[Options.RHOEND],
-            options[Options.RHOBEG],
-        ])
+        options[Options.RHOEND.value] = np.min(
+            [
+                DEFAULT_OPTIONS[Options.RHOEND],
+                options[Options.RHOBEG],
+            ]
+        )
     elif Options.RHOEND in options:
-        options[Options.RHOBEG.value] = np.max([
-            DEFAULT_OPTIONS[Options.RHOBEG],
-            options[Options.RHOEND],
-        ])
+        options[Options.RHOBEG.value] = np.max(
+            [
+                DEFAULT_OPTIONS[Options.RHOBEG],
+                options[Options.RHOEND],
+            ]
+        )
     else:
         options[Options.RHOBEG.value] = DEFAULT_OPTIONS[Options.RHOBEG]
         options[Options.RHOEND.value] = DEFAULT_OPTIONS[Options.RHOEND]
     options[Options.RHOBEG.value] = float(options[Options.RHOBEG])
     options[Options.RHOEND.value] = float(options[Options.RHOEND])
     if Options.NPT in options and options[Options.NPT] <= 0:
-        raise ValueError(
-            "The number of interpolation points must be positive."
-        )
+        raise ValueError("The number of interpolation points must be positive.")
     if (
         Options.NPT in options
         and options[Options.NPT] > ((n + 1) * (n + 2)) // 2
@@ -1005,10 +1004,12 @@ def _set_default_options(options, n):
         )
     options.setdefault(
         Options.MAX_EVAL.value,
-        np.max([
-            DEFAULT_OPTIONS[Options.MAX_EVAL](n),
-            options[Options.NPT] + 1,
-        ]),
+        np.max(
+            [
+                DEFAULT_OPTIONS[Options.MAX_EVAL](n),
+                options[Options.NPT] + 1,
+            ]
+        ),
     )
     options[Options.MAX_EVAL.value] = int(options[Options.MAX_EVAL])
     if Options.MAX_ITER in options and options[Options.MAX_ITER] <= 0:
@@ -1113,22 +1114,26 @@ def _set_default_constants(**kwargs):
                 "less than increase_radius_factor."
             )
     elif Constants.INCREASE_RADIUS_FACTOR in constants:
-        constants[Constants.DECREASE_RADIUS_THRESHOLD.value] = np.min([
-            DEFAULT_CONSTANTS[Constants.DECREASE_RADIUS_THRESHOLD],
-            0.5 * (1.0 + constants[Constants.INCREASE_RADIUS_FACTOR]),
-        ])
+        constants[Constants.DECREASE_RADIUS_THRESHOLD.value] = np.min(
+            [
+                DEFAULT_CONSTANTS[Constants.DECREASE_RADIUS_THRESHOLD],
+                0.5 * (1.0 + constants[Constants.INCREASE_RADIUS_FACTOR]),
+            ]
+        )
     elif Constants.DECREASE_RADIUS_THRESHOLD in constants:
-        constants[Constants.INCREASE_RADIUS_FACTOR.value] = np.max([
-            DEFAULT_CONSTANTS[Constants.INCREASE_RADIUS_FACTOR],
-            2.0 * constants[Constants.DECREASE_RADIUS_THRESHOLD],
-        ])
+        constants[Constants.INCREASE_RADIUS_FACTOR.value] = np.max(
+            [
+                DEFAULT_CONSTANTS[Constants.INCREASE_RADIUS_FACTOR],
+                2.0 * constants[Constants.DECREASE_RADIUS_THRESHOLD],
+            ]
+        )
     else:
-        constants[Constants.INCREASE_RADIUS_FACTOR.value] = (
-            DEFAULT_CONSTANTS[Constants.INCREASE_RADIUS_FACTOR]
-        )
-        constants[Constants.DECREASE_RADIUS_THRESHOLD.value] = (
-            DEFAULT_CONSTANTS[Constants.DECREASE_RADIUS_THRESHOLD]
-        )
+        constants[Constants.INCREASE_RADIUS_FACTOR.value] = DEFAULT_CONSTANTS[
+            Constants.INCREASE_RADIUS_FACTOR
+        ]
+        constants[Constants.DECREASE_RADIUS_THRESHOLD.value] = DEFAULT_CONSTANTS[
+            Constants.DECREASE_RADIUS_THRESHOLD
+        ]
     constants.setdefault(
         Constants.DECREASE_RESOLUTION_FACTOR.value,
         DEFAULT_CONSTANTS[Constants.DECREASE_RESOLUTION_FACTOR],
@@ -1172,15 +1177,19 @@ def _set_default_constants(**kwargs):
                 "must be at most large_resolution_threshold."
             )
     elif Constants.LARGE_RESOLUTION_THRESHOLD in constants:
-        constants[Constants.MODERATE_RESOLUTION_THRESHOLD.value] = np.min([
-            DEFAULT_CONSTANTS[Constants.MODERATE_RESOLUTION_THRESHOLD],
-            constants[Constants.LARGE_RESOLUTION_THRESHOLD],
-        ])
+        constants[Constants.MODERATE_RESOLUTION_THRESHOLD.value] = np.min(
+            [
+                DEFAULT_CONSTANTS[Constants.MODERATE_RESOLUTION_THRESHOLD],
+                constants[Constants.LARGE_RESOLUTION_THRESHOLD],
+            ]
+        )
     elif Constants.MODERATE_RESOLUTION_THRESHOLD in constants:
-        constants[Constants.LARGE_RESOLUTION_THRESHOLD.value] = np.max([
-            DEFAULT_CONSTANTS[Constants.LARGE_RESOLUTION_THRESHOLD],
-            constants[Constants.MODERATE_RESOLUTION_THRESHOLD],
-        ])
+        constants[Constants.LARGE_RESOLUTION_THRESHOLD.value] = np.max(
+            [
+                DEFAULT_CONSTANTS[Constants.LARGE_RESOLUTION_THRESHOLD],
+                constants[Constants.MODERATE_RESOLUTION_THRESHOLD],
+            ]
+        )
     else:
         constants[Constants.LARGE_RESOLUTION_THRESHOLD.value] = (
             DEFAULT_CONSTANTS[Constants.LARGE_RESOLUTION_THRESHOLD]
@@ -1208,22 +1217,26 @@ def _set_default_constants(**kwargs):
                 "The constant low_ratio must be at most high_ratio."
             )
     elif Constants.LOW_RATIO in constants:
-        constants[Constants.HIGH_RATIO.value] = np.max([
-            DEFAULT_CONSTANTS[Constants.HIGH_RATIO],
-            constants[Constants.LOW_RATIO],
-        ])
+        constants[Constants.HIGH_RATIO.value] = np.max(
+            [
+                DEFAULT_CONSTANTS[Constants.HIGH_RATIO],
+                constants[Constants.LOW_RATIO],
+            ]
+        )
     elif Constants.HIGH_RATIO in constants:
-        constants[Constants.LOW_RATIO.value] = np.min([
-            DEFAULT_CONSTANTS[Constants.LOW_RATIO],
-            constants[Constants.HIGH_RATIO],
-        ])
+        constants[Constants.LOW_RATIO.value] = np.min(
+            [
+                DEFAULT_CONSTANTS[Constants.LOW_RATIO],
+                constants[Constants.HIGH_RATIO],
+            ]
+        )
     else:
-        constants[Constants.LOW_RATIO.value] = (
-            DEFAULT_CONSTANTS[Constants.LOW_RATIO]
-        )
-        constants[Constants.HIGH_RATIO.value] = (
-            DEFAULT_CONSTANTS[Constants.HIGH_RATIO]
-        )
+        constants[Constants.LOW_RATIO.value] = DEFAULT_CONSTANTS[
+            Constants.LOW_RATIO
+        ]
+        constants[Constants.HIGH_RATIO.value] = DEFAULT_CONSTANTS[
+            Constants.HIGH_RATIO
+        ]
     constants.setdefault(
         Constants.VERY_LOW_RATIO.value,
         DEFAULT_CONSTANTS[Constants.VERY_LOW_RATIO],
@@ -1267,22 +1280,26 @@ def _set_default_constants(**kwargs):
                 "penalty_increase_threshold."
             )
     elif Constants.PENALTY_INCREASE_THRESHOLD in constants:
-        constants[Constants.PENALTY_INCREASE_FACTOR.value] = np.max([
-            DEFAULT_CONSTANTS[Constants.PENALTY_INCREASE_FACTOR],
-            constants[Constants.PENALTY_INCREASE_THRESHOLD],
-        ])
+        constants[Constants.PENALTY_INCREASE_FACTOR.value] = np.max(
+            [
+                DEFAULT_CONSTANTS[Constants.PENALTY_INCREASE_FACTOR],
+                constants[Constants.PENALTY_INCREASE_THRESHOLD],
+            ]
+        )
     elif Constants.PENALTY_INCREASE_FACTOR in constants:
-        constants[Constants.PENALTY_INCREASE_THRESHOLD.value] = np.min([
-            DEFAULT_CONSTANTS[Constants.PENALTY_INCREASE_THRESHOLD],
-            constants[Constants.PENALTY_INCREASE_FACTOR],
-        ])
+        constants[Constants.PENALTY_INCREASE_THRESHOLD.value] = np.min(
+            [
+                DEFAULT_CONSTANTS[Constants.PENALTY_INCREASE_THRESHOLD],
+                constants[Constants.PENALTY_INCREASE_FACTOR],
+            ]
+        )
     else:
         constants[Constants.PENALTY_INCREASE_THRESHOLD.value] = (
             DEFAULT_CONSTANTS[Constants.PENALTY_INCREASE_THRESHOLD]
         )
-        constants[Constants.PENALTY_INCREASE_FACTOR.value] = (
-            DEFAULT_CONSTANTS[Constants.PENALTY_INCREASE_FACTOR]
-        )
+        constants[Constants.PENALTY_INCREASE_FACTOR.value] = DEFAULT_CONSTANTS[
+            Constants.PENALTY_INCREASE_FACTOR
+        ]
     constants.setdefault(
         Constants.SHORT_STEP_THRESHOLD.value,
         DEFAULT_CONSTANTS[Constants.SHORT_STEP_THRESHOLD],
@@ -1344,9 +1361,7 @@ def _set_default_constants(**kwargs):
         constants[Constants.LARGE_SHIFT_FACTOR]
     )
     if constants[Constants.LARGE_SHIFT_FACTOR] < 0.0:
-        raise ValueError(
-            "The constant large_shift_factor must be nonnegative."
-        )
+        raise ValueError("The constant large_shift_factor must be nonnegative.")
     constants.setdefault(
         Constants.LARGE_GRADIENT_FACTOR.value,
         DEFAULT_CONSTANTS[Constants.LARGE_GRADIENT_FACTOR],
@@ -1414,20 +1429,13 @@ def _build_result(pb, penalty, success, status, n_iter, options):
         success = success and maxcv <= options[Options.FEASIBILITY_TOL]
     result = OptimizeResult()
     result.message = {
-        ExitStatus.RADIUS_SUCCESS:
-            "The lower bound for the trust-region radius has been reached",
-        ExitStatus.TARGET_SUCCESS:
-            "The target objective function value has been reached",
-        ExitStatus.FIXED_SUCCESS:
-            "All variables are fixed by the bound constraints",
-        ExitStatus.CALLBACK_SUCCESS:
-            "The callback requested to stop the optimization procedure",
-        ExitStatus.FEASIBLE_SUCCESS:
-            "The feasibility problem received has been solved successfully",
-        ExitStatus.MAX_EVAL_WARNING:
-            "The maximum number of function evaluations has been exceeded",
-        ExitStatus.MAX_ITER_WARNING:
-            "The maximum number of iterations has been exceeded",
+        ExitStatus.RADIUS_SUCCESS: "The lower bound for the trust-region radius has been reached",
+        ExitStatus.TARGET_SUCCESS: "The target objective function value has been reached",
+        ExitStatus.FIXED_SUCCESS: "All variables are fixed by the bound constraints",
+        ExitStatus.CALLBACK_SUCCESS: "The callback requested to stop the optimization procedure",
+        ExitStatus.FEASIBLE_SUCCESS: "The feasibility problem received has been solved successfully",
+        ExitStatus.MAX_EVAL_WARNING: "The maximum number of function evaluations has been exceeded",
+        ExitStatus.MAX_ITER_WARNING: "The maximum number of iterations has been exceeded",
         ExitStatus.INFEASIBLE_ERROR: "The bound constraints are infeasible",
         ExitStatus.LINALG_ERROR: "A linear algebra error occurred",
     }.get(status, "Unknown exit status")

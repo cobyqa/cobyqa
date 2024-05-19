@@ -291,11 +291,11 @@ class TrustRegion:
         """
         return (
             self.models.fun(x)
-            + self._lm_linear_ub @ (
-                self._pb.linear.a_ub @ x - self._pb.linear.b_ub
-            ) + self._lm_linear_eq @ (
-                self._pb.linear.a_eq @ x - self._pb.linear.b_eq
-            ) + self._lm_nonlinear_ub @ self.models.cub(x)
+            + self._lm_linear_ub
+            @ (self._pb.linear.a_ub @ x - self._pb.linear.b_ub)
+            + self._lm_linear_eq
+            @ (self._pb.linear.a_eq @ x - self._pb.linear.b_eq)
+            + self._lm_nonlinear_ub @ self.models.cub(x)
             + self._lm_nonlinear_eq @ self.models.ceq(x)
         )
 
@@ -495,22 +495,30 @@ class TrustRegion:
         `numpy.ndarray`, shape (m_linear_eq + m_nonlinear_eq,)
             Right-hand side vector of the linearized equality constraints.
         """
-        aub = np.block([
-            [self._pb.linear.a_ub],
-            [self.models.cub_grad(x)],
-        ])
-        bub = np.block([
-            self._pb.linear.b_ub - self._pb.linear.a_ub @ x,
-            -self.models.cub(x),
-        ])
-        aeq = np.block([
-            [self._pb.linear.a_eq],
-            [self.models.ceq_grad(x)],
-        ])
-        beq = np.block([
-            self._pb.linear.b_eq - self._pb.linear.a_eq @ x,
-            -self.models.ceq(x),
-        ])
+        aub = np.block(
+            [
+                [self._pb.linear.a_ub],
+                [self.models.cub_grad(x)],
+            ]
+        )
+        bub = np.block(
+            [
+                self._pb.linear.b_ub - self._pb.linear.a_ub @ x,
+                -self.models.cub(x),
+            ]
+        )
+        aeq = np.block(
+            [
+                [self._pb.linear.a_eq],
+                [self.models.ceq_grad(x)],
+            ]
+        )
+        beq = np.block(
+            [
+                self._pb.linear.b_eq - self._pb.linear.a_eq @ x,
+                -self.models.ceq(x),
+            ]
+        )
         return aub, bub, aeq, beq
 
     def get_trust_region_step(self, options):
@@ -560,10 +568,7 @@ class TrustRegion:
         )
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
-            if (
-                np.any(normal_step + tol < xl)
-                    or np.any(xu < normal_step - tol)
-            ):
+            if np.any(normal_step + tol < xl) or np.any(xu < normal_step - tol):
                 warnings.warn(
                     "the normal step does not respect the bound constraint.",
                     RuntimeWarning,
@@ -582,9 +587,8 @@ class TrustRegion:
         xl -= normal_step
         xu -= normal_step
         bub = np.maximum(bub - aub @ normal_step, 0.0)
-        g_best = (
-            self.models.fun_grad(self.x_best)
-            + self.lag_model_hess_prod(normal_step)
+        g_best = self.models.fun_grad(self.x_best) + self.lag_model_hess_prod(
+            normal_step
         )
         if self._pb.type in ["unconstrained", "bound-constrained"]:
             tangential_step = tangential_byrd_omojokun(
@@ -611,9 +615,8 @@ class TrustRegion:
             )
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
-            if (
-                np.any(tangential_step + tol < xl)
-                or np.any(xu < tangential_step - tol)
+            if np.any(tangential_step + tol < xl) or np.any(
+                xu < tangential_step - tol
             ):
                 warnings.warn(
                     "The tangential step does not respect the bound "
@@ -665,8 +668,9 @@ class TrustRegion:
            2022. URL: https://theses.lib.polyu.edu.hk/handle/200/12294.
         """
         if options[Options.DEBUG]:
-            assert k_new != self.best_index, \
-                "The index `k_new` must be different from the best index."
+            assert (
+                k_new != self.best_index
+            ), "The index `k_new` must be different from the best index."
 
         # Build the k_new-th Lagrange polynomial.
         coord_vec = np.squeeze(np.eye(1, self.models.npt, k_new))
@@ -719,9 +723,7 @@ class TrustRegion:
             "linearly constrained",
             "nonlinearly constrained",
         ]:
-            aub, bub, aeq, beq = self.get_constraint_linearizations(
-                self.x_best
-            )
+            aub, bub, aeq, beq = self.get_constraint_linearizations(self.x_best)
             tol_bd = get_arrays_tol(xl, xu)
             tol_ub = get_arrays_tol(bub)
             free_xl = xl <= -tol_bd
@@ -738,10 +740,7 @@ class TrustRegion:
             )
             g_lag_proj = q[:, n_act:] @ (q[:, n_act:].T @ g_lag)
             norm_g_lag_proj = np.linalg.norm(g_lag_proj)
-            if (
-                0 < n_act < self._pb.n
-                and norm_g_lag_proj > TINY * self.radius
-            ):
+            if 0 < n_act < self._pb.n and norm_g_lag_proj > TINY * self.radius:
                 step_alt = (self.radius / norm_g_lag_proj) * g_lag_proj
                 if lag.curv(step_alt, self.models.interpolation) < 0.0:
                     step_alt = -step_alt
@@ -764,8 +763,7 @@ class TrustRegion:
                 tol = min(10.0 * tol, 1e-2 * np.linalg.norm(step_alt))
                 if maxcv_val <= tol:
                     sigma_alt = self.models.determinants(
-                        self.x_best + step_alt,
-                        k_new
+                        self.x_best + step_alt, k_new
                     )
                     if abs(sigma_alt) >= 0.1 * abs(sigma):
                         step = np.clip(step_alt, xl, xu)
@@ -877,13 +875,11 @@ class TrustRegion:
             self.sqp_cub(step),
             self.sqp_ceq(step),
         )
-        if (
-            abs(merit_model_old - merit_model_new)
-            > TINY * abs(merit_old - merit_new)
+        if abs(merit_model_old - merit_model_new) > TINY * abs(
+            merit_old - merit_new
         ):
-            return (
-                (merit_old - merit_new)
-                / abs(merit_model_old - merit_model_new)
+            return (merit_old - merit_new) / abs(
+                merit_model_old - merit_model_new
             )
         else:
             return -1.0
@@ -899,30 +895,42 @@ class TrustRegion:
         """
         aub, bub, aeq, beq = self.get_constraint_linearizations(self.x_best)
         viol_diff = max(
-            np.linalg.norm(np.block([
-                np.maximum(0.0, -bub),
-                beq,
-            ])) - np.linalg.norm(np.block([
-                np.maximum(0.0, aub @ step - bub),
-                aeq @ step - beq,
-            ])),
+            np.linalg.norm(
+                np.block(
+                    [
+                        np.maximum(0.0, -bub),
+                        beq,
+                    ]
+                )
+            )
+            - np.linalg.norm(
+                np.block(
+                    [
+                        np.maximum(0.0, aub @ step - bub),
+                        aeq @ step - beq,
+                    ]
+                )
+            ),
             0.0,
         )
         sqp_val = self.sqp_fun(step)
 
-        threshold = np.linalg.norm(np.block([
-            self._lm_linear_ub,
-            self._lm_linear_eq,
-            self._lm_nonlinear_ub,
-            self._lm_nonlinear_eq,
-        ]))
+        threshold = np.linalg.norm(
+            np.block(
+                [
+                    self._lm_linear_ub,
+                    self._lm_linear_eq,
+                    self._lm_nonlinear_ub,
+                    self._lm_nonlinear_eq,
+                ]
+            )
+        )
         if abs(viol_diff) > TINY * abs(sqp_val):
             threshold = max(threshold, sqp_val / viol_diff)
         best_index_save = self.best_index
         if (
             self._penalty
-            <= self._constants[Constants.PENALTY_INCREASE_THRESHOLD]
-            * threshold
+            <= self._constants[Constants.PENALTY_INCREASE_THRESHOLD] * threshold
         ):
             self._penalty = max(
                 self._constants[Constants.PENALTY_INCREASE_FACTOR] * threshold,
@@ -1009,7 +1017,8 @@ class TrustRegion:
             (
                 self.models.interpolation.xpt
                 - self.models.interpolation.xpt[:, self.best_index, np.newaxis]
-            ) ** 2.0,
+            )
+            ** 2.0,
             axis=0,
         )
         if x_new is None:
@@ -1017,14 +1026,19 @@ class TrustRegion:
             weights = dist_sq
         else:
             sigma = self.models.determinants(x_new)
-            weights = np.maximum(
-                1.0,
-                dist_sq / max(
-                    self._constants[Constants.LOW_RADIUS_FACTOR]
-                    * self.radius,
-                    self.resolution,
-                ) ** 2.0,
-            ) ** 3.0
+            weights = (
+                np.maximum(
+                    1.0,
+                    dist_sq
+                    / max(
+                        self._constants[Constants.LOW_RADIUS_FACTOR]
+                        * self.radius,
+                        self.resolution,
+                    )
+                    ** 2.0,
+                )
+                ** 3.0
+            )
             weights[self.best_index] = -1.0  # do not remove the best point
         k_max = np.argmax(weights * np.abs(sigma))
         return k_max, np.sqrt(dist_sq[k_max])
@@ -1045,14 +1059,12 @@ class TrustRegion:
             self.radius *= self._constants[Constants.DECREASE_RADIUS_FACTOR]
         elif ratio <= self._constants[Constants.HIGH_RATIO]:
             self.radius = max(
-                self._constants[Constants.DECREASE_RADIUS_FACTOR]
-                * self.radius,
+                self._constants[Constants.DECREASE_RADIUS_FACTOR] * self.radius,
                 s_norm,
             )
         else:
             self.radius = min(
-                self._constants[Constants.INCREASE_RADIUS_FACTOR]
-                * self.radius,
+                self._constants[Constants.INCREASE_RADIUS_FACTOR] * self.radius,
                 max(
                     self._constants[Constants.DECREASE_RADIUS_FACTOR]
                     * self.radius,
@@ -1072,18 +1084,18 @@ class TrustRegion:
         """
         if (
             self._constants[Constants.LARGE_RESOLUTION_THRESHOLD]
-            * options[Options.RHOEND] < self.resolution
+            * options[Options.RHOEND]
+            < self.resolution
         ):
-            self.resolution *= (
-                self._constants[Constants.DECREASE_RESOLUTION_FACTOR]
-            )
+            self.resolution *= self._constants[
+                Constants.DECREASE_RESOLUTION_FACTOR
+            ]
         elif (
             self._constants[Constants.MODERATE_RESOLUTION_THRESHOLD]
-            * options[Options.RHOEND] < self.resolution
+            * options[Options.RHOEND]
+            < self.resolution
         ):
-            self.resolution = np.sqrt(
-                self.resolution * options[Options.RHOEND]
-            )
+            self.resolution = np.sqrt(self.resolution * options[Options.RHOEND])
         else:
             self.resolution = options[Options.RHOEND]
 
@@ -1127,10 +1139,8 @@ class TrustRegion:
         m_xu = np.count_nonzero(incl_xu)
 
         if (
-            m_linear_ub
-            + m_nonlinear_ub
-            + self.m_linear_eq
-            + self.m_nonlinear_eq > 0
+            m_linear_ub + m_nonlinear_ub + self.m_linear_eq + self.m_nonlinear_eq
+            > 0
         ):
             identity = np.eye(self._pb.n)
             c_jac = np.r_[
@@ -1155,16 +1165,13 @@ class TrustRegion:
 
             # Extract the Lagrange multipliers.
             self._lm_linear_ub[incl_linear_ub] = res.x[
-                m_xl
-                + m_xu:m_xl
-                + m_xu
-                + m_linear_ub
+                m_xl + m_xu : m_xl + m_xu + m_linear_ub
             ]
             self._lm_linear_ub[~incl_linear_ub] = 0.0
             self._lm_nonlinear_ub[incl_nonlinear_ub] = res.x[
                 m_xl
                 + m_xu
-                + m_linear_ub:m_xl
+                + m_linear_ub : m_xl
                 + m_xu
                 + m_linear_ub
                 + m_nonlinear_ub
@@ -1174,18 +1181,14 @@ class TrustRegion:
                 m_xl
                 + m_xu
                 + m_linear_ub
-                + m_nonlinear_ub:m_xl
+                + m_nonlinear_ub : m_xl
                 + m_xu
                 + m_linear_ub
                 + m_nonlinear_ub
                 + self.m_linear_eq
             ]
             self._lm_nonlinear_eq[:] = res.x[
-                m_xl
-                + m_xu
-                + m_linear_ub
-                + m_nonlinear_ub
-                + self.m_linear_eq:
+                m_xl + m_xu + m_linear_ub + m_nonlinear_ub + self.m_linear_eq :
             ]
 
     def _get_low_penalty(self):
@@ -1193,19 +1196,23 @@ class TrustRegion:
             (
                 self.models.interpolation.x_base[np.newaxis, :]
                 + self.models.interpolation.xpt.T
-            ) @ self._pb.linear.a_ub.T - self._pb.linear.b_ub[np.newaxis, :],
+            )
+            @ self._pb.linear.a_ub.T
+            - self._pb.linear.b_ub[np.newaxis, :],
             self.models.cub_val,
         ]
         r_val_eq = (
             self.models.interpolation.x_base[np.newaxis, :]
             + self.models.interpolation.xpt.T
         ) @ self._pb.linear.a_eq.T - self._pb.linear.b_eq[np.newaxis, :]
-        r_val_eq = np.block([
-            r_val_eq,
-            -r_val_eq,
-            self.models.ceq_val,
-            -self.models.ceq_val,
-        ])
+        r_val_eq = np.block(
+            [
+                r_val_eq,
+                -r_val_eq,
+                self.models.ceq_val,
+                -self.models.ceq_val,
+            ]
+        )
         r_val = np.block([r_val_ub, r_val_eq])
         c_min = np.nanmin(r_val, axis=0)
         c_max = np.nanmax(r_val, axis=0)

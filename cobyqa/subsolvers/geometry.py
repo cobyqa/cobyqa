@@ -194,27 +194,35 @@ def spider_geometry(const, grad, curv, xpt, xl, xu, delta, debug):
     # xl.shape = (N,)
     # xpt.shape = (N, M)
     # i_xl_pos.shape = (M, N)
-    i_xl_pos = ((xl > -np.inf) & (xpt.T > -TINY * xl))
-    i_xl_neg = ((xl > -np.inf) & (xpt.T < TINY * xl))
-    i_xu_pos = ((xu < np.inf) & (xpt.T > TINY * xu))
-    i_xu_neg = ((xu < np.inf) & (xpt.T < -TINY * xu))
+    i_xl_pos = (xl > -np.inf) & (xpt.T > -TINY * xl)
+    i_xl_neg = (xl > -np.inf) & (xpt.T < TINY * xl)
+    i_xu_pos = (xu < np.inf) & (xpt.T > TINY * xu)
+    i_xu_neg = (xu < np.inf) & (xpt.T < -TINY * xu)
 
     # (M, N)
-    alpha_xl_pos = np.atleast_2d(np.broadcast_to(xl, i_xl_pos.shape)[i_xl_pos] / xpt.T[i_xl_pos])
+    alpha_xl_pos = np.atleast_2d(
+        np.broadcast_to(xl, i_xl_pos.shape)[i_xl_pos] / xpt.T[i_xl_pos]
+    )
     # (M,)
     alpha_xl_pos = np.max(alpha_xl_pos, axis=1, initial=-np.inf)
     # make sure it's (M,)
     alpha_xl_pos = np.broadcast_to(np.atleast_1d(alpha_xl_pos), xpt.shape[1])
 
-    alpha_xl_neg = np.atleast_2d(np.broadcast_to(xl, i_xl_neg.shape)[i_xl_neg] / xpt.T[i_xl_neg])
+    alpha_xl_neg = np.atleast_2d(
+        np.broadcast_to(xl, i_xl_neg.shape)[i_xl_neg] / xpt.T[i_xl_neg]
+    )
     alpha_xl_neg = np.max(alpha_xl_neg, axis=1, initial=np.inf)
     alpha_xl_neg = np.broadcast_to(np.atleast_1d(alpha_xl_neg), xpt.shape[1])
 
-    alpha_xu_neg = np.atleast_2d(np.broadcast_to(xu, i_xu_neg.shape)[i_xu_neg] / xpt.T[i_xu_neg])
+    alpha_xu_neg = np.atleast_2d(
+        np.broadcast_to(xu, i_xu_neg.shape)[i_xu_neg] / xpt.T[i_xu_neg]
+    )
     alpha_xu_neg = np.max(alpha_xu_neg, axis=1, initial=-np.inf)
     alpha_xu_neg = np.broadcast_to(np.atleast_1d(alpha_xu_neg), xpt.shape[1])
 
-    alpha_xu_pos = np.atleast_2d(np.broadcast_to(xu, i_xu_pos.shape)[i_xu_pos] / xpt.T[i_xu_pos])
+    alpha_xu_pos = np.atleast_2d(
+        np.broadcast_to(xu, i_xu_pos.shape)[i_xu_pos] / xpt.T[i_xu_pos]
+    )
     alpha_xu_pos = np.max(alpha_xu_pos, axis=1, initial=np.inf)
     alpha_xu_pos = np.broadcast_to(np.atleast_1d(alpha_xu_pos), xpt.shape[1])
 
