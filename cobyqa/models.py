@@ -188,6 +188,53 @@ class Interpolation:
         return self.x_base + self.xpt[:, k]
 
 
+_cache = {"xpt": None, "a": None, "right_scaling": None}
+
+
+def build_system(interpolation):
+    """
+    Build the left-hand side matrix of the interpolation system. The
+    matrix below stores W * diag(right_scaling),
+    where W is the theoretical matrix of the interpolation system. The
+    right scaling matrices is chosen to keep the elements in
+    the matrix well-balanced.
+
+    Parameters
+    ----------
+    interpolation : `cobyqa.models.Interpolation`
+        Interpolation set.
+    """
+
+    # Compute the scaled directions from the base point to the
+    # interpolation points. We scale the directions to avoid numerical
+    # difficulties.
+    if _cache['xpt'] is not None and np.array_equal(interpolation.xpt, _cache['xpt']):
+        return _cache['a'], _cache['right_scaling']
+
+    scale = np.max(np.linalg.norm(interpolation.xpt, axis=0), initial=EPS)
+    xpt_scale = interpolation.xpt / scale
+
+    n, npt = xpt_scale.shape
+    a = np.zeros((npt + n + 1, npt + n + 1))
+    a[:npt, :npt] = 0.5 * (xpt_scale.T @ xpt_scale) ** 2.0
+    a[:npt, npt] = 1.0
+    a[:npt, npt + 1:] = xpt_scale.T
+    a[npt, :npt] = 1.0
+    a[npt + 1:, :npt] = xpt_scale
+
+    # Build the left and right scaling diagonal matrices.
+    right_scaling = np.empty(npt + n + 1)
+    right_scaling[:npt] = 1.0 / scale ** 2.0
+    right_scaling[npt] = scale ** 2.0
+    right_scaling[npt + 1:] = scale
+
+    _cache['xpt'] = np.copy(interpolation.xpt)
+    _cache['a'] = np.copy(a)
+    _cache['right_scaling'] = np.copy(right_scaling)
+
+    return a, right_scaling
+
+
 class Quadratic:
     """
     Quadratic model.
@@ -449,30 +496,6 @@ class Quadratic:
         self._e_hess += update + update.T
 
     @staticmethod
-    def build_system(xpt):
-        """
-        Build the left-hand side matrix of the interpolation system.
-
-        Parameters
-        ----------
-        xpt : `numpy.ndarray`, shape (n, npt)
-            Interpolation points.
-
-        Returns
-        -------
-        `numpy.ndarray`, shape (npt + n + 1, npt + n + 1)
-            Left-hand side matrix of the interpolation system.
-        """
-        n, npt = xpt.shape
-        a = np.zeros((npt + n + 1, npt + n + 1))
-        a[:npt, :npt] = 0.5 * (xpt.T @ xpt) ** 2.0
-        a[:npt, npt] = 1.0
-        a[:npt, npt + 1:] = xpt.T
-        a[npt, :npt] = 1.0
-        a[npt + 1:, :npt] = xpt
-        return a
-
-    @staticmethod
     def solve_systems(interpolation, rhs):
         """
         Solve the interpolation systems.
@@ -500,31 +523,12 @@ class Quadratic:
         assert rhs.ndim == 2 and rhs.shape[0] == npt + n + 1, \
             "The shape of `rhs` is not valid."
 
-        # Compute the scaled directions from the base point to the
-        # interpolation points. We scale the directions to avoid numerical
-        # difficulties.
-        scale = np.max(
-            [np.linalg.norm(interpolation.xpt[:, k]) for k in range(npt)],
-            initial=EPS,
-        )
-        xpt_scale = interpolation.xpt / scale
-
         # Build the left-hand side matrix of the interpolation system. The
         # matrix below stores diag(left_scaling) * W * diag(right_scaling),
         # where W is the theoretical matrix of the interpolation system. The
         # left and right scaling matrices are chosen to keep the elements in
         # the matrix well-balanced.
-        a = Quadratic.build_system(xpt_scale)
-
-        # Build the left and right scaling diagonal matrices.
-        left_scaling = np.empty(npt + n + 1)
-        right_scaling = np.empty(npt + n + 1)
-        left_scaling[:npt] = 1.0 / scale**2.0
-        left_scaling[npt] = scale**2.0
-        left_scaling[npt + 1:] = scale
-        right_scaling[:npt] = 1.0 / scale**2.0
-        right_scaling[npt] = scale**2.0
-        right_scaling[npt + 1:] = scale
+        a, right_scaling = build_system(interpolation)
 
         # Build the solution. After a discussion with Mike Saunders and Alexis
         # Montoison during their visit to the Hong Kong Polytechnic University
