@@ -470,19 +470,9 @@ class TrustRegion:
             fun_val, cub_val, ceq_val = self._pb(x)
         m_val = fun_val
         if self._penalty > 0.0:
-            c_val = np.block([
-                self._pb.bounds.xl - x,
-                x - self._pb.bounds.xu,
-                self._pb.linear.a_ub @ x - self._pb.linear.b_ub,
-                cub_val,
-            ])
-            c_val = np.maximum(c_val, 0.0)
-            c_val = np.block([
-                c_val,
-                np.abs(self._pb.linear.a_eq @ x - self._pb.linear.b_eq),
-                np.abs(ceq_val),
-            ])
-            m_val += self._penalty * np.linalg.norm(c_val)
+            c_val = self._pb.violation(x, cub_val=cub_val, ceq_val=ceq_val)
+            if np.count_nonzero(c_val):
+                m_val += self._penalty * np.linalg.norm(c_val)
         return m_val
 
     def get_constraint_linearizations(self, x):
