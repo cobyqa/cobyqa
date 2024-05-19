@@ -125,6 +125,9 @@ class BoundConstraints:
         self.xl[np.isnan(self.xl)] = -np.inf
         self.xu[np.isnan(self.xu)] = np.inf
 
+        self.is_feasible = np.all(self.xl <= self.xu) and np.all(self.xl < np.inf) and np.all(self.xu > -np.inf)
+        self.m = np.count_nonzero(self.xl > -np.inf) + np.count_nonzero(self.xu < np.inf)
+
     @property
     def xl(self):
         """
@@ -148,37 +151,6 @@ class BoundConstraints:
             Upper bound.
         """
         return self._xu
-
-    @property
-    def m(self):
-        """
-        Number of bound constraints.
-
-        Returns
-        -------
-        int
-            Number of bound constraints.
-        """
-        return (
-            np.count_nonzero(self.xl > -np.inf)
-            + np.count_nonzero(self.xu < np.inf)
-        )
-
-    @property
-    def is_feasible(self):
-        """
-        Whether the bound constraints are feasible.
-
-        Returns
-        -------
-        bool
-            Whether the bound constraints are feasible.
-        """
-        return (
-            np.all(self.xl <= self.xu)
-            and np.all(self.xl < np.inf)
-            and np.all(self.xu > -np.inf)
-        )
 
     def maxcv(self, x):
         """
