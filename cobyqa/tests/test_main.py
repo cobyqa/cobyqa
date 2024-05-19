@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint
+from scipy.optimize._minimize import standardize_constraints
 
 from ..main import minimize
 
@@ -104,6 +105,7 @@ class TestMinimize:
             options=self.options,
         )
         constraints_alt = {'fun': self.con, 'type': 'eq'}
+        constraints_alt = standardize_constraints((constraints_alt,), self.x0, "new")
         res_alt = minimize(
             self.fun,
             self.x0,

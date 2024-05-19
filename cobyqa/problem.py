@@ -176,7 +176,7 @@ class BoundConstraints:
     def violation(self, x):
         # shortcut for no bounds
         if self.is_feasible:
-            return np.array([])
+            return np.array([0])
         else:
             return self.pcs.violation(x)
 
@@ -387,7 +387,7 @@ class NonlinearConstraints:
         # map of indexes for equality and inequality constraints
         self._map_ub = None
         self._map_eq = None
-        self._m_ub = self._m_eq = 0
+        self._m_ub = self._m_eq = None
 
     def __call__(self, x):
         """
@@ -406,6 +406,7 @@ class NonlinearConstraints:
             Nonlinear equality constraint slack values.
         """
         if not len(self._constraints):
+            self._m_eq = self._m_ub = 0
             return np.array([]), np.array([])
 
         x = np.array(x, dtype=float)
@@ -413,6 +414,8 @@ class NonlinearConstraints:
         if not len(self.pcs):
             self._map_ub = []
             self._map_eq = []
+            self._m_eq = 0
+            self._m_ub = 0
 
             m = len(x)
             for constraint in self._constraints:
@@ -426,6 +429,10 @@ class NonlinearConstraints:
                     pc = PreparedConstraint(c, x)
                 else:
                     pc = PreparedConstraint(constraint, x)
+                # we're going to be using the same x value again immediately
+                # after this initialisation
+                pc.fun.f_updated = True
+
                 self.pcs.append(pc)
                 idx = np.arange(pc.fun.m)
 
@@ -447,7 +454,7 @@ class NonlinearConstraints:
             if self._verbose:
                 with np.printoptions(**PRINT_OPTIONS):
                     with suppress(AttributeError):
-                        fun_name = pc.fun.__name__
+                        fun_name = self._constraints[i].fun.__name__
                         print(f"{fun_name}({x}) = {val}")
                         
             # separate violations into c_eq and c_ub
