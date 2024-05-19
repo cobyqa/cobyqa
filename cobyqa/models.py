@@ -191,7 +191,7 @@ class Interpolation:
         return self.x_base + self.xpt[:, k]
 
 
-_cache = {"xpt": None, "a": None, "right_scaling": None}
+_cache = {"xpt": None, "a": None, "right_scaling": None, "eigh": None}
 
 
 def build_system(interpolation):
@@ -214,7 +214,7 @@ def build_system(interpolation):
     if _cache["xpt"] is not None and np.array_equal(
         interpolation.xpt, _cache["xpt"]
     ):
-        return _cache["a"], _cache["right_scaling"]
+        return _cache["a"], _cache["right_scaling"], _cache["eigh"]
 
     scale = np.max(np.linalg.norm(interpolation.xpt, axis=0), initial=EPS)
     xpt_scale = interpolation.xpt / scale
@@ -233,11 +233,14 @@ def build_system(interpolation):
     right_scaling[npt] = scale**2.0
     right_scaling[npt + 1 :] = scale
 
+    eig_values, eig_vectors = eigh(a, check_finite=False)
+
     _cache["xpt"] = np.copy(interpolation.xpt)
     _cache["a"] = np.copy(a)
     _cache["right_scaling"] = np.copy(right_scaling)
+    _cache["eigh"] = (eig_values, eig_vectors)
 
-    return a, right_scaling
+    return a, right_scaling, (eig_values, eig_vectors)
 
 
 class Quadratic:
@@ -541,7 +544,7 @@ class Quadratic:
         # where W is the theoretical matrix of the interpolation system. The
         # left and right scaling matrices are chosen to keep the elements in
         # the matrix well-balanced.
-        a, right_scaling = build_system(interpolation)
+        a, right_scaling, eig = build_system(interpolation)
 
         # Build the solution. After a discussion with Mike Saunders and Alexis
         # Montoison during their visit to the Hong Kong Polytechnic University
@@ -556,7 +559,10 @@ class Quadratic:
             raise np.linalg.LinAlgError(
                 "The interpolation system is ill-defined."
             )
-        eig_values, eig_vectors = eigh(a, check_finite=False)
+
+        # calculated in build_system
+        eig_values, eig_vectors = eig
+
         large_eig_values = np.abs(eig_values) > EPS
         eig_vectors = eig_vectors[:, large_eig_values]
         inv_eig_values = 1.0 / eig_values[large_eig_values]
