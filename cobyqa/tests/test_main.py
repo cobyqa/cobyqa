@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint
+from scipy.optimize._minimize import standardize_constraints
 
 from ..main import minimize
 
@@ -9,15 +10,15 @@ class TestMinimize:
 
     def setup_method(self):
         self.x0 = [4.0, 1.0]
-        self.options = {'debug': True}
+        self.options = {"debug": True}
 
     @staticmethod
     def fun(x, c=1.0):
-        return x[0]**2 + c * abs(x[1])**3
+        return x[0] ** 2 + c * abs(x[1]) ** 3
 
     @staticmethod
     def con(x):
-        return x[0]**2 + x[1]**2 - 25.0
+        return x[0] ** 2 + x[1] ** 2 - 25.0
 
     def test_simple(self):
         constraints = NonlinearConstraint(self.con, 0.0, 0.0)
@@ -103,7 +104,10 @@ class TestMinimize:
             constraints=constraints,
             options=self.options,
         )
-        constraints_alt = {'fun': self.con, 'type': 'eq'}
+        constraints_alt = {"fun": self.con, "type": "eq"}
+        constraints_alt = standardize_constraints(
+            (constraints_alt,), self.x0, "new"
+        )
         res_alt = minimize(
             self.fun,
             self.x0,
@@ -182,7 +186,7 @@ class TestMinimize:
 
     def test_target(self):
         options = dict(self.options)
-        options['target'] = 40.0
+        options["target"] = 40.0
         res = minimize(
             self.fun,
             self.x0,
@@ -194,7 +198,7 @@ class TestMinimize:
     def test_max_eval(self):
         constraints = NonlinearConstraint(self.con, 0.0, 0.0)
         options = dict(self.options)
-        options['maxfev'] = 10
+        options["maxfev"] = 10
         res = minimize(
             self.fun,
             self.x0,
@@ -206,7 +210,7 @@ class TestMinimize:
     def test_max_iter(self):
         constraints = NonlinearConstraint(self.con, 0.0, 0.0)
         options = dict(self.options)
-        options['maxiter'] = 5
+        options["maxiter"] = 5
         res = minimize(
             self.fun,
             self.x0,
@@ -234,7 +238,7 @@ class TestMinimize:
                 self.x0,
                 (2.0,),
                 constraints=constraints,
-                options={'history_size': 0},
+                options={"history_size": 0},
             )
         with pytest.raises(ValueError):
             minimize(
@@ -242,7 +246,7 @@ class TestMinimize:
                 self.x0,
                 (2.0,),
                 constraints=constraints,
-                options={'filter_size': 0},
+                options={"filter_size": 0},
             )
         with pytest.raises(ValueError):
             minimize(
@@ -250,7 +254,7 @@ class TestMinimize:
                 self.x0,
                 (2.0,),
                 constraints=constraints,
-                options={'radius_init': 0},
+                options={"radius_init": 0},
             )
         with pytest.raises(ValueError):
             minimize(
@@ -258,7 +262,7 @@ class TestMinimize:
                 self.x0,
                 (2.0,),
                 constraints=constraints,
-                options={'radius_final': -1},
+                options={"radius_final": -1},
             )
         with pytest.raises(ValueError):
             minimize(
@@ -266,7 +270,7 @@ class TestMinimize:
                 self.x0,
                 (2.0,),
                 constraints=constraints,
-                options={'radius_init': 1, 'radius_final': 2},
+                options={"radius_init": 1, "radius_final": 2},
             )
         with pytest.raises(ValueError):
             minimize(
@@ -274,7 +278,7 @@ class TestMinimize:
                 self.x0,
                 (2.0,),
                 constraints=constraints,
-                options={'nb_points': 0},
+                options={"nb_points": 0},
             )
         with pytest.raises(ValueError):
             minimize(
@@ -282,7 +286,7 @@ class TestMinimize:
                 self.x0,
                 (2.0,),
                 constraints=constraints,
-                options={'nb_points': 7},
+                options={"nb_points": 7},
             )
         with pytest.raises(ValueError):
             minimize(
@@ -290,7 +294,7 @@ class TestMinimize:
                 self.x0,
                 (2.0,),
                 constraints=constraints,
-                options={'maxfev': 0},
+                options={"maxfev": 0},
             )
         with pytest.raises(ValueError):
             minimize(
@@ -298,7 +302,7 @@ class TestMinimize:
                 self.x0,
                 (2.0,),
                 constraints=constraints,
-                options={'maxiter': 0},
+                options={"maxiter": 0},
             )
 
     def test_warning(self):
@@ -306,5 +310,5 @@ class TestMinimize:
             minimize(
                 self.fun,
                 self.x0,
-                options={'unknown': 0},
+                options={"unknown": 0},
             )

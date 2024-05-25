@@ -1,5 +1,6 @@
 from contextlib import suppress
 from inspect import signature
+import copy
 
 import numpy as np
 from scipy.optimize import (
@@ -8,6 +9,8 @@ from scipy.optimize import (
     NonlinearConstraint,
     OptimizeResult,
 )
+from scipy.optimize._constraints import PreparedConstraint
+
 
 from .settings import PRINT_OPTIONS, BARRIER
 from .utils import CallbackSuccess, get_arrays_tol
@@ -125,6 +128,16 @@ class BoundConstraints:
         self.xl[np.isnan(self.xl)] = -np.inf
         self.xu[np.isnan(self.xu)] = np.inf
 
+        self.is_feasible = (
+            np.all(self.xl <= self.xu)
+            and np.all(self.xl < np.inf)
+            and np.all(self.xu > -np.inf)
+        )
+        self.m = np.count_nonzero(self.xl > -np.inf) + np.count_nonzero(
+            self.xu < np.inf
+        )
+        self.pcs = PreparedConstraint(bounds, np.ones(bounds.lb.size))
+
     @property
     def xl(self):
         """
@@ -149,37 +162,6 @@ class BoundConstraints:
         """
         return self._xu
 
-    @property
-    def m(self):
-        """
-        Number of bound constraints.
-
-        Returns
-        -------
-        int
-            Number of bound constraints.
-        """
-        return (
-            np.count_nonzero(self.xl > -np.inf)
-            + np.count_nonzero(self.xu < np.inf)
-        )
-
-    @property
-    def is_feasible(self):
-        """
-        Whether the bound constraints are feasible.
-
-        Returns
-        -------
-        bool
-            Whether the bound constraints are feasible.
-        """
-        return (
-            np.all(self.xl <= self.xu)
-            and np.all(self.xl < np.inf)
-            and np.all(self.xu > -np.inf)
-        )
-
     def maxcv(self, x):
         """
         Evaluate the maximum constraint violation.
@@ -195,8 +177,14 @@ class BoundConstraints:
             Maximum constraint violation at `x`.
         """
         x = np.asarray(x, dtype=float)
-        val = np.max(self.xl - x, initial=0.0)
-        return np.max(x - self.xu, initial=val)
+        return self.violation(x)
+
+    def violation(self, x):
+        # shortcut for no bounds
+        if self.is_feasible:
+            return np.array([0])
+        else:
+            return self.pcs.violation(x)
 
     def project(self, x):
         """
@@ -244,29 +232,36 @@ class LinearConstraints:
         self._a_eq = np.empty((0, n))
         self._b_eq = np.empty(0)
         for constraint in constraints:
-            is_equality = (
-                np.abs(constraint.ub - constraint.lb)
-                <= get_arrays_tol(constraint.lb, constraint.ub)
-            )
+            is_equality = np.abs(
+                constraint.ub - constraint.lb
+            ) <= get_arrays_tol(constraint.lb, constraint.ub)
             if np.any(is_equality):
                 self._a_eq = np.vstack((self.a_eq, constraint.A[is_equality]))
-                self._b_eq = np.concatenate((
-                    self.b_eq,
-                    0.5 * (
-                        constraint.lb[is_equality] + constraint.ub[is_equality]
-                    ),
-                ))
+                self._b_eq = np.concatenate(
+                    (
+                        self.b_eq,
+                        0.5
+                        * (
+                            constraint.lb[is_equality]
+                            + constraint.ub[is_equality]
+                        ),
+                    )
+                )
             if not np.all(is_equality):
-                self._a_ub = np.vstack((
-                    self.a_ub,
-                    constraint.A[~is_equality],
-                    -constraint.A[~is_equality],
-                ))
-                self._b_ub = np.concatenate((
-                    self.b_ub,
-                    constraint.ub[~is_equality],
-                    -constraint.lb[~is_equality],
-                ))
+                self._a_ub = np.vstack(
+                    (
+                        self.a_ub,
+                        constraint.A[~is_equality],
+                        -constraint.A[~is_equality],
+                    )
+                )
+                self._b_ub = np.concatenate(
+                    (
+                        self.b_ub,
+                        constraint.ub[~is_equality],
+                        -constraint.lb[~is_equality],
+                    )
+                )
 
         # Remove the ill-defined constraints.
         self.a_ub[np.isnan(self.a_ub)] = 0.0
@@ -277,6 +272,9 @@ class LinearConstraints:
         self._b_ub = self.b_ub[~undef_ub]
         self._a_eq = self.a_eq[~undef_eq, :]
         self._b_eq = self.b_eq[~undef_eq]
+        self.pcs = [
+            PreparedConstraint(c, np.ones(n)) for c in constraints if c.A.size
+        ]
 
     @property
     def a_ub(self):
@@ -364,11 +362,12 @@ class LinearConstraints:
         float
             Maximum constraint violation at `x`.
         """
-        x = np.array(x, dtype=float)
-        return np.max([
-            np.max(self.a_ub @ x - self.b_ub, initial=0.0),
-            np.max(np.abs(self.a_eq @ x - self.b_eq), initial=0.0),
-        ])
+        return np.max(self.violation(x), initial=0.0)
+
+    def violation(self, x):
+        if len(self.pcs):
+            return np.concatenate([pc.violation(x) for pc in self.pcs])
+        return np.array([])
 
 
 class NonlinearConstraints:
@@ -392,22 +391,22 @@ class NonlinearConstraints:
         if debug:
             assert isinstance(constraints, list)
             for constraint in constraints:
-                assert (
-                    isinstance(constraint, NonlinearConstraint)
-                    or isinstance(constraint, dict)
-                )
+                assert isinstance(constraint, NonlinearConstraint)
             assert isinstance(verbose, bool)
             assert isinstance(debug, bool)
 
         self._constraints = constraints
+        self.pcs = []
         self._verbose = verbose
-        self._m_ub = None
-        self._m_eq = None
-        self._n_eval = 0
+
+        # map of indexes for equality and inequality constraints
+        self._map_ub = None
+        self._map_eq = None
+        self._m_ub = self._m_eq = None
 
     def __call__(self, x):
         """
-        Evaluate the constraints.
+        Calculates the residual (slack) for the constraints.
 
         Parameters
         ----------
@@ -417,72 +416,101 @@ class NonlinearConstraints:
         Returns
         -------
         `numpy.ndarray`, shape (m_nonlinear_ub,)
-            Nonlinear inequality constraint function values.
+            Nonlinear inequality constraint slack values.
         `numpy.ndarray`, shape (m_nonlinear_eq,)
-            Nonlinear equality constraint function values.
+            Nonlinear equality constraint slack values.
         """
+        if not len(self._constraints):
+            self._m_eq = self._m_ub = 0
+            return np.array([]), np.array([])
+
         x = np.array(x, dtype=float)
-        c_ub = np.empty(0)
-        c_eq = np.empty(0)
-        for constraint in self._constraints:
-            if isinstance(constraint, NonlinearConstraint):
-                fun = constraint.fun
-                val = fun(x)
-            else:
-                fun = constraint["fun"]
-                args = constraint["args"]
-                if not isinstance(args, tuple):
-                    args = (args,)
-                val = fun(x, *args)
-            val = exact_1d_array(
-                val,
-                "The nonlinear constraints must return a vector.",
-            )
+        # first time around the constraints haven't been prepared
+        if not len(self.pcs):
+            self._map_ub = []
+            self._map_eq = []
+            self._m_eq = 0
+            self._m_ub = 0
+
+            m = len(x)
+            for constraint in self._constraints:
+                if not callable(constraint.jac):
+                    # having a callable constraint constraint function
+                    # prevents constraint.fun from being evaluated when
+                    # preparing constraint
+                    c = copy.copy(constraint)
+                    c.jac = lambda x0: x0
+                    c.hess = lambda x0, v: 0.0
+                    pc = PreparedConstraint(c, x)
+                else:
+                    pc = PreparedConstraint(constraint, x)
+                # we're going to be using the same x value again immediately
+                # after this initialisation
+                pc.fun.f_updated = True
+
+                self.pcs.append(pc)
+                idx = np.arange(pc.fun.m)
+
+                # figure out equality and inequality maps
+                lb, ub = pc.bounds[0], pc.bounds[1]
+                arr_tol = get_arrays_tol(lb, ub)
+                is_equality = np.abs(ub - lb) <= arr_tol
+                self._map_eq.append(idx[is_equality])
+                self._map_ub.append(idx[~is_equality])
+
+                # these values will be corrected to their proper values later
+                self._m_eq += np.count_nonzero(is_equality)
+                self._m_ub += np.count_nonzero(~is_equality)
+
+        c_ub = []
+        c_eq = []
+        for i, pc in enumerate(self.pcs):
+            val = pc.fun.fun(x)
             if self._verbose:
                 with np.printoptions(**PRINT_OPTIONS):
                     with suppress(AttributeError):
-                        fun_name = fun.__name__
+                        fun_name = self._constraints[i].fun.__name__
                         print(f"{fun_name}({x}) = {val}")
-            if isinstance(constraint, NonlinearConstraint):
-                val, lb, ub = np.broadcast_arrays(
-                    val,
-                    constraint.lb,
-                    constraint.ub,
-                )
-                lb = np.array(lb, float)
-                ub = np.array(ub, float)
-                lb[np.isnan(lb)] = -np.inf
-                ub[np.isnan(ub)] = np.inf
-                is_equality = np.abs(ub - lb) <= get_arrays_tol(lb, ub)
-                if np.any(is_equality):
-                    c_eq = np.concatenate((
-                        c_eq,
-                        val[is_equality]
-                        - 0.5 * (lb[is_equality] + ub[is_equality]),
-                    ))
-                if not np.all(is_equality):
-                    is_inequality_lb = ~is_equality & (lb > -np.inf)
-                    is_inequality_ub = ~is_equality & (ub < np.inf)
-                    if np.any(is_inequality_lb):
-                        c_ub = np.concatenate((
-                            c_ub,
-                            lb[is_inequality_lb] - val[is_inequality_lb],
-                        ))
-                    if np.any(is_inequality_ub):
-                        c_ub = np.concatenate((
-                            c_ub,
-                            val[is_inequality_ub] - ub[is_inequality_ub],
-                        ))
-            elif constraint["type"] == "ineq":
-                c_ub = np.concatenate((c_ub, -val))
-            else:
-                c_eq = np.concatenate((c_eq, val))
-        if len(self._constraints) > 0:
-            self._n_eval += 1
-        if self._m_ub is None:
-            self._m_ub = c_ub.size
-        if self._m_eq is None:
-            self._m_eq = c_eq.size
+
+            # separate violations into c_eq and c_ub
+            eq_idx = self._map_eq[i]
+            ub_idx = self._map_ub[i]
+
+            ub_val = val[ub_idx]
+            if len(ub_idx):
+                xl = pc.bounds[0][ub_idx]
+                xu = pc.bounds[1][ub_idx]
+
+                # calculate slack within lower bound
+                finite_xl = xl > -np.inf
+                _v = xl[finite_xl] - ub_val[finite_xl]
+                c_ub.append(_v)
+
+                # calculate slack within lower bound
+                finite_xu = xu < np.inf
+                _v = ub_val[finite_xu] - xu[finite_xu]
+                c_ub.append(_v)
+
+            # equality constraints taken from midpoint between lb and ub
+            eq_val = val[eq_idx]
+            if len(eq_idx):
+                midpoint = 0.5 * (pc.bounds[1][eq_idx] + pc.bounds[0][eq_idx])
+                eq_val -= midpoint
+            c_eq.append(eq_val)
+
+        if self._m_eq:
+            c_eq = np.concatenate(c_eq)
+        else:
+            c_eq = np.array([])
+
+        if self._m_ub:
+            c_ub = np.concatenate(c_ub)
+        else:
+            c_ub = np.array([])
+
+        self._m_ub = c_ub.size
+        self._m_eq = c_eq.size
+
         return c_ub, c_eq
 
     @property
@@ -539,7 +567,10 @@ class NonlinearConstraints:
         int
             Number of function evaluations.
         """
-        return self._n_eval
+        if len(self.pcs):
+            return self.pcs[0].fun.nfev
+        else:
+            return 0
 
     def maxcv(self, x, cub_val=None, ceq_val=None):
         """
@@ -561,12 +592,12 @@ class NonlinearConstraints:
         float
             Maximum constraint violation at `x`.
         """
-        if cub_val is None or ceq_val is None:
-            cub_val, ceq_val = self(x)
-        return np.max([
-            np.max(cub_val, initial=0.0),
-            np.max(np.abs(ceq_val), initial=0.0),
-        ])
+        return np.max(
+            self.violation(x, cub_val=cub_val, ceq_val=ceq_val), initial=0.0
+        )
+
+    def violation(self, x, cub_val=None, ceq_val=None):
+        return np.concatenate([pc.violation(x) for pc in self.pcs])
 
 
 class Problem:
@@ -658,9 +689,8 @@ class Problem:
 
         # Check which variables are fixed.
         tol = get_arrays_tol(bounds.xl, bounds.xu)
-        self._fixed_idx = (
-            (bounds.xl <= bounds.xu)
-            & (np.abs(bounds.xl - bounds.xu) < tol)
+        self._fixed_idx = (bounds.xl <= bounds.xu) & (
+            np.abs(bounds.xl - bounds.xu) < tol
         )
         self._fixed_val = 0.5 * (
             bounds.xl[self._fixed_idx] + bounds.xu[self._fixed_idx]
@@ -789,7 +819,8 @@ class Problem:
             include_point = len(self._fun_filter) == 0
         elif np.isnan(fun_val):
             include_point = all(
-                np.isnan(fun_filter) and maxcv_val < maxcv_filter
+                np.isnan(fun_filter)
+                and maxcv_val < maxcv_filter
                 or np.isnan(maxcv_filter)
                 for fun_filter, maxcv_filter in zip(
                     self._fun_filter,
@@ -798,7 +829,8 @@ class Problem:
             )
         elif np.isnan(maxcv_val):
             include_point = all(
-                np.isnan(maxcv_filter) and fun_val < fun_filter
+                np.isnan(maxcv_filter)
+                and fun_val < fun_filter
                 or np.isnan(fun_filter)
                 for fun_filter, maxcv_filter in zip(
                     self._fun_filter,
@@ -913,7 +945,7 @@ class Problem:
         int
             Number of function evaluations.
         """
-        return max(self._obj.n_eval, self._nonlinear.n_eval)
+        return self._obj.n_eval
 
     @property
     def fun_name(self):
@@ -1103,9 +1135,7 @@ class Problem:
         """
         x_full = np.empty(self.n_orig)
         x_full[self._fixed_idx] = self._fixed_val
-        x_full[~self._fixed_idx] = (
-            x * self._scaling_factor + self._scaling_shift
-        )
+        x_full[~self._fixed_idx] = x * self._scaling_factor + self._scaling_shift
         return self._orig_bounds.project(x_full)
 
     def maxcv(self, x, cub_val=None, ceq_val=None):
@@ -1128,11 +1158,27 @@ class Problem:
         float
             Maximum constraint violation at `x`.
         """
-        return np.max([
-            self.bounds.maxcv(x),
-            self.linear.maxcv(x),
-            self._nonlinear.maxcv(x, cub_val, ceq_val),
-        ])
+        violation = self.violation(x, cub_val=cub_val, ceq_val=ceq_val)
+        if np.count_nonzero(violation):
+            return np.max(violation, initial=0.0)
+        else:
+            return 0.0
+
+    def violation(self, x, cub_val=None, ceq_val=None):
+        violation = []
+        if not self.bounds.is_feasible:
+            b = self.bounds.violation(x)
+            violation.append(b)
+
+        if len(self.linear.pcs):
+            lc = self.linear.violation(x)
+            violation.append(lc)
+        if len(self._nonlinear.pcs):
+            nlc = self._nonlinear.violation(x, cub_val, ceq_val)
+            violation.append(nlc)
+
+        if len(violation):
+            return np.concatenate(violation)
 
     def best_eval(self, penalty):
         """
@@ -1168,7 +1214,7 @@ class Problem:
             # At least one point has a finite maximum constraint violation.
             feasible_idx = maxcv_filter <= self._feasibility_tol
             if np.any(feasible_idx) and not np.all(
-                    np.isnan(fun_filter[feasible_idx])
+                np.isnan(fun_filter[feasible_idx])
             ):
                 # At least one point is feasible and has a well-defined
                 # objective function value. We select the point with the least
@@ -1176,11 +1222,11 @@ class Problem:
                 # point with the least maximum constraint violation. If there
                 # is still a tie, we select the most recent point.
                 fun_min_idx = feasible_idx & (
-                        fun_filter <= np.nanmin(fun_filter[feasible_idx])
+                    fun_filter <= np.nanmin(fun_filter[feasible_idx])
                 )
                 if np.count_nonzero(fun_min_idx) > 1:
-                    fun_min_idx &= (
-                            maxcv_filter <= np.min(maxcv_filter[fun_min_idx])
+                    fun_min_idx &= maxcv_filter <= np.min(
+                        maxcv_filter[fun_min_idx]
                     )
                 i = np.flatnonzero(fun_min_idx)[-1]
             elif np.any(feasible_idx):
@@ -1193,8 +1239,7 @@ class Problem:
                 # value for each point.
                 merit_filter = np.full_like(fun_filter, np.nan)
                 merit_filter[finite_idx] = (
-                        fun_filter[finite_idx]
-                        + penalty * maxcv_filter[finite_idx]
+                    fun_filter[finite_idx] + penalty * maxcv_filter[finite_idx]
                 )
                 if np.all(np.isnan(merit_filter)):
                     # No point has a well-defined merit function value. In
@@ -1215,13 +1260,13 @@ class Problem:
                     # most recent point.
                     merit_min_idx = merit_filter <= np.nanmin(merit_filter)
                     if np.count_nonzero(merit_min_idx) > 1:
-                        merit_min_idx &= (
-                            maxcv_filter
-                            <= np.min(maxcv_filter[merit_min_idx]))
+                        merit_min_idx &= maxcv_filter <= np.min(
+                            maxcv_filter[merit_min_idx]
+                        )
 
                     if np.count_nonzero(merit_min_idx) > 1:
-                        merit_min_idx &= (
-                            fun_filter <= np.min(fun_filter[merit_min_idx])
+                        merit_min_idx &= fun_filter <= np.min(
+                            fun_filter[merit_min_idx]
                         )
                     i = np.flatnonzero(merit_min_idx)[-1]
         elif not np.all(np.isnan(fun_filter)):

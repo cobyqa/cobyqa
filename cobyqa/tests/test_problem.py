@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint
+from scipy.optimize._minimize import standardize_constraints
 
 from ..problem import (
     ObjectiveFunction,
@@ -18,7 +19,7 @@ class BaseTest:
     @staticmethod
     def rosen(x, c=100.0):
         x = np.asarray(x)
-        return np.sum(c * (x[1:] - x[:-1]**2.0)**2.0 + (1.0 - x[:-1])**2.0)
+        return np.sum(c * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1.0 - x[:-1]) ** 2.0)
 
     class Rosen:
 
@@ -159,8 +160,8 @@ class TestNonlinearConstraint:
         nonlinear_constraints = [
             NonlinearConstraint(np.cos, [-0.5, -0.5], [0.0, 0.0]),
             NonlinearConstraint(np.sin, [1.0, 1.0], [1.0, 1.0]),
-            {'fun': np.tan, 'type': 'ineq', 'args': ()},
-            {'fun': lambda x: np.inner(x, x) - 1.0, 'type': 'eq', 'args': ()},
+            NonlinearConstraint(np.tan, -np.inf, np.inf),
+            NonlinearConstraint(lambda x: np.inner(x, x) - 1.0, 0, 0),
         ]
         constraints = NonlinearConstraints(nonlinear_constraints, False, True)
         assert constraints.n_eval == 0
@@ -168,7 +169,7 @@ class TestNonlinearConstraint:
         c_ub, c_eq = constraints(x)
         np.testing.assert_allclose(
             c_ub,
-            np.block([-0.5 - np.cos(x), np.cos(x), -np.tan(x)]),
+            np.block([-0.5 - np.cos(x), np.cos(x)]),
             atol=1e-15,
         )
         np.testing.assert_allclose(
@@ -177,7 +178,7 @@ class TestNonlinearConstraint:
             atol=1e-15,
         )
         assert constraints.n_eval == 1
-        assert constraints.m_ub == 6
+        assert constraints.m_ub == 4
         assert constraints.m_eq == 3
         np.testing.assert_allclose(
             constraints.maxcv(x, c_ub, c_eq),
@@ -191,11 +192,14 @@ class TestNonlinearConstraint:
 
     def test_args(self):
         nonlinear_constraints = [
-            {'fun': lambda x, c: c * np.cos(x), 'type': 'ineq', 'args': 2.0},
-            {'fun': lambda x, c: c * np.sin(x), 'type': 'eq', 'args': 2.0},
+            {"fun": lambda x, c: c * np.cos(x), "type": "ineq", "args": (2.0,)},
+            {"fun": lambda x, c: c * np.sin(x), "type": "eq", "args": (2.0,)},
         ]
-        constraints = NonlinearConstraints(nonlinear_constraints, False, True)
         x = [0.5, 0.5]
+        nonlinear_constraints = standardize_constraints(
+            nonlinear_constraints, x, "new"
+        )
+        constraints = NonlinearConstraints(nonlinear_constraints, False, True)
         c_ub, c_eq = constraints(x)
         np.testing.assert_allclose(
             c_ub,

@@ -1,6 +1,9 @@
 import numpy as np
 
 
+EPS = np.finfo(float).eps
+
+
 def get_arrays_tol(*arrays):
     """
     Get a relative tolerance for a set of arrays.
@@ -27,7 +30,7 @@ def get_arrays_tol(*arrays):
         np.max(np.abs(array[np.isfinite(array)]), initial=1.0)
         for array in arrays
     )
-    return 10.0 * np.finfo(float).eps * max(size, 1.0) * weight
+    return 10.0 * EPS * max(size, 1.0) * weight
 
 
 def exact_1d_array(x, message):
