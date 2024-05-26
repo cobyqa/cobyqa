@@ -434,9 +434,9 @@ class NonlinearConstraints:
 
             for constraint in self._constraints:
                 if not callable(constraint.jac):
-                    # having a callable constraint constraint function
-                    # prevents constraint.fun from being evaluated when
-                    # preparing constraint
+                    # having a callable constraint function prevents
+                    # constraint.fun from being evaluated when preparing
+                    # constraint
                     c = copy.copy(constraint)
                     c.jac = lambda x0: x0
                     c.hess = lambda x0, v: 0.0

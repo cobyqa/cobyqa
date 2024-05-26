@@ -65,7 +65,6 @@ linkcode
 linspace
 lnx
 lsq
-lstsq
 lvert
 mastsif
 mathalpha
@@ -82,7 +81,6 @@ mdates
 mindepth
 minexp
 MYARCH
-nanargmin
 nanmax
 nanmin
 ndarray
@@ -95,7 +93,6 @@ numpydoc
 objname
 omojokun
 Oper
-Opti
 optim
 papersize
 pcs
