@@ -3,22 +3,16 @@ COBYQA: Constrained Optimization BY Quadratic Approximations
 
 .. image:: https://img.shields.io/github/actions/workflow/status/cobyqa/cobyqa/build.yml?logo=github&style=for-the-badge
     :target: https://github.com/cobyqa/cobyqa/actions/workflows/build.yml
-
 .. image:: https://img.shields.io/readthedocs/cobyqa/latest?logo=readthedocs&style=for-the-badge
     :target: https://www.cobyqa.com/
-
 .. image:: https://img.shields.io/codecov/c/github/cobyqa/cobyqa?logo=codecov&style=for-the-badge
     :target: https://codecov.io/gh/cobyqa/cobyqa/
-
 .. image:: https://img.shields.io/pypi/v/cobyqa?logo=pypi&style=for-the-badge
     :target: https://pypi.org/project/cobyqa/
-
 .. image:: https://img.shields.io/pypi/dm/cobyqa?logo=pypi&style=for-the-badge
     :target: https://pypi.org/project/cobyqa/
-
 .. image:: https://img.shields.io/conda/v/conda-forge/cobyqa?logo=anaconda&style=for-the-badge&label=conda-forge
     :target: https://anaconda.org/conda-forge/cobyqa
-
 .. image:: https://img.shields.io/conda/d/conda-forge/cobyqa?logo=anaconda&style=for-the-badge&label=downloads
     :target: https://anaconda.org/conda-forge/cobyqa
 
