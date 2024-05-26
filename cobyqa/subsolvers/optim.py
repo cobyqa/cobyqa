@@ -1078,7 +1078,8 @@ def normal_byrd_omojokun(aub, bub, aeq, beq, xl, xu, delta, debug, **kwargs):
             cos_value = (1.0 - t_samples[i_max] ** 2.0) / (
                 1.0 + t_samples[i_max] ** 2.0
             )
-            sin_value = 2.0 * t_samples[i_max] / (1.0 + t_samples[i_max] ** 2.0)
+            sin_value = (2.0 * t_samples[i_max]
+                         / (1.0 + t_samples[i_max] ** 2.0))
             step[free_bd] = cos_value * step[free_bd] + sin_value * sd[free_bd]
             grad = aub.T @ np.maximum(aub @ step - bub, 0.0) + aeq.T @ (
                 aeq @ step - beq

@@ -223,15 +223,15 @@ def build_system(interpolation):
     a = np.zeros((npt + n + 1, npt + n + 1))
     a[:npt, :npt] = 0.5 * (xpt_scale.T @ xpt_scale) ** 2.0
     a[:npt, npt] = 1.0
-    a[:npt, npt + 1 :] = xpt_scale.T
+    a[:npt, npt + 1:] = xpt_scale.T
     a[npt, :npt] = 1.0
-    a[npt + 1 :, :npt] = xpt_scale
+    a[npt + 1:, :npt] = xpt_scale
 
     # Build the left and right scaling diagonal matrices.
     right_scaling = np.empty(npt + n + 1)
     right_scaling[:npt] = 1.0 / scale**2.0
     right_scaling[npt] = scale**2.0
-    right_scaling[npt + 1 :] = scale
+    right_scaling[npt + 1:] = scale
 
     eig_values, eig_vectors = eigh(a, check_finite=False)
 
@@ -616,7 +616,7 @@ class Quadratic:
                 ]
             ).T,
         )
-        return x[npt, 0], x[npt + 1 :, 0], x[:npt, 0], ill_conditioned
+        return x[npt, 0], x[npt + 1:, 0], x[:npt, 0], ill_conditioned
 
 
 class Models:
@@ -993,7 +993,8 @@ class Models:
                 self.m_nonlinear_ub,
             ), "The shape of `mask` is not valid."
         return np.reshape(
-            [model.grad(x, self.interpolation) for model in self._get_cub(mask)],
+            [model.grad(x, self.interpolation)
+             for model in self._get_cub(mask)],
             (-1, self.n),
         )
 
@@ -1079,7 +1080,8 @@ class Models:
                 self.m_nonlinear_ub,
             ), "The shape of `mask` is not valid."
         return np.array(
-            [model.curv(v, self.interpolation) for model in self._get_cub(mask)]
+            [model.curv(v, self.interpolation)
+             for model in self._get_cub(mask)]
         )
 
     def ceq(self, x, mask=None):
@@ -1134,7 +1136,8 @@ class Models:
                 self.m_nonlinear_eq,
             ), "The shape of `mask` is not valid."
         return np.reshape(
-            [model.grad(x, self.interpolation) for model in self._get_ceq(mask)],
+            [model.grad(x, self.interpolation)
+             for model in self._get_ceq(mask)],
             (-1, self.n),
         )
 
@@ -1220,7 +1223,8 @@ class Models:
                 self.m_nonlinear_eq,
             ), "The shape of `mask` is not valid."
         return np.array(
-            [model.curv(v, self.interpolation) for model in self._get_ceq(mask)]
+            [model.curv(v, self.interpolation)
+             for model in self._get_ceq(mask)]
         )
 
     def reset_models(self):
@@ -1280,8 +1284,10 @@ class Models:
         """
         if self._debug:
             assert 0 <= k_new < self.npt, "The index `k_new` is not valid."
-            assert x_new.shape == (self.n,), "The shape of `x_new` is not valid."
-            assert isinstance(fun_val, float), "The function value is not valid."
+            assert x_new.shape == (self.n,), \
+                "The shape of `x_new` is not valid."
+            assert isinstance(fun_val, float), \
+                "The function value is not valid."
             assert cub_val.shape == (
                 self.m_nonlinear_ub,
             ), "The shape of `cub_val` is not valid."
@@ -1368,7 +1374,8 @@ class Models:
            2004.
         """
         if self._debug:
-            assert x_new.shape == (self.n,), "The shape of `x_new` is not valid."
+            assert x_new.shape == (self.n,), \
+                "The shape of `x_new` is not valid."
             assert (
                 k_new is None or 0 <= k_new < self.npt
             ), "The index `k_new` is not valid."
@@ -1376,9 +1383,10 @@ class Models:
         # Compute the values independent of k_new.
         shift = x_new - self.interpolation.x_base
         new_col = np.empty((self.npt + self.n + 1, 1))
-        new_col[: self.npt, 0] = 0.5 * (self.interpolation.xpt.T @ shift) ** 2.0
+        new_col[: self.npt, 0] = (
+                0.5 * (self.interpolation.xpt.T @ shift) ** 2.0)
         new_col[self.npt, 0] = 1.0
-        new_col[self.npt + 1 :, 0] = shift
+        new_col[self.npt + 1:, 0] = shift
         inv_new_col = Quadratic.solve_systems(self.interpolation, new_col)[0]
         beta = 0.5 * (shift @ shift) ** 2.0 - new_col[:, 0] @ inv_new_col[:, 0]
 

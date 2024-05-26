@@ -89,6 +89,7 @@ ndarray
 ndim
 newaxis
 nfev
+nlc
 npt
 numpydoc
 objname
@@ -97,6 +98,7 @@ Oper
 Opti
 optim
 papersize
+pcs
 phdthesis
 plt
 powell

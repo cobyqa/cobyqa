@@ -568,7 +568,8 @@ class TrustRegion:
         )
         if options[Options.DEBUG]:
             tol = get_arrays_tol(xl, xu)
-            if np.any(normal_step + tol < xl) or np.any(xu < normal_step - tol):
+            if (np.any(normal_step + tol < xl)
+                    or np.any(xu < normal_step - tol)):
                 warnings.warn(
                     "the normal step does not respect the bound constraint.",
                     RuntimeWarning,
@@ -723,7 +724,8 @@ class TrustRegion:
             "linearly constrained",
             "nonlinearly constrained",
         ]:
-            aub, bub, aeq, beq = self.get_constraint_linearizations(self.x_best)
+            aub, bub, aeq, beq = (
+                self.get_constraint_linearizations(self.x_best))
             tol_bd = get_arrays_tol(xl, xu)
             tol_ub = get_arrays_tol(bub)
             free_xl = xl <= -tol_bd
@@ -930,7 +932,8 @@ class TrustRegion:
         best_index_save = self.best_index
         if (
             self._penalty
-            <= self._constants[Constants.PENALTY_INCREASE_THRESHOLD] * threshold
+            <= self._constants[Constants.PENALTY_INCREASE_THRESHOLD]
+                * threshold
         ):
             self._penalty = max(
                 self._constants[Constants.PENALTY_INCREASE_FACTOR] * threshold,
@@ -1059,12 +1062,14 @@ class TrustRegion:
             self.radius *= self._constants[Constants.DECREASE_RADIUS_FACTOR]
         elif ratio <= self._constants[Constants.HIGH_RATIO]:
             self.radius = max(
-                self._constants[Constants.DECREASE_RADIUS_FACTOR] * self.radius,
+                self._constants[Constants.DECREASE_RADIUS_FACTOR]
+                * self.radius,
                 s_norm,
             )
         else:
             self.radius = min(
-                self._constants[Constants.INCREASE_RADIUS_FACTOR] * self.radius,
+                self._constants[Constants.INCREASE_RADIUS_FACTOR]
+                * self.radius,
                 max(
                     self._constants[Constants.DECREASE_RADIUS_FACTOR]
                     * self.radius,
@@ -1095,7 +1100,8 @@ class TrustRegion:
             * options[Options.RHOEND]
             < self.resolution
         ):
-            self.resolution = np.sqrt(self.resolution * options[Options.RHOEND])
+            self.resolution = np.sqrt(self.resolution
+                                      * options[Options.RHOEND])
         else:
             self.resolution = options[Options.RHOEND]
 
@@ -1139,8 +1145,8 @@ class TrustRegion:
         m_xu = np.count_nonzero(incl_xu)
 
         if (
-            m_linear_ub + m_nonlinear_ub + self.m_linear_eq + self.m_nonlinear_eq
-            > 0
+            m_linear_ub + m_nonlinear_ub + self.m_linear_eq
+                + self.m_nonlinear_eq > 0
         ):
             identity = np.eye(self._pb.n)
             c_jac = np.r_[
@@ -1165,13 +1171,13 @@ class TrustRegion:
 
             # Extract the Lagrange multipliers.
             self._lm_linear_ub[incl_linear_ub] = res.x[
-                m_xl + m_xu : m_xl + m_xu + m_linear_ub
+                m_xl + m_xu:m_xl + m_xu + m_linear_ub
             ]
             self._lm_linear_ub[~incl_linear_ub] = 0.0
             self._lm_nonlinear_ub[incl_nonlinear_ub] = res.x[
                 m_xl
                 + m_xu
-                + m_linear_ub : m_xl
+                + m_linear_ub:m_xl
                 + m_xu
                 + m_linear_ub
                 + m_nonlinear_ub
@@ -1181,14 +1187,14 @@ class TrustRegion:
                 m_xl
                 + m_xu
                 + m_linear_ub
-                + m_nonlinear_ub : m_xl
+                + m_nonlinear_ub:m_xl
                 + m_xu
                 + m_linear_ub
                 + m_nonlinear_ub
                 + self.m_linear_eq
             ]
             self._lm_nonlinear_eq[:] = res.x[
-                m_xl + m_xu + m_linear_ub + m_nonlinear_ub + self.m_linear_eq :
+                m_xl + m_xu + m_linear_ub + m_nonlinear_ub + self.m_linear_eq:
             ]
 
     def _get_low_penalty(self):

@@ -432,7 +432,6 @@ class NonlinearConstraints:
             self._m_eq = 0
             self._m_ub = 0
 
-            m = len(x)
             for constraint in self._constraints:
                 if not callable(constraint.jac):
                     # having a callable constraint constraint function
@@ -1135,7 +1134,8 @@ class Problem:
         """
         x_full = np.empty(self.n_orig)
         x_full[self._fixed_idx] = self._fixed_val
-        x_full[~self._fixed_idx] = x * self._scaling_factor + self._scaling_shift
+        x_full[~self._fixed_idx] = (x * self._scaling_factor
+                                    + self._scaling_shift)
         return self._orig_bounds.project(x_full)
 
     def maxcv(self, x, cub_val=None, ceq_val=None):

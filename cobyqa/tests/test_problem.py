@@ -19,7 +19,8 @@ class BaseTest:
     @staticmethod
     def rosen(x, c=100.0):
         x = np.asarray(x)
-        return np.sum(c * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1.0 - x[:-1]) ** 2.0)
+        return np.sum(c * (x[1:] - x[:-1] ** 2.0) ** 2.0
+                      + (1.0 - x[:-1]) ** 2.0)
 
     class Rosen:
 
@@ -192,8 +193,10 @@ class TestNonlinearConstraint:
 
     def test_args(self):
         nonlinear_constraints = [
-            {"fun": lambda x, c: c * np.cos(x), "type": "ineq", "args": (2.0,)},
-            {"fun": lambda x, c: c * np.sin(x), "type": "eq", "args": (2.0,)},
+            {"fun": lambda x, c: c * np.cos(x),
+             "type": "ineq", "args": (2.0,)},
+            {"fun": lambda x, c: c * np.sin(x),
+             "type": "eq", "args": (2.0,)},
         ]
         x = [0.5, 0.5]
         nonlinear_constraints = standardize_constraints(

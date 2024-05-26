@@ -718,7 +718,8 @@ def minimize(
                 # Update the interpolation set.
                 try:
                     ill_conditioned = framework.models.update_interpolation(
-                        k_new, framework.x_best + step, fun_val, cub_val, ceq_val
+                        k_new, framework.x_best + step, fun_val, cub_val,
+                        ceq_val
                     )
                 except np.linalg.LinAlgError:
                     status = ExitStatus.LINALG_ERROR
@@ -987,7 +988,8 @@ def _set_default_options(options, n):
     options[Options.RHOBEG.value] = float(options[Options.RHOBEG])
     options[Options.RHOEND.value] = float(options[Options.RHOEND])
     if Options.NPT in options and options[Options.NPT] <= 0:
-        raise ValueError("The number of interpolation points must be positive.")
+        raise ValueError("The number of interpolation points must be "
+                         "positive.")
     if (
         Options.NPT in options
         and options[Options.NPT] > ((n + 1) * (n + 2)) // 2
@@ -1131,9 +1133,8 @@ def _set_default_constants(**kwargs):
         constants[Constants.INCREASE_RADIUS_FACTOR.value] = DEFAULT_CONSTANTS[
             Constants.INCREASE_RADIUS_FACTOR
         ]
-        constants[Constants.DECREASE_RADIUS_THRESHOLD.value] = DEFAULT_CONSTANTS[
-            Constants.DECREASE_RADIUS_THRESHOLD
-        ]
+        constants[Constants.DECREASE_RADIUS_THRESHOLD.value] = (
+            DEFAULT_CONSTANTS[Constants.DECREASE_RADIUS_THRESHOLD])
     constants.setdefault(
         Constants.DECREASE_RESOLUTION_FACTOR.value,
         DEFAULT_CONSTANTS[Constants.DECREASE_RESOLUTION_FACTOR],
@@ -1361,7 +1362,8 @@ def _set_default_constants(**kwargs):
         constants[Constants.LARGE_SHIFT_FACTOR]
     )
     if constants[Constants.LARGE_SHIFT_FACTOR] < 0.0:
-        raise ValueError("The constant large_shift_factor must be nonnegative.")
+        raise ValueError("The constant large_shift_factor must be "
+                         "nonnegative.")
     constants.setdefault(
         Constants.LARGE_GRADIENT_FACTOR.value,
         DEFAULT_CONSTANTS[Constants.LARGE_GRADIENT_FACTOR],
@@ -1429,13 +1431,20 @@ def _build_result(pb, penalty, success, status, n_iter, options):
         success = success and maxcv <= options[Options.FEASIBILITY_TOL]
     result = OptimizeResult()
     result.message = {
-        ExitStatus.RADIUS_SUCCESS: "The lower bound for the trust-region radius has been reached",
-        ExitStatus.TARGET_SUCCESS: "The target objective function value has been reached",
-        ExitStatus.FIXED_SUCCESS: "All variables are fixed by the bound constraints",
-        ExitStatus.CALLBACK_SUCCESS: "The callback requested to stop the optimization procedure",
-        ExitStatus.FEASIBLE_SUCCESS: "The feasibility problem received has been solved successfully",
-        ExitStatus.MAX_EVAL_WARNING: "The maximum number of function evaluations has been exceeded",
-        ExitStatus.MAX_ITER_WARNING: "The maximum number of iterations has been exceeded",
+        ExitStatus.RADIUS_SUCCESS: "The lower bound for the trust-region "
+                                   "radius has been reached",
+        ExitStatus.TARGET_SUCCESS: "The target objective function value has "
+                                   "been reached",
+        ExitStatus.FIXED_SUCCESS: "All variables are fixed by the bound "
+                                  "constraints",
+        ExitStatus.CALLBACK_SUCCESS: "The callback requested to stop the "
+                                     "optimization procedure",
+        ExitStatus.FEASIBLE_SUCCESS: "The feasibility problem received has "
+                                     "been solved successfully",
+        ExitStatus.MAX_EVAL_WARNING: "The maximum number of function "
+                                     "evaluations has been exceeded",
+        ExitStatus.MAX_ITER_WARNING: "The maximum number of iterations has "
+                                     "been exceeded",
         ExitStatus.INFEASIBLE_ERROR: "The bound constraints are infeasible",
         ExitStatus.LINALG_ERROR: "A linear algebra error occurred",
     }.get(status, "Unknown exit status")
