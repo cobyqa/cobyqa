@@ -881,7 +881,8 @@ class Problem:
             sig = signature(self._callback)
             try:
                 if set(sig.parameters) == {"intermediate_result"}:
-                    intermediate_result = OptimizeResult(x=x_full, fun=fun_val)
+                    x_best, fun_val_best, _ = self.best_eval(0.0)
+                    intermediate_result = OptimizeResult(x=x_best, fun=fun_val_best)
                     self._callback(intermediate_result=intermediate_result)
                 else:
                     self._callback(x_full)
