@@ -25,7 +25,7 @@ Using only functions values, and no derivatives, it aims at solving problems of 
     \end{cases}
 
 where :math:`\mathcal{X} = \{ x \in \mathbb{R}^n : l \le x \le u \}`.
-COBYQA always respect the bound constraints throughout the optimization process.
+COBYQA always respects the bound constraints throughout the optimization process.
 Hence, the nonlinear functions :math:`f` and :math:`c` do not need to be well-defined outside :math:`\mathcal{X}`.
 In essence, COBYQA is a derivative-free trust-region SQP method based on quadratic models obtained by underdetermined interpolation.
 For a more detailed description of the algorithm, see the :ref:`framework description <framework>`.
