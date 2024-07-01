@@ -156,7 +156,7 @@ class TestModels:
             Options.TARGET.value: 0.0,
             Options.DEBUG.value: True,
         }
-        models = Models(problem, options)
+        models = Models(problem, options, 0.0)
         assert models.n == problem.n
         assert models.npt == options[Options.NPT]
         assert models.m_nonlinear_ub == problem.m_nonlinear_ub
@@ -174,7 +174,7 @@ class TestModels:
             Options.DEBUG.value: True,
         }
         with pytest.raises(MaxEvalError):
-            Models(problem, options)
+            Models(problem, options, 0.0)
 
     def test_feasibility_problem(self):
         obj = ObjectiveFunction(None, False, True)
@@ -205,7 +205,7 @@ class TestModels:
             Options.DEBUG.value: True,
         }
         with pytest.raises(FeasibleSuccess):
-            Models(problem, options)
+            Models(problem, options, 0.0)
 
     def test_target(self):
         obj = ObjectiveFunction(rosen, False, True)
@@ -236,7 +236,7 @@ class TestModels:
             Options.DEBUG.value: True,
         }
         with pytest.raises(TargetSuccess):
-            Models(problem, options)
+            Models(problem, options, 0.0)
 
 
 def get_problem(x0):
