@@ -883,9 +883,14 @@ class Problem:
         if self._callback is not None:
             sig = signature(self._callback)
             try:
-                x_best = self.build_x(self.best_eval(penalty)[0])
+                x_best, fun_best, _ = self.best_eval(penalty)
+                x_best = self.build_x(x_best)
                 if set(sig.parameters) == {"intermediate_result"}:
-                    intermediate_result = OptimizeResult(x=x_best, fun=fun_val)
+                    intermediate_result = OptimizeResult(
+                        x=x_best,
+                        fun=fun_best,
+                        # maxcv=maxcv_best,
+                    )
                     self._callback(intermediate_result=intermediate_result)
                 else:
                     self._callback(x_best)
@@ -1138,8 +1143,6 @@ class Problem:
         """
         x_full = np.empty(self.n_orig)
         x_full[self._fixed_idx] = self._fixed_val
-        print(x)
-        print(self._scaling_factor)
         x_full[~self._fixed_idx] = (x * self._scaling_factor
                                     + self._scaling_shift)
         return self._orig_bounds.project(x_full)

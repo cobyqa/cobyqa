@@ -635,7 +635,8 @@ class Models:
         options : dict
             Options of the solver.
         penalty : float
-            Penalty parameter.
+            Penalty parameter used to select the point in the filter to forward
+            to the callback function.
 
         Raises
         ------
