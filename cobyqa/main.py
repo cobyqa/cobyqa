@@ -887,7 +887,7 @@ def _get_bounds(bounds, n):
     elif isinstance(bounds, Bounds):
         if bounds.lb.shape != (n,) or bounds.ub.shape != (n,):
             raise ValueError(f"The bounds must have {n} elements.")
-        return bounds
+        return Bounds(bounds.lb, bounds.ub)
     elif hasattr(bounds, "__len__"):
         bounds = np.asarray(bounds)
         if bounds.shape != (n, 2):

@@ -12,7 +12,7 @@ authors = [
     {name = "Tom M. Ragonneau and Zaikun Zhang", email = "cobyqa@python.org"},
 ]
 maintainers = [
-    {name = "Tom M. Ragonneau", email = "tom.ragonneau@polyu.edu.hk"},
+    {name = "Tom M. Ragonneau", email = "tom.ragonneau@gmail.com"},
     {name = "Zaikun Zhang", email = "zaikun.zhang@polyu.edu.hk"},
 ]
 keywords = [
