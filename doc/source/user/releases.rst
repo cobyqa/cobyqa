@@ -12,6 +12,11 @@ We provide below release notes for the different versions of COBYQA.
    * - Version
      - Date
      - Remarks
+   * - 1.1.2
+     - 2024-09-03
+     - This is a bugfix release.
+
+       #. Make sure that the disregarded arguments of `scipy.optimize.Bounds`, `scipy.optimize.LinearConstraint`, and `scipy.optimize.NonlinearConstraint` are not passed to the `minimize` function.
    * - 1.1.1
      - 2024-03-12
      - This is a bugfix release.
