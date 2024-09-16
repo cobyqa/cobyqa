@@ -62,7 +62,7 @@ doc = [
     "Sphinx==8.0.2",
     "sphinx-copybutton==0.5.2",
     "Sphinx-Substitution-Extensions==2024.8.6",
-    "sphinxcontrib-bibtex==2.6.2",
+    "sphinxcontrib-bibtex==2.6.3",
 ]
 examples = ["matplotlib"]
 tests = [
