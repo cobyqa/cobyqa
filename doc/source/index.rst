@@ -11,7 +11,7 @@ COBYQA documentation
 
 :Version: |version|
 :Useful links: `Issue tracker <https://github.com/cobyqa/cobyqa/issues>`_ | `Mailing list <https://mail.python.org/mailman3/lists/cobyqa.python.org/>`_
-:Authors: `Tom M. Ragonneau <https://tomragonneau.com>`_ | `Zaikun Zhang <https://www.zhangzk.net>`_
+:Authors: `Tom M. Ragonneau <https://ragonneau.github.io>`_ | `Zaikun Zhang <https://www.zhangzk.net>`_
 
 COBYQA is a derivative-free optimization solver designed to supersede `COBYLA <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-cobyla.html>`_.
 Using only functions values, and no derivatives, it aims at solving problems of the form
