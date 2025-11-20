@@ -1,8 +1,9 @@
 import numpy as np
 import pytest
 from scipy.optimize import Bounds, LinearConstraint, NonlinearConstraint, rosen
+from concurrent.futures import ThreadPoolExecutor
 
-from ..models import Interpolation, Quadratic, Models
+from ..models import Interpolation, Quadratic, Models, build_system
 from ..problem import (
     ObjectiveFunction,
     BoundConstraints,
@@ -86,6 +87,76 @@ class TestInterpolation:
             interpolation.x_base,
             [0.5, 0.5],
             atol=1e-13,
+        )
+
+    def test_multithread_build_system(self):
+        problem_list = [
+            get_problem([0.0, 0.5]),
+            get_problem([0.5, 0.5]),
+            get_problem([0.5, 0.5]),
+        ]
+        n = problem_list[0].n
+        options = {
+            Options.RHOBEG.value: 0.5,
+            Options.RHOEND.value: 1e-6,
+            Options.NPT.value: ((n + 1) * (n + 2)) // 2,
+            Options.DEBUG.value: True,
+        }
+        interpolation_list = [
+            Interpolation(problem, options)
+            for problem in problem_list
+        ]
+        expected_x_values = [
+            [0.0, 0.5],
+            [0.5, 0.5],
+            [0.5, 0.5],
+        ]
+        for interpolation, expected_x in \
+                zip(interpolation_list, expected_x_values):
+            np.testing.assert_allclose(
+                interpolation.x_base,
+                expected_x,
+                atol=1e-13,
+            )
+        # Check that multithreaded build is equivalent to single threaded build
+        systems = [
+            build_system(interpolation)
+            for interpolation in interpolation_list
+        ]
+        inner_iterations = 10
+        outer_iterations = 10
+        systems = systems * inner_iterations
+        interpolation_list = interpolation_list * inner_iterations
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            for j in range(outer_iterations):
+                results = executor.map(build_system, interpolation_list)
+                for i, actual in enumerate(results):
+                    self.check_system_equal(actual, systems[i])
+
+    def check_system_equal(self, actual, expected):
+        expected_a, expected_right_scaling, \
+            (expected_eig_values, expected_eig_vectors) = expected
+        actual_a, actual_right_scaling, \
+            (actual_eig_values, actual_eig_vectors) = actual
+        np.testing.assert_allclose(
+            actual_a,
+            expected_a,
+            rtol=0
+        )
+        np.testing.assert_allclose(
+            actual_right_scaling,
+            expected_right_scaling,
+            rtol=0,
+        )
+        np.testing.assert_allclose(
+            actual_eig_values,
+            expected_eig_values,
+            rtol=0,
+        )
+        np.testing.assert_allclose(
+            actual_eig_vectors,
+            expected_eig_vectors,
+            rtol=0,
         )
 
 

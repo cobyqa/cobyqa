@@ -59,6 +59,7 @@ jac
 keyprefix
 labelprefix
 LGR
+lhs
 linalg
 linewidth
 linkcode
@@ -113,6 +114,7 @@ RHOEND
 rosen
 rosenbrock
 rst
+rtol
 rvert
 scipy
 scriptscriptstyle

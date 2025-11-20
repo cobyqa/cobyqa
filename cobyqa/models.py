@@ -88,6 +88,7 @@ class Interpolation:
                 k2 = (k1 + spread) % pb.n
                 self.xpt[k1, k] = self.xpt[k1, k1 + 1]
                 self.xpt[k2, k] = self.xpt[k2, k2 + 1]
+        self._lhs_cache = None
 
     @property
     def n(self):
@@ -191,9 +192,6 @@ class Interpolation:
         return self.x_base + self.xpt[:, k]
 
 
-_cache = {"xpt": None, "a": None, "right_scaling": None, "eigh": None}
-
-
 def build_system(interpolation):
     """
     Build the left-hand side matrix of the interpolation system. The
@@ -208,10 +206,11 @@ def build_system(interpolation):
         Interpolation set.
     """
 
+    _cache = interpolation._lhs_cache
     # Compute the scaled directions from the base point to the
     # interpolation points. We scale the directions to avoid numerical
     # difficulties.
-    if _cache["xpt"] is not None and np.array_equal(
+    if _cache is not None and np.array_equal(
         interpolation.xpt, _cache["xpt"]
     ):
         return _cache["a"], _cache["right_scaling"], _cache["eigh"]
@@ -235,10 +234,13 @@ def build_system(interpolation):
 
     eig_values, eig_vectors = eigh(a, check_finite=False)
 
-    _cache["xpt"] = np.copy(interpolation.xpt)
-    _cache["a"] = np.copy(a)
-    _cache["right_scaling"] = np.copy(right_scaling)
-    _cache["eigh"] = (eig_values, eig_vectors)
+    new_cache = {
+        "xpt": np.copy(interpolation.xpt),
+        "a": np.copy(a),
+        "right_scaling": np.copy(right_scaling),
+        "eigh": (eig_values, eig_vectors),
+    }
+    interpolation._lhs_cache = new_cache
 
     return a, right_scaling, (eig_values, eig_vectors)
 
