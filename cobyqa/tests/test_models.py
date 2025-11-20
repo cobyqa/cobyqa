@@ -154,7 +154,7 @@ class TestInterpolation:
             rtol=0,
         )
         np.testing.assert_allclose(
-            actual_eig_vectors,
+            expected_eig_vectors,
             actual_eig_vectors,
             rtol=0,
         )
