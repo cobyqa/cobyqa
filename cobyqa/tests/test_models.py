@@ -122,13 +122,13 @@ class TestInterpolation:
             build_system(interpolation)
             for interpolation in interpolation_list
         ]
-        iterations = 10
-        systems = systems * iterations
-        interpolation_list = interpolation_list * iterations
+        inner_iterations = 10
+        outer_iterations = 10
+        systems = systems * inner_iterations
+        interpolation_list = interpolation_list * inner_iterations
         with ThreadPoolExecutor(max_workers=4) as executor:
-            for j in range(100):
+            for j in range(outer_iterations):
                 for i, actual in enumerate(executor.map(build_system, interpolation_list)):
-                    print(j * len(interpolation_list) + i)
                     expected_a, expected_right_scaling, \
                         (expected_eig_values, expected_eig_vectors) = systems[i]
                     actual_a, actual_right_scaling, \
