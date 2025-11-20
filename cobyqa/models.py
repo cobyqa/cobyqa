@@ -1,4 +1,5 @@
 import warnings
+import time
 
 import numpy as np
 from scipy.linalg import eigh
@@ -214,6 +215,7 @@ def build_system(interpolation):
     if _cache["xpt"] is not None and np.array_equal(
         interpolation.xpt, _cache["xpt"]
     ):
+        time.sleep(0.001)
         return _cache["a"], _cache["right_scaling"], _cache["eigh"]
 
     scale = np.max(np.linalg.norm(interpolation.xpt, axis=0), initial=EPS)
