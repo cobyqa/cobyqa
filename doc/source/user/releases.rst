@@ -12,6 +12,11 @@ We provide below release notes for the different versions of COBYQA.
    * - Version
      - Date
      - Remarks
+   * - 1.1.3
+     - 2025-11-20
+     - This is a bugfix release.
+
+       #. Solve a concurrency issue (see `#183 <https://github.com/cobyqa/cobyqa/pull/183>`_)
    * - 1.1.2
      - 2024-09-03
      - This is a bugfix release.

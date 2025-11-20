@@ -15,6 +15,6 @@ from .utils import show_versions
 #
 # Dev branch marker is: 'X.Y.dev' or 'X.Y.devN' where N is an integer.
 # 'X.Y.dev0' is the canonical version of 'X.Y.dev'.
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 
 __all__ = ["minimize", "show_versions"]
