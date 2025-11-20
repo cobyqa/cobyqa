@@ -111,7 +111,8 @@ class TestInterpolation:
             [0.5, 0.5],
             [0.5, 0.5],
         ]
-        for interpolation, expected_x in zip(interpolation_list, expected_x_values):
+        for interpolation, expected_x in \
+                zip(interpolation_list, expected_x_values):
             np.testing.assert_allclose(
                 interpolation.x_base,
                 expected_x,
@@ -128,15 +129,35 @@ class TestInterpolation:
         interpolation_list = interpolation_list * inner_iterations
         with ThreadPoolExecutor(max_workers=4) as executor:
             for j in range(outer_iterations):
-                for i, actual in enumerate(executor.map(build_system, interpolation_list)):
-                    expected_a, expected_right_scaling, \
-                        (expected_eig_values, expected_eig_vectors) = systems[i]
-                    actual_a, actual_right_scaling, \
-                        (actual_eig_values, actual_eig_vectors) = actual
-                    np.testing.assert_allclose(expected_a, actual_a, rtol=0)
-                    np.testing.assert_allclose(expected_right_scaling, actual_right_scaling, rtol=0)
-                    np.testing.assert_allclose(expected_eig_values, actual_eig_values, rtol=0)
-                    np.testing.assert_allclose(actual_eig_vectors, actual_eig_vectors, rtol=0)
+                results = executor.map(build_system, interpolation_list)
+                for i, actual in enumerate(results):
+                    self.check_system_equal(actual, systems[i])
+
+    def check_system_equal(self, actual, expected):
+        expected_a, expected_right_scaling, \
+            (expected_eig_values, expected_eig_vectors) = expected
+        actual_a, actual_right_scaling, \
+            (actual_eig_values, actual_eig_vectors) = actual
+        np.testing.assert_allclose(
+            expected_a,
+            actual_a,
+            rtol=0
+        )
+        np.testing.assert_allclose(
+            expected_right_scaling,
+            actual_right_scaling,
+            rtol=0,
+        )
+        np.testing.assert_allclose(
+            expected_eig_values,
+            actual_eig_values,
+            rtol=0,
+        )
+        np.testing.assert_allclose(
+            actual_eig_vectors,
+            actual_eig_vectors,
+            rtol=0,
+        )
 
 
 class TestQuadratic:
