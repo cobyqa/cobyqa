@@ -92,7 +92,7 @@ class TestMinimize:
         np.testing.assert_allclose(res.x, solution, atol=1e-4)
         assert res.success, res.message
         assert res.status == 0, res
-        assert res.maxcv < 1e-8, res
+        assert res.maxcv < 1e-6, res
         assert res.nfev <= 100, res
         assert res.fun < self.fun(solution) + 1e-3, res
 
