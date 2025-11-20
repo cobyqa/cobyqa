@@ -139,23 +139,23 @@ class TestInterpolation:
         actual_a, actual_right_scaling, \
             (actual_eig_values, actual_eig_vectors) = actual
         np.testing.assert_allclose(
-            expected_a,
             actual_a,
+            expected_a,
             rtol=0
         )
         np.testing.assert_allclose(
-            expected_right_scaling,
             actual_right_scaling,
+            expected_right_scaling,
             rtol=0,
         )
         np.testing.assert_allclose(
-            expected_eig_values,
             actual_eig_values,
+            expected_eig_values,
             rtol=0,
         )
         np.testing.assert_allclose(
-            expected_eig_vectors,
             actual_eig_vectors,
+            expected_eig_vectors,
             rtol=0,
         )
 
