@@ -42,7 +42,7 @@ jobs:
           fi
 
       - name: Comment the flake8 output on commit
-        uses: peter-evans/commit-comment@v3
+        uses: peter-evans/commit-comment@v4
         if: failure()
         with:
           body-path: output_flake8.md
