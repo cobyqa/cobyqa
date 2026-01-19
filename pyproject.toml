@@ -61,7 +61,7 @@ doc = [
     "pydata-sphinx-theme==0.16.1",
     "Sphinx==8.2.3",
     "sphinx-copybutton==0.5.2",
-    "Sphinx-Substitution-Extensions==2025.11.17",
+    "Sphinx-Substitution-Extensions==2026.1.12",
     "sphinxcontrib-bibtex==2.6.5",
 ]
 examples = ["matplotlib"]
