@@ -711,7 +711,10 @@ class Problem:
             self._bounds.pcs = None
         else:
             self._bounds = BoundConstraints(
-                Bounds(bounds.xl[~self._fixed_idx], bounds.xu[~self._fixed_idx])
+                Bounds(
+                    bounds.xl[~self._fixed_idx],
+                    bounds.xu[~self._fixed_idx],
+                )
             )
 
         # Set the initial guess.
