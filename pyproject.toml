@@ -13,7 +13,7 @@ authors = [
 ]
 maintainers = [
     {name = "Tom M. Ragonneau", email = "tom.ragonneau@gmail.com"},
-    {name = "Zaikun Zhang", email = "zaikun.zhang@polyu.edu.hk"},
+    {name = "Zaikun Zhang", email = "zhangzaikun@mail.sysu.edu.cn"},
 ]
 keywords = [
     "blackbox-optimization",

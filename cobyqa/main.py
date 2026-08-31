@@ -207,9 +207,9 @@ def minimize(
             * - 2
               - All variables are fixed by the bound constraints.
             * - 3
-              - The callback requested to stop the optimization procedure.
-            * - 4
               - The feasibility problem received has been solved successfully.
+            * - 4
+              - The callback requested to stop the optimization procedure.
             * - 5
               - The maximum number of function evaluations has been exceeded.
             * - 6
@@ -539,8 +539,8 @@ def minimize(
         return _build_result(
             pb,
             0.0,
-            True,
-            ExitStatus.CALLBACK_SUCCESS,
+            False,
+            ExitStatus.CALLBACK_WARNING,
             0,
             options,
         )
@@ -662,8 +662,7 @@ def minimize(
                     success = True
                     break
                 except CallbackSuccess:
-                    status = ExitStatus.CALLBACK_SUCCESS
-                    success = True
+                    status = ExitStatus.CALLBACK_WARNING
                     break
                 except MaxEvalError:
                     status = ExitStatus.MAX_EVAL_WARNING
@@ -709,8 +708,7 @@ def minimize(
                             success = True
                             break
                         except CallbackSuccess:
-                            status = ExitStatus.CALLBACK_SUCCESS
-                            success = True
+                            status = ExitStatus.CALLBACK_WARNING
                             break
                         except MaxEvalError:
                             status = ExitStatus.MAX_EVAL_WARNING
@@ -847,8 +845,7 @@ def minimize(
                 success = True
                 break
             except CallbackSuccess:
-                status = ExitStatus.CALLBACK_SUCCESS
-                success = True
+                status = ExitStatus.CALLBACK_WARNING
                 break
             except MaxEvalError:
                 status = ExitStatus.MAX_EVAL_WARNING
@@ -1455,10 +1452,10 @@ def _build_result(pb, penalty, success, status, n_iter, options):
                                    "been reached",
         ExitStatus.FIXED_SUCCESS: "All variables are fixed by the bound "
                                   "constraints",
-        ExitStatus.CALLBACK_SUCCESS: "The callback requested to stop the "
-                                     "optimization procedure",
         ExitStatus.FEASIBLE_SUCCESS: "The feasibility problem received has "
                                      "been solved successfully",
+        ExitStatus.CALLBACK_WARNING: "The callback requested to stop the "
+                                     "optimization procedure",
         ExitStatus.MAX_EVAL_WARNING: "The maximum number of function "
                                      "evaluations has been exceeded",
         ExitStatus.MAX_ITER_WARNING: "The maximum number of iterations has "
