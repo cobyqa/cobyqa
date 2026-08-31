@@ -596,6 +596,15 @@ class NonlinearConstraints:
         )
 
     def violation(self, x, cub_val=None, ceq_val=None):
+        if cub_val is not None and ceq_val is not None:
+            # Use the already-computed constraint values to avoid re-evaluating
+            # the constraint functions at x.
+            parts = []
+            if len(cub_val):
+                parts.append(np.maximum(cub_val, 0.0))
+            if len(ceq_val):
+                parts.append(np.abs(ceq_val))
+            return np.concatenate(parts) if parts else np.array([])
         return np.concatenate([pc.violation(x) for pc in self.pcs])
 
 
