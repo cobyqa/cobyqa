@@ -702,9 +702,17 @@ class Problem:
 
         # Set the bound constraints.
         self._orig_bounds = bounds
-        self._bounds = BoundConstraints(
-            Bounds(bounds.xl[~self._fixed_idx], bounds.xu[~self._fixed_idx])
-        )
+        if np.all(self._fixed_idx):
+            self._bounds = copy.copy(self._orig_bounds)
+            self._bounds._xl = np.empty(0)
+            self._bounds._xu = np.empty(0)
+            self._bounds.is_feasible = True
+            self._bounds.m = 0
+            self._bounds.pcs = None
+        else:
+            self._bounds = BoundConstraints(
+                Bounds(bounds.xl[~self._fixed_idx], bounds.xu[~self._fixed_idx])
+            )
 
         # Set the initial guess.
         self._x0 = self._bounds.project(x0[~self._fixed_idx])
