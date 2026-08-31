@@ -12,6 +12,13 @@ We provide below release notes for the different versions of COBYQA.
    * - Version
      - Date
      - Remarks
+   * - 1.1.4
+     - 2026-08-31
+     - This is a bugfix release.
+
+       #. Solve a nonlinear constraint function evaluation issue (see `#206 <https://github.com/cobyqa/cobyqa/pull/206>`_)
+       #. The same bug lead in some cases to evaluations of points outside the bounds (see `#201 <https://github.com/cobyqa/cobyqa/pull/201>`_).
+       #. The success flag of the returned result is now set to False if a `StopIteration` exception is raised in the callback function (see `#211 <https://github.com/cobyqa/cobyqa/pull/211>`_).
    * - 1.1.3
      - 2025-11-20
      - This is a bugfix release.
