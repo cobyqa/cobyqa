@@ -26,7 +26,7 @@ No derivative information is needed.
 Installation
 ------------
 
-COBYQA can be installed for `Python 3.8 or above <https://www.python.org>`_.
+COBYQA can be installed for `Python 3.10 or above <https://www.python.org>`_.
 
 Dependencies
 ~~~~~~~~~~~~
