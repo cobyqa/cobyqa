@@ -1,5 +1,10 @@
 [
     {
+        "name": "latest",
+        "version": "latest",
+        "url": "https://www.cobyqa.com/latest/"
+    },
+    {
         "name": "1.1.4 (stable)",
         "version": "1.1.4",
         "url": "https://www.cobyqa.com/v1.1.4/",
