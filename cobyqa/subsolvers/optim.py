@@ -708,7 +708,7 @@ def constrained_tangential_byrd_omojokun(
                 if t_xu <= t_min:
                     i_new = _argmin(all_t_xu)
                     step[i_new] = xu[i_new]
-                    free_xl[i_new] = False
+                    free_xu[i_new] = False
                 if t_ub <= t_min:
                     i_new = _argmin(all_t_ub)
                     free_ub[i_new] = False

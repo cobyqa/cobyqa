@@ -560,7 +560,7 @@ def minimize(
             pb,
             0.0,
             False,
-            ExitStatus.MAX_ITER_WARNING,
+            ExitStatus.MAX_EVAL_WARNING,
             0,
             options,
         )
@@ -772,7 +772,7 @@ def minimize(
                             n_alt_models = 0
 
                 # Update the Lagrange multipliers.
-                framework.set_multipliers(framework.x_best + step)
+                framework.set_multipliers(framework.x_best + step, cub_val)
 
                 # Check whether the resolution should be enhanced.
                 try:

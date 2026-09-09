@@ -67,7 +67,7 @@ class TrustRegion:
         self._lm_linear_eq = np.zeros(self.m_linear_eq)
         self._lm_nonlinear_ub = np.zeros(self.m_nonlinear_ub)
         self._lm_nonlinear_eq = np.zeros(self.m_nonlinear_eq)
-        self.set_multipliers(self.x_best)
+        self.set_multipliers()
 
         # Set the initial trust-region radius and the resolution.
         self._resolution = options[Options.RHOBEG]
@@ -611,7 +611,7 @@ class TrustRegion:
                 bub,
                 aeq,
                 radius,
-                options["debug"],
+                options[Options.DEBUG],
                 **self._constants,
             )
         if options[Options.DEBUG]:
@@ -1122,7 +1122,7 @@ class TrustRegion:
         """
         self.models.shift_x_base(np.copy(self.x_best), options)
 
-    def set_multipliers(self, x):
+    def set_multipliers(self, x=None, cub_val=None):
         """
         Set the Lagrange multipliers.
 
@@ -1131,12 +1131,19 @@ class TrustRegion:
 
         Parameters
         ----------
-        x : `numpy.ndarray`, shape (n,)
-            Point at which the Lagrange multipliers are computed.
+        x : `numpy.ndarray`, shape (n,), optional
+            Point at which the Lagrange multipliers are computed. If not
+            provided, the Lagrange multipliers are computed at `x_best`.
+        cub_val : `numpy.ndarray`, shape (m_nonlinear_ub,), optional
+            Value of the nonlinear constraints at `x`.
         """
+        if x is None:
+            x = self.x_best
+        if cub_val is None:
+            cub_val = self.cub_best
         # Build the constraints of the least-squares problem.
         incl_linear_ub = self._pb.linear.a_ub @ x >= self._pb.linear.b_ub
-        incl_nonlinear_ub = self.cub_best >= 0.0
+        incl_nonlinear_ub = cub_val >= 0.0
         incl_xl = self._pb.bounds.xl >= x
         incl_xu = self._pb.bounds.xu <= x
         m_linear_ub = np.count_nonzero(incl_linear_ub)
