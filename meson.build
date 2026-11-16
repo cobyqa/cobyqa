@@ -1,6 +1,6 @@
 project(
   'cobyqa',
-  version: '1.1.3',
+  version: '1.1.4',
   license: 'BSD-3-Clause',
   license_files: 'LICENSE',
 )
